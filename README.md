@@ -1,5 +1,7 @@
 # GLAP — AI-Native Logistics Decision Intelligence Platform
 
+AI-native logistics decision intelligence platform built on modern AWS lakehouse architecture.
+
 GLAP (Global Logistics Analytics Platform) is an AI-native logistics decision intelligence system designed to transform traditional analytics pipelines into an automated operational AI platform.
 
 The system detects logistics anomalies, performs root cause analysis, generates decision recommendations, and visualizes insights through operational dashboards.
@@ -32,6 +34,7 @@ This architecture enables a continuous **AI Decision Flywheel** for operational 
 ![Data Lineage](docs/data_lineage.png)
 
 The AI decision pipeline follows a structured data lineage from raw logistics events to AI-generated operational actions.
+
 raw_shipment_events
 ↓
 fact_shipment_events_extended
@@ -45,7 +48,6 @@ fact_ai_decisions
 fact_ai_actions
 ↓
 fact_ai_outcomes
-
 
 
 
@@ -120,35 +122,50 @@ GLAP forms a continuous operational intelligence loop:
 Detection  
 → Root Cause Analysis  
 → Decision Generation  
-→ Operational Insights  
+→ Operational Execution  
 → Outcome Evaluation  
 → Learning Signals  
 → Policy Update  
 
 This flywheel enables the platform to continuously improve operational decision quality.
+![Flywheel](docs/Flywheel.png)
 
 ---
 
 # Technology Stack
 
+### Cloud Platform
+- AWS
+
+### Data Storage
 - Amazon S3
-- Apache Iceberg
-- AWS Glue Data Catalog
+- Apache Iceberg (Lakehouse format)
+
+### Data Processing
 - Amazon Athena
+- SQL
+- Python
+
+### Data Pipeline
+- Synthetic data generator
+- Incremental data ingestion
+
+### AI / Analytics
+- Logistics anomaly detection
+- Route performance analysis
+- AI reasoning engine
+- Decision recommendation engine
+
+### Orchestration
 - AWS Lambda
 - Amazon EventBridge
-- Amazon CloudWatch
+
+### Visualization
 - Amazon QuickSight
-- Python
-- SQL
 
 ---
 
 # Repository Structure
-
-## Repository Structure
-
-## Repository Structure
 
 ```
 GLAP-AI-Decision-Platform/
@@ -175,6 +192,7 @@ GLAP-AI-Decision-Platform/
 
 ---
 
+
 # Technical Implementation
 
 Detailed system implementation documentation:
@@ -183,14 +201,14 @@ Detailed system implementation documentation:
 
 This document includes:
 
-- synthetic logistics data generation
-- Iceberg lakehouse architecture
-- anomaly detection pipeline
-- AI reasoning system
-- decision engine
-- Lambda orchestration
-- EventBridge automation
-- QuickSight dashboard integration
+- synthetic logistics data generation  
+- Iceberg lakehouse architecture  
+- anomaly detection pipeline  
+- AI reasoning system  
+- decision engine  
+- Lambda orchestration  
+- EventBridge automation  
+- QuickSight dashboard integration  
 
 ---
 
@@ -204,4 +222,4 @@ The project highlights the integration of modern data engineering practices with
 
 # Author
 
-Portfolio project demonstrating modern **AI-native data platform architecture and decision intelligence systems**.
+Portfolio project demonstrating modern **AI-native data platform architecture, decision intelligence systems, and end-to-end operational AI pipelines.**
