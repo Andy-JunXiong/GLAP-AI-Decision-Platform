@@ -146,20 +146,28 @@ This flywheel enables the platform to continuously improve operational decision 
 
 # Repository Structure
 
+## Repository Structure
+
 GLAP-AI-Decision-Platform/
 │
 ├── README.md
 ├── GLAP_Technical_Implementation.md
 │
 ├── docs/
-│ ├── architecture.png
-│ └── data_lineage.png
-│
-├── GLAP - AI Decision.pdf
-├── GLAP - AI Detection.pdf
-├── GLAP - AI Learning.pdf
-├── GLAP - AI Learning Dashboard.pdf
-└── GLAP - AI Ops Decision.pdf
+│   ├── architecture.png
+│   ├── data_lineage.png
+│   │
+│   ├── dashboards/
+│   │   ├── GLAP - AI Detection.png
+│   │   ├── GLAP - AI Decision.png
+│   │   ├── GLAP - AI Ops Decision.png
+│   │   └── GLAP - AI Learning.png
+│   │
+│   └── reports/
+│       ├── GLAP - AI Detection.pdf
+│       ├── GLAP - AI Decision.pdf
+│       ├── GLAP - AI Ops Decision.pdf
+│       └── GLAP - AI Learning.pdf
 
 ---
 
