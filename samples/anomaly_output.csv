@@ -1,0 +1,3 @@
+run_date,entity_key,metric_name,metric_value,baseline_value,z_score,shipment_count,alert_band
+2026-03-30,DEHAM->AUSYD / MAERSK,avg_leg_duration_days,35.4,27.8,2.91,18,HIGH
+2026-03-30,CNSHA->NLRTM / COSCO,breach_rate,0.22,0.11,1.96,12,MEDIUM

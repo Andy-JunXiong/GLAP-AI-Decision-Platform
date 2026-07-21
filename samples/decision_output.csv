@@ -1,0 +1,3 @@
+run_date,entity_key,metric_name,root_cause,recommended_action,action_priority,outcome_status
+2026-03-30,DEHAM->AUSYD / MAERSK,avg_leg_duration_days,Carrier transit delay or port congestion,Investigate carrier transit delay and review impacted shipments,HIGH,monitor_next_run
+2026-03-30,CNSHA->NLRTM / COSCO,breach_rate,SLA reliability degradation,Escalate SLA issue with carrier and monitor exception queue,HIGH,open
