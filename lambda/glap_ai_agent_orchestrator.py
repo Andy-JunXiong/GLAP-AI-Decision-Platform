@@ -30,6 +30,7 @@ def wait_for_query(query_id, timeout_seconds=120):
             return state, response
 
         if time.time() - start_time > timeout_seconds:
+            athena.stop_query_execution(QueryExecutionId=query_id)
             raise TimeoutError(f"Athena query timed out after {timeout_seconds} seconds")
 
         time.sleep(2)
@@ -47,14 +48,35 @@ def run_query(sql):
 
 
 def get_query_results(query_id):
-    result = athena.get_query_results(QueryExecutionId=query_id)
-
-    columns = [c["Label"] for c in result["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]]
     rows = []
+    next_token = None
+    columns = None
+    first_page = True
 
-    for row in result["ResultSet"]["Rows"][1:]:
-        values = [col.get("VarCharValue", None) for col in row["Data"]]
-        rows.append(dict(zip(columns, values)))
+    while True:
+        request = {"QueryExecutionId": query_id}
+        if next_token:
+            request["NextToken"] = next_token
+
+        result = athena.get_query_results(**request)
+        if columns is None:
+            columns = [
+                c["Label"]
+                for c in result["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
+            ]
+
+        result_rows = result["ResultSet"]["Rows"]
+        if first_page:
+            result_rows = result_rows[1:]
+            first_page = False
+
+        for row in result_rows:
+            values = [col.get("VarCharValue", None) for col in row["Data"]]
+            rows.append(dict(zip(columns, values)))
+
+        next_token = result.get("NextToken")
+        if not next_token:
+            break
 
     return rows
 
@@ -91,6 +113,20 @@ def record_exists(table_name, run_date, entity_key, metric_name):
         return int(rows[0]["cnt"]) > 0
     except Exception:
         return False
+
+
+def get_existing_root_cause(run_date, entity_key, metric_name):
+    sql = f"""
+    SELECT root_cause, confidence_score, supporting_metric
+    FROM curated_iceberg.fact_ai_root_cause_v1
+    WHERE run_date = DATE '{escape_sql_string(run_date)}'
+      AND entity_key = '{escape_sql_string(entity_key)}'
+      AND metric_name = '{escape_sql_string(metric_name)}'
+    ORDER BY created_at DESC
+    LIMIT 1
+    """
+    rows = get_query_results(run_query(sql))
+    return rows[0] if rows else None
 
 
 def generate_root_cause(metric_name, metric_value, baseline_value, z_score):
@@ -161,13 +197,16 @@ def insert_root_cause_record(row):
         row["entity_key"],
         row["metric_name"]
     ):
+        existing = get_existing_root_cause(
+            row["run_date"], row["entity_key"], row["metric_name"]
+        ) or {}
         return {
             "run_date": row["run_date"],
             "entity_key": row["entity_key"],
             "metric_name": row["metric_name"],
-            "root_cause": None,
-            "confidence_score": None,
-            "supporting_metric": None,
+            "root_cause": existing.get("root_cause"),
+            "confidence_score": existing.get("confidence_score"),
+            "supporting_metric": existing.get("supporting_metric"),
             "skipped": True
         }
 
@@ -213,7 +252,7 @@ def insert_decision_record(root_cause_row):
     ):
         return "skipped"
 
-    if root_cause_row.get("skipped") and root_cause_row.get("confidence_score") is None:
+    if root_cause_row.get("confidence_score") is None:
         return "skipped"
 
     recommended_action, decision_reason, action_priority = generate_decision(
@@ -243,14 +282,22 @@ def lambda_handler(event, context):
 
     anomaly_sql = """
     SELECT
-        run_date,
-        entity_key,
-        metric_name,
-        metric_value,
-        baseline_value,
-        z_score
-    FROM curated_iceberg.fact_ai_anomaly_scores_v1
-    ORDER BY abs(z_score) DESC
+        anomaly.run_date,
+        anomaly.entity_key,
+        anomaly.metric_name,
+        anomaly.metric_value,
+        anomaly.baseline_value,
+        anomaly.z_score
+    FROM curated_iceberg.fact_ai_anomaly_scores_v1 AS anomaly
+    WHERE anomaly.anomaly_flag = 1
+      AND NOT EXISTS (
+          SELECT 1
+          FROM curated_iceberg.fact_ai_decision_explanations_v1 AS decision
+          WHERE decision.run_date = anomaly.run_date
+            AND decision.entity_key = anomaly.entity_key
+            AND decision.metric_name = anomaly.metric_name
+      )
+    ORDER BY anomaly.run_date DESC, abs(anomaly.z_score) DESC
     LIMIT 10
     """
 
