@@ -6,6 +6,22 @@ This manifest records which public artifacts were checked against the deployed A
 
 Verification was performed on **2026-07-21** against the GLAP resources in AWS `us-east-1` using read-only inspection wherever possible.
 
+An orchestrator reliability update was deployed and smoke-tested on
+**2026-07-23**. The deployed revision selects only anomalies without an existing
+decision, can resume a missing decision from an existing root-cause record,
+cancels timed-out Athena queries, and reads paginated Athena results. The
+post-deployment synchronous invocation completed successfully with no function
+error. With no pending anomalies, its measured duration was approximately 2.34
+seconds, compared with approximately 55.37 seconds for the preceding duplicate-
+only scheduled invocation. Immutable Lambda version `1` is the pre-deployment
+rollback point and version `2` is the verified reliability release.
+The `prod` Lambda alias points to version `2`, and the enabled daily EventBridge
+Scheduler target was changed from the mutable function ARN to that alias after a
+successful alias-qualified smoke test.
+The `staging` alias also points to version `2` and passed a qualified smoke test,
+establishing separate candidate and production release channels for subsequent
+CLI-driven development.
+
 | Artifact | AWS source | Verification | Public location |
 | --- | --- | --- | --- |
 | Agent orchestrator | Deployed `glap-ai-agent-orchestrator` Lambda package | Source exported; Python 3.14 runtime and 2026-03-12 deployment metadata observed | [`../lambda/glap_ai_agent_orchestrator.py`](../lambda/glap_ai_agent_orchestrator.py) |
