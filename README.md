@@ -1,5 +1,7 @@
 # GLAP: AI-Native Logistics Decision Intelligence on AWS
 
+[![CI](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/workflows/ci.yml)
+
 GLAP is an AWS-deployed reference implementation showing how a logistics team can move from passive reporting to a decision workflow that detects shipment anomalies and recommends traceable actions. It was built and validated with synthetic logistics data.
 
 ![GLAP Architecture](docs/architecture.png)
