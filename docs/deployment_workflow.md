@@ -92,6 +92,12 @@ AWS role can update candidate code, publish immutable versions, invoke dry-run
 smoke tests, and move only the `staging` alias. It cannot update `prod`, modify
 the Scheduler, administer IAM, or deploy another Lambda function.
 
+AWS authorizes `UpdateAlias` against the unqualified function ARN, so the
+GitHub role does not receive that action. It invokes a separate promoter Lambda
+whose code and environment are locked to the `staging` alias. The promoter
+validates immutable version numbers and Git commit descriptions and uses the
+alias revision ID as a concurrency guard.
+
 Candidate and alias smoke tests pass `{"dry_run": true}`. Dry-run execution reads
 the pending anomaly set and builds decision previews without inserting root-
 cause or decision records.

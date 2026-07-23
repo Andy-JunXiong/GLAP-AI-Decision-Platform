@@ -20,6 +20,7 @@ jobs:
       AWS_REGION: us-east-1
       FUNCTION_NAME: glap-ai-agent-orchestrator
       STAGING_ALIAS: staging
+      PROMOTER_FUNCTION: glap-staging-alias-promoter
 
     steps:
       - name: Check out main
@@ -62,12 +63,8 @@ jobs:
           staging_version=$(aws lambda get-alias \
             --function-name "$FUNCTION_NAME" --name "$STAGING_ALIAS" \
             --query FunctionVersion --output text)
-          alias_revision=$(aws lambda get-alias \
-            --function-name "$FUNCTION_NAME" --name "$STAGING_ALIAS" \
-            --query RevisionId --output text)
           echo "latest_revision=$latest_revision" >> "$GITHUB_OUTPUT"
           echo "staging_version=$staging_version" >> "$GITHUB_OUTPUT"
-          echo "alias_revision=$alias_revision" >> "$GITHUB_OUTPUT"
 
       - name: Upload candidate to latest
         id: upload
@@ -103,12 +100,16 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Move staging alias
+        shell: bash
         run: |
-          aws lambda update-alias \
-            --function-name "$FUNCTION_NAME" \
-            --name "$STAGING_ALIAS" \
-            --function-version "${{ steps.release.outputs.version }}" \
-            --revision-id "${{ steps.current.outputs.alias_revision }}"
+          payload=$(printf '{"version":"%s","expected_git_sha":"%s"}' \
+            "${{ steps.release.outputs.version }}" "$GITHUB_SHA")
+          aws lambda invoke \
+            --function-name "$PROMOTER_FUNCTION" \
+            --cli-binary-format raw-in-base64-out \
+            --payload "$payload" \
+            dist/promotion-response.json
+          python -c 'import json; data=json.load(open("dist/promotion-response.json")); assert data.get("status") in {"promoted", "unchanged"}, data'
 
       - name: Smoke-test staging alias in dry-run mode
         shell: bash
@@ -124,14 +125,14 @@ jobs:
         if: failure() && steps.release.outputs.version != ''
         shell: bash
         run: |
-          current_alias_revision=$(aws lambda get-alias \
-            --function-name "$FUNCTION_NAME" --name "$STAGING_ALIAS" \
-            --query RevisionId --output text)
-          aws lambda update-alias \
-            --function-name "$FUNCTION_NAME" \
-            --name "$STAGING_ALIAS" \
-            --function-version "${{ steps.current.outputs.staging_version }}" \
-            --revision-id "$current_alias_revision"
+          payload=$(printf '{"version":"%s"}' \
+            "${{ steps.current.outputs.staging_version }}")
+          aws lambda invoke \
+            --function-name "$PROMOTER_FUNCTION" \
+            --cli-binary-format raw-in-base64-out \
+            --payload "$payload" \
+            dist/rollback-response.json
+          python -c 'import json; data=json.load(open("dist/rollback-response.json")); assert data.get("status") in {"promoted", "unchanged"}, data'
 
       - name: Write deployment summary
         if: success()
