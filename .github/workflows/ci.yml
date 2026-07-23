@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.13"
+          - "3.14"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Check changed lines for whitespace errors
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ -n "$PR_BASE_SHA" ]]; then
+            git diff --check "$PR_BASE_SHA"...HEAD
+          else
+            git show --check --format= HEAD
+          fi
+
+      - name: Compile Python sources
+        run: python -m compileall -q lambda examples tests
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check required SQL artifacts
+        shell: bash
+        run: |
+          test -s sql/00_core_table_ddl.sql
+          test -s sql/01_agent_orchestration.sql
+          test -s sql/02_validation_queries.sql
+
+      - name: Verify Lambda deployment package entry point
+        shell: bash
+        run: |
+          mkdir -p dist/package
+          cp lambda/glap_ai_agent_orchestrator.py dist/package/lambda_function.py
+          (cd dist/package && zip -q ../glap-ai-agent-orchestrator.zip lambda_function.py)
+          test "$(unzip -Z1 dist/glap-ai-agent-orchestrator.zip)" = "lambda_function.py"
