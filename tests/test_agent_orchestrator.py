@@ -128,6 +128,28 @@ class AgentOrchestratorTests(unittest.TestCase):
         self.assertIn("NOT EXISTS", captured_sql[0])
         self.assertIn("fact_ai_decision_explanations_v1", captured_sql[0])
 
+    def test_dry_run_builds_preview_without_writes(self):
+        module = load_module()
+        anomaly = {
+            "run_date": "2026-07-23",
+            "entity_key": "DEHAM->AUSYD / MAERSK",
+            "metric_name": "avg_leg_duration_days",
+            "metric_value": "35.4",
+            "baseline_value": "27.8",
+            "z_score": "2.91",
+        }
+
+        with patch.object(module, "run_query", return_value="query-1"), patch.object(
+            module, "get_query_results", return_value=[anomaly]
+        ), patch.object(module, "insert_root_cause_record") as insert_root_cause:
+            result = module.lambda_handler({"dry_run": True}, None)
+
+        self.assertEqual(result["status"], "success")
+        self.assertTrue(result["dry_run"])
+        self.assertEqual(result["anomalies_evaluated"], 1)
+        self.assertEqual(result["previews"][0]["action_priority"], "HIGH")
+        insert_root_cause.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

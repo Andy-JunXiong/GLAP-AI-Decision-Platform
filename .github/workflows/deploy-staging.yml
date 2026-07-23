@@ -1,0 +1,146 @@
+name: Deploy staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Test and deploy staging
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_REGION: us-east-1
+      FUNCTION_NAME: glap-ai-agent-orchestrator
+      STAGING_ALIAS: staging
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Run tests
+        run: |
+          python -m compileall -q lambda examples tests
+          python -m unittest discover -s tests -v
+
+      - name: Build Lambda package
+        shell: bash
+        run: |
+          mkdir -p dist/package
+          cp lambda/glap_ai_agent_orchestrator.py dist/package/lambda_function.py
+          (cd dist/package && zip -q ../glap-ai-agent-orchestrator.zip lambda_function.py)
+          test "$(unzip -Z1 dist/glap-ai-agent-orchestrator.zip)" = "lambda_function.py"
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: glap-staging-${{ github.run_id }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Capture current deployment state
+        id: current
+        shell: bash
+        run: |
+          latest_revision=$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" --query RevisionId --output text)
+          staging_version=$(aws lambda get-alias \
+            --function-name "$FUNCTION_NAME" --name "$STAGING_ALIAS" \
+            --query FunctionVersion --output text)
+          alias_revision=$(aws lambda get-alias \
+            --function-name "$FUNCTION_NAME" --name "$STAGING_ALIAS" \
+            --query RevisionId --output text)
+          echo "latest_revision=$latest_revision" >> "$GITHUB_OUTPUT"
+          echo "staging_version=$staging_version" >> "$GITHUB_OUTPUT"
+          echo "alias_revision=$alias_revision" >> "$GITHUB_OUTPUT"
+
+      - name: Upload candidate to latest
+        id: upload
+        shell: bash
+        run: |
+          response=$(aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://dist/glap-ai-agent-orchestrator.zip \
+            --revision-id "${{ steps.current.outputs.latest_revision }}")
+          code_sha=$(python -c 'import json,sys; print(json.load(sys.stdin)["CodeSha256"])' <<< "$response")
+          echo "code_sha=$code_sha" >> "$GITHUB_OUTPUT"
+          aws lambda wait function-updated --function-name "$FUNCTION_NAME"
+
+      - name: Smoke-test candidate in dry-run mode
+        shell: bash
+        run: |
+          aws lambda invoke \
+            --function-name "$FUNCTION_NAME" \
+            --cli-binary-format raw-in-base64-out \
+            --payload '{"dry_run":true}' \
+            dist/candidate-response.json
+          python -c 'import json; data=json.load(open("dist/candidate-response.json")); assert data.get("status") == "success" and data.get("dry_run") is True, data'
+
+      - name: Publish immutable version
+        id: release
+        shell: bash
+        run: |
+          version=$(aws lambda publish-version \
+            --function-name "$FUNCTION_NAME" \
+            --code-sha256 "${{ steps.upload.outputs.code_sha }}" \
+            --description "GitHub ${GITHUB_SHA}" \
+            --query Version --output text)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Move staging alias
+        run: |
+          aws lambda update-alias \
+            --function-name "$FUNCTION_NAME" \
+            --name "$STAGING_ALIAS" \
+            --function-version "${{ steps.release.outputs.version }}" \
+            --revision-id "${{ steps.current.outputs.alias_revision }}"
+
+      - name: Smoke-test staging alias in dry-run mode
+        shell: bash
+        run: |
+          aws lambda invoke \
+            --function-name "$FUNCTION_NAME:$STAGING_ALIAS" \
+            --cli-binary-format raw-in-base64-out \
+            --payload '{"dry_run":true}' \
+            dist/staging-response.json
+          python -c 'import json; data=json.load(open("dist/staging-response.json")); assert data.get("status") == "success" and data.get("dry_run") is True, data'
+
+      - name: Roll back staging alias after failure
+        if: failure() && steps.release.outputs.version != ''
+        shell: bash
+        run: |
+          current_alias_revision=$(aws lambda get-alias \
+            --function-name "$FUNCTION_NAME" --name "$STAGING_ALIAS" \
+            --query RevisionId --output text)
+          aws lambda update-alias \
+            --function-name "$FUNCTION_NAME" \
+            --name "$STAGING_ALIAS" \
+            --function-version "${{ steps.current.outputs.staging_version }}" \
+            --revision-id "$current_alias_revision"
+
+      - name: Write deployment summary
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "## GLAP staging deployment"
+            echo "- Git commit: \`$GITHUB_SHA\`"
+            echo "- Lambda version: \`${{ steps.release.outputs.version }}\`"
+            echo "- Alias: \`staging\`"
+            echo "- Smoke mode: dry run (no inserts)"
+          } >> "$GITHUB_STEP_SUMMARY"

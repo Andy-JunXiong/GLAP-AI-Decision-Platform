@@ -279,6 +279,7 @@ def insert_decision_record(root_cause_row):
 
 def lambda_handler(event, context):
     print("GLAP AI Agent Orchestrator started")
+    dry_run = isinstance(event, dict) and event.get("dry_run") is True
 
     anomaly_sql = """
     SELECT
@@ -305,6 +306,38 @@ def lambda_handler(event, context):
     anomaly_rows = get_query_results(qid)
 
     print("Anomaly rows fetched:", len(anomaly_rows))
+
+    if dry_run:
+        previews = []
+        for row in anomaly_rows:
+            root_cause, supporting_metric, confidence_score = generate_root_cause(
+                row["metric_name"],
+                row["metric_value"],
+                row["baseline_value"],
+                row["z_score"]
+            )
+            recommended_action, decision_reason, action_priority = generate_decision(
+                row["metric_name"], confidence_score
+            )
+            previews.append({
+                "run_date": row["run_date"],
+                "entity_key": row["entity_key"],
+                "metric_name": row["metric_name"],
+                "root_cause": root_cause,
+                "supporting_metric": supporting_metric,
+                "confidence_score": confidence_score,
+                "recommended_action": recommended_action,
+                "decision_reason": decision_reason,
+                "action_priority": action_priority
+            })
+
+        print("Dry run completed; no records were written")
+        return {
+            "status": "success",
+            "dry_run": True,
+            "anomalies_evaluated": len(anomaly_rows),
+            "previews": previews
+        }
 
     root_cause_inserted = 0
     root_cause_skipped = 0
