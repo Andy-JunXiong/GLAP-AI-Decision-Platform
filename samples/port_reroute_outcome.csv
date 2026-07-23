@@ -1,0 +1,2 @@
+run_date,decision_id,outcome_date,approved_divert_fcl_count,actual_disruption_extension_days,actual_reroute_cost_aud,avoided_storage_exposure_aud,net_modelled_storage_benefit_aud,critical_sku_stockout,outcome_status,evidence_type
+2026-04-01,DEC-PORT-0001,2026-04-10,8,4,4800,10560,5760,false,validated_synthetic,synthetic_scenario

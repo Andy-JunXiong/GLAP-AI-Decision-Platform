@@ -1,0 +1,2 @@
+run_date,decision_id,destination_port,alternate_port,risk_reason,no_action_storage_exposure_aud,inventory_stockout_risk,recommended_action,divert_fcl_count,retain_fcl_count,estimated_reroute_cost_aud,action_priority,human_review_required,status
+2026-04-01,DEC-PORT-0001,AUSYD,AUMEL,Port congestion combined with elevated labour-strike probability,15840,HIGH,Divert high-priority FCL cargo to Melbourne and move it to the Sydney DC by rail or truck,8,4,4800,HIGH,true,pending_review
