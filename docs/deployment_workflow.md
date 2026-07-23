@@ -23,7 +23,9 @@ Current verified mapping:
 | Git commit | Lambda version | Alias | Status |
 | --- | ---: | --- | --- |
 | Pre-reliability release | 1 | none | Rollback point |
-| `f983a73` | 2 | `staging`, `prod` | Verified production release |
+| `f983a73` | 2 | `prod` | Verified production release |
+| `5be47e7` | 3 | none | OIDC validation artifact; alias promotion was blocked |
+| `21f43a4` | 4 | `staging` | Verified OIDC staging release |
 
 Git tag `glap-agent-v2` identifies the merge commit on `main` that contains the
 version 2 source, tests, and release documentation.
@@ -101,3 +103,7 @@ alias revision ID as a concurrency guard.
 Candidate and alias smoke tests pass `{"dry_run": true}`. Dry-run execution reads
 the pending anomaly set and builds decision previews without inserting root-
 cause or decision records.
+
+The first complete OIDC deployment succeeded on 2026-07-23. GitHub Actions run
+`29973354442` published version 4, promoted only `staging`, and completed both
+dry-run smoke tests. Production remained on version 2.
