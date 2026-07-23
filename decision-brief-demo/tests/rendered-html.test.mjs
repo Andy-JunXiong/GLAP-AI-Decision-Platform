@@ -14,18 +14,18 @@ async function render() {
   );
 }
 
-test("server-renders the port disruption decision brief", async () => {
+test("server-renders the GLAP customer control tower", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>GLAP Port Disruption Decision Brief<\/title>/i);
-  assert.match(html, /Protect critical inventory before Sydney port disruption compounds/);
-  assert.match(html, /Divert/);
-  assert.match(html, /high-priority FCL to Melbourne/);
-  assert.match(html, /Storage exposure/);
-  assert.match(html, /Approve diversion/);
+  assert.match(html, /<title>GLAP Logistics Decision Platform<\/title>/i);
+  assert.match(html, /Control Tower/);
+  assert.match(html, /Network risk picture/);
+  assert.match(html, /Needs your attention/);
+  assert.match(html, /Divert 8 FCL via Melbourne/);
+  assert.match(html, /Value delivered/);
   assert.match(html, /property="og:image" content="\/og\.png"/);
 });
 
