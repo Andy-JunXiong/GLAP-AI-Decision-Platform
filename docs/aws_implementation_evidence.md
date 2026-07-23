@@ -26,6 +26,9 @@ dedicated, SQS-managed encrypted dead-letter queue with 14-day retention. Four
 CloudWatch alarms monitor Lambda errors, throttles, maximum duration above 100
 seconds, and visible messages in the dead-letter queue. The Scheduler execution
 role has a scoped inline policy granting only `sqs:SendMessage` to that queue.
+Both alarm and recovery transitions publish to the existing
+`glap-pipeline-alerts` SNS topic. A direct test publication was accepted by SNS;
+subscriber addresses remain private AWS configuration.
 
 | Artifact | AWS source | Verification | Public location |
 | --- | --- | --- | --- |

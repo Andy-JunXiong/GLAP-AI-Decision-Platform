@@ -74,9 +74,9 @@ The values are deliberately omitted because they identify environment-specific r
 - CloudWatch alarms cover Lambda errors, throttles, duration above 100 seconds,
   and visible dead-letter queue messages
 
-The deployed CloudWatch alarms currently have no notification actions. They are
-visible in CloudWatch and can later be connected to an approved SNS, email, or
-incident-management destination.
+The deployed CloudWatch alarms publish both alarm and recovery transitions to
+the existing `glap-pipeline-alerts` SNS topic. Subscriber endpoints are managed
+in AWS and are deliberately not published in this repository.
 
 ## IAM model
 
