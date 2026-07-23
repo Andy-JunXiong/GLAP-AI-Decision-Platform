@@ -25,6 +25,9 @@ Current verified mapping:
 | Pre-reliability release | 1 | none | Rollback point |
 | `f983a73` | 2 | `staging`, `prod` | Verified production release |
 
+Git tag `glap-agent-v2` identifies the merge commit on `main` that contains the
+version 2 source, tests, and release documentation.
+
 ## Manual CLI release
 
 Use an authenticated AWS CLI profile and explicitly set `us-east-1` for every
