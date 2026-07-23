@@ -83,3 +83,15 @@ When the release process is stable, GitHub Actions should automate the same
 sequence through AWS OIDC: test, package, upload candidate, smoke-test, publish,
 update `staging`, require approval, and finally update `prod`. Long-lived AWS
 access keys must not be stored as GitHub secrets.
+
+## GitHub staging deployment
+
+The manual `Deploy staging` workflow uses GitHub OIDC instead of stored AWS
+credentials. The GitHub `staging` Environment is restricted to `main`, and its
+AWS role can update candidate code, publish immutable versions, invoke dry-run
+smoke tests, and move only the `staging` alias. It cannot update `prod`, modify
+the Scheduler, administer IAM, or deploy another Lambda function.
+
+Candidate and alias smoke tests pass `{"dry_run": true}`. Dry-run execution reads
+the pending anomaly set and builds decision previews without inserting root-
+cause or decision records.
