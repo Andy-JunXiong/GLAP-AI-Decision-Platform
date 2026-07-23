@@ -44,6 +44,7 @@ This repository separates deployed evidence from representative examples. Eviden
 - Observed Athena queries: [sql/](sql/)
 - Infrastructure and evidence status: [INFRASTRUCTURE.md](INFRASTRUCTURE.md)
 - AWS verification manifest: [docs/aws_implementation_evidence.md](docs/aws_implementation_evidence.md)
+- Versioned deployment workflow: [docs/deployment_workflow.md](docs/deployment_workflow.md)
 - Representative Athena query: [examples/anomaly_detection.sql](examples/anomaly_detection.sql)
 - Representative Lambda snippet: [examples/lambda_orchestrator.py](examples/lambda_orchestrator.py)
 - Representative decision rules: [examples/decision_logic.py](examples/decision_logic.py)

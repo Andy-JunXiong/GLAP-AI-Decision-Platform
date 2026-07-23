@@ -18,6 +18,9 @@ rollback point and version `2` is the verified reliability release.
 The `prod` Lambda alias points to version `2`, and the enabled daily EventBridge
 Scheduler target was changed from the mutable function ARN to that alias after a
 successful alias-qualified smoke test.
+The `staging` alias also points to version `2` and passed a qualified smoke test,
+establishing separate candidate and production release channels for subsequent
+CLI-driven development.
 
 | Artifact | AWS source | Verification | Public location |
 | --- | --- | --- | --- |
