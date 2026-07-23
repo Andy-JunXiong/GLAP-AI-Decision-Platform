@@ -36,7 +36,8 @@ and reduces the modelled storage exposure by `AUD 5,760` after reroute cost. Thi
 is a demonstration of decision logic, not a measured production saving.
 
 [Read the complete decision case](docs/case_study_port_disruption.md) ·
-[Open the sample inputs and outputs](samples/port_disruption_signal.csv)
+[Open the sample inputs and outputs](samples/port_disruption_signal.csv) ·
+[Try the private interactive decision brief](https://glap-port-decision.maki83794676.chatgpt.site)
 
 ## From signal to action
 
