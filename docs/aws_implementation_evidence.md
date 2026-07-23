@@ -15,6 +15,9 @@ error. With no pending anomalies, its measured duration was approximately 2.34
 seconds, compared with approximately 55.37 seconds for the preceding duplicate-
 only scheduled invocation. Immutable Lambda version `1` is the pre-deployment
 rollback point and version `2` is the verified reliability release.
+The `prod` Lambda alias points to version `2`, and the enabled daily EventBridge
+Scheduler target was changed from the mutable function ARN to that alias after a
+successful alias-qualified smoke test.
 
 | Artifact | AWS source | Verification | Public location |
 | --- | --- | --- | --- |
