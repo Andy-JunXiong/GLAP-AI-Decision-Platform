@@ -34,6 +34,11 @@ specific role trusted only for this repository's `staging` Environment. Alias
 mutation is delegated to `glap-staging-alias-promoter`; the GitHub role can
 invoke that function but has no direct `UpdateAlias` permission. A no-change
 promoter smoke test returned successfully while `staging` remained on version 2.
+After the promoter control was installed, GitHub Actions run `29973354442`
+completed the full OIDC path successfully: tests, package, candidate dry-run,
+immutable version publication, promoter-mediated staging update, and alias dry-
+run. `staging` moved to version 4 for Git commit `21f43a4`; `prod` and its daily
+Scheduler remained on version 2.
 
 | Artifact | AWS source | Verification | Public location |
 | --- | --- | --- | --- |
