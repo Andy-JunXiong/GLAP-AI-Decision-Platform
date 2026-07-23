@@ -29,6 +29,11 @@ role has a scoped inline policy granting only `sqs:SendMessage` to that queue.
 Both alarm and recovery transitions publish to the existing
 `glap-pipeline-alerts` SNS topic. A direct test publication was accepted by SNS;
 subscriber addresses remain private AWS configuration.
+GitHub staging deployment uses the account's GitHub OIDC provider and a GLAP-
+specific role trusted only for this repository's `staging` Environment. Alias
+mutation is delegated to `glap-staging-alias-promoter`; the GitHub role can
+invoke that function but has no direct `UpdateAlias` permission. A no-change
+promoter smoke test returned successfully while `staging` remained on version 2.
 
 | Artifact | AWS source | Verification | Public location |
 | --- | --- | --- | --- |

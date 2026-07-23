@@ -73,6 +73,11 @@ The values are deliberately omitted because they identify environment-specific r
   days
 - CloudWatch alarms cover Lambda errors, throttles, duration above 100 seconds,
   and visible dead-letter queue messages
+- GitHub Actions assumes a repository- and environment-scoped OIDC role for
+  manual staging deployments; no long-lived AWS key is stored in GitHub
+- a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
+  environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
+  permission and cannot move `prod`
 
 The deployed CloudWatch alarms publish both alarm and recovery transitions to
 the existing `glap-pipeline-alerts` SNS topic. Subscriber endpoints are managed
