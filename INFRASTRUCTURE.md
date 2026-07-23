@@ -66,6 +66,17 @@ The values are deliberately omitted because they identify environment-specific r
 - SQL string escaping for generated statements
 - duplicate checks by date, entity, and metric
 - inserted/skipped counters in the Lambda result and logs
+- immutable `staging` and `prod` Lambda aliases for controlled promotion
+- EventBridge Scheduler targets `prod`, retries failed invocations twice within
+  24 hours, and sends exhausted invocations to a dedicated SQS dead-letter queue
+- the dead-letter queue uses SQS-managed encryption and retains messages for 14
+  days
+- CloudWatch alarms cover Lambda errors, throttles, duration above 100 seconds,
+  and visible dead-letter queue messages
+
+The deployed CloudWatch alarms currently have no notification actions. They are
+visible in CloudWatch and can later be connected to an approved SNS, email, or
+incident-management destination.
 
 ## IAM model
 
