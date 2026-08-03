@@ -36,8 +36,10 @@ flowchart TB
         GLUE --> ATHENA[Athena + Iceberg]
         PROD --> ATHENA
         STAGING -. dry-run only .-> ATHENA
-        ATHENA --> OUTPUTS[Anomaly / root cause / decision tables]
+        ATHENA --> OUTPUTS[Alert / insight / decision / action / outcome / learning]
         OUTPUTS --> QS[QuickSight]
+        OUTPUTS --> EXPORT[Sanitized aggregate export]
+        EXPORT --> PAGES[Public OPS Analytics]
     end
 
     subgraph Reliability[Reliability boundary]
@@ -56,3 +58,34 @@ flowchart TB
 - Alias mutation is delegated to code hard-locked to `staging`.
 - Production Scheduler targets `prod`, not mutable `$LATEST`.
 - Failed scheduled invocations retry twice before entering the encrypted DLQ.
+- The public Pages role is read-only and publishes aggregate analytics without
+  entity, route, carrier, account, ARN, or S3 identifiers.
+- Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,
+  root-cause, and decision tables remain historical evidence only.
+
+## Planned internal operations boundary — not deployed
+
+The next implementation phase adds authenticated writes without granting them
+to GitHub Pages:
+
+```mermaid
+flowchart LR
+    USER[Authenticated operator] --> API[Operations API]
+    API --> REVIEW[Human decision review]
+    API --> ACTION[Action status]
+    API --> OUTCOME[Observed outcome]
+    REVIEW --> AUDIT[Append-only audit]
+    ACTION --> AUDIT
+    OUTCOME --> AUDIT
+    REVIEW --> LAKE[Athena / Iceberg]
+    ACTION --> LAKE
+    OUTCOME --> LAKE
+    AUDIT --> LAKE
+    LAKE --> INTERNAL[Internal operations cockpit]
+    LAKE -->|aggregate only| PUBLISH[Public OPS snapshot]
+```
+
+Success-gated orchestration and data-quality controls are required before this
+write boundary is enabled. See the
+[implementation roadmap](implementation_roadmap.md) for dependencies and
+acceptance criteria.

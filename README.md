@@ -166,6 +166,8 @@ flowchart TB
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
 - [Public OPS snapshot contract](docs/ops_snapshot.md)
 - [Athena OPS analytics and forecast SQL](sql/03_ops_analytics.sql)
+- [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
+- [Prioritized project TODO](TODO.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)
 - [Zero-install interactive demo](offline/glap-demo.html)
 - [QuickSight detection dashboard](docs/ai_detection_dashboard.png)

@@ -82,3 +82,11 @@ python ops/export_ops_snapshot.py --output offline/data/ops-snapshot.json
 The exporter queries only the allowlisted contracts in
 `ops/export_ops_snapshot.py`. Reusable private analyst queries and the matching
 seven-day forecast baseline are documented in `sql/03_ops_analytics.sql`.
+
+## Next boundary
+
+This contract remains read-only and aggregate-only. Decision review, Action
+updates, and observed Outcome writes will be implemented behind an authenticated
+internal API; they will not be added to the GitHub Pages role. Pipeline
+reliability gates must be completed before that write path is enabled. See the
+[implementation roadmap](implementation_roadmap.md).
