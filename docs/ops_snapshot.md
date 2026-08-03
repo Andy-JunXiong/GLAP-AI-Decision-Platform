@@ -20,6 +20,19 @@ query execution IDs and individual decisions. Actions and outcomes remain
 
 ## GitHub configuration
 
+The repository includes an idempotent PowerShell setup command for the current
+GLAP deployment. It discovers the deployed Athena/Glue/S3 contract, creates or
+updates the least-privilege GitHub OIDC role, and sets the four variables on the
+`github-pages` environment:
+
+```powershell
+.\ops\configure_ops_snapshot_access.ps1
+```
+
+Run it after authenticating `gh`, the AWS `default` admin profile, and the
+`codex-readonly` inspection profile. Profile, region, repository, environment,
+and role names can also be supplied as script parameters.
+
 Configure these repository variables before enabling the AWS export step:
 
 | Variable | Purpose |
