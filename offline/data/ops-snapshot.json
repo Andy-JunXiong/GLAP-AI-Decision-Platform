@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-23T00:00:00Z",
+  "source_updated_at": "2026-07-23T00:00:00Z",
+  "as_of_date": "2026-07-23",
+  "provenance": {
+    "source_type": "synthetic_validation_snapshot",
+    "connection": "repository_fallback",
+    "label": "Synthetic validation snapshot",
+    "is_connected": false,
+    "disclosure": "Committed fallback data; not a live AWS OPS connection."
+  },
+  "freshness": {
+    "status": "stale",
+    "max_age_hours": 36
+  },
+  "metrics": {
+    "shipments_generated": 468,
+    "shipments_at_risk": 15,
+    "alerts_generated": 3,
+    "root_causes_generated": 3,
+    "decisions_generated": 3,
+    "actions_generated": 3,
+    "outcomes_generated": 3
+  },
+  "pipeline": {
+    "status": "snapshot",
+    "query_checks_succeeded": 50,
+    "query_checks_total": 50
+  }
+}

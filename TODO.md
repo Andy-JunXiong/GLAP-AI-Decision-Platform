@@ -6,8 +6,9 @@
   `Shipment → Signal → Root Cause → Decision → Human Review → Action → Outcome → Learning`.
 - [x] Add a compact **Today's operational flow** summary to the **Control Tower**, including generated shipments, at-risk shipments, pending decisions, executed actions, outcomes, and pipeline health.
 - [ ] Keep **System** focused on technical evidence only: AWS resources, Data Catalog, Lambda logic, SQL, monitoring, release controls, and lineage.
-- [ ] Connect the OPS flow to automatically refreshed daily data rather than a dated HTML snapshot.
-- [ ] Add per-stage freshness, record counts, duration, failure status, and drill-down links.
+- [x] Connect the OPS presentation to a versioned daily snapshot contract with an optional scheduled Athena export and explicit non-live fallback.
+- [ ] Configure the repository's `AWS_OPS_READ_ROLE_ARN` and Athena variables to activate the scheduled AWS export.
+- [ ] Add per-stage duration, failure status, and drill-down links beyond the implemented snapshot-level freshness and record counts.
 - [ ] Fix orchestration order so the flywheel starts only after shipment generation and validation succeed.
 - [ ] Decide whether the stale legacy v1 anomaly feed should be repaired or formally retired.
 

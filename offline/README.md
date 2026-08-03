@@ -19,7 +19,7 @@ For a concise interview or portfolio presentation, follow the
 
 ## What is implemented
 
-Navigation, filtering, scenario economics, approval invalidation, approve/reject/override reason capture, cross-page state changes, an in-memory decision ledger, expected-versus-observed outcome presentation, and a detailed AWS System evidence view all run locally in the browser.
+Navigation, filtering, scenario economics, approval invalidation, approve/reject/override reason capture, cross-page state changes, an in-memory decision ledger, expected-versus-observed outcome presentation, and a detailed AWS System evidence view all run locally in the browser. On GitHub Pages, the Control Tower also loads the published `data/ops-snapshot.json` contract and displays its provenance and freshness. Directly opening the HTML file uses the explicitly labelled embedded fallback because browsers do not allow the page to fetch a sibling local JSON file reliably.
 
 The System view is split into six focused subpages: Daily E2E Flow, AWS Overview, Data Catalog, Logic & SQL, OPS Dashboard, and Release & Lineage. Together they translate the deployed platform into:
 
@@ -45,6 +45,6 @@ The System page reflects a read-only AWS inspection performed on 23 July 2026. I
 ## Known limitations
 
 - One decision path has a detailed interactive brief.
-- Live data sources and operational integrations are not connected.
+- The committed fallback is not live. A scheduled Athena export becomes connected only after the documented read-only GitHub OIDC variables are configured.
 - The ledger is session-local and not written to durable storage.
 - Non-demo actions display a clear scope message instead of silently doing nothing.

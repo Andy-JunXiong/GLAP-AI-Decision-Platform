@@ -34,10 +34,23 @@ class OfflineDemoTests(unittest.TestCase):
                 self.assertIn(label, self.html)
 
     def test_control_tower_summarises_daily_operational_flow(self):
-        self.assertIn("Today's operational flow", self.html)
-        for marker in ('id="opsPending"', 'id="opsActions"', 'id="opsOutcomes"'):
+        self.assertIn("Operational data snapshot", self.html)
+        for marker in (
+            'id="opsGenerated"',
+            'id="opsAtRisk"',
+            'id="opsAlerts"',
+            'id="opsDecisions"',
+            'id="opsActions"',
+            'id="opsOutcomes"',
+        ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
+
+    def test_ops_snapshot_loads_with_explicit_fallback(self):
+        self.assertIn('fetch("data/ops-snapshot.json"', self.html)
+        self.assertIn("SYNTHETIC OPS FALLBACK", self.html)
+        self.assertIn("SCHEDULED AWS OPS SNAPSHOT", self.html)
+        self.assertIn("is_connected:false", self.html)
 
     def test_human_review_and_audit_controls_are_present(self):
         for marker in (
@@ -85,6 +98,9 @@ class RepositoryShowcaseTests(unittest.TestCase):
     def test_live_demo_has_a_pages_deployment_workflow(self):
         workflow = PAGES_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("offline/glap-demo.html", workflow)
+        self.assertIn("offline/data/ops-snapshot.json", workflow)
+        self.assertIn("ops/export_ops_snapshot.py", workflow)
+        self.assertIn("AWS_OPS_READ_ROLE_ARN", workflow)
         self.assertIn("actions/configure-pages@v5", workflow)
         self.assertIn("actions/upload-pages-artifact@v4", workflow)
         self.assertIn("actions/deploy-pages@v4", workflow)

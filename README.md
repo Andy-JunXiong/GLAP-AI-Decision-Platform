@@ -40,6 +40,12 @@ No installation, internet connection, AWS account or build step is required.
 The demo runs entirely in the browser and does not send operational
 instructions or persist synthetic records.
 
+The published Control Tower reads a versioned, sanitized
+[OPS snapshot contract](docs/ops_snapshot.md). It shows source provenance,
+data date and freshness explicitly. Until the repository's read-only AWS OIDC
+role is configured, the public site displays a clearly labelled synthetic
+fallback rather than claiming a live connection.
+
 [Read what is implemented and simulated](offline/README.md) ·
 [Inspect the deployable web version](decision-brief-demo/README.md) ·
 [View the QuickSight decision dashboard](docs/ai_decision_dashboard.png)
@@ -155,6 +161,7 @@ flowchart TB
 - [Versioned deployment workflow](docs/deployment_workflow.md)
 - [Technical implementation](docs/GLAP_Technical_Implementation.md)
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
+- [Public OPS snapshot contract](docs/ops_snapshot.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)
 - [Zero-install interactive demo](offline/glap-demo.html)
 - [QuickSight detection dashboard](docs/ai_detection_dashboard.png)
