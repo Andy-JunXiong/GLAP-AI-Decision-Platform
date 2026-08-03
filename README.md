@@ -10,6 +10,26 @@ recommends an action, and retains the result for review and later learning.
 > synthetic logistics data. Runtime and deployment evidence is real; scenario
 > costs and business outcomes are explicitly labelled synthetic.
 
+## Try the product demo
+
+The most complete product walkthrough is a self-contained browser demo:
+
+1. Download or clone the repository.
+2. Open [`offline/glap-demo.html`](offline/glap-demo.html) in a modern browser.
+3. Follow the critical Sydney port decision from **Control Tower** to
+   **Decision Brief**, change the diversion volume, approve or reject it, and
+   inspect the resulting shipment, outcome and audit-ledger updates.
+
+No installation, internet connection, AWS account or build step is required.
+The demo runs entirely in the browser and does not send operational
+instructions or persist synthetic records.
+
+[Follow the three-minute demo script](docs/demo_walkthrough.md) ·
+[Read what is implemented and simulated](offline/README.md) ·
+[Inspect the deployable web version](decision-brief-demo/README.md)
+
+![GLAP AI decision dashboard](docs/ai_decision_dashboard.png)
+
 ## 60-second case: avoid port storage fees and a stockout
 
 A destination port is already congested when a labour-strike signal raises the
@@ -37,7 +57,7 @@ is a demonstration of decision logic, not a measured production saving.
 
 [Read the complete decision case](docs/case_study_port_disruption.md) ·
 [Open the sample inputs and outputs](samples/port_disruption_signal.csv) ·
-[Try the private interactive decision brief](https://glap-port-decision.maki83794676.chatgpt.site)
+[Run the interactive demo](offline/glap-demo.html)
 
 ## From signal to action
 
@@ -121,6 +141,8 @@ flowchart TB
 - [Versioned deployment workflow](docs/deployment_workflow.md)
 - [Technical implementation](docs/GLAP_Technical_Implementation.md)
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
+- [Three-minute product demo script](docs/demo_walkthrough.md)
+- [Zero-install interactive demo](offline/glap-demo.html)
 - [QuickSight detection dashboard](docs/ai_detection_dashboard.png)
 - [QuickSight decision dashboard](docs/ai_decision_dashboard.png)
 - [QuickSight operations dashboard](docs/ai_ops_dashboard.png)
@@ -135,6 +157,8 @@ tests/     unit tests for orchestration, dry-run and alias promotion
 samples/   synthetic safe data and end-to-end decision examples
 docs/      architecture, case studies, dashboards and evidence
 examples/  simplified teaching examples
+offline/   zero-install interactive product demo
+decision-brief-demo/ deployable web product demo
 ```
 
 ## Evidence boundaries

@@ -4,7 +4,7 @@
 
 - [ ] Move the complete daily business flow out of **System** and into the **OPS Dashboard**:
   `Shipment → Signal → Root Cause → Decision → Human Review → Action → Outcome → Learning`.
-- [ ] Add a compact **Today's operational flow** summary to the **Control Tower**, including generated shipments, at-risk shipments, pending decisions, executed actions, outcomes, and pipeline health.
+- [x] Add a compact **Today's operational flow** summary to the **Control Tower**, including generated shipments, at-risk shipments, pending decisions, executed actions, outcomes, and pipeline health.
 - [ ] Keep **System** focused on technical evidence only: AWS resources, Data Catalog, Lambda logic, SQL, monitoring, release controls, and lineage.
 - [ ] Connect the OPS flow to automatically refreshed daily data rather than a dated HTML snapshot.
 - [ ] Add per-stage freshness, record counts, duration, failure status, and drill-down links.
@@ -16,4 +16,5 @@
 - Local customer-facing HTML demo is available in `offline/glap-demo.html`.
 - System content has been split into focused subpages.
 - Daily AWS output, KPI funnel, schedules, health checks, and freshness exception are represented.
+- Control Tower now summarises today's shipment-to-outcome flow and updates decision, action, and pending-outcome counts during the demo.
 - No AWS deployment or configuration change was made during the latest UI work.

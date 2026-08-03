@@ -11,6 +11,9 @@ This single-file demo presents the customer journey:
 
 Open `glap-demo.html` directly in a modern browser. No installation, internet connection, server, AWS account, or build step is required.
 
+For a concise interview or portfolio presentation, follow the
+[three-minute product walkthrough](../docs/demo_walkthrough.md).
+
 ## What is implemented
 
 Navigation, filtering, scenario economics, approval invalidation, approve/reject/override reason capture, cross-page state changes, an in-memory decision ledger, expected-versus-observed outcome presentation, and a detailed AWS System evidence view all run locally in the browser.
