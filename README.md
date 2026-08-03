@@ -2,15 +2,31 @@
 
 [![CI](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/workflows/ci.yml)
 
-GLAP turns logistics disruption signals into traceable operational decisions. It
-detects abnormal shipment or port conditions, explains the business exposure,
-recommends an action, and retains the result for review and later learning.
+**Turn logistics disruption signals into governed operational decisions.**
+
+GLAP is an AWS decision-intelligence platform that detects abnormal shipment or
+port conditions, explains the business exposure, recommends a bounded action,
+and keeps human approval, execution evidence and outcomes traceable.
+
+![GLAP Decision Intelligence — from disruption signals to governed action](docs/glap-decision-intelligence-hero.png)
+
+<p align="center">
+  <strong>Follow one port-disruption decision from signal to evidence.</strong>
+  <br><br>
+  <a href="offline/glap-demo.html">Run the zero-install product demo →</a>
+  ·
+  <a href="docs/demo_walkthrough.md">Follow the three-minute walkthrough</a>
+  ·
+  <a href="docs/aws_implementation_evidence.md">Inspect AWS evidence</a>
+  ·
+  <a href="docs/case_study_port_disruption.md">Read the decision case</a>
+</p>
 
 > **Project status:** AWS-deployed reference implementation, validated with
 > synthetic logistics data. Runtime and deployment evidence is real; scenario
 > costs and business outcomes are explicitly labelled synthetic.
 
-## Try the product demo
+## Explore the interactive product story
 
 The most complete product walkthrough is a self-contained browser demo:
 
@@ -24,11 +40,9 @@ No installation, internet connection, AWS account or build step is required.
 The demo runs entirely in the browser and does not send operational
 instructions or persist synthetic records.
 
-[Follow the three-minute demo script](docs/demo_walkthrough.md) ·
 [Read what is implemented and simulated](offline/README.md) ·
-[Inspect the deployable web version](decision-brief-demo/README.md)
-
-![GLAP AI decision dashboard](docs/ai_decision_dashboard.png)
+[Inspect the deployable web version](decision-brief-demo/README.md) ·
+[View the QuickSight decision dashboard](docs/ai_decision_dashboard.png)
 
 ## 60-second case: avoid port storage fees and a stockout
 

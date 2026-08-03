@@ -4,6 +4,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "offline" / "glap-demo.html"
+README = ROOT / "README.md"
+HERO = ROOT / "docs" / "glap-decision-intelligence-hero.png"
 
 
 class OfflineDemoTests(unittest.TestCase):
@@ -62,6 +64,20 @@ class OfflineDemoTests(unittest.TestCase):
         ):
             with self.subTest(view=view):
                 self.assertIn(view, self.html)
+
+
+class RepositoryShowcaseTests(unittest.TestCase):
+    def test_readme_has_a_complete_showcase_hero(self):
+        readme = README.read_text(encoding="utf-8")
+        self.assertIn("docs/glap-decision-intelligence-hero.png", readme)
+        self.assertIn("Run the zero-install product demo", readme)
+        self.assertIn("Follow the three-minute walkthrough", readme)
+        self.assertIn("Inspect AWS evidence", readme)
+        self.assertIn("Read the decision case", readme)
+
+    def test_showcase_hero_is_present_and_nonempty(self):
+        self.assertTrue(HERO.is_file())
+        self.assertGreater(HERO.stat().st_size, 100_000)
 
 
 if __name__ == "__main__":
