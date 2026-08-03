@@ -11,8 +11,8 @@ This single-file demo presents the customer journey:
 
 Open `glap-demo.html` directly in a modern browser. No installation, internet connection, server, AWS account, or build step is required.
 
-The same file is published as a live site at
-[andy-junxiong.github.io/GLAP-AI-Decision-Platform](https://andy-junxiong.github.io/GLAP-AI-Decision-Platform/).
+The same file can be opened as a live browser demo through
+[RawGitHack](https://raw.githack.com/Andy-JunXiong/GLAP-AI-Decision-Platform/main/offline/glap-demo.html).
 
 For a concise interview or portfolio presentation, follow the
 [three-minute product walkthrough](../docs/demo_walkthrough.md).

@@ -1,7 +1,7 @@
 # GLAP: Logistics Decision Intelligence on AWS
 
 [![CI](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/workflows/ci.yml)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-open-0f8294)](https://andy-junxiong.github.io/GLAP-AI-Decision-Platform/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-open-0f8294)](https://raw.githack.com/Andy-JunXiong/GLAP-AI-Decision-Platform/main/offline/glap-demo.html)
 
 **Turn logistics disruption signals into governed operational decisions.**
 
@@ -14,7 +14,7 @@ and keeps human approval, execution evidence and outcomes traceable.
 <p align="center">
   <strong>Follow one port-disruption decision from signal to evidence.</strong>
   <br><br>
-  <a href="https://andy-junxiong.github.io/GLAP-AI-Decision-Platform/">Open the interactive product demo →</a>
+  <a href="https://raw.githack.com/Andy-JunXiong/GLAP-AI-Decision-Platform/main/offline/glap-demo.html">Open the interactive product demo →</a>
   ·
   <a href="docs/demo_walkthrough.md">Follow the three-minute walkthrough</a>
   ·
@@ -31,7 +31,7 @@ and keeps human approval, execution evidence and outcomes traceable.
 
 The most complete product walkthrough is a self-contained browser demo:
 
-1. [Open the live interactive demo](https://andy-junxiong.github.io/GLAP-AI-Decision-Platform/), or download the repository and open `offline/glap-demo.html` locally.
+1. [Open the live interactive demo](https://raw.githack.com/Andy-JunXiong/GLAP-AI-Decision-Platform/main/offline/glap-demo.html), or download the repository and open `offline/glap-demo.html` locally.
 2. Follow the critical Sydney port decision from **Control Tower** to
    **Decision Brief**, change the diversion volume, approve or reject it, and
    inspect the resulting shipment, outcome and audit-ledger updates.

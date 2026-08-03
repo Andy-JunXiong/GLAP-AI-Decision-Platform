@@ -6,8 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "offline" / "glap-demo.html"
 README = ROOT / "README.md"
 HERO = ROOT / "docs" / "glap-decision-intelligence-hero.png"
-PAGES_WORKFLOW = ROOT / ".github" / "workflows" / "pages.yml"
-LIVE_DEMO_URL = "https://andy-junxiong.github.io/GLAP-AI-Decision-Platform/"
+LIVE_DEMO_URL = "https://raw.githack.com/Andy-JunXiong/GLAP-AI-Decision-Platform/main/offline/glap-demo.html"
 
 
 class OfflineDemoTests(unittest.TestCase):
@@ -82,12 +81,6 @@ class RepositoryShowcaseTests(unittest.TestCase):
         self.assertTrue(HERO.is_file())
         self.assertGreater(HERO.stat().st_size, 100_000)
 
-    def test_live_demo_has_a_pages_deployment_workflow(self):
-        workflow = PAGES_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("offline/glap-demo.html", workflow)
-        self.assertIn("actions/configure-pages@v5", workflow)
-        self.assertIn("actions/upload-pages-artifact@v4", workflow)
-        self.assertIn("actions/deploy-pages@v4", workflow)
 
 
 if __name__ == "__main__":
