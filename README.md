@@ -110,6 +110,8 @@ its source metrics.
 | Versioned delivery | immutable Lambda versions with `staging` and `prod` |
 | AWS authentication | GitHub OIDC; no long-lived deployment key |
 | Staging safety | dry-run validation and staging-only alias promoter |
+| Published OPS analytics | scheduled current-flywheel aggregates with per-stage freshness |
+| Forecast baseline | 28-day Athena history with a transparent seven-day OLS volume forecast |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is
@@ -130,8 +132,9 @@ flowchart TB
     GLUE --> ATHENA[Athena + Iceberg]
     PROD --> ATHENA
     STAGE -. dry-run .-> ATHENA
-    ATHENA --> TABLES[Anomaly, root-cause and decision tables]
+    ATHENA --> TABLES[Alert, insight, decision, action, outcome and learning tables]
     TABLES --> QS[QuickSight dashboards]
+    TABLES --> PAGES[Sanitized OPS analytics + forecast]
 
     EB -->|exhausted failures| DLQ[SQS DLQ]
     PROD --> CW[CloudWatch alarms]
@@ -162,6 +165,7 @@ flowchart TB
 - [Technical implementation](docs/GLAP_Technical_Implementation.md)
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
 - [Public OPS snapshot contract](docs/ops_snapshot.md)
+- [Athena OPS analytics and forecast SQL](sql/03_ops_analytics.sql)
 - [Three-minute product demo script](docs/demo_walkthrough.md)
 - [Zero-install interactive demo](offline/glap-demo.html)
 - [QuickSight detection dashboard](docs/ai_detection_dashboard.png)

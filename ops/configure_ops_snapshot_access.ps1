@@ -100,9 +100,12 @@ if (-not $athenaOutput) {
 
 $tables = @(
     "fact_shipment_events_extended_iceberg",
-    "fact_ai_anomaly_scores_v1",
-    "fact_ai_root_cause_v1",
-    "fact_ai_decision_explanations_v1"
+    "fact_ai_alerts_v3",
+    "fact_ai_insights_v3",
+    "fact_ai_decisions_v3",
+    "fact_ai_actions_v2",
+    "fact_ai_outcomes_v2",
+    "fact_ai_learning_v1"
 )
 $dataLocations = foreach ($tableName in $tables) {
     $table = Invoke-AwsJson -Arguments @(

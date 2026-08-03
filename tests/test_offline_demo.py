@@ -49,8 +49,20 @@ class OfflineDemoTests(unittest.TestCase):
     def test_ops_snapshot_loads_with_explicit_fallback(self):
         self.assertIn('fetch("data/ops-snapshot.json"', self.html)
         self.assertIn("SYNTHETIC OPS FALLBACK", self.html)
-        self.assertIn("SCHEDULED AWS OPS SNAPSHOT", self.html)
+        self.assertIn("SCHEDULED AWS OPS ANALYTICS", self.html)
         self.assertIn("is_connected:false", self.html)
+
+    def test_live_analytics_and_forecast_are_rendered_from_the_snapshot(self):
+        for marker in (
+            'id="analytics"',
+            'id="analyticsForecastTotal"',
+            'id="forecastChart"',
+            'id="stageFreshness"',
+            "ordinary_least_squares_28d",
+            "renderAnalytics(snapshot)",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
 
     def test_human_review_and_audit_controls_are_present(self):
         for marker in (

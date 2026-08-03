@@ -7,16 +7,20 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The snapshot contains only:
+The `1.1` snapshot contains only:
 
 - generation and source timestamps;
-- freshness and connection status;
-- daily aggregate shipment, alert, root-cause and decision counts;
-- aggregate pipeline query status.
+- per-stage freshness and logical-run lag;
+- current v3/v2 flywheel shipment, alert, root-cause, decision, action, outcome,
+  and learning counts;
+- aggregate action-completion and outcome-effectiveness rates;
+- a 28-day total-volume history and transparent seven-day linear baseline;
+- aggregate pipeline query status and data-completeness checks.
 
 It excludes shipment IDs, entity keys, carriers, account IDs, ARNs, S3 paths,
-query execution IDs and individual decisions. Actions and outcomes remain
-`null` until their deployed schemas are added to the verified public contract.
+query execution IDs and individual decisions. Forecast points contain only
+daily total volume, a residual interval, and projected at-risk totals. They are
+labelled as a statistical baseline, not an operational commitment.
 
 ## GitHub configuration
 
@@ -43,10 +47,22 @@ Configure these repository variables before enabling the AWS export step:
 | `AWS_OPS_WORKGROUP` | Athena workgroup; defaults to `primary` |
 
 The role should trust the repository's GitHub OIDC subject for the
-`github-pages` environment and grant only the reads required for the four
-verified tables, plus Athena execution/status and the private query-result
-prefix. It does not need permission to mutate Lambda aliases, schedules,
-Iceberg tables, or production decisions.
+`github-pages` environment and grant only the reads required for the seven
+verified current-flywheel tables, plus Athena execution/status and the private
+query-result prefix. It does not need permission to mutate Lambda aliases,
+schedules, Iceberg tables, or production decisions.
+
+The published contract intentionally reads `fact_ai_alerts_v3`,
+`fact_ai_insights_v3`, `fact_ai_decisions_v3`, `fact_ai_actions_v2`,
+`fact_ai_outcomes_v2`, and `fact_ai_learning_v1`. The March 2026 anomaly,
+root-cause, and decision v1 tables remain historical contracts and are not used
+to claim current pipeline health.
+
+The inspected current daily path runs shipment generation at 00:05 and the v2
+orchestrator at 00:30 in `Australia/Sydney`. The Pages refresh runs later and
+checks every stage date. A source can therefore be fresh while the overall
+pipeline is still reported `partial_or_stale` if any stage lags by more than one
+logical run day.
 
 If `AWS_OPS_READ_ROLE_ARN` is absent, Pages publishes the committed fallback and
 the product displays **Synthetic validation snapshot · not live**. If the role
@@ -63,5 +79,6 @@ python -m pip install boto3
 python ops/export_ops_snapshot.py --output offline/data/ops-snapshot.json
 ```
 
-The export query is intentionally limited to schemas retained in
-`sql/00_core_table_ddl.sql`.
+The exporter queries only the allowlisted contracts in
+`ops/export_ops_snapshot.py`. Reusable private analyst queries and the matching
+seven-day forecast baseline are documented in `sql/03_ops_analytics.sql`.

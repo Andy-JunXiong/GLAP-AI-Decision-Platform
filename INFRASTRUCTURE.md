@@ -42,7 +42,20 @@ EventBridge Scheduler
 
 ## Core tables
 
+The scheduled public OPS analytics contract reads the current decision flywheel:
+
 - `curated_iceberg.fact_shipment_events_extended_iceberg`
+- `curated_iceberg.fact_ai_alerts_v3`
+- `curated_iceberg.fact_ai_insights_v3`
+- `curated_iceberg.fact_ai_decisions_v3`
+- `curated_iceberg.fact_ai_actions_v2`
+- `curated_iceberg.fact_ai_outcomes_v2`
+- `curated_iceberg.fact_ai_learning_v1`
+
+The following v1 tables document the separately deployed deterministic agent
+orchestrator. They are retained as historical contracts but are not used to
+claim current daily pipeline health:
+
 - `curated_iceberg.fact_ai_anomaly_scores_v1`
 - `curated_iceberg.fact_ai_root_cause_v1`
 - `curated_iceberg.fact_ai_decision_explanations_v1`

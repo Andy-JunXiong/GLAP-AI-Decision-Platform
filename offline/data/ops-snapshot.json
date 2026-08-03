@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "generated_at": "2026-07-23T00:00:00Z",
   "source_updated_at": "2026-07-23T00:00:00Z",
   "as_of_date": "2026-07-23",
@@ -8,11 +8,20 @@
     "connection": "repository_fallback",
     "label": "Synthetic validation snapshot",
     "is_connected": false,
-    "disclosure": "Committed fallback data; not a live AWS OPS connection."
+    "disclosure": "Committed fallback analytics; not a live AWS OPS connection."
   },
   "freshness": {
     "status": "stale",
     "max_age_hours": 36
+  },
+  "stage_freshness": {
+    "shipments": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"},
+    "alerts": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"},
+    "root_causes": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"},
+    "decisions": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"},
+    "actions": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"},
+    "outcomes": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"},
+    "learning": {"as_of_date": "2026-07-23", "lag_days": 0, "status": "stale"}
   },
   "metrics": {
     "shipments_generated": 468,
@@ -21,11 +30,47 @@
     "root_causes_generated": 3,
     "decisions_generated": 3,
     "actions_generated": 3,
-    "outcomes_generated": 3
+    "actions_completed": 2,
+    "actions_open": 1,
+    "outcomes_generated": 3,
+    "learning_records_generated": 3
+  },
+  "analytics": {
+    "window_days": 28,
+    "observed_days": 28,
+    "data_completeness_pct": 100.0,
+    "latest_daily_shipments": 468,
+    "average_daily_shipments": 431.6,
+    "latest_risk_rate_pct": 3.2,
+    "daily_volume_trend_pct": 0.45,
+    "action_completion_rate_pct": 66.7,
+    "outcome_success_rate_pct": 75.0,
+    "avg_outcome_improvement_pct": 12.3,
+    "avg_effectiveness_score": 0.84,
+    "max_stage_lag_days": 0
+  },
+  "forecast": {
+    "status": "not_live",
+    "method": "ordinary_least_squares_28d",
+    "method_label": "Synthetic 28-day linear trend baseline",
+    "horizon_days": 7,
+    "predicted_shipments_7d": 3402,
+    "points": [
+      {"date": "2026-07-24", "predicted_shipments": 477, "lower_bound": 438, "upper_bound": 516, "predicted_at_risk": 15},
+      {"date": "2026-07-25", "predicted_shipments": 480, "lower_bound": 441, "upper_bound": 519, "predicted_at_risk": 15},
+      {"date": "2026-07-26", "predicted_shipments": 483, "lower_bound": 444, "upper_bound": 522, "predicted_at_risk": 15},
+      {"date": "2026-07-27", "predicted_shipments": 486, "lower_bound": 447, "upper_bound": 525, "predicted_at_risk": 16},
+      {"date": "2026-07-28", "predicted_shipments": 489, "lower_bound": 450, "upper_bound": 528, "predicted_at_risk": 16},
+      {"date": "2026-07-29", "predicted_shipments": 492, "lower_bound": 453, "upper_bound": 531, "predicted_at_risk": 16},
+      {"date": "2026-07-30", "predicted_shipments": 495, "lower_bound": 456, "upper_bound": 534, "predicted_at_risk": 16}
+    ],
+    "history": [],
+    "disclosure": "Synthetic statistical baseline; not a committed operational target or autonomous decision."
   },
   "pipeline": {
     "status": "snapshot",
-    "query_checks_succeeded": 50,
-    "query_checks_total": 50
+    "max_stage_lag_days": 0,
+    "query_checks_succeeded": 2,
+    "query_checks_total": 2
   }
 }
