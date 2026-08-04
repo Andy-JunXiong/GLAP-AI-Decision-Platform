@@ -168,6 +168,7 @@ flowchart TB
 - [Technical implementation](docs/GLAP_Technical_Implementation.md)
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
 - [Stateful shipment lifecycle design](docs/shipment_lifecycle_design.md)
+- [Stateful lifecycle AWS staging deployment](docs/stateful_lifecycle_aws_deployment.md)
 - [Public OPS snapshot contract](docs/ops_snapshot.md)
 - [Athena OPS analytics and forecast SQL](sql/03_ops_analytics.sql)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)

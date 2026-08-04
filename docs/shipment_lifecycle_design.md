@@ -45,60 +45,59 @@ public metric contract will use the v2 canonical path.
 
 ## Shipment time model
 
-### Planned, estimated and actual timestamps
+### Origin, port-to-port and destination timestamps
 
-Initial commitments must never be overwritten. Current estimates may change as
-new information arrives. Actual timestamps remain `NULL` until the milestone is
-observed and are immutable afterwards, except through an explicit correction
-event.
+The port-to-port contract has exactly four key milestones. ETD and ETA are the
+single immutable schedule commitments; there are no `original_*` and
+`current_*` variants. ATD and ATA remain `NULL` until observed and are then
+immutable, except through an explicit correction event.
 
 | Meaning | Field | Update rule |
 | --- | --- | --- |
-| Initial planned departure | `original_etd` | immutable |
-| Latest estimated departure | `current_etd` | may be revised before departure |
+| Planned port departure | `etd` | immutable after booking |
 | Actual departure | `atd` | `NULL` until departure, then immutable |
-| Initial planned port arrival | `original_eta` | immutable |
-| Latest estimated port arrival | `current_eta` | may be revised until arrival |
+| Planned port arrival | `eta` | immutable after booking |
 | Actual port arrival | `ata` | `NULL` until arrival, then immutable |
-| Latest estimated customer delivery | `estimated_delivery_at` | may change through customs and last mile |
-| Actual customer delivery | `actual_delivery_at` | set once when delivered |
+| Origin gate-in target | `gate_in_target_at` | booking plus seven days |
+| Actual origin gate-in | `gate_in_at` | set once when observed |
+| Discharge target | `discharge_target_at` | ATA plus three days |
+| Actual discharge | `discharged_at` | set once when observed |
+| Delivery target | `delivery_target_at` | discharge plus four days |
+| Actual delivery | `delivered_at` | set once when observed |
 
-This separation supports auditable measures such as departure schedule slip,
-actual departure delay, arrival schedule slip and final delivery delay. It also
-prevents a revised estimate from erasing the original commitment.
+Origin and destination targets remain separate from the P2P metric. ATA is not
+discharge, customs clearance, pickup or final delivery.
 
 ### Shanghai to Sydney ocean baseline
 
-For the synthetic ocean route, GLAP will initially use a 16-day port-to-port
-baseline, a normal range of 14--18 days, and a disrupted range of approximately
-19--25 days. This is consistent with current published carrier schedules:
+The route-service master now carries a versioned baseline instead of one global
+16-day value. Shanghai--Sydney starts at 14 days for Qilin premium and 17 days
+for Dragon standard. Other configured Asia--Australia routes use their own
+published schedule or explicitly labelled calibrated assumption.
 
 - [Maersk's 2026 Qilin launch](https://www.maersk.com/news/articles/2026/05/22/maersk-qilin-service-china-australia-launch)
   lists Shanghai to Sydney at 14 days on Qilin and 18 days on Dragon.
 - [ONE's May 2026 Shanghai export schedule](https://ch.one-line.com/sites/china/files/schedules/2026-05/Sha-May-Schedule-2026.pdf)
   lists direct services at 14 and 16 days.
 
-These are simulation baselines, not service commitments. `current_eta` means
-estimated port arrival; final delivery should add a separate synthetic customs,
-terminal and last-mile duration, initially 2--5 days.
-
-New shipments will normally enter the system about one week before planned
-departure. The first implementation should sample booking-to-ETD lead time from
-a documented range, initially 5--10 days, instead of assigning exactly seven
-days to every shipment.
+These are simulation baselines, not service commitments. The lifecycle target
+is seven days from booking to gate-in, one terminal-buffer day from gate-in to
+ETD, three days from ATA to discharge, and four days from discharge to final
+delivery.
 
 Example for a shipment created on 4 August:
 
 ```text
 booking date:                4 Aug
-original/current ETD:       11 Aug
-original/current ETA:       27 Aug
-estimated final delivery:   30 Aug
+gate-in target:             11 Aug
+ETD:                        12 Aug
+ETA:                        26 Aug (Qilin)
+discharge target:           29 Aug after ATA
+delivery target:             2 Sep after discharge
 ```
 
-If a rollover is learned on 9 August, `current_etd` and `current_eta` move while
-the original fields remain unchanged. `atd` stays `NULL` until the vessel really
-departs in the simulation.
+A rollover makes ATD later than ETD. It never rewrites ETD or ETA. Downstream
+delay is expressed by ATA against the same immutable ETA.
 
 ## Lifecycle and daily processing
 
@@ -121,13 +120,18 @@ For each governed logical run date, the generator will:
 1. read all shipments not in `DELIVERED` or `CANCELLED`;
 2. create a controlled number of new shipments;
 3. advance eligible existing shipments and append new milestone events;
-4. revise current ETD, ETA and estimated delivery only when conditions require;
-5. set ATD, ATA and actual delivery when those milestones occur;
+4. preserve ETD and ETA and set ATD/ATA only when those P2P milestones occur;
+5. set gate-in, discharge and delivery actuals only when observed;
 6. recalculate current risk, SLA metrics and accumulated cost;
 7. write the current-date snapshot for active shipments and final snapshots for
    shipments delivered that day;
 8. retain completed history but exclude delivered shipments from future active
    updates.
+
+On the delivery date the final snapshot records `lifecycle_stage=DELIVERED`,
+`lifecycle_status=CLOSED` and `terminal_state=true`, together with the immutable
+DELIVERED event. Later logical dates read only `OPEN` non-terminal shipments, so
+the delivered shipment is retained in history but never updated again.
 
 Volume, weight, product allocation and other shipment identity attributes are
 stable after booking in the first simulation version. A later version may model
@@ -184,8 +188,8 @@ dashboard result:
 
 ```text
 carrier rollover
--> current ETD slips
--> current ETA slips
+-> ATD occurs after ETD
+-> ATA may occur after ETA
 -> SLA and risk metrics worsen
 -> alert is created or escalated
 -> action is proposed
@@ -231,6 +235,38 @@ delayed outcome
 This avoids a self-confirming loop in which simulated outcomes change the same
 generator assumptions that are then used to claim improvement.
 
+Rate Cards are selected and locked by `booking_at`, not by ETD, ATD, ETA, ATA
+or invoice date. A shipment booked in Q1 retains its Q1 version and price even
+when ETD falls in Q2. Active Rate Card versions are immutable; quarterly market
+calibration creates a new version for new Bookings only.
+
+## Future external intelligence and LLM boundary
+
+A later capability will proactively monitor authorised external information for
+conditions that may affect active operations, including severe weather, origin
+container or equipment shortages, geopolitical disruption, destination-port
+congestion, labour action and strikes. External feeds provide the evidence; an
+LLM may extract events, normalize locations/time windows, classify disruption
+type and draft an explanation. It must not invent evidence or directly mutate a
+Shipment, milestone, Rate Card, Alert status or Decision policy.
+
+The governed flow is:
+
+```text
+weather / port / carrier / government / news evidence
+-> source capture with publication time and URL
+-> LLM extraction into a versioned event schema
+-> deterministic validation, deduplication and port/route matching
+-> exposure calculation against active OPEN shipments
+-> external-risk insight or early warning
+-> human-reviewed action where required
+```
+
+Every extracted event requires source provenance, observed and effective time,
+affected geography/entity, confidence, expiry, evidence excerpt/hash and model
+version. Low-confidence or conflicting evidence remains advisory and cannot
+trigger an autonomous operational action.
+
 ## Delivery sequence
 
 ### P0 -- Restore metric correctness and observability
@@ -249,7 +285,7 @@ generator assumptions that are then used to claim improvement.
 - seed a representative active population;
 - add a controlled daily new-shipment rate;
 - carry active shipment IDs across dates;
-- progress milestones and preserve original versus current estimates;
+- progress Origin, immutable P2P and Destination milestones;
 - stop active updates after delivery;
 - update quality-gate semantics and thresholds where the meaning changes from
   daily generated population to active shipment snapshots.
@@ -283,8 +319,7 @@ The stateful lifecycle is complete only when:
 
 1. the same `shipment_id` is present on multiple logical dates and progresses
    through valid milestone transitions;
-2. original ETD and ETA remain unchanged while current estimates retain their
-   revision history;
+2. the single ETD and ETA remain unchanged for the full shipment lifecycle;
 3. ATD, ATA and actual delivery are set only when observed and then remain stable;
 4. delivered shipments stop receiving active updates without losing history;
 5. journey-level exception incidence is measured against the documented 3--7%
@@ -300,10 +335,8 @@ The stateful lifecycle is complete only when:
 
 ## Open implementation questions
 
-- the exact mapping from the current deployed columns to original and current
-  milestone fields, including whether compatible Iceberg column additions are
-  required;
-- route-specific baselines for modes and lanes beyond Shanghai--Sydney ocean;
+- the exact compatible mapping from the deployed v2 columns to the new Origin,
+  P2P and Destination milestone fields;
 - the initial active-population stage distribution and daily new-shipment rate;
 - whether alert lifecycle fields fit the current v3 schema or require compatible
   schema evolution;

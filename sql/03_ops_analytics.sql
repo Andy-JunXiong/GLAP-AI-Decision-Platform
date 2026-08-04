@@ -11,7 +11,7 @@
 WITH stage_metrics AS (
     SELECT 'shipments' AS stage, max(try_cast(dt AS date)) AS run_date,
         count(DISTINCT shipment_id) AS total_records
-    FROM curated_iceberg.fact_shipment_events_extended_iceberg
+    FROM simulated_iceberg_m.fact_shipment_v2
     WHERE try_cast(dt AS date) <= current_date
     UNION ALL
     SELECT 'alerts', max(run_date), count(*) FROM curated_iceberg.fact_ai_alerts_v3
@@ -72,7 +72,7 @@ calendar AS (
 observed AS (
     SELECT try_cast(dt AS date) AS day,
         count(DISTINCT shipment_id) AS shipments
-    FROM curated_iceberg.fact_shipment_events_extended_iceberg
+    FROM simulated_iceberg_m.fact_shipment_v2
     CROSS JOIN bounds
     WHERE try_cast(dt AS date) BETWEEN date_add('day', -27, latest_date) AND latest_date
     GROUP BY try_cast(dt AS date)
@@ -122,7 +122,7 @@ SELECT
     count(*) AS measured_outcomes,
     round(100.0 * sum(CASE WHEN outcomes.improvement_pct > 0 THEN 1 ELSE 0 END)
         / nullif(count(*), 0), 1) AS success_rate_pct,
-    round(avg(outcomes.improvement_pct), 2) AS avg_improvement_pct,
+    round(100.0 * avg(outcomes.improvement_pct), 2) AS avg_improvement_pct,
     round(avg(outcomes.effectiveness_score), 3) AS avg_effectiveness_score,
     round(avg(CAST(outcomes.lag_days AS double)), 1) AS avg_lag_days
 FROM curated_iceberg.fact_ai_outcomes_v2 AS outcomes
@@ -131,14 +131,8 @@ WHERE outcomes.run_date = latest_outcome.run_date
 GROUP BY outcomes.action_type
 ORDER BY avg_effectiveness_score DESC, measured_outcomes DESC;
 
--- 5. Existing deployed analysis assets. Inventory these before proposing a new
--- mart. v_ai_latest_decision_trace is safe to reuse at its current date grain;
--- Athena also requires catalog access to its ai_decision_trace_v1 dependency.
-SELECT count(*) AS latest_decision_traces
-FROM curated_iceberg.v_ai_latest_decision_trace
-WHERE run_date = current_date;
-
--- The older ai_decision_trace_v1 and v_ai_*_distribution views join several
+-- 5. Existing deployed analysis assets. The older decision-trace and v_ai_*
+-- distribution views join several
 -- one-to-many stages. Inspection showed join fan-out, so the public aggregate
 -- path does not use those views. It reuses the existing result tables directly
 -- at one exact logical run date; it does not create replacement tables.
@@ -149,21 +143,16 @@ GROUP BY alert_type
 ORDER BY alert_count DESC;
 
 SELECT action_type, count(*) AS action_count
-FROM curated_iceberg.fact_ai_decisions_v3
+FROM curated_iceberg.fact_ai_actions_v2
 WHERE run_date = current_date
 GROUP BY action_type
 ORDER BY action_count DESC;
 
 SELECT root_cause_title, count(*) AS cause_count
-FROM curated_iceberg.fact_ai_root_causes_v1
+FROM curated_iceberg.fact_ai_insights_v3
 WHERE run_date = current_date
 GROUP BY root_cause_title
 ORDER BY cause_count DESC;
-
--- Existing feedback is retained as a learning input and freshness dependency.
-SELECT max(run_date) AS latest_feedback_date, count(*) AS feedback_records
-FROM curated_iceberg.fact_ai_learning_feedback_v1
-WHERE run_date <= current_date;
 
 -- Public publication counts distinct hotspots from the existing alerts result
 -- table; route and carrier values remain inside the authenticated AWS boundary.

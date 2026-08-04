@@ -15,9 +15,10 @@ internal boundary.
 ## Design decision -- 4 August 2026
 
 The next product capability is a stateful synthetic shipment lifecycle. The
-same shipment will remain active across logical dates, preserve original ETD
-and ETA, revise current estimates when evidence changes, record ATD/ATA only
-when observed, and stop active updates after delivery. See the
+same shipment will remain active across logical dates. Port-to-port uses one
+immutable ETD and ETA and records ATD/ATA only when observed; Origin gate-in,
+destination discharge and final delivery use separate target/actual milestones.
+Active updates stop after delivery. See the
 [stateful shipment lifecycle design](shipment_lifecycle_design.md) for the
 agreed field semantics, Shanghai--Sydney baseline, journey-level delay model,
 governance boundary and acceptance criteria.
@@ -218,10 +219,10 @@ Acceptance criteria:
 
 ## Recommended next implementation slice
 
-Complete the P0 public metric correction first: reconcile shipment volume to
-`fact_shipment_v2`, use insights v3 for root causes, actions v2 for action
-distribution, correct outcome percentage semantics, and safely publish the
-existing controller/quality-gate status. Then implement the stateful generator
-slice defined in `shipment_lifecycle_design.md`. Authenticated operational
-writes remain blocked until reliability controls pass the first real governed
-run and the lifecycle state contract is validated.
+The repository now contains the corrected P0 public metric contract and the
+isolated stateful lifecycle staging slice defined in
+`shipment_lifecycle_design.md`, including deterministic replay, Athena merges,
+per-snapshot lifecycle metrics and simulated SLA/cost signal candidates. The
+next implementation gate is a private 28-day AWS staging replay with daily SQL
+reconciliation. Authenticated production writes remain blocked until that real
+governed run passes and the production alias/rollback boundary is approved.

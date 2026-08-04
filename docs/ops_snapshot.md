@@ -7,18 +7,17 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The `1.3` snapshot contains only:
+The `1.4` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
 - current v3/v2 flywheel shipment, alert, insight/root-cause, decision, action,
   outcome, and learning counts;
-- aggregate action-completion and outcome-effectiveness rates;
+- aggregate action-completion and simulated outcome-effectiveness rates;
 - a 28-day total-volume history and transparent seven-day linear baseline,
   calculated by Athena engine v3;
-- aggregate alert, action, and root-cause distributions from AWS result tables;
-  the current `1.3` implementation also exposes a decision-trace count that is
-  listed below as a contract gap to remove;
+- aggregate alert, action, and root-cause distributions from governed AWS v3/v2
+  result tables;
 - aggregate pipeline query status and data-completeness checks.
 - optional success-gated pipeline stage timing, completion state, safe failure
   category, quality-check results, and a public runbook link.
@@ -65,6 +64,7 @@ Configure these repository variables before enabling the AWS export step:
 | --- | --- |
 | `AWS_OPS_READ_ROLE_ARN` | OIDC role assumed only by the Pages workflow |
 | `AWS_OPS_DATABASE` | Athena database; defaults to `curated_iceberg` |
+| `AWS_OPS_SOURCE_DATABASE` | Canonical shipment database; defaults to `simulated_iceberg_m` |
 | `AWS_OPS_ATHENA_OUTPUT` | Private S3 query-result location |
 | `AWS_OPS_WORKGROUP` | Athena workgroup; defaults to `primary` |
 | `AWS_OPS_PIPELINE_STATUS_URI` | Optional S3 URI of the controller's sanitized latest-run contract |
@@ -85,19 +85,17 @@ from insights v3 and action distributions come from actions v2. Legacy v1
 root-cause/feedback tables and latest-decision trace views are not governed
 public outputs and must not be used to imply current pipeline health.
 
-**Known 4 August 2026 implementation gap:** snapshot schema `1.3` and its
-exporter still reference `fact_shipment_events_extended_iceberg`,
-`fact_ai_root_causes_v1`, `fact_ai_learning_feedback_v1`, and the decision-trace
-views. They also derive action distribution from decisions v3. These references
-are recorded for removal in the next P0 implementation slice; this document does
-not claim that the deployed exporter has already been corrected. Until then,
-the separate display shipment source and the governed AI shipment source must
-not be presented as one reconciled population.
+Snapshot schema `1.4` removes the legacy shipment-events, v1 root-cause/feedback,
+and decision-trace dependencies. Shipment volume comes from
+`simulated_iceberg_m.fact_shipment_v2`; root-cause distribution comes from
+insights v3 and action distribution comes from actions v2. Outcome improvement
+is stored as a ratio and multiplied by 100 in Athena (`0.375` is published as
+`37.5%`). Every public outcome aggregate is explicitly labelled simulated.
 
 The governed analysis date is the successful pipeline logical run date. Shipment
-volume will be grouped from the canonical v2 Iceberg `dt` snapshot after the P0
-correction; a shipment's future milestone time does not move the analysis date
-forward. All KPI, distribution, completion-rate, trend and forecast calculations
+volume is grouped from the canonical v2 Iceberg `dt` snapshot; a shipment's
+future milestone time does not move the analysis date forward. All KPI,
+distribution, completion-rate, trend and forecast calculations
 run in Athena. GitHub Actions only assumes the read role, requests the governed
 AWS result, validates the aggregate response contract, and publishes the JSON
 artifact.

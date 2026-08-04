@@ -21,11 +21,11 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 
 - [x] Record the diagnosis that the AWS execution chain is complete while the
   synthetic business state is still a largely independent daily population.
-- [x] Define the target cross-day shipment milestone model, including immutable
-  original ETD/ETA, revisable current estimates, observed ATD/ATA, final delivery
-  and terminal delivered state.
-- [x] Document a Shanghai--Sydney ocean baseline of 14--18 port-to-port days,
-  with a 16-day simulation baseline and separate final-delivery duration.
+- [x] Define the target cross-day shipment milestone model, including a single
+  immutable P2P ETD/ETA, observed ATD/ATA, separate Origin/Destination targets,
+  final delivery and terminal delivered state.
+- [x] Document versioned route-service P2P targets, including Shanghai--Sydney
+  Qilin 14-day and Dragon 17-day baselines.
 - [x] Define 3--7% as a journey-level exception incidence rather than an
   independent daily probability.
 - [x] Separate simulation calibration from decision policy and require human
@@ -35,18 +35,40 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 
 ## Next product slice — Stateful shipment lifecycle
 
-- [ ] Correct the public metric contract: v2 shipment volume, insights v3 root
+Repository implementation checkpoint — 4 August 2026:
+
+- [x] Add isolated Iceberg contracts for lifecycle targets, route services,
+  synthetic rate cards, charge tiers, FX and staging shipment/event/cost data.
+- [x] Implement deterministic seed population, 14–18 daily arrivals, immutable
+  P2P ETD/ETA, observed ATD/ATA and separate Origin/Destination milestones.
+- [x] Implement expected-cost selection, percentage surcharges, FX conversion
+  and tiered time-based charges.
+- [x] Lock the applicable quarterly Rate Card by `booking_at`, including the
+  cross-quarter case where a Q1 Booking has a Q2 ETD.
+- [x] Add fail-closed validation SQL and a plan-only AWS schema deployment command.
+- [x] Add the governed, retry-safe Athena persistence adapter for isolated staging.
+- [x] Add per-snapshot Origin/P2P/Destination lifecycle metrics and stable,
+  simulated `SLA_BREACH` / `COST_ANOMALY` candidate contracts.
+- [x] Validate a deterministic 28-day multi-date replay locally, including ID
+  carryover, terminal closure and 3--7% journey exception incidence.
+- [x] Add a manual GitHub OIDC staging workflow for plan, isolated stack deploy,
+  replay and fail-closed daily reconciliation; it creates no schedule and does
+  not modify a production alias.
+- [ ] Run the private 28-day replay in AWS staging and reconcile every logical
+  date before changing the production alias.
+
+- [x] Correct the public metric contract: v2 shipment volume, insights v3 root
   causes, actions v2 action distribution, no legacy v1 or trace claims.
-- [ ] Correct outcome ratio display (`0.375` means `37.5%`) and label every
+- [x] Correct outcome ratio display (`0.375` means `37.5%`) and label every
   public outcome as simulated.
 - [ ] Publish the existing six-stage controller and quality-gate status without
   exposing private AWS identifiers.
-- [ ] Seed a representative active population across lifecycle stages.
-- [ ] Add approximately 14--18 new shipments per normal day while carrying
+- [x] Seed a representative active population across lifecycle stages.
+- [x] Add approximately 14--18 new shipments per normal day while carrying
   active shipment IDs across logical dates.
-- [ ] Preserve original ETD/ETA, revise only current estimates, and set ATD/ATA
-  only when their milestones occur.
-- [ ] Stop active updates after delivery while retaining completed history.
+- [x] Preserve the single immutable P2P ETD/ETA and set ATD/ATA only when their
+  milestones occur in the governed AWS writer.
+- [x] Stop active updates after delivery while retaining completed history.
 - [ ] Add SLA breach and cost anomaly alongside the existing high-risk-route
   alert, with explicit grain and stable lifecycle identity.
 - [ ] Add delayed, reproducible and context-dependent simulated outcomes.
@@ -152,6 +174,12 @@ Repository checkpoint — 4 August 2026:
 - [ ] Distinguish synthetic scenario cards, live aggregate analytics, and measured
   operational outcomes everywhere in the UI.
 - [ ] Add accessible loading, empty, stale, partial, and failed states.
+- [ ] Add a governed External Intelligence pipeline for weather, equipment
+  shortage, geopolitical disruption, port congestion and labour-action evidence.
+- [ ] Use an LLM only to extract, normalize, classify and summarize sourced
+  external events; use deterministic matching to identify exposed OPEN shipments.
+- [ ] Require source URL/publication time, effective window, confidence, expiry,
+  deduplication key and model version for every external-risk insight or warning.
 
 ## P5 — Governance and production readiness
 

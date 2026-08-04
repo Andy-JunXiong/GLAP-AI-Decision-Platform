@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 DEFAULT_DATABASE = "curated_iceberg"
+DEFAULT_SOURCE_DATABASE = "simulated_iceberg_m"
 DEFAULT_WORKGROUP = "primary"
 HISTORY_DAYS = 28
 FORECAST_HORIZON_DAYS = 7
@@ -50,21 +51,16 @@ PIPELINE_RUNBOOK_URL = (
 )
 
 CURRENT_CONTRACT_TABLES = (
-    "fact_shipment_events_extended_iceberg",
     "fact_ai_alerts_v3",
-    "fact_ai_root_causes_v1",
     "fact_ai_insights_v3",
     "fact_ai_decisions_v3",
     "fact_ai_actions_v2",
     "fact_ai_outcomes_v2",
-    "fact_ai_learning_feedback_v1",
     "fact_ai_learning_v1",
 )
 
-CURRENT_ANALYTICS_VIEWS = (
-    "ai_decision_trace_v1",
-    "v_ai_latest_decision_trace",
-)
+CURRENT_SOURCE_TABLES = ("fact_shipment_v2",)
+CURRENT_ANALYTICS_VIEWS: tuple[str, ...] = ()
 
 STAGE_DATE_COLUMNS = {
     "shipments": "latest_shipment_date",
@@ -118,7 +114,11 @@ def resolve_analysis_date(
     return current_sydney_date
 
 
-def build_query(database: str, logical_run_date: str | date) -> str:
+def build_query(
+    database: str,
+    logical_run_date: str | date,
+    source_database: str = DEFAULT_SOURCE_DATABASE,
+) -> str:
     """Build the current-flywheel KPI query.
 
     Counts are taken at each stage's own latest logical run date. The returned
@@ -126,6 +126,7 @@ def build_query(database: str, logical_run_date: str | date) -> str:
     """
 
     database = validate_identifier(database, "Athena database")
+    source_database = validate_identifier(source_database, "Athena source database")
     logical_date = validate_logical_date(logical_run_date).isoformat()
     return f"""
 WITH params AS (
@@ -133,7 +134,7 @@ WITH params AS (
 ),
 latest_shipment AS (
     SELECT max(try_cast(dt AS date)) AS run_date
-    FROM {database}.fact_shipment_events_extended_iceberg
+    FROM {source_database}.fact_shipment_v2
     CROSS JOIN params
     WHERE try_cast(dt AS date) <= params.logical_run_date
 ),
@@ -167,7 +168,7 @@ shipment_counts AS (
         count(DISTINCT CASE
             WHEN upper(status) IN ('AT_RISK', 'BREACHED', 'DELAYED', 'EXCEPTION')
             THEN shipment_id END) AS shipments_at_risk
-    FROM {database}.fact_shipment_events_extended_iceberg
+    FROM {source_database}.fact_shipment_v2
     CROSS JOIN latest_shipment
     WHERE try_cast(dt AS date) = latest_shipment.run_date
 ),
@@ -202,7 +203,7 @@ action_counts AS (
 outcome_counts AS (
     SELECT
         count(*) AS outcomes_generated,
-        avg(improvement_pct) AS avg_outcome_improvement_pct,
+        100.0 * avg(improvement_pct) AS avg_outcome_improvement_pct,
         avg(effectiveness_score) AS avg_effectiveness_score,
         100.0 * sum(CASE WHEN improvement_pct > 0 THEN 1 ELSE 0 END)
             / nullif(count(*), 0) AS outcome_success_rate_pct
@@ -260,10 +261,12 @@ def build_forecast_query(
     logical_run_date: str | date,
     history_days: int = HISTORY_DAYS,
     horizon_days: int = FORECAST_HORIZON_DAYS,
+    source_database: str = DEFAULT_SOURCE_DATABASE,
 ) -> str:
     """Build the AWS Athena OLS baseline and its public-safe history."""
 
     database = validate_identifier(database, "Athena database")
+    source_database = validate_identifier(source_database, "Athena source database")
     if not 7 <= history_days <= 90:
         raise ValueError("history_days must be between 7 and 90")
     if not 1 <= horizon_days <= 30:
@@ -289,7 +292,7 @@ observed AS (
         count(DISTINCT CASE
             WHEN upper(status) IN ('AT_RISK', 'BREACHED', 'DELAYED', 'EXCEPTION')
             THEN shipment_id END) AS shipments_at_risk
-    FROM {database}.fact_shipment_events_extended_iceberg
+    FROM {source_database}.fact_shipment_v2
     CROSS JOIN params
     WHERE try_cast(dt AS date)
         BETWEEN date_add('day', -{history_days - 1}, analysis_date) AND analysis_date
@@ -413,12 +416,11 @@ ORDER BY metric_date
 
 
 def build_existing_analytics_query(database: str, logical_run_date: str | date) -> str:
-    """Aggregate already-recorded result tables at one governed run date."""
+    """Aggregate governed result tables at one governed run date."""
 
     database = validate_identifier(database, "Athena database")
     logical_date = validate_logical_date(logical_run_date).isoformat()
     return f"""
--- v_ai_latest_decision_trace stored-view dependency: ai_decision_trace_v1
 WITH params AS (
     SELECT DATE '{logical_date}' AS logical_run_date
 ),
@@ -431,13 +433,13 @@ distributions AS (
     GROUP BY alert_type
     UNION ALL
     SELECT 'actions', coalesce(action_type, 'UNKNOWN'), count(*)
-    FROM {database}.fact_ai_decisions_v3
+    FROM {database}.fact_ai_actions_v2
     CROSS JOIN params
     WHERE run_date = params.logical_run_date
     GROUP BY action_type
     UNION ALL
     SELECT 'root_causes', coalesce(root_cause_title, 'UNKNOWN'), count(*)
-    FROM {database}.fact_ai_root_causes_v1
+    FROM {database}.fact_ai_insights_v3
     CROSS JOIN params
     WHERE run_date = params.logical_run_date
     GROUP BY root_cause_title
@@ -448,12 +450,7 @@ ranked AS (
     FROM distributions
 ),
 summary AS (
-    SELECT 'summary' AS dimension, 'latest_decision_traces' AS label, count(*) AS metric_count
-    FROM {database}.v_ai_latest_decision_trace
-    CROSS JOIN params
-    WHERE run_date = params.logical_run_date
-    UNION ALL
-    SELECT 'summary', 'risk_hotspots_tracked', count(*)
+    SELECT 'summary' AS dimension, 'risk_hotspots_tracked' AS label, count(*) AS metric_count
     FROM (
         SELECT DISTINCT route_id, carrier, alert_type
         FROM {database}.fact_ai_alerts_v3
@@ -626,8 +623,12 @@ def _safe_pipeline_health(
 
     duration_ms = None
     try:
-        started = datetime.fromisoformat(_safe_timestamp(pipeline_run.get("started_at")) or "")
-        completed = datetime.fromisoformat(_safe_timestamp(pipeline_run.get("completed_at")) or "")
+        started = datetime.fromisoformat(
+            (_safe_timestamp(pipeline_run.get("started_at")) or "").replace("Z", "+00:00")
+        )
+        completed = datetime.fromisoformat(
+            (_safe_timestamp(pipeline_run.get("completed_at")) or "").replace("Z", "+00:00")
+        )
         duration_ms = max(0, int((completed - started).total_seconds() * 1000))
     except (TypeError, ValueError):
         pass
@@ -714,7 +715,6 @@ def parse_existing_analytics(rows: list[dict[str, str | None]]) -> dict[str, Any
 
     result: dict[str, Any] = {
         "source": "existing_athena_result_tables",
-        "latest_decision_traces": 0,
         "risk_hotspots_tracked": 0,
         "distributions": {"alerts": [], "actions": [], "root_causes": []},
     }
@@ -722,10 +722,7 @@ def parse_existing_analytics(rows: list[dict[str, str | None]]) -> dict[str, Any
         dimension = str(row.get("dimension") or "")
         label = str(row.get("label") or "")
         metric_count = _optional_int(row.get("metric_count")) or 0
-        if dimension == "summary" and label in {
-            "latest_decision_traces",
-            "risk_hotspots_tracked",
-        }:
+        if dimension == "summary" and label == "risk_hotspots_tracked":
             result[label] = metric_count
         elif dimension in result["distributions"] and SAFE_ANALYTIC_LABEL.fullmatch(label):
             result["distributions"][dimension].append({"label": label, "count": metric_count})
@@ -796,7 +793,7 @@ def build_snapshot(
     )
 
     return {
-        "schema_version": "1.3",
+        "schema_version": "1.4",
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "source_updated_at": source_updated_at.isoformat().replace("+00:00", "Z"),
         "as_of_date": newest_date.isoformat(),
@@ -806,6 +803,7 @@ def build_snapshot(
             "label": "AWS Athena existing-asset analytics",
             "is_connected": True,
             "disclosure": "Public-safe aggregate analytics; no operational records or identifiers are exported.",
+            "outcome_evidence": "simulated",
         },
         "freshness": {
             "status": "fresh" if fresh else "stale",
@@ -877,6 +875,10 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
         raise RuntimeError("boto3 is required for an AWS OPS export") from exc
 
     database = validate_identifier(os.getenv("ATHENA_DATABASE") or DEFAULT_DATABASE, "Athena database")
+    source_database = validate_identifier(
+        os.getenv("ATHENA_SOURCE_DATABASE") or DEFAULT_SOURCE_DATABASE,
+        "Athena source database",
+    )
     workgroup = os.getenv("ATHENA_WORKGROUP") or DEFAULT_WORKGROUP
     output = os.environ.get("ATHENA_OUTPUT")
     if not output:
@@ -900,10 +902,14 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
     analysis_date = resolve_analysis_date(pipeline_run)
     client = boto3.client("athena", region_name=region)
     metric_response = run_query(
-        client, build_query(database, analysis_date), database, output, workgroup
+        client, build_query(database, analysis_date, source_database), database, output, workgroup
     )
     forecast_response = run_query(
-        client, build_forecast_query(database, analysis_date), database, output, workgroup
+        client,
+        build_forecast_query(database, analysis_date, source_database=source_database),
+        database,
+        output,
+        workgroup,
     )
     existing_analytics_response = run_query(
         client,

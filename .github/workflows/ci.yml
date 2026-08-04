@@ -58,10 +58,18 @@ jobs:
           test -s sql/00_core_table_ddl.sql
           test -s sql/01_agent_orchestration.sql
           test -s sql/02_validation_queries.sql
+          test -s sql/04_stateful_lifecycle_config.sql
+          test -s sql/05_stateful_lifecycle_seed.sql
+          test -s sql/06_stateful_lifecycle_validation.sql
 
       - name: Validate pipeline reliability template
         shell: bash
-        run: test -s infrastructure/pipeline-reliability.yaml
+        run: |
+          test -s infrastructure/pipeline-reliability.yaml
+          test -s infrastructure/stateful-lifecycle-staging.yaml
+          test -s .github/workflows/deploy-stateful-lifecycle-staging.yml
+          test -s ops/deploy_stateful_lifecycle_stack.ps1
+          test -s ops/validate_stateful_lifecycle_staging.ps1
 
       - name: Verify Lambda deployment package entry point
         shell: bash
@@ -94,3 +102,12 @@ jobs:
           cp lambda/glap_pipeline_stage_stub.py dist/stub/lambda_function.py
           (cd dist/stub && zip -q ../glap-pipeline-stage-stub.zip lambda_function.py)
           test "$(unzip -Z1 dist/glap-pipeline-stage-stub.zip)" = "lambda_function.py"
+
+      - name: Verify stateful lifecycle generator package entry point
+        shell: bash
+        run: |
+          mkdir -p dist/lifecycle
+          cp lambda/glap_lifecycle_athena_adapter.py dist/lifecycle/lambda_function.py
+          cp lambda/glap_stateful_lifecycle_generator.py dist/lifecycle/glap_stateful_lifecycle_generator.py
+          (cd dist/lifecycle && zip -q ../glap-stateful-lifecycle-generator.zip lambda_function.py glap_stateful_lifecycle_generator.py)
+          test "$(unzip -Z1 dist/glap-stateful-lifecycle-generator.zip | sort | tr '\n' ' ')" = "glap_stateful_lifecycle_generator.py lambda_function.py "

@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Isolated GLAP stateful lifecycle staging writer. It has no schedule and is not
+  connected to the production success-gated controller.
+
+Parameters:
+  ArtifactBucket:
+    Type: String
+  GeneratorArtifactKey:
+    Type: String
+  AthenaOutputUri:
+    Type: String
+    AllowedPattern: ^s3://[^/]+/.+$
+  AthenaResultsBucketName:
+    Type: String
+  AthenaResultsPrefix:
+    Type: String
+  LifecycleDataBucketArn:
+    Type: String
+    AllowedPattern: ^arn:[^:]+:s3:::[^/]+$
+  LifecycleDataObjectArn:
+    Type: String
+    Description: Prefix-scoped object ARN ending in /* for lifecycle staging only.
+    AllowedPattern: ^arn:[^:]+:s3:::[^/]+/.+\*$
+  AthenaWorkgroup:
+    Type: String
+    Default: primary
+  SourceDatabase:
+    Type: String
+    Default: simulated_iceberg_m
+  FunctionName:
+    Type: String
+    Default: glap-stateful-lifecycle-generator-staging
+
+Resources:
+  LifecycleGeneratorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LifecycleStagingOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FunctionName}:*
+              - Sid: RunAthena
+                Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                  - athena:GetWorkGroup
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AthenaWorkgroup}
+              - Sid: ReadLifecycleCatalog
+                Effect: Allow
+                Action:
+                  - glue:GetDatabase
+                  - glue:GetDatabases
+                  - glue:GetTable
+                  - glue:GetTables
+                  - glue:GetPartitions
+                  - glue:UpdateTable
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${SourceDatabase}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_lifecycle_target_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_route_service_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_card_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_tier_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_fx_rate_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_event_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_cost_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_metrics_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_signal_candidate_staging_v1
+              - Sid: UseLakeFormation
+                Effect: Allow
+                Action: lakeformation:GetDataAccess
+                Resource: "*"
+              - Sid: ListLifecycleBucket
+                Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource: !Ref LifecycleDataBucketArn
+              - Sid: ReadWriteLifecyclePrefix
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:AbortMultipartUpload
+                Resource: !Ref LifecycleDataObjectArn
+              - Sid: UseAthenaResults
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}/${AthenaResultsPrefix}*
+              - Sid: LocateAthenaResults
+                Effect: Allow
+                Action: s3:GetBucketLocation
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}
+
+  LifecycleGeneratorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LifecycleGeneratorRole.Arn
+      Timeout: 900
+      MemorySize: 512
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref GeneratorArtifactKey
+      Environment:
+        Variables:
+          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
+          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          SHIPMENT_TABLE: fact_shipment_lifecycle_staging_v1
+          SHIPMENT_EVENT_TABLE: fact_shipment_lifecycle_event_staging_v1
+          SHIPMENT_COST_TABLE: fact_shipment_cost_staging_v1
+          SHIPMENT_METRICS_TABLE: fact_shipment_lifecycle_metrics_staging_v1
+          SHIPMENT_SIGNAL_TABLE: fact_shipment_signal_candidate_staging_v1
+          ROUTE_SERVICE_TABLE: dim_route_service_v1
+          LIFECYCLE_TARGET_TABLE: dim_lifecycle_target_v1
+          RATE_CARD_TABLE: dim_rate_card_v1
+          FX_RATE_TABLE: dim_fx_rate_v1
+          DEFAULT_REPORTING_CURRENCY: AUD
+
+  LifecycleGeneratorErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: GLAP isolated stateful lifecycle staging writer failed.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LifecycleGeneratorFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  LifecycleGeneratorFunctionName:
+    Value: !Ref LifecycleGeneratorFunction
+  LifecycleGeneratorRoleArn:
+    Value: !GetAtt LifecycleGeneratorRole.Arn

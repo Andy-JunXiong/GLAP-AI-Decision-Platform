@@ -53,7 +53,7 @@ class OpsSnapshotTests(unittest.TestCase):
     def test_query_uses_current_flywheel_contract_tables(self):
         query = exporter.build_query("curated_iceberg", "2026-08-04")
         for table in (
-            "fact_shipment_events_extended_iceberg",
+            "simulated_iceberg_m.fact_shipment_v2",
             "fact_ai_alerts_v3",
             "fact_ai_insights_v3",
             "fact_ai_decisions_v3",
@@ -64,6 +64,7 @@ class OpsSnapshotTests(unittest.TestCase):
             with self.subTest(table=table):
                 self.assertIn(table, query)
         for legacy_table in (
+            "fact_shipment_events_extended_iceberg",
             "fact_ai_anomaly_scores_v1",
             "fact_ai_root_cause_v1",
             "fact_ai_decision_explanations_v1",
@@ -91,10 +92,11 @@ class OpsSnapshotTests(unittest.TestCase):
 
     def test_existing_analytics_query_reuses_deployed_views(self):
         query = exporter.build_existing_analytics_query("curated_iceberg", "2026-08-04")
-        for view in exporter.CURRENT_ANALYTICS_VIEWS:
-            with self.subTest(view=view):
-                self.assertIn(view, query)
-        self.assertIn("fact_ai_root_causes_v1", query)
+        self.assertIn("fact_ai_insights_v3", query)
+        self.assertIn("fact_ai_actions_v2", query)
+        self.assertNotIn("fact_ai_root_causes_v1", query)
+        self.assertNotIn("v_ai_latest_decision_trace", query)
+        self.assertNotIn("FROM curated_iceberg.fact_ai_decisions_v3", query)
         self.assertIn("SELECT DISTINCT route_id, carrier, alert_type", query)
         self.assertNotIn("v_ai_action_distribution", query)
         self.assertNotIn("v_ai_alert_distribution", query)
@@ -156,7 +158,6 @@ class OpsSnapshotTests(unittest.TestCase):
             "outcome_success_rate_pct": "75.0",
         }
         existing_assets = [
-            {"dimension": "summary", "label": "latest_decision_traces", "metric_count": "5"},
             {"dimension": "summary", "label": "risk_hotspots_tracked", "metric_count": "12"},
             {"dimension": "actions", "label": "MONITOR", "metric_count": "81"},
             {"dimension": "alerts", "label": "SLA_BREACH", "metric_count": "42"},
@@ -182,7 +183,8 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["forecast"]["status"], "ready")
         self.assertEqual(snapshot["forecast"]["calculation_engine"], "aws_athena_engine_v3")
         self.assertEqual(len(snapshot["forecast"]["points"]), 7)
-        self.assertEqual(snapshot["schema_version"], "1.3")
+        self.assertEqual(snapshot["schema_version"], "1.4")
+        self.assertEqual(snapshot["provenance"]["outcome_evidence"], "simulated")
         serialized = json.dumps(snapshot)
         for forbidden in ("shipment_id", "entity_key", "account_id", "arn:", "s3://"):
             self.assertNotIn(forbidden, serialized.lower())
@@ -337,6 +339,10 @@ class OpsSnapshotTests(unittest.TestCase):
         setup = (ROOT / "ops" / "configure_ops_snapshot_access.ps1").read_text(encoding="utf-8")
         analyst_sql = (ROOT / "sql" / "03_ops_analytics.sql").read_text(encoding="utf-8")
         for table in exporter.CURRENT_CONTRACT_TABLES:
+            with self.subTest(table=table):
+                self.assertIn(table, setup)
+                self.assertIn(table, analyst_sql)
+        for table in exporter.CURRENT_SOURCE_TABLES:
             with self.subTest(table=table):
                 self.assertIn(table, setup)
                 self.assertIn(table, analyst_sql)

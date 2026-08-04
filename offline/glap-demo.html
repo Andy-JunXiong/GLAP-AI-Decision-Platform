@@ -68,7 +68,7 @@
         <article class="card"><div class="head"><div><h2>Decision-flywheel freshness</h2><p>Every stage must be within one logical run day</p></div><span id="stageLagSummary" class="status-note">LOADING</span></div><div class="stage-table" id="stageFreshness"></div></article>
       </div>
       <div class="existing-analytics-grid">
-        <article class="card"><div class="head"><div><h2>Existing AWS analysis</h2><p>Reused results at the governed logical run date</p></div><span id="analyticsAssetSource" class="status-note">LOADING</span></div><div class="asset-summary"><div><strong id="latestDecisionTraces">—</strong><span>latest decision traces</span></div><div><strong id="riskHotspotsTracked">—</strong><span>risk hotspots tracked</span></div></div></article>
+        <article class="card"><div class="head"><div><h2>Existing AWS analysis</h2><p>Governed aggregates at the logical run date</p></div><span id="analyticsAssetSource" class="status-note">LOADING</span></div><div class="asset-summary"><div><strong id="riskHotspotsTracked">—</strong><span>risk hotspots tracked</span></div></div></article>
         <article class="card"><div class="head"><div><h2>Alert distribution</h2><p>Existing alerts v3 results</p></div></div><div class="distribution-list" id="alertDistribution"></div></article>
         <article class="card"><div class="head"><div><h2>Action distribution</h2><p>Existing decisions v3 recommendations</p></div></div><div class="distribution-list" id="actionDistribution"></div></article>
         <article class="card"><div class="head"><div><h2>Root-cause distribution</h2><p>Existing root-cause result table</p></div></div><div class="distribution-list" id="rootCauseDistribution"></div></article>
@@ -210,11 +210,11 @@ LIMIT 10;</pre></article>
   const pageNames={overview:"Control Tower",signals:"Signals",decisions:"Decisions",shipments:"Shipments",outcomes:"Outcomes",analytics:"Analytics",system:"System",brief:"Decision Brief"};
   const state={decision:"pending",diverted:8,owner:"Mia Chen · Import Operations",reason:"",approvedAt:"",currentFilter:"All",pendingReasonAction:null};
   const fallbackOpsSnapshot={
-    schema_version:"1.3",generated_at:"2026-07-23T00:00:00Z",source_updated_at:"2026-07-23T00:00:00Z",as_of_date:"2026-07-23",
-    provenance:{source_type:"synthetic_validation_snapshot",connection:"repository_fallback",label:"Synthetic validation snapshot",is_connected:false,disclosure:"Committed fallback analytics; not a live AWS OPS connection."},freshness:{status:"stale",max_age_hours:36},
+    schema_version:"1.4",generated_at:"2026-07-23T00:00:00Z",source_updated_at:"2026-07-23T00:00:00Z",as_of_date:"2026-07-23",
+    provenance:{source_type:"synthetic_validation_snapshot",connection:"repository_fallback",label:"Synthetic validation snapshot",is_connected:false,outcome_evidence:"simulated",disclosure:"Committed fallback analytics; not a live AWS OPS connection."},freshness:{status:"stale",max_age_hours:36},
     stage_freshness:{shipments:{as_of_date:"2026-07-23",lag_days:0,status:"stale"},alerts:{as_of_date:"2026-07-23",lag_days:0,status:"stale"},root_causes:{as_of_date:"2026-07-23",lag_days:0,status:"stale"},decisions:{as_of_date:"2026-07-23",lag_days:0,status:"stale"},actions:{as_of_date:"2026-07-23",lag_days:0,status:"stale"},outcomes:{as_of_date:"2026-07-23",lag_days:0,status:"stale"},learning:{as_of_date:"2026-07-23",lag_days:0,status:"stale"}},
     metrics:{shipments_generated:468,shipments_at_risk:15,alerts_generated:3,root_causes_generated:3,decisions_generated:3,actions_generated:3,actions_completed:2,actions_open:1,outcomes_generated:3,learning_records_generated:3},
-    analytics:{window_days:28,observed_days:28,data_completeness_pct:100,latest_daily_shipments:468,average_daily_shipments:431.6,latest_risk_rate_pct:3.2,daily_volume_trend_pct:.45,action_completion_rate_pct:66.7,outcome_success_rate_pct:75,avg_outcome_improvement_pct:12.3,avg_effectiveness_score:.84,max_stage_lag_days:0,calculation_engine:"repository_fallback",date_anchor:"logical_run_date_dt",existing_assets:{source:"synthetic_fallback",latest_decision_traces:3,risk_hotspots_tracked:3,distributions:{alerts:[{label:"SYNTHETIC_ALERT",count:3}],actions:[{label:"SYNTHETIC_ACTION",count:3}],root_causes:[{label:"Synthetic root cause",count:3}]}}},
+    analytics:{window_days:28,observed_days:28,data_completeness_pct:100,latest_daily_shipments:468,average_daily_shipments:431.6,latest_risk_rate_pct:3.2,daily_volume_trend_pct:.45,action_completion_rate_pct:66.7,outcome_success_rate_pct:75,avg_outcome_improvement_pct:37.5,avg_effectiveness_score:.84,max_stage_lag_days:0,calculation_engine:"repository_fallback",date_anchor:"logical_run_date_dt",existing_assets:{source:"synthetic_fallback",risk_hotspots_tracked:3,distributions:{alerts:[{label:"SYNTHETIC_ALERT",count:3}],actions:[{label:"SYNTHETIC_ACTION",count:3}],root_causes:[{label:"Synthetic root cause",count:3}]}}},
     forecast:{status:"not_live",method:"ordinary_least_squares_28d",method_label:"Synthetic 28-day linear trend baseline",calculation_engine:"repository_fallback",horizon_days:7,predicted_shipments_7d:3402,points:[477,480,483,486,489,492,495].map((value,index)=>({date:`2026-07-${String(24+index).padStart(2,"0")}`,predicted_shipments:value,lower_bound:value-39,upper_bound:value+39,predicted_at_risk:Math.round(value*.032)})),history:[],disclosure:"Synthetic statistical baseline; not a committed operational target or autonomous decision."},
     pipeline:{status:"snapshot",max_stage_lag_days:0,query_checks_succeeded:2,query_checks_total:2}
   };
@@ -237,7 +237,7 @@ LIMIT 10;</pre></article>
     const trend=Number(a.daily_volume_trend_pct||0);
     document.getElementById("analyticsTrend").textContent=`${trend>0?"+":""}${trend.toFixed(2)}%/day`;
     document.getElementById("analyticsOutcomeSuccess").textContent=percent(a.outcome_success_rate_pct);
-    document.getElementById("analyticsImprovement").textContent=`Average improvement ${percent(a.avg_outcome_improvement_pct)}`;
+    document.getElementById("analyticsImprovement").textContent=`Simulated average improvement ${percent(a.avg_outcome_improvement_pct)}`;
     document.getElementById("forecastMethod").textContent=`${forecast.method_label||"Forecast unavailable"} · ${metric(a.data_completeness_pct)}% data completeness`;
     const forecastReady=connected&&forecast.status==="ready";
     const forecastStatus=document.getElementById("forecastStatus");
@@ -257,7 +257,6 @@ LIMIT 10;</pre></article>
     document.getElementById("systemStageLag").textContent=lag===null||lag===undefined?"—":`${lag} day${lag===1?"":"s"}`;
     document.getElementById("systemStageLagNote").textContent=pipelineCurrent?"All current stages aligned":"One or more stages require review";
     const assets=a.existing_assets||{},distributions=assets.distributions||{};
-    document.getElementById("latestDecisionTraces").textContent=metric(assets.latest_decision_traces);
     document.getElementById("riskHotspotsTracked").textContent=metric(assets.risk_hotspots_tracked);
     const assetSource=document.getElementById("analyticsAssetSource");
     assetSource.textContent=connected?"AWS EXISTING ASSETS":"SYNTHETIC FALLBACK";

@@ -6,6 +6,7 @@ param(
     [string]$Repository = "Andy-JunXiong/GLAP-AI-Decision-Platform",
     [string]$Environment = "github-pages",
     [string]$RoleName = "GLAPGithubPagesOpsRead",
+    [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$PipelineStatusS3Uri = "",
     [switch]$RequirePipelineStatus,
     [switch]$SkipGitHubVariables
@@ -114,20 +115,15 @@ if (-not $athenaOutput) {
 }
 
 $tables = @(
-    "fact_shipment_events_extended_iceberg",
     "fact_ai_alerts_v3",
-    "fact_ai_root_causes_v1",
     "fact_ai_insights_v3",
     "fact_ai_decisions_v3",
     "fact_ai_actions_v2",
     "fact_ai_outcomes_v2",
-    "fact_ai_learning_feedback_v1",
     "fact_ai_learning_v1"
 )
-$views = @(
-    "ai_decision_trace_v1",
-    "v_ai_latest_decision_trace"
-)
+$views = @()
+$sourceTables = @("fact_shipment_v2")
 $catalogObjects = $tables + $views
 $dataLocations = foreach ($tableName in $tables) {
     $table = Invoke-AwsJson -Arguments @(
@@ -140,6 +136,18 @@ $dataLocations = foreach ($tableName in $tables) {
     }
     ConvertFrom-S3Uri -Value $table.Table.StorageDescriptor.Location
 }
+$sourceDataLocations = foreach ($tableName in $sourceTables) {
+    $table = Invoke-AwsJson -Arguments @(
+        "glue", "get-table",
+        "--database-name", $SourceDatabase,
+        "--name", $tableName
+    ) -Profile $ReadProfile
+    if (-not $table.Table.StorageDescriptor.Location) {
+        throw "Glue table $SourceDatabase.$tableName has no S3 location"
+    }
+    ConvertFrom-S3Uri -Value $table.Table.StorageDescriptor.Location
+}
+$dataLocations += $sourceDataLocations
 $resultLocation = ConvertFrom-S3Uri -Value $athenaOutput
 
 $subject = "repo:${Repository}:environment:${Environment}"
@@ -234,8 +242,10 @@ $permissions = @{
             )
             Resource = @(
                 "arn:aws:glue:${Region}:${accountId}:catalog",
-                "arn:aws:glue:${Region}:${accountId}:database/${database}"
-            ) + ($catalogObjects | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${database}/$_" })
+                "arn:aws:glue:${Region}:${accountId}:database/${database}",
+                "arn:aws:glue:${Region}:${accountId}:database/${SourceDatabase}"
+            ) + ($catalogObjects | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${database}/$_" }) +
+                ($sourceTables | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/$_" })
         },
         @{
             Sid = "RequestGovernedTableData"
@@ -331,10 +341,16 @@ foreach ($tableName in $catalogObjects) {
     }
     if (-not $tableGrant) { $lakeFormationGranted = $false }
 }
+foreach ($tableName in $sourceTables) {
+    $null = Invoke-AwsJson -Arguments @(
+        "glue", "get-table", "--database-name", $SourceDatabase, "--name", $tableName
+    ) -Profile $ReadProfile
+}
 
 $variables = @{
     AWS_OPS_READ_ROLE_ARN = $roleArn
     AWS_OPS_DATABASE = $database
+    AWS_OPS_SOURCE_DATABASE = $SourceDatabase
     AWS_OPS_ATHENA_OUTPUT = $athenaOutput
     AWS_OPS_WORKGROUP = $workgroup
 }

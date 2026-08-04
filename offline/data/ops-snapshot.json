@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "generated_at": "2026-07-23T00:00:00Z",
   "source_updated_at": "2026-07-23T00:00:00Z",
   "as_of_date": "2026-07-23",
@@ -8,6 +8,7 @@
     "connection": "repository_fallback",
     "label": "Synthetic validation snapshot",
     "is_connected": false,
+    "outcome_evidence": "simulated",
     "disclosure": "Committed fallback analytics; not a live AWS OPS connection."
   },
   "freshness": {
@@ -45,14 +46,13 @@
     "daily_volume_trend_pct": 0.45,
     "action_completion_rate_pct": 66.7,
     "outcome_success_rate_pct": 75.0,
-    "avg_outcome_improvement_pct": 12.3,
+    "avg_outcome_improvement_pct": 37.5,
     "avg_effectiveness_score": 0.84,
     "max_stage_lag_days": 0,
     "calculation_engine": "repository_fallback",
     "date_anchor": "logical_run_date_dt",
     "existing_assets": {
       "source": "synthetic_fallback",
-      "latest_decision_traces": 3,
       "risk_hotspots_tracked": 3,
       "distributions": {
         "alerts": [{"label": "SYNTHETIC_ALERT", "count": 3}],
