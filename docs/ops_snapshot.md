@@ -11,13 +11,14 @@ The `1.3` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
-- current v3/v2 flywheel shipment, alert, root-cause, decision, action, outcome,
-  and learning counts;
+- current v3/v2 flywheel shipment, alert, insight/root-cause, decision, action,
+  outcome, and learning counts;
 - aggregate action-completion and outcome-effectiveness rates;
 - a 28-day total-volume history and transparent seven-day linear baseline,
   calculated by Athena engine v3;
-- aggregate alert, action, and root-cause distributions from existing AWS result
-  tables, plus the existing latest-decision-trace view count;
+- aggregate alert, action, and root-cause distributions from AWS result tables;
+  the current `1.3` implementation also exposes a decision-trace count that is
+  listed below as a contract gap to remove;
 - aggregate pipeline query status and data-completeness checks.
 - optional success-gated pipeline stage timing, completion state, safe failure
   category, quality-check results, and a public runbook link.
@@ -70,28 +71,36 @@ Configure these repository variables before enabling the AWS export step:
 | `AWS_OPS_PIPELINE_STATUS_REQUIRED` | Set to `true` only after the controller and read permission are deployed |
 
 The role should trust the repository's GitHub OIDC subject for the
-`github-pages` environment and grant only the reads required for the allowlisted
-current-flywheel tables, `v_ai_latest_decision_trace`, and its stored-view
-dependency `ai_decision_trace_v1`, plus Athena
-execution/status and the private query-result prefix. It does not need
+`github-pages` environment and grant only the reads required for the governed
+six-input/six-output metric contract, plus Athena execution/status, the
+sanitized pipeline-status object and the private query-result prefix. It does
+not need
 permission to mutate Lambda aliases, schedules, Iceberg tables, or production
 decisions.
 
-The published contract intentionally reuses `fact_ai_alerts_v3`,
-`fact_ai_root_causes_v1`, `fact_ai_insights_v3`, `fact_ai_decisions_v3`,
-`fact_ai_actions_v2`, `fact_ai_outcomes_v2`, `fact_ai_learning_feedback_v1`,
-`fact_ai_learning_v1`, and `v_ai_latest_decision_trace` (including its catalog
-dependency `ai_decision_trace_v1`). It does not create a new analytics table or
-duplicate an existing result. Historical distribution views with multi-stage
-joins are not used by the public snapshot because their grain can fan out one
-alert into multiple joined rows.
+The governed target contract intentionally reuses `fact_ai_alerts_v3`,
+`fact_ai_insights_v3`, `fact_ai_decisions_v3`, `fact_ai_actions_v2`,
+`fact_ai_outcomes_v2`, and `fact_ai_learning_v1`. Root-cause distributions come
+from insights v3 and action distributions come from actions v2. Legacy v1
+root-cause/feedback tables and latest-decision trace views are not governed
+public outputs and must not be used to imply current pipeline health.
+
+**Known 4 August 2026 implementation gap:** snapshot schema `1.3` and its
+exporter still reference `fact_shipment_events_extended_iceberg`,
+`fact_ai_root_causes_v1`, `fact_ai_learning_feedback_v1`, and the decision-trace
+views. They also derive action distribution from decisions v3. These references
+are recorded for removal in the next P0 implementation slice; this document does
+not claim that the deployed exporter has already been corrected. Until then,
+the separate display shipment source and the governed AI shipment source must
+not be presented as one reconciled population.
 
 The governed analysis date is the successful pipeline logical run date. Shipment
-volume is grouped by the Iceberg `dt` batch partition; a shipment's future
-`event_time` does not move the analysis date forward. All KPI, distribution,
-completion-rate, OLS trend, residual interval, and forecast calculations run in
-Athena. GitHub Actions only assumes the read role, starts those queries, validates
-the aggregate response contract, and publishes the JSON artifact.
+volume will be grouped from the canonical v2 Iceberg `dt` snapshot after the P0
+correction; a shipment's future milestone time does not move the analysis date
+forward. All KPI, distribution, completion-rate, trend and forecast calculations
+run in Athena. GitHub Actions only assumes the read role, requests the governed
+AWS result, validates the aggregate response contract, and publishes the JSON
+artifact.
 
 The inspected current daily path runs shipment generation at 00:05 and the v2
 orchestrator at 00:30 in `Australia/Sydney`. The Pages refresh runs later and
@@ -142,4 +151,5 @@ This contract remains read-only and aggregate-only. Decision review, Action
 updates, and observed Outcome writes will be implemented behind an authenticated
 internal API; they will not be added to the GitHub Pages role. Pipeline
 reliability gates must be completed before that write path is enabled. See the
-[implementation roadmap](implementation_roadmap.md).
+[implementation roadmap](implementation_roadmap.md) and the approved
+[stateful shipment lifecycle design](shipment_lifecycle_design.md).

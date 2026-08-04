@@ -17,6 +17,42 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   orchestration at 00:30 `Australia/Sydney` before the public refresh.
 - [x] Keep public output aggregate-only and exclude operational identifiers.
 
+## Design checkpoint — 4 August 2026
+
+- [x] Record the diagnosis that the AWS execution chain is complete while the
+  synthetic business state is still a largely independent daily population.
+- [x] Define the target cross-day shipment milestone model, including immutable
+  original ETD/ETA, revisable current estimates, observed ATD/ATA, final delivery
+  and terminal delivered state.
+- [x] Document a Shanghai--Sydney ocean baseline of 14--18 port-to-port days,
+  with a 16-day simulation baseline and separate final-delivery duration.
+- [x] Define 3--7% as a journey-level exception incidence rather than an
+  independent daily probability.
+- [x] Separate simulation calibration from decision policy and require human
+  approval before a learned policy version becomes effective.
+- [x] Record the phased design and acceptance criteria in
+  [`docs/shipment_lifecycle_design.md`](docs/shipment_lifecycle_design.md).
+
+## Next product slice — Stateful shipment lifecycle
+
+- [ ] Correct the public metric contract: v2 shipment volume, insights v3 root
+  causes, actions v2 action distribution, no legacy v1 or trace claims.
+- [ ] Correct outcome ratio display (`0.375` means `37.5%`) and label every
+  public outcome as simulated.
+- [ ] Publish the existing six-stage controller and quality-gate status without
+  exposing private AWS identifiers.
+- [ ] Seed a representative active population across lifecycle stages.
+- [ ] Add approximately 14--18 new shipments per normal day while carrying
+  active shipment IDs across logical dates.
+- [ ] Preserve original ETD/ETA, revise only current estimates, and set ATD/ATA
+  only when their milestones occur.
+- [ ] Stop active updates after delivery while retaining completed history.
+- [ ] Add SLA breach and cost anomaly alongside the existing high-risk-route
+  alert, with explicit grain and stable lifecycle identity.
+- [ ] Add delayed, reproducible and context-dependent simulated outcomes.
+- [ ] Route learning into a human-reviewed decision-policy proposal, not an
+  automatic simulation-generator change.
+
 ## P0 — Pipeline reliability and truthful health
 
 Repository checkpoint — 4 August 2026:
@@ -132,4 +168,4 @@ Repository checkpoint — 4 August 2026:
 
 ## Delivery order
 
-`P0 reliability → P1 write-back → P2 existing-asset analytics → P4 cockpit → P3 model upgrade → P5 production readiness`
+`P0 metric correctness and reliability → stateful shipment lifecycle → alert lifecycle → delayed outcome and governed policy feedback → internal write-back/cockpit → forecast validation → production readiness`

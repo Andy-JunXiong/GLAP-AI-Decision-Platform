@@ -167,6 +167,7 @@ flowchart TB
 - [Versioned deployment workflow](docs/deployment_workflow.md)
 - [Technical implementation](docs/GLAP_Technical_Implementation.md)
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
+- [Stateful shipment lifecycle design](docs/shipment_lifecycle_design.md)
 - [Public OPS snapshot contract](docs/ops_snapshot.md)
 - [Athena OPS analytics and forecast SQL](sql/03_ops_analytics.sql)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
@@ -200,6 +201,9 @@ decision-brief-demo/ deployable web product demo
   financial results.
 - Current decision generation is deterministic and explainable; autonomous model
   learning and measured production impact are future capabilities.
+- The deployed generator still produces a largely independent daily synthetic
+  population. The approved next design carries shipment IDs and milestones
+  across logical dates; see the [stateful shipment lifecycle design](docs/shipment_lifecycle_design.md).
 
 ## Author
 

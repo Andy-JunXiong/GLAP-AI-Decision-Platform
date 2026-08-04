@@ -12,6 +12,20 @@ Public GitHub Pages must remain read-only and aggregate-only. Entity-level
 operations, approvals, Actions, and Outcomes belong behind an authenticated
 internal boundary.
 
+## Design decision -- 4 August 2026
+
+The next product capability is a stateful synthetic shipment lifecycle. The
+same shipment will remain active across logical dates, preserve original ETD
+and ETA, revise current estimates when evidence changes, record ATD/ATA only
+when observed, and stop active updates after delivery. See the
+[stateful shipment lifecycle design](shipment_lifecycle_design.md) for the
+agreed field semantics, Shanghai--Sydney baseline, journey-level delay model,
+governance boundary and acceptance criteria.
+
+This design does not replace the current reliability chain. It reuses the six
+governed v2 inputs and six current AI outputs, and keeps every business
+calculation in AWS. Public Pages remains a sanitized aggregate publisher.
+
 ## Delivery sequence
 
 ```mermaid
@@ -94,14 +108,25 @@ Current reusable assets:
 
 | Existing asset | Primary use |
 | --- | --- |
-| `fact_shipment_events_extended_iceberg` | Daily volume anchored by `dt` |
-| `fact_ai_alerts_v3` | Current alerts and aggregate risk patterns |
-| `fact_ai_root_causes_v1` | Existing root-cause results |
-| `fact_ai_insights_v3` | Current analysis-stage completion |
-| `fact_ai_decisions_v3` | Recommendations and action distribution |
-| `fact_ai_actions_v2`, `fact_ai_outcomes_v2` | Execution and measured outcomes |
-| `fact_ai_learning_feedback_v1`, `fact_ai_learning_v1` | Feedback and learning state |
-| `v_ai_latest_decision_trace` | Existing latest decision trace; depends on `ai_decision_trace_v1` |
+| `simulated_iceberg_m.fact_shipment_v2` | Canonical AI shipment snapshot and public volume target |
+| `simulated_iceberg_m.fact_shipment_event_v2` | Shipment milestone events |
+| `simulated_iceberg_m.fact_shipment_leg_metrics_core_v2` | Leg duration and SLA evidence |
+| `simulated_iceberg_m.fact_shipment_cost_v2` | Shipment cost evidence |
+| `simulated_iceberg_m.fact_shipment_risk_v2` | Delay, damage, compliance and overall risk |
+| `simulated_iceberg_m.shipment_product_allocation_v2` | Shipment/product allocation |
+| `fact_ai_alerts_v3` | Current governed alerts |
+| `fact_ai_insights_v3` | Current governed root-cause and evidence layer |
+| `fact_ai_decisions_v3` | Current governed recommendations |
+| `fact_ai_actions_v2` | Current governed actions and action distribution |
+| `fact_ai_outcomes_v2` | Current governed synthetic outcomes |
+| `fact_ai_learning_v1` | Current governed learning aggregate |
+
+`fact_shipment_events_extended_iceberg`, legacy v1 root-cause and feedback
+tables, and the latest-decision trace views may exist in AWS, but they are not
+part of the six-input/six-output success-gated public metric contract. The
+current exporter references some of these assets and must be corrected in the
+P0 metric-contract slice before new lifecycle capability is represented as
+current.
 
 All calculation SQL runs in Athena. The public exporter packages only safe
 aggregates. A new mart is justified only when this inventory cannot meet a
@@ -193,7 +218,10 @@ Acceptance criteria:
 
 ## Recommended next implementation slice
 
-Start with P0. Add a pipeline-run contract and success-gated orchestration, then
-publish stage duration and failure state through the existing OPS snapshot. P1
-should not accept operational writes until these controls pass a controlled
-failure test.
+Complete the P0 public metric correction first: reconcile shipment volume to
+`fact_shipment_v2`, use insights v3 for root causes, actions v2 for action
+distribution, correct outcome percentage semantics, and safely publish the
+existing controller/quality-gate status. Then implement the stateful generator
+slice defined in `shipment_lifecycle_design.md`. Authenticated operational
+writes remain blocked until reliability controls pass the first real governed
+run and the lifecycle state contract is validated.
