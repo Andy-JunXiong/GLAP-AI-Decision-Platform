@@ -7,7 +7,7 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The `1.1` snapshot contains only:
+The `1.2` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
@@ -16,6 +16,8 @@ The `1.1` snapshot contains only:
 - aggregate action-completion and outcome-effectiveness rates;
 - a 28-day total-volume history and transparent seven-day linear baseline;
 - aggregate pipeline query status and data-completeness checks.
+- optional success-gated pipeline stage timing, completion state, safe failure
+  category, quality-check results, and a public runbook link.
 
 It excludes shipment IDs, entity keys, carriers, account IDs, ARNs, S3 paths,
 query execution IDs and individual decisions. Forecast points contain only
@@ -26,11 +28,20 @@ labelled as a statistical baseline, not an operational commitment.
 
 The repository includes an idempotent PowerShell setup command for the current
 GLAP deployment. It discovers the deployed Athena/Glue/S3 contract, creates or
-updates the least-privilege GitHub OIDC role, and sets the four variables on the
+updates the least-privilege GitHub OIDC role, and sets the core variables on the
 `github-pages` environment:
 
 ```powershell
 .\ops\configure_ops_snapshot_access.ps1
+```
+
+After the controller status object is deployed and a controlled failure test
+passes, enable required verification explicitly:
+
+```powershell
+.\ops\configure_ops_snapshot_access.ps1 `
+  -PipelineStatusS3Uri "s3://<private-bucket>/<private-prefix>/latest.json" `
+  -RequirePipelineStatus
 ```
 
 Run it after authenticating `gh`, the AWS `default` admin profile, and the
@@ -45,6 +56,8 @@ Configure these repository variables before enabling the AWS export step:
 | `AWS_OPS_DATABASE` | Athena database; defaults to `curated_iceberg` |
 | `AWS_OPS_ATHENA_OUTPUT` | Private S3 query-result location |
 | `AWS_OPS_WORKGROUP` | Athena workgroup; defaults to `primary` |
+| `AWS_OPS_PIPELINE_STATUS_URI` | Optional S3 URI of the controller's sanitized latest-run contract |
+| `AWS_OPS_PIPELINE_STATUS_REQUIRED` | Set to `true` only after the controller and read permission are deployed |
 
 The role should trust the repository's GitHub OIDC subject for the
 `github-pages` environment and grant only the reads required for the seven
@@ -69,6 +82,23 @@ the product displays **Synthetic validation snapshot · not live**. If the role
 is configured but the export fails, the deployment fails and the last
 successful site remains available; it does not silently publish a fresh-looking
 fallback.
+
+When `AWS_OPS_PIPELINE_STATUS_REQUIRED=true`, a missing, failed, stale, or
+incomplete pipeline-run contract forces the published snapshot to `stale`; fresh
+stage dates alone are no longer enough to claim `current`. Before that flag is
+enabled, the snapshot labels its verification mode `stage_dates_only` for
+backward-compatible rollout. The controller contract never includes Lambda
+names, ARNs, query IDs, S3 locations, row identifiers, or exception text.
+
+The controller source is `lambda/glap_pipeline_controller.py`. It reads an
+ordered `PIPELINE_STAGES_JSON` configuration and requires
+`PIPELINE_STATUS_S3_URI`. A stage marked `quality_gate` must report exactly these
+checks as `passed` or `failed`: missing dates, empty inputs, duplicate business
+keys, abnormal volume change, and stale stage outputs. Any missing or failed
+check blocks every later stage. See the
+[pipeline reliability runbook](runbooks/pipeline_reliability.md).
+The verified six-stage replacement order and aggregate Athena validation
+evidence are documented in [pipeline reliability](pipeline_reliability.md).
 
 ## Local export
 

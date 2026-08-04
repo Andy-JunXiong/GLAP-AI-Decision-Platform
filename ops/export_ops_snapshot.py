@@ -25,6 +25,27 @@ FORECAST_HORIZON_DAYS = 7
 MAX_STAGE_LAG_DAYS = 1
 TERMINAL_FAILURE_STATES = {"FAILED", "CANCELLED"}
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+SAFE_PUBLIC_STAGE = re.compile(r"^[a-z][a-z0-9_]{1,47}$")
+PIPELINE_RUN_SUCCESS = {"success", "succeeded"}
+PIPELINE_QUALITY_CHECKS = {
+    "missing_dates",
+    "empty_inputs",
+    "duplicate_business_keys",
+    "abnormal_volume_change",
+    "stale_stage_outputs",
+}
+SAFE_FAILURE_CATEGORIES = {
+    "dependency_failure",
+    "invalid_response",
+    "quality_contract_invalid",
+    "quality_gate_failed",
+    "unexpected_failure",
+    "status_unavailable",
+}
+PIPELINE_RUNBOOK_URL = (
+    "https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/"
+    "blob/main/docs/runbooks/pipeline_reliability.md"
+)
 
 CURRENT_CONTRACT_TABLES = (
     "fact_shipment_events_extended_iceberg",
@@ -245,6 +266,141 @@ def _date(value: str | None) -> date | None:
     return date.fromisoformat(value) if value else None
 
 
+def _safe_timestamp(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _safe_pipeline_health(
+    pipeline_run: dict[str, Any] | None,
+    newest_date: date,
+    required: bool,
+) -> tuple[dict[str, Any], bool]:
+    """Return a sanitized pipeline view and whether it proves current success."""
+
+    if not pipeline_run:
+        status = "unverified" if required else "date_inferred"
+        return (
+            {
+                "status": status,
+                "verification_mode": "pipeline_run" if required else "stage_dates_only",
+                "logical_run_date": None,
+                "started_at": None,
+                "completed_at": None,
+                "duration_ms": None,
+                "failed_stage": None,
+                "failure_category": "status_unavailable" if required else None,
+                "stages": [],
+                "runbook_url": PIPELINE_RUNBOOK_URL,
+            },
+            not required,
+        )
+
+    try:
+        logical_date = _date(str(pipeline_run.get("logical_run_date") or ""))
+    except ValueError:
+        logical_date = None
+    raw_stages = pipeline_run.get("stages")
+    if not isinstance(raw_stages, list):
+        raw_stages = []
+    stages = []
+    quality_gate_verified = False
+    for raw_stage in raw_stages:
+        if not isinstance(raw_stage, dict):
+            continue
+        checks = raw_stage.get("quality_checks")
+        safe_checks = []
+        if isinstance(checks, list):
+            for check in checks:
+                if not isinstance(check, dict):
+                    continue
+                name = str(check.get("name") or "")
+                check_status = str(check.get("status") or "").lower()
+                if name in PIPELINE_QUALITY_CHECKS and check_status in {"passed", "failed"}:
+                    safe_checks.append({"name": name, "status": check_status})
+            if (
+                {check["name"] for check in safe_checks} == PIPELINE_QUALITY_CHECKS
+                and all(check["status"] == "passed" for check in safe_checks)
+            ):
+                quality_gate_verified = True
+        failure_category = str(raw_stage.get("failure_category") or "") or None
+        if failure_category not in SAFE_FAILURE_CATEGORIES:
+            failure_category = "unexpected_failure" if failure_category else None
+        stage_name = str(raw_stage.get("name") or "")
+        if not SAFE_PUBLIC_STAGE.fullmatch(stage_name):
+            stage_name = "unknown"
+        stages.append(
+            {
+                "name": stage_name,
+                "started_at": _safe_timestamp(raw_stage.get("started_at")),
+                "completed_at": _safe_timestamp(raw_stage.get("completed_at")),
+                "duration_ms": int(raw_stage["duration_ms"])
+                if isinstance(raw_stage.get("duration_ms"), (int, float))
+                and raw_stage["duration_ms"] >= 0
+                else None,
+                "status": str(raw_stage.get("status") or "unknown").lower(),
+                "failure_category": failure_category,
+                "quality_checks": safe_checks,
+            }
+        )
+
+    run_status = str(pipeline_run.get("status") or "unknown").lower()
+    failure_category = str(pipeline_run.get("failure_category") or "") or None
+    if failure_category not in SAFE_FAILURE_CATEGORIES:
+        failure_category = "unexpected_failure" if failure_category else None
+    logical_date_current = logical_date == newest_date
+    all_stages_succeeded = bool(stages) and all(stage["status"] == "succeeded" for stage in stages)
+    verified = (
+        run_status in PIPELINE_RUN_SUCCESS
+        and logical_date_current
+        and all_stages_succeeded
+        and quality_gate_verified
+    )
+    if verified:
+        public_status = "current"
+    elif run_status == "failed":
+        public_status = "failed"
+    elif run_status == "running":
+        public_status = "running"
+    else:
+        public_status = "unverified"
+
+    duration_ms = None
+    try:
+        started = datetime.fromisoformat(_safe_timestamp(pipeline_run.get("started_at")) or "")
+        completed = datetime.fromisoformat(_safe_timestamp(pipeline_run.get("completed_at")) or "")
+        duration_ms = max(0, int((completed - started).total_seconds() * 1000))
+    except (TypeError, ValueError):
+        pass
+
+    return (
+        {
+            "status": public_status,
+            "verification_mode": "pipeline_run",
+            "logical_run_date": logical_date.isoformat() if logical_date else None,
+            "started_at": _safe_timestamp(pipeline_run.get("started_at")),
+            "completed_at": _safe_timestamp(pipeline_run.get("completed_at")),
+            "duration_ms": duration_ms,
+            "failed_stage": (
+                str(pipeline_run.get("failed_stage"))
+                if SAFE_PUBLIC_STAGE.fullmatch(str(pipeline_run.get("failed_stage") or ""))
+                else None
+            ),
+            "failure_category": failure_category,
+            "stages": stages,
+            "runbook_url": PIPELINE_RUNBOOK_URL,
+        },
+        verified,
+    )
+
+
 def build_volume_forecast(
     history_rows: list[dict[str, str | None]],
     history_days: int = HISTORY_DAYS,
@@ -351,6 +507,8 @@ def build_snapshot(
     row: dict[str, str | None],
     history_rows: list[dict[str, str | None]] | None = None,
     now: datetime | None = None,
+    pipeline_run: dict[str, Any] | None = None,
+    pipeline_status_required: bool = False,
 ) -> dict[str, Any]:
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None:
@@ -376,7 +534,11 @@ def build_snapshot(
         (stage["lag_days"] for stage in stage_freshness.values() if stage["lag_days"] is not None),
         default=999,
     )
-    pipeline_current = all(stage["status"] == "current" for stage in stage_freshness.values())
+    stage_dates_current = all(stage["status"] == "current" for stage in stage_freshness.values())
+    pipeline_health, run_verified = _safe_pipeline_health(
+        pipeline_run, newest_date, pipeline_status_required
+    )
+    pipeline_current = stage_dates_current and run_verified
     fresh = age_hours <= 36 and pipeline_current
 
     metrics = {
@@ -407,7 +569,7 @@ def build_snapshot(
     )
 
     return {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "source_updated_at": source_updated_at.isoformat().replace("+00:00", "Z"),
         "as_of_date": newest_date.isoformat(),
@@ -428,12 +590,32 @@ def build_snapshot(
         "analytics": analytics,
         "forecast": forecast,
         "pipeline": {
-            "status": "current" if pipeline_current else "partial_or_stale",
+            **pipeline_health,
+            "status": (
+                "current"
+                if pipeline_current
+                else (
+                    pipeline_health["status"]
+                    if pipeline_health["status"] in {"failed", "running", "unverified"}
+                    else "partial_or_stale"
+                )
+            ),
             "max_stage_lag_days": max_stage_lag,
             "query_checks_succeeded": 2,
             "query_checks_total": 2,
         },
     }
+
+
+def load_pipeline_run(client: Any, status_uri: str) -> dict[str, Any]:
+    parsed = urlparse(status_uri)
+    if parsed.scheme != "s3" or not parsed.netloc or not parsed.path.lstrip("/"):
+        raise ValueError("PIPELINE_STATUS_S3_URI must be a complete s3:// URI")
+    response = client.get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
+    value = json.loads(response["Body"].read())
+    if not isinstance(value, dict):
+        raise ValueError("Pipeline status object must contain a JSON object")
+    return value
 
 
 def run_query(client: Any, query: str, database: str, output: str, workgroup: str) -> dict[str, Any]:
@@ -473,12 +655,29 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
     if not output:
         raise ValueError("ATHENA_OUTPUT is required")
 
-    client = boto3.client("athena", region_name=os.getenv("AWS_REGION", "us-east-1"))
+    region = os.getenv("AWS_REGION", "us-east-1")
+    client = boto3.client("athena", region_name=region)
     metric_response = run_query(client, build_query(database), database, output, workgroup)
     history_response = run_query(client, build_history_query(database), database, output, workgroup)
+    pipeline_status_uri = os.getenv("PIPELINE_STATUS_S3_URI")
+    pipeline_status_required = os.getenv("PIPELINE_STATUS_REQUIRED", "false").lower() == "true"
+    pipeline_run = None
+    if pipeline_status_uri:
+        try:
+            pipeline_run = load_pipeline_run(
+                boto3.client("s3", region_name=region), pipeline_status_uri
+            )
+        except Exception:
+            if not pipeline_status_required:
+                raise
+            # Required verification fails closed while still allowing Pages to
+            # publish an explicit stale/unverified state.
+            pipeline_run = None
     snapshot = build_snapshot(
         parse_athena_result(metric_response),
         parse_athena_rows(history_response),
+        pipeline_run=pipeline_run,
+        pipeline_status_required=pipeline_status_required,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")

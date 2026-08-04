@@ -19,6 +19,29 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 
 ## P0 — Pipeline reliability and truthful health
 
+Repository checkpoint — 4 August 2026:
+
+- [x] Add a configurable success-gated controller that stops after the first
+  failed stage or data-quality gate and preserves blocked downstream stages.
+- [x] Define the five required quality-check result names and fail closed on an
+  incomplete validation response.
+- [x] Implement input/output Athena gates against the verified v2 and v3/v2
+  schemas; both aggregate queries passed against the 4 August logical run.
+- [x] Persist only sanitized stage timing and failure state, and make controller
+  failure trigger the existing Scheduler retry/DLQ path.
+- [x] Add optional OPS snapshot verification that prevents `current` when a
+  required pipeline-run status is missing, stale, incomplete, or failed.
+- [x] Add a least-privilege CloudFormation template with a private status object,
+  encrypted DLQ, alarms, and a replacement schedule that defaults to disabled.
+- [x] Deploy an isolated staging stack with zero-write stage stubs; verify one
+  controlled quality failure blocks all downstream stages, then restore the
+  threshold and pass all six stages and ten quality checks.
+- [x] Replace staging stubs with governed current-function targets, back up the
+  prior configurations privately, disable five time-only/legacy schedules, and
+  enable the success-gated 00:05 schedule with rollback protection.
+- [ ] Observe the first real success-gated run on 5 August, verify six stages and
+  ten checks, then enable required OPS verification.
+
 - [ ] Replace time-only sequencing with success-gated orchestration from data
   generation and validation through the current v3/v2 flywheel.
 - [ ] Add data-quality gates for missing dates, empty inputs, duplicate business
@@ -29,7 +52,8 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   Dashboard without exposing private AWS identifiers.
 - [ ] Verify CloudWatch alarms, retries, and DLQ coverage for every function in
   the current v3/v2 path.
-- [ ] Retire or reschedule the separate legacy 08:00 generator/flywheel pair.
+- [x] Retire the separate legacy 08:00 generator/flywheel scheduling pair; the
+  flywheel function now runs only inside the success-gated chain.
 - [ ] Ensure downstream processing and Pages refresh cannot claim `current` after
   any upstream validation or stage failure.
 

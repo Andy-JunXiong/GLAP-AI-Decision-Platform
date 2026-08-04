@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: Compile Python sources
-        run: python -m compileall -q lambda examples tests
+        run: python -m compileall -q lambda ops examples tests
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
@@ -59,6 +59,10 @@ jobs:
           test -s sql/01_agent_orchestration.sql
           test -s sql/02_validation_queries.sql
 
+      - name: Validate pipeline reliability template
+        shell: bash
+        run: test -s infrastructure/pipeline-reliability.yaml
+
       - name: Verify Lambda deployment package entry point
         shell: bash
         run: |
@@ -66,3 +70,27 @@ jobs:
           cp lambda/glap_ai_agent_orchestrator.py dist/package/lambda_function.py
           (cd dist/package && zip -q ../glap-ai-agent-orchestrator.zip lambda_function.py)
           test "$(unzip -Z1 dist/glap-ai-agent-orchestrator.zip)" = "lambda_function.py"
+
+      - name: Verify pipeline controller package entry point
+        shell: bash
+        run: |
+          mkdir -p dist/controller
+          cp lambda/glap_pipeline_controller.py dist/controller/lambda_function.py
+          (cd dist/controller && zip -q ../glap-pipeline-controller.zip lambda_function.py)
+          test "$(unzip -Z1 dist/glap-pipeline-controller.zip)" = "lambda_function.py"
+
+      - name: Verify data quality gate package entry point
+        shell: bash
+        run: |
+          mkdir -p dist/quality
+          cp lambda/glap_data_quality_gate.py dist/quality/lambda_function.py
+          (cd dist/quality && zip -q ../glap-data-quality-gate.zip lambda_function.py)
+          test "$(unzip -Z1 dist/glap-data-quality-gate.zip)" = "lambda_function.py"
+
+      - name: Verify staging stage stub package entry point
+        shell: bash
+        run: |
+          mkdir -p dist/stub
+          cp lambda/glap_pipeline_stage_stub.py dist/stub/lambda_function.py
+          (cd dist/stub && zip -q ../glap-pipeline-stage-stub.zip lambda_function.py)
+          test "$(unzip -Z1 dist/glap-pipeline-stage-stub.zip)" = "lambda_function.py"

@@ -54,6 +54,8 @@ jobs:
           ATHENA_DATABASE: ${{ vars.AWS_OPS_DATABASE }}
           ATHENA_OUTPUT: ${{ vars.AWS_OPS_ATHENA_OUTPUT }}
           ATHENA_WORKGROUP: ${{ vars.AWS_OPS_WORKGROUP }}
+          PIPELINE_STATUS_S3_URI: ${{ vars.AWS_OPS_PIPELINE_STATUS_URI }}
+          PIPELINE_STATUS_REQUIRED: ${{ vars.AWS_OPS_PIPELINE_STATUS_REQUIRED }}
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check boto3

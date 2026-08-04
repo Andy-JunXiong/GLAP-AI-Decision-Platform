@@ -97,7 +97,7 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["analytics"]["action_completion_rate_pct"], 66.7)
         self.assertEqual(snapshot["forecast"]["status"], "ready")
         self.assertEqual(len(snapshot["forecast"]["points"]), 7)
-        self.assertEqual(snapshot["schema_version"], "1.1")
+        self.assertEqual(snapshot["schema_version"], "1.2")
         serialized = json.dumps(snapshot)
         for forbidden in ("shipment_id", "entity_key", "account_id", "arn:", "s3://"):
             self.assertNotIn(forbidden, serialized.lower())
@@ -119,6 +119,127 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["freshness"]["status"], "stale")
         self.assertEqual(snapshot["pipeline"]["status"], "partial_or_stale")
         self.assertEqual(snapshot["stage_freshness"]["decisions"]["status"], "stale")
+
+    def test_verified_pipeline_run_is_required_when_gate_is_enabled(self):
+        row = {
+            "latest_shipment_date": "2026-08-04",
+            "latest_alert_date": "2026-08-04",
+            "latest_insight_date": "2026-08-04",
+            "latest_decision_date": "2026-08-04",
+            "latest_action_date": "2026-08-04",
+            "latest_outcome_date": "2026-08-04",
+            "latest_learning_date": "2026-08-04",
+        }
+        missing = exporter.build_snapshot(
+            row,
+            now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+            pipeline_status_required=True,
+        )
+        self.assertEqual(missing["freshness"]["status"], "stale")
+        self.assertEqual(missing["pipeline"]["status"], "unverified")
+        self.assertEqual(missing["pipeline"]["failure_category"], "status_unavailable")
+
+        pipeline_run = {
+            "logical_run_date": "2026-08-04",
+            "started_at": "2026-08-04T00:05:00Z",
+            "completed_at": "2026-08-04T00:07:00Z",
+            "status": "succeeded",
+            "failed_stage": None,
+            "failure_category": None,
+            "stages": [
+                {
+                    "name": "generation",
+                    "started_at": "2026-08-04T00:05:00Z",
+                    "completed_at": "2026-08-04T00:06:00Z",
+                    "duration_ms": 60000,
+                    "status": "succeeded",
+                    "failure_category": None,
+                    "quality_checks": [],
+                },
+                {
+                    "name": "input_validation",
+                    "started_at": "2026-08-04T00:06:00Z",
+                    "completed_at": "2026-08-04T00:06:30Z",
+                    "duration_ms": 30000,
+                    "status": "succeeded",
+                    "failure_category": None,
+                    "quality_checks": [
+                        {"name": name, "status": "passed"}
+                        for name in sorted(exporter.PIPELINE_QUALITY_CHECKS)
+                    ],
+                },
+                {
+                    "name": "decision_flywheel",
+                    "started_at": "2026-08-04T00:06:30Z",
+                    "completed_at": "2026-08-04T00:07:00Z",
+                    "duration_ms": 30000,
+                    "status": "succeeded",
+                    "failure_category": None,
+                    "quality_checks": [],
+                },
+            ],
+        }
+        verified = exporter.build_snapshot(
+            row,
+            now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+            pipeline_run=pipeline_run,
+            pipeline_status_required=True,
+        )
+        self.assertEqual(verified["freshness"]["status"], "fresh")
+        self.assertEqual(verified["pipeline"]["status"], "current")
+        self.assertEqual(verified["pipeline"]["duration_ms"], 120000)
+
+        previous_day = dict(pipeline_run, logical_run_date="2026-08-03")
+        stale_run = exporter.build_snapshot(
+            row,
+            now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+            pipeline_run=previous_day,
+            pipeline_status_required=True,
+        )
+        self.assertEqual(stale_run["freshness"]["status"], "stale")
+        self.assertEqual(stale_run["pipeline"]["status"], "unverified")
+
+    def test_failed_pipeline_run_cannot_report_current(self):
+        row = {
+            key: "2026-08-04"
+            for key in exporter.STAGE_DATE_COLUMNS.values()
+        }
+        failed = exporter.build_snapshot(
+            row,
+            now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+            pipeline_run={
+                "logical_run_date": "2026-08-04",
+                "status": "failed",
+                "failed_stage": "input_validation",
+                "failure_category": "quality_gate_failed",
+                "stages": [],
+            },
+            pipeline_status_required=True,
+        )
+        self.assertEqual(failed["freshness"]["status"], "stale")
+        self.assertEqual(failed["pipeline"]["status"], "failed")
+        self.assertEqual(failed["pipeline"]["failed_stage"], "input_validation")
+
+    def test_pipeline_health_sanitizes_untrusted_public_fields(self):
+        row = {key: "2026-08-04" for key in exporter.STAGE_DATE_COLUMNS.values()}
+        snapshot = exporter.build_snapshot(
+            row,
+            now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+            pipeline_run={
+                "logical_run_date": "2026-08-04",
+                "started_at": "arn:aws:lambda:private",
+                "completed_at": "s3://private/path",
+                "status": "failed",
+                "failed_stage": "private/function/name",
+                "failure_category": "private exception text",
+                "stages": [{"name": "arn:private", "status": "failed"}],
+            },
+            pipeline_status_required=True,
+        )
+        serialized = json.dumps(snapshot["pipeline"]).lower()
+        for forbidden in ("arn:", "s3://", "private/function", "exception text"):
+            self.assertNotIn(forbidden, serialized)
+        self.assertEqual(snapshot["pipeline"]["failure_category"], "unexpected_failure")
 
     def test_committed_fallback_is_explicitly_not_live(self):
         path = ROOT / "offline" / "data" / "ops-snapshot.json"

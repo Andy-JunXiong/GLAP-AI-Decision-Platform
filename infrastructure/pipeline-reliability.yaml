@@ -1,0 +1,417 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  GLAP success-gated pipeline controller and Athena quality gate. The replacement
+  schedule is disabled by default and must not be enabled before controlled
+  failure verification.
+
+Parameters:
+  ArtifactBucket:
+    Type: String
+  ControllerArtifactKey:
+    Type: String
+  QualityGateArtifactKey:
+    Type: String
+  StageStubArtifactKey:
+    Type: String
+  AthenaOutputUri:
+    Type: String
+    AllowedPattern: ^s3://[^/]+/.+$
+  AthenaResultsBucketName:
+    Type: String
+  AthenaResultsPrefix:
+    Type: String
+  SourceBucketArns:
+    Type: CommaDelimitedList
+    Description: Bucket ARNs containing only the required source and Iceberg tables.
+  SourceObjectArns:
+    Type: CommaDelimitedList
+    Description: Prefix-scoped object ARNs containing the required table data.
+  AthenaWorkgroup:
+    Type: String
+    Default: primary
+  CuratedDatabase:
+    Type: String
+    Default: curated_iceberg
+  SourceDatabase:
+    Type: String
+    Default: simulated_iceberg_m
+  GeneratorFunctionName:
+    Type: String
+    Default: glap-daily-incremental-generator-v2
+  IngestFunctionName:
+    Type: String
+    Default: glap-v2-orchestrator
+  DecisionFunctionName:
+    Type: String
+    Default: glap-ai-orchestrator-v1
+  FlywheelFunctionName:
+    Type: String
+    Default: glap-ai-flywheel-orchestrator
+  ControllerFunctionName:
+    Type: String
+    Default: glap-pipeline-controller
+  QualityGateFunctionName:
+    Type: String
+    Default: glap-data-quality-gate
+  StageStubFunctionName:
+    Type: String
+    Default: glap-pipeline-stage-stub-staging
+  ScheduleName:
+    Type: String
+    Default: glap-success-gated-daily
+  ScheduleState:
+    Type: String
+    Default: DISABLED
+    AllowedValues:
+      - DISABLED
+      - ENABLED
+  MaximumVolumeChangePct:
+    Type: Number
+    Default: 50
+    MinValue: 0
+    MaxValue: 1000
+
+Resources:
+  PipelineStatusBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireNoncurrentStatusVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+
+  QualityGateRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: QualityGateReadOnlyQueries
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${QualityGateFunctionName}:*
+              - Sid: RunAthenaChecks
+                Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                  - athena:GetWorkGroup
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AthenaWorkgroup}
+              - Sid: ReadGlueContracts
+                Effect: Allow
+                Action:
+                  - glue:GetDatabase
+                  - glue:GetTable
+                  - glue:GetPartitions
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${CuratedDatabase}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${SourceDatabase}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${CuratedDatabase}/fact_ai_alerts_v3
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${CuratedDatabase}/fact_ai_insights_v3
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${CuratedDatabase}/fact_ai_decisions_v3
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${CuratedDatabase}/fact_ai_actions_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${CuratedDatabase}/fact_ai_outcomes_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${CuratedDatabase}/fact_ai_learning_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_event_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_leg_metrics_core_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_cost_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_risk_v2
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/shipment_product_allocation_v2
+              - Sid: RequestGovernedData
+                Effect: Allow
+                Action: lakeformation:GetDataAccess
+                Resource: "*"
+              - Sid: ListSourceBuckets
+                Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource: !Ref SourceBucketArns
+              - Sid: ReadSourceObjects
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Ref SourceObjectArns
+              - Sid: UseAthenaResultPrefix
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}/${AthenaResultsPrefix}*
+              - Sid: LocateAthenaResultBucket
+                Effect: Allow
+                Action: s3:GetBucketLocation
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}
+
+  QualityGateFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref QualityGateFunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt QualityGateRole.Arn
+      Timeout: 180
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref QualityGateArtifactKey
+      Environment:
+        Variables:
+          ATHENA_DATABASE: !Ref CuratedDatabase
+          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
+          MAX_VOLUME_CHANGE_PCT: !Ref MaximumVolumeChangePct
+
+  StageStubRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: WriteStubLogsOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${StageStubFunctionName}:*
+
+  StageStubFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref StageStubFunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt StageStubRole.Arn
+      Timeout: 30
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref StageStubArtifactKey
+
+  ControllerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeOnlyConfiguredPipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ControllerFunctionName}:*
+              - Sid: InvokePipelineStages
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${GeneratorFunctionName}
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${IngestFunctionName}
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${DecisionFunctionName}
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FlywheelFunctionName}
+                  - !GetAtt QualityGateFunction.Arn
+              - Sid: PublishSanitizedStatus
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub ${PipelineStatusBucket.Arn}/pipeline/latest.json
+
+  ControllerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref ControllerFunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt ControllerRole.Arn
+      Timeout: 900
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref ControllerArtifactKey
+      Environment:
+        Variables:
+          PIPELINE_TIMEZONE: Australia/Sydney
+          PIPELINE_STATUS_S3_URI: !Sub s3://${PipelineStatusBucket}/pipeline/latest.json
+          PIPELINE_STAGES_JSON: !Sub >-
+            [{"name":"generation","function_name":"${GeneratorFunctionName}"},
+            {"name":"raw_to_iceberg","function_name":"${IngestFunctionName}"},
+            {"name":"input_validation","function_name":"${QualityGateFunctionName}","quality_gate":true},
+            {"name":"decision_pipeline","function_name":"${DecisionFunctionName}"},
+            {"name":"decision_flywheel","function_name":"${FlywheelFunctionName}"},
+            {"name":"output_validation","function_name":"${QualityGateFunctionName}","quality_gate":true}]
+
+  PipelineDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
+      MessageRetentionPeriod: 1209600
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeControllerAndUseDlq
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt ControllerFunction.Arn
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt PipelineDeadLetterQueue.Arn
+
+  PipelineSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Ref ScheduleName
+      Description: Success-gated replacement for the separate daily GLAP schedules.
+      State: !Ref ScheduleState
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      ScheduleExpression: cron(5 0 * * ? *)
+      ScheduleExpressionTimezone: Australia/Sydney
+      Target:
+        Arn: !GetAtt ControllerFunction.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: "{}"
+        RetryPolicy:
+          MaximumEventAgeInSeconds: 86400
+          MaximumRetryAttempts: 2
+        DeadLetterConfig:
+          Arn: !GetAtt PipelineDeadLetterQueue.Arn
+
+  ControllerErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: GLAP success-gated controller invocation failed.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ControllerFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  ControllerDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: GLAP success-gated controller duration exceeded 12 minutes.
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ControllerFunction
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 720000
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  QualityGateErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: GLAP Athena data-quality gate invocation failed.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref QualityGateFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  PipelineDlqAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: GLAP success-gated schedule exhausted retries.
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt PipelineDeadLetterQueue.QueueName
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  PipelineStatusS3Uri:
+    Description: Private sanitized status object consumed by the OPS exporter.
+    Value: !Sub s3://${PipelineStatusBucket}/pipeline/latest.json
+  ControllerFunctionArn:
+    Value: !GetAtt ControllerFunction.Arn
+  QualityGateFunctionArn:
+    Value: !GetAtt QualityGateFunction.Arn
+  StageStubFunctionArn:
+    Value: !GetAtt StageStubFunction.Arn
+  ReplacementScheduleName:
+    Value: !Ref PipelineSchedule

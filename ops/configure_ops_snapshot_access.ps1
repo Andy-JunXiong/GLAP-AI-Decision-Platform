@@ -5,7 +5,9 @@ param(
     [string]$Region = "us-east-1",
     [string]$Repository = "Andy-JunXiong/GLAP-AI-Decision-Platform",
     [string]$Environment = "github-pages",
-    [string]$RoleName = "GLAPGithubPagesOpsRead"
+    [string]$RoleName = "GLAPGithubPagesOpsRead",
+    [string]$PipelineStatusS3Uri = "",
+    [switch]$RequirePipelineStatus
 )
 
 $ErrorActionPreference = "Stop"
@@ -70,6 +72,18 @@ if ($adminIdentity.Account -ne $readIdentity.Account) {
     throw "AdminProfile and ReadProfile must target the same AWS account"
 }
 $accountId = $adminIdentity.Account
+
+if ($RequirePipelineStatus -and -not $PipelineStatusS3Uri) {
+    throw "PipelineStatusS3Uri is required when RequirePipelineStatus is set"
+}
+$pipelineStatusLocation = if ($PipelineStatusS3Uri) {
+    ConvertFrom-S3Uri -Value $PipelineStatusS3Uri
+} else {
+    $null
+}
+if ($pipelineStatusLocation -and -not $pipelineStatusLocation.Prefix) {
+    throw "PipelineStatusS3Uri must identify one object, not only a bucket"
+}
 
 $providers = Invoke-AwsJson -Arguments @("iam", "list-open-id-connect-providers") -Profile $AdminProfile
 $githubProviderArn = $providers.OpenIDConnectProviderList.Arn |
@@ -247,6 +261,16 @@ $permissions = @{
         }
     )
 }
+if ($pipelineStatusLocation) {
+    $permissions.Statement += @(
+        @{
+            Sid = "ReadPipelineStatusObject"
+            Effect = "Allow"
+            Action = "s3:GetObject"
+            Resource = "arn:aws:s3:::$($pipelineStatusLocation.Bucket)/$($pipelineStatusLocation.Prefix)"
+        }
+    )
+}
 $permissionsJson = ConvertTo-CompressedJson -Value $permissions
 $permissionsPath = Write-TemporaryJsonFile -Json $permissionsJson
 try {
@@ -305,6 +329,10 @@ $variables = @{
     AWS_OPS_DATABASE = $database
     AWS_OPS_ATHENA_OUTPUT = $athenaOutput
     AWS_OPS_WORKGROUP = $workgroup
+}
+if ($PipelineStatusS3Uri) {
+    $variables.AWS_OPS_PIPELINE_STATUS_URI = $PipelineStatusS3Uri
+    $variables.AWS_OPS_PIPELINE_STATUS_REQUIRED = $(if ($RequirePipelineStatus) { "true" } else { "false" })
 }
 foreach ($entry in $variables.GetEnumerator()) {
     & gh variable set $entry.Key `
