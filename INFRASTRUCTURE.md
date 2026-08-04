@@ -46,11 +46,20 @@ The scheduled public OPS analytics contract reads the current decision flywheel:
 
 - `curated_iceberg.fact_shipment_events_extended_iceberg`
 - `curated_iceberg.fact_ai_alerts_v3`
+- `curated_iceberg.fact_ai_root_causes_v1`
 - `curated_iceberg.fact_ai_insights_v3`
 - `curated_iceberg.fact_ai_decisions_v3`
 - `curated_iceberg.fact_ai_actions_v2`
 - `curated_iceberg.fact_ai_outcomes_v2`
+- `curated_iceberg.fact_ai_learning_feedback_v1`
 - `curated_iceberg.fact_ai_learning_v1`
+- `curated_iceberg.v_ai_latest_decision_trace`
+
+Athena performs the public KPI, distribution, action-completion, outcome, OLS
+trend, residual-interval, and forecast calculations. Shipment volume is anchored
+to the governed logical run date and the Iceberg `dt` partition, so future
+shipment event timestamps do not make the analysis appear to run in the future.
+No new analytics table is created for this public path.
 
 The following v1 tables document the separately deployed deterministic agent
 orchestrator. They are retained as historical contracts but are not used to

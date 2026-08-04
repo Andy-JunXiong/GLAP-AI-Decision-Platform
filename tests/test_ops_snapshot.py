@@ -13,10 +13,54 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(exporter)
 
 
+def athena_forecast_rows():
+    common = {
+        "observed_days": "28",
+        "data_completeness_pct": "100.0",
+        "latest_daily_shipments": "425",
+        "average_daily_shipments": "420.0",
+        "latest_risk_rate_pct": "2.0",
+        "daily_volume_trend_pct": "0.5",
+    }
+    history = [
+        {
+            **common,
+            "row_type": "history",
+            "metric_date": f"2026-07-{day:02d}",
+            "shipments_generated": str(390 + day),
+            "shipments_at_risk": "8",
+            "predicted_shipments_total": None,
+        }
+        for day in range(4, 32)
+    ]
+    forecast = [
+        {
+            **common,
+            "row_type": "forecast",
+            "metric_date": f"2026-08-{day:02d}",
+            "predicted_shipments": str(425 + day),
+            "lower_bound": str(400 + day),
+            "upper_bound": str(450 + day),
+            "predicted_at_risk": "9",
+            "predicted_shipments_total": "3010",
+        }
+        for day in range(4, 11)
+    ]
+    return history + forecast
+
+
 class OpsSnapshotTests(unittest.TestCase):
     def test_query_uses_current_flywheel_contract_tables(self):
-        query = exporter.build_query("curated_iceberg")
-        for table in exporter.CURRENT_CONTRACT_TABLES:
+        query = exporter.build_query("curated_iceberg", "2026-08-04")
+        for table in (
+            "fact_shipment_events_extended_iceberg",
+            "fact_ai_alerts_v3",
+            "fact_ai_insights_v3",
+            "fact_ai_decisions_v3",
+            "fact_ai_actions_v2",
+            "fact_ai_outcomes_v2",
+            "fact_ai_learning_v1",
+        ):
             with self.subTest(table=table):
                 self.assertIn(table, query)
         for legacy_table in (
@@ -27,18 +71,51 @@ class OpsSnapshotTests(unittest.TestCase):
             with self.subTest(legacy_table=legacy_table):
                 self.assertNotIn(legacy_table, query)
         self.assertNotIn("SELECT *", query.upper())
+        self.assertIn("try_cast(dt AS date)", query)
+        self.assertNotIn("max(CAST(event_time AS date))", query)
+        self.assertIn("DATE '2026-08-04'", query)
 
-    def test_history_query_is_bounded_and_aggregate_only(self):
-        query = exporter.build_history_query("curated_iceberg", history_days=28)
+    def test_forecast_query_runs_ols_in_athena_on_logical_dt(self):
+        query = exporter.build_forecast_query(
+            "curated_iceberg", "2026-08-04", history_days=28
+        )
         self.assertIn("date_add('day', -27", query)
         self.assertIn("count(DISTINCT shipment_id)", query)
+        self.assertIn("UNNEST(sequence(1, 7))", query)
+        self.assertIn("residual_sigma", query)
+        self.assertIn("try_cast(dt AS date)", query)
+        self.assertNotIn("max(CAST(event_time AS date))", query)
         self.assertNotIn("SELECT *", query.upper())
         with self.assertRaises(ValueError):
-            exporter.build_history_query("curated_iceberg", history_days=365)
+            exporter.build_forecast_query("curated_iceberg", "2026-08-04", history_days=365)
+
+    def test_existing_analytics_query_reuses_deployed_views(self):
+        query = exporter.build_existing_analytics_query("curated_iceberg", "2026-08-04")
+        for view in exporter.CURRENT_ANALYTICS_VIEWS:
+            with self.subTest(view=view):
+                self.assertIn(view, query)
+        self.assertIn("fact_ai_root_causes_v1", query)
+        self.assertIn("SELECT DISTINCT route_id, carrier, alert_type", query)
+        self.assertNotIn("v_ai_action_distribution", query)
+        self.assertNotIn("v_ai_alert_distribution", query)
+        self.assertIn("DATE '2026-08-04'", query)
 
     def test_rejects_unsafe_database_identifier(self):
         with self.assertRaises(ValueError):
-            exporter.build_query("curated_iceberg; DROP TABLE x")
+            exporter.build_query("curated_iceberg; DROP TABLE x", "2026-08-04")
+        with self.assertRaises(ValueError):
+            exporter.build_query("curated_iceberg", "2026-08-04'; DROP TABLE x")
+
+    def test_analysis_date_prefers_governed_run_and_rejects_future_anchor(self):
+        now = datetime(2026, 8, 4, 2, tzinfo=timezone.utc)
+        self.assertEqual(
+            exporter.resolve_analysis_date({"logical_run_date": "2026-08-04"}, now),
+            datetime(2026, 8, 4).date(),
+        )
+        self.assertEqual(
+            exporter.resolve_analysis_date({"logical_run_date": "2026-08-06"}, now),
+            datetime(2026, 8, 4).date(),
+        )
 
     def test_parses_athena_result(self):
         response = {
@@ -71,23 +148,24 @@ class OpsSnapshotTests(unittest.TestCase):
             "actions_generated": "3",
             "actions_completed": "2",
             "actions_open": "1",
+            "action_completion_rate_pct": "66.7",
             "outcomes_generated": "2",
             "learning_records_generated": "2",
             "avg_outcome_improvement_pct": "12.345",
             "avg_effectiveness_score": "0.84",
             "outcome_success_rate_pct": "75.0",
         }
-        history = [
-            {
-                "metric_date": f"2026-07-{day:02d}" if day <= 31 else f"2026-08-{day - 31:02d}",
-                "shipments_generated": str(400 + day),
-                "shipments_at_risk": "10",
-            }
-            for day in range(7, 35)
+        existing_assets = [
+            {"dimension": "summary", "label": "latest_decision_traces", "metric_count": "5"},
+            {"dimension": "summary", "label": "risk_hotspots_tracked", "metric_count": "12"},
+            {"dimension": "actions", "label": "MONITOR", "metric_count": "81"},
+            {"dimension": "alerts", "label": "SLA_BREACH", "metric_count": "42"},
+            {"dimension": "root_causes", "label": "Carrier delay", "metric_count": "17"},
         ]
         snapshot = exporter.build_snapshot(
             row,
-            history,
+            athena_forecast_rows(),
+            existing_assets,
             now=datetime(2026, 8, 3, 12, tzinfo=timezone.utc),
         )
         self.assertEqual(snapshot["freshness"]["status"], "fresh")
@@ -95,9 +173,16 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["metrics"]["shipments_generated"], 468)
         self.assertEqual(snapshot["metrics"]["actions_generated"], 3)
         self.assertEqual(snapshot["analytics"]["action_completion_rate_pct"], 66.7)
+        self.assertEqual(snapshot["analytics"]["calculation_engine"], "aws_athena_engine_v3")
+        self.assertEqual(snapshot["analytics"]["existing_assets"]["risk_hotspots_tracked"], 12)
+        self.assertEqual(
+            snapshot["analytics"]["existing_assets"]["distributions"]["actions"][0],
+            {"label": "MONITOR", "count": 81},
+        )
         self.assertEqual(snapshot["forecast"]["status"], "ready")
+        self.assertEqual(snapshot["forecast"]["calculation_engine"], "aws_athena_engine_v3")
         self.assertEqual(len(snapshot["forecast"]["points"]), 7)
-        self.assertEqual(snapshot["schema_version"], "1.2")
+        self.assertEqual(snapshot["schema_version"], "1.3")
         serialized = json.dumps(snapshot)
         for forbidden in ("shipment_id", "entity_key", "account_id", "arn:", "s3://"):
             self.assertNotIn(forbidden, serialized.lower())
@@ -255,6 +340,10 @@ class OpsSnapshotTests(unittest.TestCase):
             with self.subTest(table=table):
                 self.assertIn(table, setup)
                 self.assertIn(table, analyst_sql)
+        for view in exporter.CURRENT_ANALYTICS_VIEWS:
+            with self.subTest(view=view):
+                self.assertIn(view, setup)
+                self.assertIn(view, analyst_sql)
         self.assertIn("UNNEST(sequence(1, 7))", analyst_sql)
         self.assertIn("avg_effectiveness_score", analyst_sql)
 

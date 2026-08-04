@@ -72,17 +72,20 @@ Repository checkpoint — 4 August 2026:
 - [ ] Add an append-only audit contract and idempotency keys for all writes.
 - [ ] Keep the public Pages deployment read-only and aggregate-only.
 
-## P2 — Governed operational SQL marts
+## P2 — Governed operational analytics assets
 
-- [ ] Build `mart_ops_daily` for network volume, risk, and flow conversion.
-- [ ] Build `mart_route_performance_daily` for route-level SLA and delay trends.
-- [ ] Build `mart_carrier_performance_daily` for carrier reliability analysis.
-- [ ] Build `mart_decision_effectiveness` for acceptance, execution, outcome, and
-  time-to-value metrics.
-- [ ] Build `mart_forecast_accuracy` for prediction-versus-actual evaluation.
-- [ ] Build `mart_pipeline_health` for stage duration, freshness, and failures.
-- [ ] Add schema tests, uniqueness checks, freshness checks, and documented metric
-  definitions for every mart.
+- [x] Inventory current AWS result tables and reusable analytics views before
+  proposing new marts.
+- [x] Connect daily KPIs, OLS forecast, alert/action/root-cause distributions,
+  and latest decision traces to existing AWS assets.
+- [x] Anchor shipment analysis to the logical run date and `dt`, not future
+  shipment `event_time`.
+- [x] Keep calculations in Athena and GitHub Actions limited to orchestration and
+  aggregate snapshot publication.
+- [ ] Document grain, ownership, and freshness for each remaining internal-only
+  analytics view.
+- [ ] Materialise a new mart only when reconciliation or performance evidence
+  proves the existing assets cannot meet the requirement.
 - [ ] Add Athena cost controls and incremental refresh rules.
 
 ## P3 — Forecast validation and model upgrade
@@ -129,4 +132,4 @@ Repository checkpoint — 4 August 2026:
 
 ## Delivery order
 
-`P0 reliability → P1 write-back → P2 marts → P4 cockpit → P3 model upgrade → P5 production readiness`
+`P0 reliability → P1 write-back → P2 existing-asset analytics → P4 cockpit → P3 model upgrade → P5 production readiness`

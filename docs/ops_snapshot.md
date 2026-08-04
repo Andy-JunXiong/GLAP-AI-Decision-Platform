@@ -7,19 +7,22 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The `1.2` snapshot contains only:
+The `1.3` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
 - current v3/v2 flywheel shipment, alert, root-cause, decision, action, outcome,
   and learning counts;
 - aggregate action-completion and outcome-effectiveness rates;
-- a 28-day total-volume history and transparent seven-day linear baseline;
+- a 28-day total-volume history and transparent seven-day linear baseline,
+  calculated by Athena engine v3;
+- aggregate alert, action, and root-cause distributions from existing AWS result
+  tables, plus the existing latest-decision-trace view count;
 - aggregate pipeline query status and data-completeness checks.
 - optional success-gated pipeline stage timing, completion state, safe failure
   category, quality-check results, and a public runbook link.
 
-It excludes shipment IDs, entity keys, carriers, account IDs, ARNs, S3 paths,
+It excludes shipment IDs, entity keys, routes, carriers, account IDs, ARNs, S3 paths,
 query execution IDs and individual decisions. Forecast points contain only
 daily total volume, a residual interval, and projected at-risk totals. They are
 labelled as a statistical baseline, not an operational commitment.
@@ -48,6 +51,13 @@ Run it after authenticating `gh`, the AWS `default` admin profile, and the
 `codex-readonly` inspection profile. Profile, region, repository, environment,
 and role names can also be supplied as script parameters.
 
+When the GitHub environment variables already exist, update only AWS access
+without requiring a `gh` login:
+
+```powershell
+.\ops\configure_ops_snapshot_access.ps1 -SkipGitHubVariables
+```
+
 Configure these repository variables before enabling the AWS export step:
 
 | Variable | Purpose |
@@ -60,16 +70,26 @@ Configure these repository variables before enabling the AWS export step:
 | `AWS_OPS_PIPELINE_STATUS_REQUIRED` | Set to `true` only after the controller and read permission are deployed |
 
 The role should trust the repository's GitHub OIDC subject for the
-`github-pages` environment and grant only the reads required for the seven
-verified current-flywheel tables, plus Athena execution/status and the private
-query-result prefix. It does not need permission to mutate Lambda aliases,
-schedules, Iceberg tables, or production decisions.
+`github-pages` environment and grant only the reads required for the allowlisted
+current-flywheel tables and `v_ai_latest_decision_trace`, plus Athena
+execution/status and the private query-result prefix. It does not need
+permission to mutate Lambda aliases, schedules, Iceberg tables, or production
+decisions.
 
-The published contract intentionally reads `fact_ai_alerts_v3`,
-`fact_ai_insights_v3`, `fact_ai_decisions_v3`, `fact_ai_actions_v2`,
-`fact_ai_outcomes_v2`, and `fact_ai_learning_v1`. The March 2026 anomaly,
-root-cause, and decision v1 tables remain historical contracts and are not used
-to claim current pipeline health.
+The published contract intentionally reuses `fact_ai_alerts_v3`,
+`fact_ai_root_causes_v1`, `fact_ai_insights_v3`, `fact_ai_decisions_v3`,
+`fact_ai_actions_v2`, `fact_ai_outcomes_v2`, `fact_ai_learning_feedback_v1`,
+`fact_ai_learning_v1`, and `v_ai_latest_decision_trace`. It does not create a
+new analytics table or duplicate an existing result. Historical distribution
+views with multi-stage joins are not used by the public snapshot because their
+grain can fan out one alert into multiple joined rows.
+
+The governed analysis date is the successful pipeline logical run date. Shipment
+volume is grouped by the Iceberg `dt` batch partition; a shipment's future
+`event_time` does not move the analysis date forward. All KPI, distribution,
+completion-rate, OLS trend, residual interval, and forecast calculations run in
+Athena. GitHub Actions only assumes the read role, starts those queries, validates
+the aggregate response contract, and publishes the JSON artifact.
 
 The inspected current daily path runs shipment generation at 00:05 and the v2
 orchestrator at 00:30 in `Australia/Sydney`. The Pages refresh runs later and
@@ -110,8 +130,9 @@ python ops/export_ops_snapshot.py --output offline/data/ops-snapshot.json
 ```
 
 The exporter queries only the allowlisted contracts in
-`ops/export_ops_snapshot.py`. Reusable private analyst queries and the matching
-seven-day forecast baseline are documented in `sql/03_ops_analytics.sql`.
+`ops/export_ops_snapshot.py`. Reusable private analyst queries, the existing
+asset inventory, and the matching seven-day forecast baseline are documented in
+`sql/03_ops_analytics.sql`.
 
 ## Next boundary
 

@@ -58,6 +58,12 @@ class OfflineDemoTests(unittest.TestCase):
             'id="analyticsForecastTotal"',
             'id="forecastChart"',
             'id="stageFreshness"',
+            'id="latestDecisionTraces"',
+            'id="riskHotspotsTracked"',
+            'id="alertDistribution"',
+            'id="actionDistribution"',
+            'id="rootCauseDistribution"',
+            "AWS EXISTING ASSETS",
             "ordinary_least_squares_28d",
             "renderAnalytics(snapshot)",
         ):

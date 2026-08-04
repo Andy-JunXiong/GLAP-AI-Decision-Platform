@@ -8,7 +8,7 @@ entity keys, routes, carriers, query locations, account identifiers, or ARNs.
 from __future__ import annotations
 
 import argparse
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 import json
 import math
 import os
@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import time
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 DEFAULT_DATABASE = "curated_iceberg"
@@ -26,6 +27,7 @@ MAX_STAGE_LAG_DAYS = 1
 TERMINAL_FAILURE_STATES = {"FAILED", "CANCELLED"}
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 SAFE_PUBLIC_STAGE = re.compile(r"^[a-z][a-z0-9_]{1,47}$")
+SAFE_ANALYTIC_LABEL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _./&()'\-]{0,79}$")
 PIPELINE_RUN_SUCCESS = {"success", "succeeded"}
 PIPELINE_QUALITY_CHECKS = {
     "missing_dates",
@@ -50,11 +52,17 @@ PIPELINE_RUNBOOK_URL = (
 CURRENT_CONTRACT_TABLES = (
     "fact_shipment_events_extended_iceberg",
     "fact_ai_alerts_v3",
+    "fact_ai_root_causes_v1",
     "fact_ai_insights_v3",
     "fact_ai_decisions_v3",
     "fact_ai_actions_v2",
     "fact_ai_outcomes_v2",
+    "fact_ai_learning_feedback_v1",
     "fact_ai_learning_v1",
+)
+
+CURRENT_ANALYTICS_VIEWS = (
+    "v_ai_latest_decision_trace",
 )
 
 STAGE_DATE_COLUMNS = {
@@ -74,7 +82,42 @@ def validate_identifier(value: str, label: str) -> str:
     return value
 
 
-def build_query(database: str) -> str:
+def validate_logical_date(value: str | date) -> date:
+    if isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("logical date must use YYYY-MM-DD") from exc
+
+
+def resolve_analysis_date(
+    pipeline_run: dict[str, Any] | None,
+    now: datetime | None = None,
+) -> date:
+    """Use the governed run date, never a future event timestamp, as the anchor."""
+
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    try:
+        current_sydney_date = now.astimezone(ZoneInfo("Australia/Sydney")).date()
+    except ZoneInfoNotFoundError:
+        # Minimal Windows Python installations may omit the IANA tz database.
+        # The governed pipeline date remains authoritative; UTC is only the
+        # conservative fallback when no run contract is available.
+        current_sydney_date = now.astimezone(timezone.utc).date()
+    if pipeline_run:
+        try:
+            logical_date = validate_logical_date(str(pipeline_run.get("logical_run_date") or ""))
+        except ValueError:
+            logical_date = None
+        if logical_date and logical_date <= current_sydney_date:
+            return logical_date
+    return current_sydney_date
+
+
+def build_query(database: str, logical_run_date: str | date) -> str:
     """Build the current-flywheel KPI query.
 
     Counts are taken at each stage's own latest logical run date. The returned
@@ -82,28 +125,40 @@ def build_query(database: str) -> str:
     """
 
     database = validate_identifier(database, "Athena database")
+    logical_date = validate_logical_date(logical_run_date).isoformat()
     return f"""
-WITH latest_shipment AS (
-    SELECT max(CAST(event_time AS date)) AS run_date
+WITH params AS (
+    SELECT DATE '{logical_date}' AS logical_run_date
+),
+latest_shipment AS (
+    SELECT max(try_cast(dt AS date)) AS run_date
     FROM {database}.fact_shipment_events_extended_iceberg
+    CROSS JOIN params
+    WHERE try_cast(dt AS date) <= params.logical_run_date
 ),
 latest_alert AS (
-    SELECT max(run_date) AS run_date FROM {database}.fact_ai_alerts_v3
+    SELECT max(run_date) AS run_date FROM {database}.fact_ai_alerts_v3 CROSS JOIN params
+    WHERE run_date <= params.logical_run_date
 ),
 latest_insight AS (
-    SELECT max(run_date) AS run_date FROM {database}.fact_ai_insights_v3
+    SELECT max(run_date) AS run_date FROM {database}.fact_ai_insights_v3 CROSS JOIN params
+    WHERE run_date <= params.logical_run_date
 ),
 latest_decision AS (
-    SELECT max(run_date) AS run_date FROM {database}.fact_ai_decisions_v3
+    SELECT max(run_date) AS run_date FROM {database}.fact_ai_decisions_v3 CROSS JOIN params
+    WHERE run_date <= params.logical_run_date
 ),
 latest_action AS (
-    SELECT max(run_date) AS run_date FROM {database}.fact_ai_actions_v2
+    SELECT max(run_date) AS run_date FROM {database}.fact_ai_actions_v2 CROSS JOIN params
+    WHERE run_date <= params.logical_run_date
 ),
 latest_outcome AS (
-    SELECT max(run_date) AS run_date FROM {database}.fact_ai_outcomes_v2
+    SELECT max(run_date) AS run_date FROM {database}.fact_ai_outcomes_v2 CROSS JOIN params
+    WHERE run_date <= params.logical_run_date
 ),
 latest_learning AS (
-    SELECT max(run_date) AS run_date FROM {database}.fact_ai_learning_v1
+    SELECT max(run_date) AS run_date FROM {database}.fact_ai_learning_v1 CROSS JOIN params
+    WHERE run_date <= params.logical_run_date
 ),
 shipment_counts AS (
     SELECT
@@ -113,7 +168,7 @@ shipment_counts AS (
             THEN shipment_id END) AS shipments_at_risk
     FROM {database}.fact_shipment_events_extended_iceberg
     CROSS JOIN latest_shipment
-    WHERE CAST(event_time AS date) = latest_shipment.run_date
+    WHERE try_cast(dt AS date) = latest_shipment.run_date
 ),
 alert_counts AS (
     SELECT count(*) AS alerts_generated
@@ -136,7 +191,10 @@ action_counts AS (
         sum(CASE WHEN upper(coalesce(status, '')) IN
             ('COMPLETED', 'EXECUTED', 'CLOSED', 'DONE') THEN 1 ELSE 0 END) AS actions_completed,
         sum(CASE WHEN upper(coalesce(status, '')) NOT IN
-            ('COMPLETED', 'EXECUTED', 'CLOSED', 'DONE') THEN 1 ELSE 0 END) AS actions_open
+            ('COMPLETED', 'EXECUTED', 'CLOSED', 'DONE') THEN 1 ELSE 0 END) AS actions_open,
+        100.0 * sum(CASE WHEN upper(coalesce(status, '')) IN
+            ('COMPLETED', 'EXECUTED', 'CLOSED', 'DONE') THEN 1 ELSE 0 END)
+            / nullif(count(*), 0) AS action_completion_rate_pct
     FROM {database}.fact_ai_actions_v2 CROSS JOIN latest_action
     WHERE fact_ai_actions_v2.run_date = latest_action.run_date
 ),
@@ -163,6 +221,7 @@ SELECT
     CAST(latest_action.run_date AS varchar) AS latest_action_date,
     CAST(latest_outcome.run_date AS varchar) AS latest_outcome_date,
     CAST(latest_learning.run_date AS varchar) AS latest_learning_date,
+    CAST(params.logical_run_date AS varchar) AS analysis_date,
     shipments_generated,
     shipments_at_risk,
     alerts_generated,
@@ -171,12 +230,14 @@ SELECT
     actions_generated,
     actions_completed,
     actions_open,
+    action_completion_rate_pct,
     outcomes_generated,
     learning_records_generated,
     avg_outcome_improvement_pct,
     avg_effectiveness_score,
     outcome_success_rate_pct
 FROM latest_shipment
+CROSS JOIN params
 CROSS JOIN latest_alert
 CROSS JOIN latest_insight
 CROSS JOIN latest_decision
@@ -193,29 +254,218 @@ CROSS JOIN learning_counts
 """.strip()
 
 
-def build_history_query(database: str, history_days: int = HISTORY_DAYS) -> str:
-    """Build a public-safe daily shipment history query for forecasting."""
+def build_forecast_query(
+    database: str,
+    logical_run_date: str | date,
+    history_days: int = HISTORY_DAYS,
+    horizon_days: int = FORECAST_HORIZON_DAYS,
+) -> str:
+    """Build the AWS Athena OLS baseline and its public-safe history."""
 
     database = validate_identifier(database, "Athena database")
     if not 7 <= history_days <= 90:
         raise ValueError("history_days must be between 7 and 90")
+    if not 1 <= horizon_days <= 30:
+        raise ValueError("horizon_days must be between 1 and 30")
+    logical_date = validate_logical_date(logical_run_date).isoformat()
     return f"""
-WITH latest AS (
-    SELECT max(CAST(event_time AS date)) AS latest_date
+WITH params AS (
+    SELECT DATE '{logical_date}' AS analysis_date
+),
+calendar AS (
+    SELECT
+        CAST(day AS date) AS day,
+        row_number() OVER (ORDER BY day) - 1 AS x
+    FROM params
+    CROSS JOIN UNNEST(
+        sequence(date_add('day', -{history_days - 1}, analysis_date), analysis_date, INTERVAL '1' DAY)
+    ) AS dates(day)
+),
+observed AS (
+    SELECT
+        try_cast(dt AS date) AS day,
+        count(DISTINCT shipment_id) AS shipments,
+        count(DISTINCT CASE
+            WHEN upper(status) IN ('AT_RISK', 'BREACHED', 'DELAYED', 'EXCEPTION')
+            THEN shipment_id END) AS shipments_at_risk
     FROM {database}.fact_shipment_events_extended_iceberg
+    CROSS JOIN params
+    WHERE try_cast(dt AS date)
+        BETWEEN date_add('day', -{history_days - 1}, analysis_date) AND analysis_date
+    GROUP BY try_cast(dt AS date)
+),
+series AS (
+    SELECT
+        calendar.day,
+        calendar.x,
+        coalesce(observed.shipments, 0) AS shipments,
+        coalesce(observed.shipments_at_risk, 0) AS shipments_at_risk,
+        CASE WHEN observed.day IS NULL THEN 0 ELSE 1 END AS observed_flag
+    FROM calendar
+    LEFT JOIN observed ON calendar.day = observed.day
+),
+terms AS (
+    SELECT
+        count(*) AS n,
+        sum(CAST(x AS double)) AS sum_x,
+        sum(CAST(shipments AS double)) AS sum_y,
+        sum(CAST(x AS double) * CAST(shipments AS double)) AS sum_xy,
+        sum(CAST(x AS double) * CAST(x AS double)) AS sum_xx
+    FROM series
+),
+model AS (
+    SELECT
+        (n * sum_xy - sum_x * sum_y) / nullif(n * sum_xx - sum_x * sum_x, 0) AS slope,
+        (sum_y - ((n * sum_xy - sum_x * sum_y)
+            / nullif(n * sum_xx - sum_x * sum_x, 0)) * sum_x) / n AS intercept,
+        n
+    FROM terms
+),
+residual AS (
+    SELECT
+        sqrt(sum(power(CAST(series.shipments AS double)
+            - (model.intercept + model.slope * series.x), 2)) / greatest(1, model.n - 2))
+            AS residual_sigma
+    FROM series
+    CROSS JOIN model
+    GROUP BY model.n
+),
+summary AS (
+    SELECT
+        sum(observed_flag) AS observed_days,
+        round(100.0 * sum(observed_flag) / count(*), 1) AS data_completeness_pct,
+        CAST(sum(CASE WHEN day = params.analysis_date THEN shipments ELSE 0 END) AS bigint)
+            AS latest_daily_shipments,
+        round(avg(CAST(shipments AS double)), 1) AS average_daily_shipments,
+        round(100.0 * sum(CASE WHEN day = params.analysis_date THEN shipments_at_risk ELSE 0 END)
+            / nullif(sum(CASE WHEN day = params.analysis_date THEN shipments ELSE 0 END), 0), 1)
+            AS latest_risk_rate_pct,
+        round(100.0 * model.slope / nullif(avg(CAST(shipments AS double)), 0), 2)
+            AS daily_volume_trend_pct
+    FROM series
+    CROSS JOIN params
+    CROSS JOIN model
+    GROUP BY params.analysis_date, model.slope
+),
+forecast_points AS (
+    SELECT
+        date_add('day', horizon, params.analysis_date) AS metric_date,
+        greatest(0, CAST(round(model.intercept + model.slope * ({history_days - 1} + horizon)) AS bigint))
+            AS predicted_shipments,
+        greatest(1, CAST(round(1.96 * residual.residual_sigma) AS bigint)) AS interval_size
+    FROM params
+    CROSS JOIN model
+    CROSS JOIN residual
+    CROSS JOIN UNNEST(sequence(1, {horizon_days})) AS future(horizon)
+),
+forecast AS (
+    SELECT
+        metric_date,
+        predicted_shipments,
+        greatest(0, predicted_shipments - interval_size) AS lower_bound,
+        predicted_shipments + interval_size AS upper_bound,
+        CAST(round(predicted_shipments * coalesce(summary.latest_risk_rate_pct, 0) / 100.0) AS bigint)
+            AS predicted_at_risk,
+        sum(predicted_shipments) OVER () AS predicted_shipments_total
+    FROM forecast_points
+    CROSS JOIN summary
 )
 SELECT
-    CAST(CAST(event_time AS date) AS varchar) AS metric_date,
-    count(DISTINCT shipment_id) AS shipments_generated,
-    count(DISTINCT CASE
-        WHEN upper(status) IN ('AT_RISK', 'BREACHED', 'DELAYED', 'EXCEPTION')
-        THEN shipment_id END) AS shipments_at_risk
-FROM {database}.fact_shipment_events_extended_iceberg
-CROSS JOIN latest
-WHERE CAST(event_time AS date)
-    BETWEEN date_add('day', -{history_days - 1}, latest.latest_date) AND latest.latest_date
-GROUP BY CAST(event_time AS date)
-ORDER BY CAST(event_time AS date)
+    'history' AS row_type,
+    CAST(CAST(series.day AS date) AS varchar) AS metric_date,
+    CAST(series.shipments AS bigint) AS shipments_generated,
+    CAST(series.shipments_at_risk AS bigint) AS shipments_at_risk,
+    CAST(NULL AS bigint) AS predicted_shipments,
+    CAST(NULL AS bigint) AS lower_bound,
+    CAST(NULL AS bigint) AS upper_bound,
+    CAST(NULL AS bigint) AS predicted_at_risk,
+    CAST(summary.observed_days AS bigint) AS observed_days,
+    summary.data_completeness_pct,
+    summary.latest_daily_shipments,
+    summary.average_daily_shipments,
+    summary.latest_risk_rate_pct,
+    summary.daily_volume_trend_pct,
+    CAST(NULL AS bigint) AS predicted_shipments_total
+FROM series
+CROSS JOIN summary
+UNION ALL
+SELECT
+    'forecast',
+    CAST(forecast.metric_date AS varchar),
+    CAST(NULL AS bigint),
+    CAST(NULL AS bigint),
+    forecast.predicted_shipments,
+    forecast.lower_bound,
+    forecast.upper_bound,
+    forecast.predicted_at_risk,
+    CAST(summary.observed_days AS bigint),
+    summary.data_completeness_pct,
+    summary.latest_daily_shipments,
+    summary.average_daily_shipments,
+    summary.latest_risk_rate_pct,
+    summary.daily_volume_trend_pct,
+    forecast.predicted_shipments_total
+FROM forecast
+CROSS JOIN summary
+ORDER BY metric_date
+""".strip()
+
+
+def build_existing_analytics_query(database: str, logical_run_date: str | date) -> str:
+    """Aggregate already-recorded result tables at one governed run date."""
+
+    database = validate_identifier(database, "Athena database")
+    logical_date = validate_logical_date(logical_run_date).isoformat()
+    return f"""
+WITH params AS (
+    SELECT DATE '{logical_date}' AS logical_run_date
+),
+distributions AS (
+    SELECT 'alerts' AS dimension, coalesce(alert_type, 'UNKNOWN') AS label,
+        count(*) AS metric_count
+    FROM {database}.fact_ai_alerts_v3
+    CROSS JOIN params
+    WHERE run_date = params.logical_run_date
+    GROUP BY alert_type
+    UNION ALL
+    SELECT 'actions', coalesce(action_type, 'UNKNOWN'), count(*)
+    FROM {database}.fact_ai_decisions_v3
+    CROSS JOIN params
+    WHERE run_date = params.logical_run_date
+    GROUP BY action_type
+    UNION ALL
+    SELECT 'root_causes', coalesce(root_cause_title, 'UNKNOWN'), count(*)
+    FROM {database}.fact_ai_root_causes_v1
+    CROSS JOIN params
+    WHERE run_date = params.logical_run_date
+    GROUP BY root_cause_title
+),
+ranked AS (
+    SELECT dimension, label, metric_count,
+        row_number() OVER (PARTITION BY dimension ORDER BY metric_count DESC, label) AS rank
+    FROM distributions
+),
+summary AS (
+    SELECT 'summary' AS dimension, 'latest_decision_traces' AS label, count(*) AS metric_count
+    FROM {database}.v_ai_latest_decision_trace
+    CROSS JOIN params
+    WHERE run_date = params.logical_run_date
+    UNION ALL
+    SELECT 'summary', 'risk_hotspots_tracked', count(*)
+    FROM (
+        SELECT DISTINCT route_id, carrier, alert_type
+        FROM {database}.fact_ai_alerts_v3
+        CROSS JOIN params
+        WHERE run_date = params.logical_run_date
+    )
+)
+SELECT dimension, label, metric_count
+FROM ranked
+WHERE rank <= 6
+UNION ALL
+SELECT dimension, label, metric_count
+FROM summary
+ORDER BY dimension, metric_count DESC, label
 """.strip()
 
 
@@ -401,111 +651,89 @@ def _safe_pipeline_health(
     )
 
 
-def build_volume_forecast(
-    history_rows: list[dict[str, str | None]],
+def parse_forecast_rows(
+    rows: list[dict[str, str | None]],
     history_days: int = HISTORY_DAYS,
     horizon_days: int = FORECAST_HORIZON_DAYS,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build a deterministic OLS daily-volume baseline and public analytics."""
+    """Validate and package values already calculated by Athena."""
 
-    if not history_rows:
-        return (
-            {
-                "window_days": history_days,
-                "observed_days": 0,
-                "data_completeness_pct": 0.0,
-                "latest_daily_shipments": None,
-                "latest_risk_rate_pct": None,
-            },
-            {
-                "status": "insufficient_data",
-                "method": "ordinary_least_squares_28d",
-                "horizon_days": horizon_days,
-                "points": [],
-                "history": [],
-            },
-        )
-
-    observed: dict[date, tuple[int, int]] = {}
-    for row in history_rows:
-        metric_date = _date(row.get("metric_date"))
-        if metric_date is None:
-            continue
-        observed[metric_date] = (
-            _optional_int(row.get("shipments_generated")) or 0,
-            _optional_int(row.get("shipments_at_risk")) or 0,
-        )
-    if not observed:
-        return build_volume_forecast([], history_days, horizon_days)
-
-    anchor = max(observed)
-    start = anchor - timedelta(days=history_days - 1)
-    dates = [start + timedelta(days=index) for index in range(history_days)]
-    volumes = [float(observed.get(day, (0, 0))[0]) for day in dates]
-    risks = [observed.get(day, (0, 0))[1] for day in dates]
-    x_values = list(range(history_days))
-    x_mean = sum(x_values) / history_days
-    y_mean = sum(volumes) / history_days
-    denominator = sum((x - x_mean) ** 2 for x in x_values)
-    slope = (
-        sum((x - x_mean) * (y - y_mean) for x, y in zip(x_values, volumes)) / denominator
-        if denominator
-        else 0.0
-    )
-    intercept = y_mean - slope * x_mean
-    residuals = [y - (intercept + slope * x) for x, y in zip(x_values, volumes)]
-    residual_sigma = math.sqrt(sum(value * value for value in residuals) / max(1, history_days - 2))
-    latest_volume = int(volumes[-1])
-    latest_risk = risks[-1]
-    latest_risk_rate = 100.0 * latest_risk / latest_volume if latest_volume else 0.0
-
-    points = []
-    for horizon in range(1, horizon_days + 1):
-        predicted = max(0, int(round(intercept + slope * (history_days - 1 + horizon))))
-        interval = max(1, int(round(1.96 * residual_sigma)))
-        points.append(
-            {
-                "date": (anchor + timedelta(days=horizon)).isoformat(),
-                "predicted_shipments": predicted,
-                "lower_bound": max(0, predicted - interval),
-                "upper_bound": predicted + interval,
-                "predicted_at_risk": int(round(predicted * latest_risk_rate / 100.0)),
-            }
-        )
-
-    observed_days = sum(1 for day in dates if day in observed)
+    history_rows = [row for row in rows if row.get("row_type") == "history"]
+    forecast_rows = [row for row in rows if row.get("row_type") == "forecast"]
+    summary = (forecast_rows or history_rows or [{}])[0]
+    observed_days = _optional_int(summary.get("observed_days")) or 0
     analytics = {
         "window_days": history_days,
         "observed_days": observed_days,
-        "data_completeness_pct": round(100.0 * observed_days / history_days, 1),
-        "latest_daily_shipments": latest_volume,
-        "average_daily_shipments": round(y_mean, 1),
-        "latest_risk_rate_pct": round(latest_risk_rate, 1),
-        "daily_volume_trend_pct": round(100.0 * slope / y_mean, 2) if y_mean else 0.0,
+        "data_completeness_pct": _optional_float(summary.get("data_completeness_pct"), 1) or 0.0,
+        "latest_daily_shipments": _optional_int(summary.get("latest_daily_shipments")),
+        "average_daily_shipments": _optional_float(summary.get("average_daily_shipments"), 1),
+        "latest_risk_rate_pct": _optional_float(summary.get("latest_risk_rate_pct"), 1),
+        "daily_volume_trend_pct": _optional_float(summary.get("daily_volume_trend_pct"), 2),
+        "calculation_engine": "aws_athena_engine_v3",
+        "date_anchor": "logical_run_date_dt",
     }
+    points = [
+        {
+            "date": row.get("metric_date"),
+            "predicted_shipments": _optional_int(row.get("predicted_shipments")),
+            "lower_bound": _optional_int(row.get("lower_bound")),
+            "upper_bound": _optional_int(row.get("upper_bound")),
+            "predicted_at_risk": _optional_int(row.get("predicted_at_risk")),
+        }
+        for row in forecast_rows
+        if _date(row.get("metric_date")) is not None
+    ]
+    history = [
+        {
+            "date": row.get("metric_date"),
+            "shipments": _optional_int(row.get("shipments_generated")) or 0,
+            "shipments_at_risk": _optional_int(row.get("shipments_at_risk")) or 0,
+        }
+        for row in history_rows[-14:]
+        if _date(row.get("metric_date")) is not None
+    ]
     forecast = {
-        "status": "ready" if observed_days >= 7 else "insufficient_data",
+        "status": "ready" if observed_days >= 7 and len(points) == horizon_days else "insufficient_data",
         "method": "ordinary_least_squares_28d",
-        "method_label": "28-day linear trend baseline",
+        "method_label": "28-day Athena OLS baseline",
+        "calculation_engine": "aws_athena_engine_v3",
         "horizon_days": horizon_days,
-        "predicted_shipments_7d": sum(point["predicted_shipments"] for point in points),
+        "predicted_shipments_7d": _optional_int(summary.get("predicted_shipments_total")),
         "points": points,
-        "history": [
-            {
-                "date": day.isoformat(),
-                "shipments": int(volume),
-                "shipments_at_risk": risk,
-            }
-            for day, volume, risk in zip(dates[-14:], volumes[-14:], risks[-14:])
-        ],
-        "disclosure": "Statistical baseline, not a committed operational target or autonomous decision.",
+        "history": history,
+        "disclosure": "AWS Athena statistical baseline, not a committed operational target or autonomous decision.",
     }
     return analytics, forecast
 
 
+def parse_existing_analytics(rows: list[dict[str, str | None]]) -> dict[str, Any]:
+    """Package aggregate-only results from the already-deployed v_ai views."""
+
+    result: dict[str, Any] = {
+        "source": "existing_athena_result_tables",
+        "latest_decision_traces": 0,
+        "risk_hotspots_tracked": 0,
+        "distributions": {"alerts": [], "actions": [], "root_causes": []},
+    }
+    for row in rows:
+        dimension = str(row.get("dimension") or "")
+        label = str(row.get("label") or "")
+        metric_count = _optional_int(row.get("metric_count")) or 0
+        if dimension == "summary" and label in {
+            "latest_decision_traces",
+            "risk_hotspots_tracked",
+        }:
+            result[label] = metric_count
+        elif dimension in result["distributions"] and SAFE_ANALYTIC_LABEL.fullmatch(label):
+            result["distributions"][dimension].append({"label": label, "count": metric_count})
+    return result
+
+
 def build_snapshot(
     row: dict[str, str | None],
-    history_rows: list[dict[str, str | None]] | None = None,
+    forecast_rows: list[dict[str, str | None]] | None = None,
+    existing_analytics_rows: list[dict[str, str | None]] | None = None,
     now: datetime | None = None,
     pipeline_run: dict[str, Any] | None = None,
     pipeline_status_required: bool = False,
@@ -553,30 +781,27 @@ def build_snapshot(
         "outcomes_generated": _optional_int(row.get("outcomes_generated")),
         "learning_records_generated": _optional_int(row.get("learning_records_generated")),
     }
-    analytics, forecast = build_volume_forecast(history_rows or [])
+    analytics, forecast = parse_forecast_rows(forecast_rows or [])
     analytics.update(
         {
-            "action_completion_rate_pct": round(
-                100.0 * (metrics["actions_completed"] or 0) / metrics["actions_generated"], 1
-            )
-            if metrics["actions_generated"]
-            else None,
+            "action_completion_rate_pct": _optional_float(row.get("action_completion_rate_pct"), 1),
             "outcome_success_rate_pct": _optional_float(row.get("outcome_success_rate_pct"), 1),
             "avg_outcome_improvement_pct": _optional_float(row.get("avg_outcome_improvement_pct"), 1),
             "avg_effectiveness_score": _optional_float(row.get("avg_effectiveness_score"), 2),
             "max_stage_lag_days": max_stage_lag,
+            "existing_assets": parse_existing_analytics(existing_analytics_rows or []),
         }
     )
 
     return {
-        "schema_version": "1.2",
+        "schema_version": "1.3",
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "source_updated_at": source_updated_at.isoformat().replace("+00:00", "Z"),
         "as_of_date": newest_date.isoformat(),
         "provenance": {
             "source_type": "athena_iceberg_aggregate",
-            "connection": "scheduled_github_oidc_export",
-            "label": "Scheduled AWS OPS analytics",
+            "connection": "aws_athena_existing_assets_via_github_oidc",
+            "label": "AWS Athena existing-asset analytics",
             "is_connected": True,
             "disclosure": "Public-safe aggregate analytics; no operational records or identifiers are exported.",
         },
@@ -601,8 +826,8 @@ def build_snapshot(
                 )
             ),
             "max_stage_lag_days": max_stage_lag,
-            "query_checks_succeeded": 2,
-            "query_checks_total": 2,
+            "query_checks_succeeded": 3,
+            "query_checks_total": 3,
         },
     }
 
@@ -656,9 +881,6 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
         raise ValueError("ATHENA_OUTPUT is required")
 
     region = os.getenv("AWS_REGION", "us-east-1")
-    client = boto3.client("athena", region_name=region)
-    metric_response = run_query(client, build_query(database), database, output, workgroup)
-    history_response = run_query(client, build_history_query(database), database, output, workgroup)
     pipeline_status_uri = os.getenv("PIPELINE_STATUS_S3_URI")
     pipeline_status_required = os.getenv("PIPELINE_STATUS_REQUIRED", "false").lower() == "true"
     pipeline_run = None
@@ -673,9 +895,25 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
             # Required verification fails closed while still allowing Pages to
             # publish an explicit stale/unverified state.
             pipeline_run = None
+    analysis_date = resolve_analysis_date(pipeline_run)
+    client = boto3.client("athena", region_name=region)
+    metric_response = run_query(
+        client, build_query(database, analysis_date), database, output, workgroup
+    )
+    forecast_response = run_query(
+        client, build_forecast_query(database, analysis_date), database, output, workgroup
+    )
+    existing_analytics_response = run_query(
+        client,
+        build_existing_analytics_query(database, analysis_date),
+        database,
+        output,
+        workgroup,
+    )
     snapshot = build_snapshot(
         parse_athena_result(metric_response),
-        parse_athena_rows(history_response),
+        parse_athena_rows(forecast_response),
+        parse_athena_rows(existing_analytics_response),
         pipeline_run=pipeline_run,
         pipeline_status_required=pipeline_status_required,
     )

@@ -7,7 +7,8 @@ param(
     [string]$Environment = "github-pages",
     [string]$RoleName = "GLAPGithubPagesOpsRead",
     [string]$PipelineStatusS3Uri = "",
-    [switch]$RequirePipelineStatus
+    [switch]$RequirePipelineStatus,
+    [switch]$SkipGitHubVariables
 )
 
 $ErrorActionPreference = "Stop"
@@ -115,12 +116,18 @@ if (-not $athenaOutput) {
 $tables = @(
     "fact_shipment_events_extended_iceberg",
     "fact_ai_alerts_v3",
+    "fact_ai_root_causes_v1",
     "fact_ai_insights_v3",
     "fact_ai_decisions_v3",
     "fact_ai_actions_v2",
     "fact_ai_outcomes_v2",
+    "fact_ai_learning_feedback_v1",
     "fact_ai_learning_v1"
 )
+$views = @(
+    "v_ai_latest_decision_trace"
+)
+$catalogObjects = $tables + $views
 $dataLocations = foreach ($tableName in $tables) {
     $table = Invoke-AwsJson -Arguments @(
         "glue", "get-table",
@@ -227,7 +234,7 @@ $permissions = @{
             Resource = @(
                 "arn:aws:glue:${Region}:${accountId}:catalog",
                 "arn:aws:glue:${Region}:${accountId}:database/${database}"
-            ) + ($tables | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${database}/$_" })
+            ) + ($catalogObjects | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${database}/$_" })
         },
         @{
             Sid = "RequestGovernedTableData"
@@ -304,7 +311,7 @@ try {
     Remove-Item -LiteralPath $databaseResourcePath -Force -ErrorAction SilentlyContinue
 }
 if (-not $databaseGrant) { $lakeFormationGranted = $false }
-foreach ($tableName in $tables) {
+foreach ($tableName in $catalogObjects) {
     $tableResource = ConvertTo-CompressedJson -Value @{
         Table = @{ DatabaseName = $database; Name = $tableName }
     }
@@ -334,16 +341,18 @@ if ($PipelineStatusS3Uri) {
     $variables.AWS_OPS_PIPELINE_STATUS_URI = $PipelineStatusS3Uri
     $variables.AWS_OPS_PIPELINE_STATUS_REQUIRED = $(if ($RequirePipelineStatus) { "true" } else { "false" })
 }
-foreach ($entry in $variables.GetEnumerator()) {
-    & gh variable set $entry.Key `
-        --env $Environment `
-        --repo $Repository `
-        --body $entry.Value
-    if ($LASTEXITCODE -ne 0) { throw "Failed to set GitHub environment variable $($entry.Key)" }
+if (-not $SkipGitHubVariables) {
+    foreach ($entry in $variables.GetEnumerator()) {
+        & gh variable set $entry.Key `
+            --env $Environment `
+            --repo $Repository `
+            --body $entry.Value
+        if ($LASTEXITCODE -ne 0) { throw "Failed to set GitHub environment variable $($entry.Key)" }
+    }
 }
 
 Write-Output "OPS read role: $roleAction"
 Write-Output "Inline least-privilege policy: configured"
 Write-Output "Lake Formation named-resource grants: $(if ($lakeFormationGranted) { 'configured' } else { 'not required or not permitted; verify only if Athena reports Lake Formation denial' })"
-Write-Output "GitHub environment variables: configured"
+Write-Output "GitHub environment variables: $(if ($SkipGitHubVariables) { 'unchanged' } else { 'configured' })"
 Write-Output "No account IDs, ARNs, bucket names, or query paths were printed"

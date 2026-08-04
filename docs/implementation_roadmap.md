@@ -17,7 +17,7 @@ internal boundary.
 ```mermaid
 flowchart LR
     P0[P0 Reliability] --> P1[P1 Write-back API]
-    P1 --> P2[P2 SQL marts]
+    P1 --> P2[P2 Existing-asset analytics]
     P2 --> P4[P4 Operations cockpit]
     P2 --> P3[P3 Model validation]
     P3 --> P5[P5 Production readiness]
@@ -85,31 +85,35 @@ Acceptance criteria:
   table version;
 - unauthenticated and public Pages clients have no write permission.
 
-## P2 — Governed operational SQL marts
+## P2 — Governed operational analytics assets
 
-**Objective:** provide stable business metrics without repeating complex joins.
+**Objective:** provide stable business metrics by inventorying and reusing the
+deployed AWS result tables and views before materialising anything new.
 
-Planned marts:
+Current reusable assets:
 
-| Mart | Primary use |
+| Existing asset | Primary use |
 | --- | --- |
-| `mart_ops_daily` | Daily volume, risk, and stage conversion |
-| `mart_route_performance_daily` | Route SLA and delay trends |
-| `mart_carrier_performance_daily` | Carrier reliability |
-| `mart_decision_effectiveness` | Review, execution, outcome, and time-to-value |
-| `mart_forecast_accuracy` | Forecast-versus-actual evaluation |
-| `mart_pipeline_health` | Stage duration, freshness, and failures |
+| `fact_shipment_events_extended_iceberg` | Daily volume anchored by `dt` |
+| `fact_ai_alerts_v3` | Current alerts and aggregate risk patterns |
+| `fact_ai_root_causes_v1` | Existing root-cause results |
+| `fact_ai_insights_v3` | Current analysis-stage completion |
+| `fact_ai_decisions_v3` | Recommendations and action distribution |
+| `fact_ai_actions_v2`, `fact_ai_outcomes_v2` | Execution and measured outcomes |
+| `fact_ai_learning_feedback_v1`, `fact_ai_learning_v1` | Feedback and learning state |
+| `v_ai_latest_decision_trace` | Existing latest decision trace |
 
-Every metric requires an owner, definition, grain, source contract, freshness
-target, and data-quality check. Refreshes should be incremental and run in a
-cost-controlled Athena workgroup.
+All calculation SQL runs in Athena. The public exporter packages only safe
+aggregates. A new mart is justified only when this inventory cannot meet a
+documented grain, performance, reconciliation, or history requirement.
 
 Acceptance criteria:
 
-- each mart has schema, uniqueness, null, and freshness tests;
-- dashboard metrics reconcile to source-table control totals;
+- each reused asset has a documented grain and freshness rule;
+- dashboard metrics reconcile to existing result-table control totals without
+  join fan-out;
 - documented SQL reproduces the published KPI within its stated data boundary;
-- backfills do not duplicate business keys.
+- any proposed new mart includes evidence that no existing asset meets the need.
 
 ## P3 — Forecast validation and model upgrade
 

@@ -42,9 +42,11 @@ instructions or persist synthetic records.
 
 The published Control Tower reads a versioned, sanitized
 [OPS snapshot contract](docs/ops_snapshot.md). It shows source provenance,
-data date and freshness explicitly. Until the repository's read-only AWS OIDC
-role is configured, the public site displays a clearly labelled synthetic
-fallback rather than claiming a live connection.
+data date and freshness explicitly. Its KPIs and OLS forecast are calculated in
+Athena at the governed logical run date, and its distributions reuse deployed
+AWS result tables. GitHub Actions only publishes the aggregate contract. Until
+the repository's read-only AWS OIDC role is configured, the public site displays
+a clearly labelled synthetic fallback rather than claiming a live connection.
 
 [Read what is implemented and simulated](offline/README.md) ·
 [Inspect the deployable web version](decision-brief-demo/README.md) ·
@@ -110,8 +112,8 @@ its source metrics.
 | Versioned delivery | immutable Lambda versions with `staging` and `prod` |
 | AWS authentication | GitHub OIDC; no long-lived deployment key |
 | Staging safety | dry-run validation and staging-only alias promoter |
-| Published OPS analytics | scheduled current-flywheel aggregates with per-stage freshness |
-| Forecast baseline | 28-day Athena history with a transparent seven-day OLS volume forecast |
+| Published OPS analytics | scheduled current-flywheel and existing-result aggregates with per-stage freshness |
+| Forecast baseline | 28-day `dt` history with Athena-calculated seven-day OLS volume forecast |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is
@@ -134,7 +136,8 @@ flowchart TB
     STAGE -. dry-run .-> ATHENA
     ATHENA --> TABLES[Alert, insight, decision, action, outcome and learning tables]
     TABLES --> QS[QuickSight dashboards]
-    TABLES --> PAGES[Sanitized OPS analytics + forecast]
+    TABLES --> ATHENAOPS[Athena KPI, distribution + OLS SQL]
+    ATHENAOPS --> PAGES[Sanitized aggregate snapshot]
 
     EB -->|exhausted failures| DLQ[SQS DLQ]
     PROD --> CW[CloudWatch alarms]

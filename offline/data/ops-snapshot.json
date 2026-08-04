@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "generated_at": "2026-07-23T00:00:00Z",
   "source_updated_at": "2026-07-23T00:00:00Z",
   "as_of_date": "2026-07-23",
@@ -47,12 +47,25 @@
     "outcome_success_rate_pct": 75.0,
     "avg_outcome_improvement_pct": 12.3,
     "avg_effectiveness_score": 0.84,
-    "max_stage_lag_days": 0
+    "max_stage_lag_days": 0,
+    "calculation_engine": "repository_fallback",
+    "date_anchor": "logical_run_date_dt",
+    "existing_assets": {
+      "source": "synthetic_fallback",
+      "latest_decision_traces": 3,
+      "risk_hotspots_tracked": 3,
+      "distributions": {
+        "alerts": [{"label": "SYNTHETIC_ALERT", "count": 3}],
+        "actions": [{"label": "SYNTHETIC_ACTION", "count": 3}],
+        "root_causes": [{"label": "Synthetic root cause", "count": 3}]
+      }
+    }
   },
   "forecast": {
     "status": "not_live",
     "method": "ordinary_least_squares_28d",
     "method_label": "Synthetic 28-day linear trend baseline",
+    "calculation_engine": "repository_fallback",
     "horizon_days": 7,
     "predicted_shipments_7d": 3402,
     "points": [
