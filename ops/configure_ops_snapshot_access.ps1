@@ -125,6 +125,7 @@ $tables = @(
     "fact_ai_learning_v1"
 )
 $views = @(
+    "ai_decision_trace_v1",
     "v_ai_latest_decision_trace"
 )
 $catalogObjects = $tables + $views

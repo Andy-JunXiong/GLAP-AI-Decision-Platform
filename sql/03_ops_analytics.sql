@@ -132,7 +132,8 @@ GROUP BY outcomes.action_type
 ORDER BY avg_effectiveness_score DESC, measured_outcomes DESC;
 
 -- 5. Existing deployed analysis assets. Inventory these before proposing a new
--- mart. v_ai_latest_decision_trace is safe to reuse at its current date grain.
+-- mart. v_ai_latest_decision_trace is safe to reuse at its current date grain;
+-- Athena also requires catalog access to its ai_decision_trace_v1 dependency.
 SELECT count(*) AS latest_decision_traces
 FROM curated_iceberg.v_ai_latest_decision_trace
 WHERE run_date = current_date;

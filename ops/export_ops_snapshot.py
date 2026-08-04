@@ -62,6 +62,7 @@ CURRENT_CONTRACT_TABLES = (
 )
 
 CURRENT_ANALYTICS_VIEWS = (
+    "ai_decision_trace_v1",
     "v_ai_latest_decision_trace",
 )
 
@@ -417,6 +418,7 @@ def build_existing_analytics_query(database: str, logical_run_date: str | date) 
     database = validate_identifier(database, "Athena database")
     logical_date = validate_logical_date(logical_run_date).isoformat()
     return f"""
+-- v_ai_latest_decision_trace stored-view dependency: ai_decision_trace_v1
 WITH params AS (
     SELECT DATE '{logical_date}' AS logical_run_date
 ),

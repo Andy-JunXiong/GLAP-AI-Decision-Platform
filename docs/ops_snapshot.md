@@ -71,7 +71,8 @@ Configure these repository variables before enabling the AWS export step:
 
 The role should trust the repository's GitHub OIDC subject for the
 `github-pages` environment and grant only the reads required for the allowlisted
-current-flywheel tables and `v_ai_latest_decision_trace`, plus Athena
+current-flywheel tables, `v_ai_latest_decision_trace`, and its stored-view
+dependency `ai_decision_trace_v1`, plus Athena
 execution/status and the private query-result prefix. It does not need
 permission to mutate Lambda aliases, schedules, Iceberg tables, or production
 decisions.
@@ -79,10 +80,11 @@ decisions.
 The published contract intentionally reuses `fact_ai_alerts_v3`,
 `fact_ai_root_causes_v1`, `fact_ai_insights_v3`, `fact_ai_decisions_v3`,
 `fact_ai_actions_v2`, `fact_ai_outcomes_v2`, `fact_ai_learning_feedback_v1`,
-`fact_ai_learning_v1`, and `v_ai_latest_decision_trace`. It does not create a
-new analytics table or duplicate an existing result. Historical distribution
-views with multi-stage joins are not used by the public snapshot because their
-grain can fan out one alert into multiple joined rows.
+`fact_ai_learning_v1`, and `v_ai_latest_decision_trace` (including its catalog
+dependency `ai_decision_trace_v1`). It does not create a new analytics table or
+duplicate an existing result. Historical distribution views with multi-stage
+joins are not used by the public snapshot because their grain can fan out one
+alert into multiple joined rows.
 
 The governed analysis date is the successful pipeline logical run date. Shipment
 volume is grouped by the Iceberg `dt` batch partition; a shipment's future

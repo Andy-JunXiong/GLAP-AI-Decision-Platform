@@ -53,6 +53,7 @@ The scheduled public OPS analytics contract reads the current decision flywheel:
 - `curated_iceberg.fact_ai_outcomes_v2`
 - `curated_iceberg.fact_ai_learning_feedback_v1`
 - `curated_iceberg.fact_ai_learning_v1`
+- `curated_iceberg.ai_decision_trace_v1` (stored-view dependency)
 - `curated_iceberg.v_ai_latest_decision_trace`
 
 Athena performs the public KPI, distribution, action-completion, outcome, OLS

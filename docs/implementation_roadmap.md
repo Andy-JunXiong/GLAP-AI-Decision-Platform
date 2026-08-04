@@ -101,7 +101,7 @@ Current reusable assets:
 | `fact_ai_decisions_v3` | Recommendations and action distribution |
 | `fact_ai_actions_v2`, `fact_ai_outcomes_v2` | Execution and measured outcomes |
 | `fact_ai_learning_feedback_v1`, `fact_ai_learning_v1` | Feedback and learning state |
-| `v_ai_latest_decision_trace` | Existing latest decision trace |
+| `v_ai_latest_decision_trace` | Existing latest decision trace; depends on `ai_decision_trace_v1` |
 
 All calculation SQL runs in Athena. The public exporter packages only safe
 aggregates. A new mart is justified only when this inventory cannot meet a
