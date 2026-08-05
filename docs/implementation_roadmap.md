@@ -219,13 +219,16 @@ Acceptance criteria:
 
 ## Recommended next implementation slice
 
-The repository now contains the corrected P0 public metric contract and the
-isolated stateful lifecycle staging slice defined in
-`shipment_lifecycle_design.md`, including deterministic replay, Athena merges,
-per-snapshot lifecycle metrics and simulated SLA/cost signal candidates. The
-private 28-day AWS staging replay passed on 5 August 2026 with 448 fail-closed
-checks, 4.58% journey exception incidence, and no schedule or production alias
-change. The next implementation gate is schema compatibility and controlled
-insertion of the staging writer ahead of the existing input quality gate.
-Authenticated production writes remain blocked until that integration passes
-and the production alias/rollback boundary is explicitly approved.
+The corrected P0 public metric contract and isolated stateful lifecycle staging
+slice are now running together behind the existing-input contract. The private
+28-day replay passed with 448 lifecycle checks and 4.58% journey exception
+incidence. The subsequent `2026-09-01` manual integration passed all 16
+lifecycle checks and all 5 compatibility-input checks through six read-only v2
+views, with no schedule, production alias, or current-v2 write.
+
+The next implementation slice is the governed analytics and prediction
+foundation: operational daily aggregates, feature and outcome-label history,
+completeness/drift monitoring, and a benchmark forecast with time-ordered
+backtesting. Authenticated production writes remain blocked until those outputs
+reconcile and a controlled current-controller integration plus production
+alias/rollback boundary is explicitly approved.

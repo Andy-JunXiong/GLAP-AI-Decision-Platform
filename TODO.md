@@ -63,6 +63,11 @@ Repository implementation checkpoint — 4 August 2026:
     incidence, 309 delivered shipments, zero post-delivery rows, zero invalid
     terminal rows, and zero duplicate snapshot keys. No schedule or production
     alias was created or changed.
+- [x] Add six read-only v2 compatibility views and prove the isolated manual
+  controller chain for `2026-09-01`: lifecycle generation, all 16 lifecycle
+  checks, then all 5 existing-input contract checks. Workflow run `30972254011`
+  passed without a schedule, Lambda alias, event-source mapping, EventBridge
+  rule, or write to the current v2 tables.
 
 - [x] Correct the public metric contract: v2 shipment volume, insights v3 root
   causes, actions v2 action distribution, no legacy v1 or trace claims.

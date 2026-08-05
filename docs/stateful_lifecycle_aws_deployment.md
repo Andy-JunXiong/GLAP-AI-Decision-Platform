@@ -6,7 +6,8 @@ This repository slice creates the versioned lifecycle, route, rate, tier and FX
 contracts; an isolated staging snapshot/event/cost/metric/signal boundary; a
 deterministic state transition and expected-cost engine; a retry-safe Athena
 persistence adapter; an unscheduled staging Lambda template; and fail-closed
-validation SQL.
+validation SQL. It also includes six read-only v2 compatibility views and a
+separate unscheduled manual controller/quality-gate integration path.
 It does not replace `glap-daily-incremental-generator-v2` or write to governed
 v2 production tables.
 
@@ -21,16 +22,21 @@ delivery have separate target and actual milestones.
   synthetic rate versions.
 - `sql/06_stateful_lifecycle_validation.sql` reconciles snapshot, milestones,
   versions, tiers and cost detail.
+- `sql/07_stateful_lifecycle_compatibility_views.sql` exposes the isolated data
+  through six read-only views matching the deployed v2 input shapes.
 - `lambda/glap_stateful_lifecycle_generator.py` provides deterministic replay,
   seed population, daily progression, expected-cost calculation, lifecycle SLA
   metrics and auditable SLA/cost signal candidates.
 - `lambda/glap_lifecycle_athena_adapter.py` reads governed configuration and the
   prior active snapshot, then performs retry-safe staging Iceberg merges.
+- `lambda/glap_quality_contracts.py`, `lambda/glap_data_quality_gate.py`, and
+  `lambda/glap_pipeline_controller.py` enforce the named lifecycle and
+  compatibility contracts in the isolated manual chain.
 - `ops/deploy_stateful_lifecycle.ps1` renders and optionally executes the schema.
 - `ops/deploy_stateful_lifecycle_stack.ps1` packages the two-module Lambda and
   deploys the isolated IAM/Lambda/alarm CloudFormation stack.
-- `infrastructure/stateful-lifecycle-staging.yaml` creates an unscheduled,
-  prefix-scoped staging Lambda and alarm.
+- `infrastructure/stateful-lifecycle-staging.yaml` creates unscheduled,
+  prefix-scoped generator, controller, quality-gate, roles, and alarm resources.
 - `ops/replay_stateful_lifecycle_staging.ps1` performs a plan-only-by-default
   sequence of governed logical-date invocations.
 - `ops/validate_stateful_lifecycle_staging.ps1` runs both reconciliation query
@@ -256,6 +262,36 @@ through `2026-08-31` with an initial active population of 450.
 - The workflow evidence records `Production alias changed: false` and
   `Schedule created: false`.
 
-This closes the private replay and reconciliation gate only. Schema
-compatibility and controlled insertion ahead of the existing input quality gate
-remain required before any production v2 promotion or alias change.
+This closes the private replay and reconciliation gate only.
+
+## Isolated pipeline-integration evidence — 5 August 2026
+
+Commits `b9d4049` and `bee43ef` add six read-only compatibility views, shared
+quality contracts, and a separate manual integration controller. Plan workflow
+run
+[`30971969667`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30971969667)
+passed before integration workflow run
+[`30972254011`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30972254011)
+executed the `2026-09-01` logical date.
+
+- The chain completed `stateful_lifecycle_generation`, `lifecycle_validation`,
+  and `input_validation` successfully in about 139 seconds. Generation used
+  about 120 seconds; the two quality stages used about 18 seconds combined.
+- All 16 lifecycle checks and all 5 `lifecycle_compat_v2` input-contract checks
+  passed fail closed.
+- Native staging contained 601 shipment snapshots, 109 milestone events, 601
+  lifecycle metrics, 61 cost rows, and 22 signal candidates for the logical
+  date.
+- The shipment, event, leg-metric, cost, risk, and product-allocation
+  compatibility views returned 601, 109, 601, 601, 601, and 601 rows
+  respectively. Derived identity, risk, and allocation values remain explicitly
+  marked as simulated where the deployed schema permits provenance.
+- The stack contains no Scheduler resource. Both integration Lambdas have no
+  alias, event-source mapping, or EventBridge rule, and the compatibility layer
+  does not write the current v2 tables.
+
+This closes schema compatibility and isolated manual insertion ahead of the
+input quality gate. It does not authorize production v2 writes, a schedule, or
+an alias change. The next gate is to build governed operational aggregates and
+forecast feature/label history on this foundation, validate backtests, and only
+then request explicit approval for a controlled production-boundary change.

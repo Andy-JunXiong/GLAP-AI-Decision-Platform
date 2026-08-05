@@ -335,10 +335,9 @@ The stateful lifecycle is complete only when:
 
 ## Open implementation questions
 
-- the exact compatible mapping from the deployed v2 columns to the new Origin,
-  P2P and Destination milestone fields;
-- the initial active-population stage distribution and daily new-shipment rate;
+- whether the six proven read-only v2 compatibility views should remain virtual
+  or be materialized after measured Athena cost and reconciliation tests;
 - whether alert lifecycle fields fit the current v3 schema or require compatible
   schema evolution;
-- whether the derived daily-state view requires materialization after measured
-  Athena cost and reconciliation tests.
+- how much governed feature and outcome-label history is required before the
+  first route/carrier forecast can be evaluated beyond the benchmark.
