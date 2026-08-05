@@ -125,6 +125,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("destination_breach_flag", analytics)
         self.assertIn("ROWS BETWEEN 7 PRECEDING AND 1 PRECEDING", analytics)
         self.assertIn("'NO_FUTURE_DATA'", analytics)
+        self.assertIn("'multimodal_forecast_feature_daily_v1'", analytics)
+        self.assertIn("feature_day_of_week", analytics)
         self.assertIn("'ADVISORY_SIMULATION_ONLY'", analytics)
         self.assertIn("'AIR_CHARGEABLE_KG_VS_OCEAN_GROSS_KG'", analytics)
         self.assertIn("expected_cost_per_comparison_kg", analytics)
@@ -240,6 +242,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
         self.assertIn("deploy-replay-validate", workflow)
         self.assertIn("deploy-integration-validate", workflow)
+        self.assertIn("deploy-analytics-contract", workflow)
+        self.assertIn("-AnalyticsOnly", workflow)
+        self.assertIn("Deploy read-only analytics contract", workflow)
         self.assertIn("Validate lifecycle pipeline integration", workflow)
         self.assertIn("lifecycle_validation", workflow)
         self.assertIn("input_validation", workflow)
@@ -250,6 +255,39 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Production alias changed: \\`false\\`", workflow)
         self.assertNotIn("update-alias", workflow)
         self.assertNotIn("scheduler", workflow.lower())
+
+    def test_forecast_backtest_is_manual_read_only_and_private(self):
+        script = (
+            ROOT / "ops" / "run_multimodal_forecast_backtest.ps1"
+        ).read_text(encoding="utf-8")
+        label_script = (
+            ROOT / "ops" / "run_multimodal_label_readiness.ps1"
+        ).read_text(encoding="utf-8")
+        workflow = (
+            ROOT / ".github" / "workflows" /
+            "backtest-multimodal-forecast-staging.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("SELECT", script)
+        self.assertIn("vw_multimodal_forecast_feature_daily_v1", script)
+        self.assertIn("scan_budget_status", script)
+        self.assertNotRegex(script, r"(?i)(insert\s+into|merge\s+into|delete\s+from)")
+        self.assertIn("[switch]$Apply", label_script)
+        self.assertIn("if (-not $Apply)", label_script)
+        self.assertIn("vw_multimodal_outcome_label_v1", label_script)
+        self.assertIn("outcome_status = 'OBSERVED'", label_script)
+        self.assertIn("scan_budget_status", label_script)
+        self.assertNotRegex(label_script, r"(?i)(insert\s+into|merge\s+into|delete\s+from)")
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("default: plan", workflow)
+        self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
+        self.assertIn("retention-days: 14", workflow)
+        self.assertIn("Public Pages publication: \\`false\\`", workflow)
+        self.assertIn("Production writes: \\`false\\`", workflow)
+        self.assertIn("Pending outcome labels used for training: \\`false\\`", workflow)
+        self.assertIn("Assess supervised-label readiness", workflow)
+        self.assertNotIn("schedule:", workflow)
 
     def test_deployer_policy_bootstrap_is_plan_only_and_staging_scoped(self):
         script = (

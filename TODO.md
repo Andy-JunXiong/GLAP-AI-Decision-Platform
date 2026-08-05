@@ -26,7 +26,7 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 
 ## Active next slice — Forecast validation
 
-- [ ] Freeze a versioned `multimodal_forecast_feature_daily_v1` feature contract
+- [x] Freeze a versioned `multimodal_forecast_feature_daily_v1` feature contract
   and document feature availability, null handling, and training cutoff rules.
 - [ ] Backtest recent-level, moving-average, weekday-seasonal, and existing OLS
   booking-volume baselines by mode and provider using rolling time windows.
@@ -34,8 +34,12 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   the simple benchmark unless a candidate consistently beats it.
 - [ ] Accumulate enough observed shipment labels before training SLA-breach,
   delay-risk, or cost-variance models; pending labels must never enter training.
+  - [x] Add an aggregate mode/provider readiness gate with minimum observed and
+    class-balance thresholds; actual staging cohorts must still accumulate.
 - [ ] Add feature completeness, drift, prediction-error, and Athena scan-cost
   monitoring before any recurring forecast execution is proposed.
+  - [x] Emit local completeness, missing-date, seven-day drift, normalized-error,
+    interval-coverage, and per-query scan-budget evidence; AWS results pending.
 - [ ] Keep every forecast advisory and inside the authenticated/private boundary;
   production scheduling or writes require a separate explicit approval.
 
