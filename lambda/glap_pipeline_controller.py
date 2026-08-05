@@ -246,14 +246,25 @@ def execute_pipeline(
             raise ValueError("Recovery requires an existing failed run for the same date")
         if existing_date == requested_date:
             if retry_failed_run:
-                retryable = (
+                failed_stage = existing_run.get("failed_stage")
+                failure_category = existing_run.get("failure_category")
+                retryable_dependency = (
                     existing_run.get("status") == "failed"
-                    and existing_run.get("failed_stage") == stages[0]["name"]
-                    and existing_run.get("failure_category") == "dependency_failure"
+                    and failed_stage == stages[0]["name"]
+                    and failure_category == "dependency_failure"
                 )
-                if not retryable:
+                retryable_quality_gate = (
+                    existing_run.get("status") == "failed"
+                    and failure_category == "quality_gate_failed"
+                    and any(
+                        stage["name"] == failed_stage and stage["quality_gate"]
+                        for stage in stages
+                    )
+                )
+                if not (retryable_dependency or retryable_quality_gate):
                     raise ValueError(
-                        "Recovery is allowed only for a first-stage dependency failure"
+                        "Recovery is allowed only for a first-stage dependency failure "
+                        "or a configured quality-gate failure"
                     )
             else:
                 # Reuse every same-day terminal or indeterminate status. Reinvoking a
