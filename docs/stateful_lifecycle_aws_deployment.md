@@ -365,7 +365,9 @@ shipment outcome-label view. The deployment also adds the eight-check
 `multimodal_analytics_v1` fail-closed contract as the fourth manual controller
 stage.
 
-- Local validation passed all 99 repository tests.
+- Local validation passed all 99 repository tests, and
+  [CI run `30980919130`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30980919130)
+  passed for commit `635a590`.
 - Logical dates `2026-09-06` and `2026-09-07` each passed all 27 staging
   checks: 19 lifecycle checks plus 8 analytics checks. The Sep 7 controller
   also passed all 5 v2 compatibility checks.
