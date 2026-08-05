@@ -63,7 +63,8 @@ if ($AthenaOutputUri -notmatch '^s3://([^/]+)/(.+)$') {
 $athenaResultsBucket = $Matches[1]
 $athenaResultsPrefix = $Matches[2].Trim('/') + '/'
 $dataPrefix = $LifecycleDataPrefix.Trim('/')
-$statusKey = "$dataPrefix/status/pipeline-integration-latest.json"
+$statusPrefix = "$dataPrefix/status"
+$statusKey = "$statusPrefix/pipeline-integration-latest.json"
 
 $root = Split-Path $PSScriptRoot -Parent
 $templatePath = Join-Path $root "infrastructure/stateful-lifecycle-staging.yaml"
@@ -168,6 +169,7 @@ $parameterOverrides = @(
     "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
     "PipelineStatusS3Uri=s3://$LifecycleDataBucket/$statusKey",
     "PipelineStatusObjectArn=arn:aws:s3:::$LifecycleDataBucket/$statusKey",
+    "PipelineStatusPrefix=$statusPrefix",
     "AthenaWorkgroup=$Workgroup",
     "SourceDatabase=$SourceDatabase",
     "FunctionName=$FunctionName",

@@ -116,6 +116,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('"quality_contract":"lifecycle_v1"', template)
         self.assertIn('"quality_contract":"lifecycle_compat_v2"', template)
         self.assertIn("PipelineStatusObjectArn", template)
+        self.assertIn("PipelineStatusPrefix", template)
+        self.assertIn("FindPrivateStatus", template)
         self.assertNotIn("AWS::Scheduler::Schedule", template)
         self.assertNotIn("pipeline-reliability", template)
 

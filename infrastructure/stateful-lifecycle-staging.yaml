@@ -33,6 +33,9 @@ Parameters:
   PipelineStatusObjectArn:
     Type: String
     AllowedPattern: ^arn:[^:]+:s3:::[^/]+/.+$
+  PipelineStatusPrefix:
+    Type: String
+    AllowedPattern: ^[A-Za-z0-9][A-Za-z0-9!_.*'()/=-]+$
   AthenaWorkgroup:
     Type: String
     Default: primary
@@ -326,6 +329,15 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                 Resource: !Ref PipelineStatusObjectArn
+              - Sid: FindPrivateStatus
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Ref LifecycleDataBucketArn
+                Condition:
+                  StringLike:
+                    s3:prefix:
+                      - !Ref PipelineStatusPrefix
+                      - !Sub ${PipelineStatusPrefix}/*
 
   IntegrationControllerFunction:
     Type: AWS::Lambda::Function
