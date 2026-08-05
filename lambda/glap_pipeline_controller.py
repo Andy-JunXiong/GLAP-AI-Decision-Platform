@@ -218,6 +218,7 @@ def execute_pipeline(
     logical_run_date: str,
     status_uri: str,
     dry_run: bool = False,
+    retry_failed_run: bool = False,
 ) -> dict[str, Any]:
     run = new_run(logical_run_date, stages, utc_now())
     if dry_run:
@@ -234,17 +235,32 @@ def execute_pipeline(
         return run
 
     existing_run = load_existing_run(status_uri)
+    if retry_failed_run and not existing_run:
+        raise ValueError("Recovery requires an existing failed run for the same date")
     if existing_run:
         existing_date = validate_run_date(existing_run.get("logical_run_date"))
         requested_date = date.fromisoformat(logical_run_date)
         if existing_date > requested_date:
             raise ValueError("Refusing to overwrite a newer pipeline run")
+        if retry_failed_run and existing_date != requested_date:
+            raise ValueError("Recovery requires an existing failed run for the same date")
         if existing_date == requested_date:
-            # Reuse every same-day terminal or indeterminate status. Reinvoking a
-            # current mutating stage could duplicate business records after a
-            # timeout or partial failure, so recovery requires an explicit new
-            # logical run or a separately governed reconciliation procedure.
-            return existing_run
+            if retry_failed_run:
+                retryable = (
+                    existing_run.get("status") == "failed"
+                    and existing_run.get("failed_stage") == stages[0]["name"]
+                    and existing_run.get("failure_category") == "dependency_failure"
+                )
+                if not retryable:
+                    raise ValueError(
+                        "Recovery is allowed only for a first-stage dependency failure"
+                    )
+            else:
+                # Reuse every same-day terminal or indeterminate status. Reinvoking a
+                # current mutating stage could duplicate business records after a
+                # timeout or partial failure, so recovery requires the explicit,
+                # narrowly guarded retry path above.
+                return existing_run
 
     persist_run(run, status_uri)
 
@@ -338,7 +354,14 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             raise ValueError(f"Unknown PIPELINE_TIMEZONE: {timezone_name}") from exc
         logical_run_date = utc_now().astimezone(pipeline_timezone).date().isoformat()
     dry_run = event.get("dry_run") is True
-    run = execute_pipeline(stages, logical_run_date, status_uri, dry_run=dry_run)
+    retry_failed_run = event.get("retry_failed_run") is True
+    run = execute_pipeline(
+        stages,
+        logical_run_date,
+        status_uri,
+        dry_run=dry_run,
+        retry_failed_run=retry_failed_run,
+    )
     if run["status"] == "running":
         raise RuntimeError("Pipeline run is already running or has indeterminate state")
     if run["status"] != "succeeded":
