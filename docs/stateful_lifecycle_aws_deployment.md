@@ -317,3 +317,41 @@ input quality gate. It does not authorize production v2 writes, a schedule, or
 an alias change. The next gate is to build governed operational aggregates and
 forecast feature/label history on this foundation, validate backtests, and only
 then request explicit approval for a controlled production-boundary change.
+
+## Multimodal AWS staging evidence — 5 August 2026
+
+Commit `def806b` introduced the backward-compatible multimodal evolution.
+[CI run `30978116882`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30978116882)
+and manual
+[plan run `30978159773`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30978159773)
+passed before
+[integration run `30978208810`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30978208810)
+applied the missing Iceberg columns, idempotent provider configuration, views,
+and unscheduled Lambda package. The integration workflow completed in 5 minutes
+59 seconds, including the one-time schema and stack updates.
+
+The isolated controller then completed each logical date from `2026-09-02`
+through `2026-09-06` in order.
+
+- Every date passed all 19 lifecycle checks and all 5 compatibility-input
+  checks.
+- The five-day cohort contained 83 new bookings: 35 Maersk Ocean (42.17%), 33
+  KN Ocean (39.76%), and 15 DHL Air (18.07%). The rolling Air-share check became
+  active after 70 bookings and passed the approved 15--20% range.
+- The first three DHL Air shipments recorded `BOOKING_CONFIRMED`,
+  `ORIGIN_RECEIVED`, `FLIGHT_DEPARTED`, `FLIGHT_ARRIVED`, `CARGO_AVAILABLE`, and
+  `DELIVERED`; all three were closed as `DELIVERED` on `2026-09-06`.
+- DHL Air rows used zero containers, positive pieces/gross/volumetric and
+  chargeable weight, and chargeable weight greater than or equal to gross
+  weight. Their booking cost detail used `AIR_FREIGHT`,
+  `AIR_FUEL_SURCHARGE`, `ORIGIN_HANDLING`, `SECURITY_SCREENING`, and
+  `DESTINATION_HANDLING`.
+- Existing Ocean history remained in place. Compatibility views emit the
+  governed mode, preserve common P2P and delivery fields, and keep Ocean-only
+  equipment null for Air.
+- The updated stack still contains no Scheduler resource. Controller and
+  quality-gate functions have no alias, event-source mapping, or EventBridge
+  target rule.
+
+This establishes the multimodal data foundation in isolated staging only.
+Recurring execution and production writes remain disabled.

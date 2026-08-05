@@ -73,8 +73,13 @@ Repository implementation checkpoint — 4 August 2026:
   milestones, pieces/chargeable weight, per-kg cost, provider metadata, and
   mode-aware compatibility views. The deterministic 28-day local replay
   produced 449 new bookings with 17.37% Air.
-- [ ] Prove the multimodal schema evolution and `2026-09-02` controller run in
-  AWS staging before enabling any recurring execution.
+- [x] Prove the multimodal schema evolution and `2026-09-02` through
+  `2026-09-06` controller runs in AWS staging before enabling any recurring
+  execution. The five-day booking cohort contained 35 Maersk Ocean, 33 KN
+  Ocean, and 15 DHL Air shipments; Air was 18.07%. The first three DHL Air
+  shipments completed Origin receipt, P2P flight departure/arrival,
+  Destination cargo availability, and final delivery. All 19 lifecycle and 5
+  compatibility checks passed on every date, with no schedule or alias.
 
 - [x] Correct the public metric contract: v2 shipment volume, insights v3 root
   causes, actions v2 action distribution, no legacy v1 or trace claims.

@@ -229,8 +229,10 @@ views, with no schedule, production alias, or current-v2 write.
 The next implementation slice is the governed analytics and prediction
 foundation: operational daily aggregates, feature and outcome-label history,
 completeness/drift monitoring, and a benchmark forecast with time-ordered
-backtesting. The staging input now distinguishes Maersk/KN Ocean from DHL Air;
-mode-specific cost units and SLA baselines must remain separate in those
+backtesting. The AWS staging input now distinguishes Maersk/KN Ocean from DHL
+Air; its first five-day governed cohort held Air at 18.07% and passed the full
+Origin/P2P/Destination event path plus 19 lifecycle and 5 compatibility checks.
+Mode-specific cost units and SLA baselines must remain separate in those
 features, while Origin/P2P/Destination and final outcome labels stay common.
 Authenticated production writes remain blocked until those outputs
 reconcile and a controlled current-controller integration plus production
