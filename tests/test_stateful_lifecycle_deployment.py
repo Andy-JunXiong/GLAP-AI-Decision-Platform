@@ -99,6 +99,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("if (-not $Apply)", script)
         self.assertIn("$isFirst = $logicalDate -eq $dates[0]", script)
         self.assertIn("seed_population = $isFirst", script)
+        self.assertIn("--cli-read-timeout 900", script)
         self.assertIn("Remove-Item -LiteralPath $payloadPath", script)
 
     def test_oidc_compatible_stack_and_validation_commands_are_plan_only(self):

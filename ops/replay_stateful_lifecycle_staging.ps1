@@ -46,6 +46,8 @@ foreach ($logicalDate in $dates) {
         & aws lambda invoke `
             --function-name $FunctionName `
             --payload "fileb://$payloadPath" `
+            --cli-read-timeout 900 `
+            --cli-connect-timeout 60 `
             @awsScope `
             $responsePath | Out-Null
         if ($LASTEXITCODE -ne 0) {

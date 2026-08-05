@@ -195,6 +195,11 @@ After deploying the isolated Lambda and validating its target prefixes:
 .\ops\replay_stateful_lifecycle_staging.ps1 -Apply
 ```
 
+The synchronous Lambda invocation sets the AWS CLI read timeout to 900 seconds,
+matching the function timeout. Keep this explicit: the CLI's shorter default
+can retry a still-running invocation and create avoidable concurrent Athena
+MERGE attempts, even though the writer's business keys are retry-safe.
+
 Then fail closed on any reconciliation error:
 
 ```powershell
