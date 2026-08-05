@@ -273,6 +273,12 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Recover one failed lifecycle date through governed controller", workflow)
         self.assertIn("-RetryFailedRun", workflow)
         self.assertIn('test "${{ inputs.replay_days }}" -le 12', workflow)
+        self.assertIn(
+            '$action -in @("plan", "extend-integration-validate", '
+            '"recover-failed-integration-date")',
+            workflow,
+        )
+        self.assertIn('Days = [Math]::Min([int]"${{ inputs.replay_days }}", 12)', workflow)
         self.assertIn("-MaxElapsedMinutes 50", workflow)
         self.assertIn("-AnalyticsOnly", workflow)
         self.assertIn("Deploy read-only analytics contract", workflow)

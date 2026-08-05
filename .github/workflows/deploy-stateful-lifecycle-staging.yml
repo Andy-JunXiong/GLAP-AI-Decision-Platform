@@ -155,17 +155,20 @@ jobs:
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
             -PopulationSize ${{ inputs.population_size }}
-          $extensionPlan = @{
-            Region = $env:AWS_REGION
-            ControllerFunction = $env:CONTROLLER_FUNCTION
-            StartDate = "${{ inputs.replay_start_date }}"
-            Days = ${{ inputs.replay_days }}
-            MaxElapsedMinutes = 50
+          $action = "${{ inputs.action }}"
+          if ($action -in @("plan", "extend-integration-validate", "recover-failed-integration-date")) {
+            $extensionPlan = @{
+              Region = $env:AWS_REGION
+              ControllerFunction = $env:CONTROLLER_FUNCTION
+              StartDate = "${{ inputs.replay_start_date }}"
+              Days = [Math]::Min([int]"${{ inputs.replay_days }}", 12)
+              MaxElapsedMinutes = 50
+            }
+            if ($action -eq "recover-failed-integration-date") {
+              $extensionPlan.RetryFailedRun = $true
+            }
+            ./ops/extend_stateful_lifecycle_controller_staging.ps1 @extensionPlan
           }
-          if ("${{ inputs.action }}" -eq "recover-failed-integration-date") {
-            $extensionPlan.RetryFailedRun = $true
-          }
-          ./ops/extend_stateful_lifecycle_controller_staging.ps1 @extensionPlan
           ./ops/validate_stateful_lifecycle_staging.ps1 `
             -Region $env:AWS_REGION `
             -SourceDatabase $env:SOURCE_DATABASE `
