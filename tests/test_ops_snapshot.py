@@ -73,6 +73,9 @@ class OpsSnapshotTests(unittest.TestCase):
                 self.assertNotIn(legacy_table, query)
         self.assertNotIn("SELECT *", query.upper())
         self.assertIn("try_cast(dt AS date)", query)
+        self.assertIn("shipment_risk_counts", query)
+        self.assertIn("JOIN risk_keys", query)
+        self.assertNotIn("upper(status)", query.lower())
         self.assertNotIn("max(CAST(event_time AS date))", query)
         self.assertIn("DATE '2026-08-04'", query)
 
@@ -85,6 +88,9 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertIn("UNNEST(sequence(1, 7))", query)
         self.assertIn("residual_sigma", query)
         self.assertIn("try_cast(dt AS date)", query)
+        self.assertIn("risk_observed", query)
+        self.assertIn("JOIN risk_keys", query)
+        self.assertNotIn("upper(status)", query.lower())
         self.assertNotIn("max(CAST(event_time AS date))", query)
         self.assertNotIn("SELECT *", query.upper())
         with self.assertRaises(ValueError):

@@ -164,13 +164,26 @@ latest_learning AS (
 ),
 shipment_counts AS (
     SELECT
-        count(DISTINCT shipment_id) AS shipments_generated,
-        count(DISTINCT CASE
-            WHEN upper(status) IN ('AT_RISK', 'BREACHED', 'DELAYED', 'EXCEPTION')
-            THEN shipment_id END) AS shipments_at_risk
+        count(DISTINCT shipment_id) AS shipments_generated
     FROM {source_database}.fact_shipment_v2
     CROSS JOIN latest_shipment
     WHERE try_cast(dt AS date) = latest_shipment.run_date
+),
+risk_keys AS (
+    SELECT DISTINCT route_id, carrier, ship_mode
+    FROM {database}.fact_ai_alerts_v3
+    CROSS JOIN latest_alert
+    WHERE fact_ai_alerts_v3.run_date = latest_alert.run_date
+),
+shipment_risk_counts AS (
+    SELECT count(DISTINCT shipments.shipment_id) AS shipments_at_risk
+    FROM {source_database}.fact_shipment_v2 AS shipments
+    JOIN risk_keys
+      ON lower(trim(shipments.route_id)) = lower(trim(risk_keys.route_id))
+     AND lower(trim(shipments.carrier)) = lower(trim(risk_keys.carrier))
+     AND lower(trim(shipments.ship_mode)) = lower(trim(risk_keys.ship_mode))
+    CROSS JOIN latest_shipment
+    WHERE try_cast(shipments.dt AS date) = latest_shipment.run_date
 ),
 alert_counts AS (
     SELECT count(*) AS alerts_generated
@@ -247,6 +260,7 @@ CROSS JOIN latest_action
 CROSS JOIN latest_outcome
 CROSS JOIN latest_learning
 CROSS JOIN shipment_counts
+CROSS JOIN shipment_risk_counts
 CROSS JOIN alert_counts
 CROSS JOIN insight_counts
 CROSS JOIN decision_counts
@@ -288,25 +302,45 @@ calendar AS (
 observed AS (
     SELECT
         try_cast(dt AS date) AS day,
-        count(DISTINCT shipment_id) AS shipments,
-        count(DISTINCT CASE
-            WHEN upper(status) IN ('AT_RISK', 'BREACHED', 'DELAYED', 'EXCEPTION')
-            THEN shipment_id END) AS shipments_at_risk
+        count(DISTINCT shipment_id) AS shipments
     FROM {source_database}.fact_shipment_v2
     CROSS JOIN params
     WHERE try_cast(dt AS date)
         BETWEEN date_add('day', -{history_days - 1}, analysis_date) AND analysis_date
     GROUP BY try_cast(dt AS date)
 ),
+risk_keys AS (
+    SELECT DISTINCT run_date AS day, route_id, carrier, ship_mode
+    FROM {database}.fact_ai_alerts_v3
+    CROSS JOIN params
+    WHERE run_date
+        BETWEEN date_add('day', -{history_days - 1}, analysis_date) AND analysis_date
+),
+risk_observed AS (
+    SELECT
+        try_cast(shipments.dt AS date) AS day,
+        count(DISTINCT shipments.shipment_id) AS shipments_at_risk
+    FROM {source_database}.fact_shipment_v2 AS shipments
+    JOIN risk_keys
+      ON try_cast(shipments.dt AS date) = risk_keys.day
+     AND lower(trim(shipments.route_id)) = lower(trim(risk_keys.route_id))
+     AND lower(trim(shipments.carrier)) = lower(trim(risk_keys.carrier))
+     AND lower(trim(shipments.ship_mode)) = lower(trim(risk_keys.ship_mode))
+    CROSS JOIN params
+    WHERE try_cast(shipments.dt AS date)
+        BETWEEN date_add('day', -{history_days - 1}, analysis_date) AND analysis_date
+    GROUP BY try_cast(shipments.dt AS date)
+),
 series AS (
     SELECT
         calendar.day,
         calendar.x,
         coalesce(observed.shipments, 0) AS shipments,
-        coalesce(observed.shipments_at_risk, 0) AS shipments_at_risk,
+        coalesce(risk_observed.shipments_at_risk, 0) AS shipments_at_risk,
         CASE WHEN observed.day IS NULL THEN 0 ELSE 1 END AS observed_flag
     FROM calendar
     LEFT JOIN observed ON calendar.day = observed.day
+    LEFT JOIN risk_observed ON calendar.day = risk_observed.day
 ),
 terms AS (
     SELECT

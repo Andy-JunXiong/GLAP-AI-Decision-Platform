@@ -91,6 +91,10 @@ and decision-trace dependencies. Shipment volume comes from
 insights v3 and action distribution comes from actions v2. Outcome improvement
 is stored as a ratio and multiplied by 100 in Athena (`0.375` is published as
 `37.5%`). Every public outcome aggregate is explicitly labelled simulated.
+Because the canonical shipment snapshot has no synthetic `status` column,
+`shipments_at_risk` counts distinct shipments whose route, carrier and ship mode
+match an alerts v3 hotspot on the same logical date. It is an aggregate exposure
+count, not an entity-level risk classification.
 
 The governed analysis date is the successful pipeline logical run date. Shipment
 volume is grouped from the canonical v2 Iceberg `dt` snapshot; a shipment's
