@@ -99,6 +99,8 @@ class OpsSnapshotTests(unittest.TestCase):
     def test_existing_analytics_query_reuses_deployed_views(self):
         query = exporter.build_existing_analytics_query("curated_iceberg", "2026-08-04")
         self.assertIn("fact_ai_insights_v3", query)
+        self.assertIn("root_cause_type", query)
+        self.assertNotIn("root_cause_title", query)
         self.assertIn("fact_ai_actions_v2", query)
         self.assertNotIn("fact_ai_root_causes_v1", query)
         self.assertNotIn("v_ai_latest_decision_trace", query)

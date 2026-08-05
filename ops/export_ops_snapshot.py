@@ -472,11 +472,11 @@ distributions AS (
     WHERE run_date = params.logical_run_date
     GROUP BY action_type
     UNION ALL
-    SELECT 'root_causes', coalesce(root_cause_title, 'UNKNOWN'), count(*)
+    SELECT 'root_causes', coalesce(root_cause_type, 'UNKNOWN'), count(*)
     FROM {database}.fact_ai_insights_v3
     CROSS JOIN params
     WHERE run_date = params.logical_run_date
-    GROUP BY root_cause_title
+    GROUP BY root_cause_type
 ),
 ranked AS (
     SELECT dimension, label, metric_count,
