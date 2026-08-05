@@ -461,3 +461,16 @@ queried the closed `2026-08-04` through `2026-09-07` feature window.
 This validates the private forecasting workflow and the decision to retain the
 simple benchmark for the only provider with enough history. It does not close
 the DHL/KN backtest or supervised-label accumulation gates.
+
+## Governed history extension
+
+Use the manual lifecycle workflow action `extend-integration-validate` to add
+consecutive logical dates after the latest successful staging date. The action
+invokes the isolated controller once per date and requires generation, 19
+lifecycle checks, 5 compatibility checks, and 8 analytics checks to pass before
+advancing. It stops on the first failure.
+
+The extension payload contains only `logical_run_date`: it never requests a new
+seed population. The action neither deploys the stack nor creates a schedule or
+production alias. `replay_start_date` is the first new date and `replay_days`
+is limited to 45 so the manual job remains inside its two-hour timeout.

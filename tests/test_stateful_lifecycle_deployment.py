@@ -212,6 +212,20 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("--cli-read-timeout 900", script)
         self.assertIn("Remove-Item -LiteralPath $payloadPath", script)
 
+    def test_controller_extension_is_plan_only_and_never_seeds(self):
+        script = (
+            ROOT / "ops" / "extend_stateful_lifecycle_controller_staging.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("Seed population: False", script)
+        self.assertIn("logical_run_date = $day", script)
+        self.assertNotIn("seed_population =", script)
+        self.assertIn("19, 5, 8", script)
+        self.assertIn("Controller quality check failed", script)
+        self.assertIn("--cli-read-timeout 900", script)
+        self.assertIn("Remove-Item -LiteralPath $payloadPath", script)
+
     def test_oidc_compatible_stack_and_validation_commands_are_plan_only(self):
         stack = (ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1").read_text(
             encoding="utf-8"
@@ -243,6 +257,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("deploy-replay-validate", workflow)
         self.assertIn("deploy-integration-validate", workflow)
         self.assertIn("deploy-analytics-contract", workflow)
+        self.assertIn("extend-integration-validate", workflow)
+        self.assertIn("Extend lifecycle through governed controller", workflow)
         self.assertIn("-AnalyticsOnly", workflow)
         self.assertIn("Deploy read-only analytics contract", workflow)
         self.assertIn("Validate lifecycle pipeline integration", workflow)

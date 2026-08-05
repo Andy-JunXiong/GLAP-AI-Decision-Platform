@@ -13,6 +13,7 @@ on:
           - deploy-replay-validate
           - deploy-integration-validate
           - deploy-analytics-contract
+          - extend-integration-validate
       load_initial_seed:
         description: Load Q3 seed once; leave false on repeat deployments
         required: true
@@ -146,6 +147,11 @@ jobs:
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
             -PopulationSize ${{ inputs.population_size }}
+          ./ops/extend_stateful_lifecycle_controller_staging.ps1 `
+            -Region $env:AWS_REGION `
+            -ControllerFunction $env:CONTROLLER_FUNCTION `
+            -StartDate "${{ inputs.replay_start_date }}" `
+            -Days ${{ inputs.replay_days }}
           ./ops/validate_stateful_lifecycle_staging.ps1 `
             -Region $env:AWS_REGION `
             -SourceDatabase $env:SOURCE_DATABASE `
@@ -255,6 +261,17 @@ jobs:
             integration-response.json)
           test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$metadata")" = ""
           python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation", "analytics_validation"], stages; assert len(stages[1]["quality_checks"]) == 19 and len(stages[2]["quality_checks"]) == 5 and len(stages[3]["quality_checks"]) == 8, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
+
+      - name: Extend lifecycle through governed controller
+        if: inputs.action == 'extend-integration-validate'
+        shell: pwsh
+        run: |
+          ./ops/extend_stateful_lifecycle_controller_staging.ps1 `
+            -Region $env:AWS_REGION `
+            -ControllerFunction $env:CONTROLLER_FUNCTION `
+            -StartDate "${{ inputs.replay_start_date }}" `
+            -Days ${{ inputs.replay_days }} `
+            -Apply
 
       - name: Write staging evidence summary
         if: success()
