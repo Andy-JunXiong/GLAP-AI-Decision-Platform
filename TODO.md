@@ -54,13 +54,15 @@ Repository implementation checkpoint — 4 August 2026:
 - [x] Add a manual GitHub OIDC staging workflow for plan, isolated stack deploy,
   replay and fail-closed daily reconciliation; it creates no schedule and does
   not modify a production alias.
-- [ ] Run the private 28-day replay in AWS staging and reconcile every logical
+- [x] Run the private 28-day replay in AWS staging and reconcile every logical
   date before changing the production alias.
-  - 5 August preflight: GitHub environment targets are configured, lifecycle
-    tests and OIDC succeeded, then the plan stopped before writes because the
-    staging deployer lacks `athena:GetWorkGroup`. Apply the reviewed,
-    lifecycle-scoped policy from
-    `ops/configure_stateful_lifecycle_deployer.ps1`, then rerun `action=plan`.
+  - 5 August evidence: workflow run `30967670110` replayed `2026-08-04` through
+    `2026-08-31` from an initial population of 450 and passed 16 fail-closed
+    checks for every date (448 checks total). The aggregate staging audit found
+    28 dates, 16,037 snapshots, 895 shipment IDs, 4.58% journey exception
+    incidence, 309 delivered shipments, zero post-delivery rows, zero invalid
+    terminal rows, and zero duplicate snapshot keys. No schedule or production
+    alias was created or changed.
 
 - [x] Correct the public metric contract: v2 shipment volume, insights v3 root
   causes, actions v2 action distribution, no legacy v1 or trace claims.

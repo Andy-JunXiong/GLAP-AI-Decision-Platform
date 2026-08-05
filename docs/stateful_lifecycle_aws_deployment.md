@@ -231,3 +231,31 @@ its staging data contract:
 Only after those checks pass should the staging writer receive scoped Glue,
 Lake Formation and S3 write permissions and be added ahead of the existing
 input quality gate. Production v2 promotion remains a separate controlled step.
+
+## AWS staging evidence — 5 August 2026
+
+The isolated staging gate passed in GitHub Actions workflow run
+[`30967670110`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30967670110)
+from commit `346ed68`. The successful run used `load_initial_seed=false`, kept
+the initial seed single-loaded, and replayed 28 logical dates from `2026-08-04`
+through `2026-08-31` with an initial active population of 450.
+
+- All 28 Lambda invocations completed serially with no Lambda error, timeout,
+  or CLI retry in the successful run.
+- Every logical date passed both validation statements and all 16 fail-closed
+  checks: 448 checks in total.
+- The replay produced 16,037 daily snapshot rows across 895 distinct shipment
+  IDs. Journey-level exception incidence was 4.58%, inside the documented
+  3--7% target.
+- 309 shipments reached `DELIVERED`; invalid terminal rows, rows after the
+  first delivered snapshot, and duplicate snapshot keys were all zero.
+- The CloudFormation stack finished `UPDATE_COMPLETE`. Its managed resources
+  are the isolated Lambda, its dedicated IAM role, and an error alarm in `OK`.
+  Lambda event-source mappings, aliases, and EventBridge rules targeting the
+  function were all empty.
+- The workflow evidence records `Production alias changed: false` and
+  `Schedule created: false`.
+
+This closes the private replay and reconciliation gate only. Schema
+compatibility and controlled insertion ahead of the existing input quality gate
+remain required before any production v2 promotion or alias change.

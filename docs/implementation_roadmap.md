@@ -223,6 +223,9 @@ The repository now contains the corrected P0 public metric contract and the
 isolated stateful lifecycle staging slice defined in
 `shipment_lifecycle_design.md`, including deterministic replay, Athena merges,
 per-snapshot lifecycle metrics and simulated SLA/cost signal candidates. The
-next implementation gate is a private 28-day AWS staging replay with daily SQL
-reconciliation. Authenticated production writes remain blocked until that real
-governed run passes and the production alias/rollback boundary is approved.
+private 28-day AWS staging replay passed on 5 August 2026 with 448 fail-closed
+checks, 4.58% journey exception incidence, and no schedule or production alias
+change. The next implementation gate is schema compatibility and controlled
+insertion of the staging writer ahead of the existing input quality gate.
+Authenticated production writes remain blocked until that integration passes
+and the production alias/rollback boundary is explicitly approved.
