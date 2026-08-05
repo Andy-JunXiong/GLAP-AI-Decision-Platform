@@ -8,6 +8,7 @@ param(
     [string]$Workgroup = "primary",
     [string]$StackName = "glap-stateful-lifecycle-staging",
     [string]$FunctionName = "glap-stateful-lifecycle-generator-staging",
+    [string]$ExecutionRoleName = "glap-stateful-lifecycle-generator-staging-role",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
     [string]$ArtifactPrefix = "stateful-lifecycle-staging/artifacts",
     [Parameter(Mandatory)] [string]$LifecycleDataBucket,
@@ -18,7 +19,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-foreach ($name in @($RoleName, $PolicyName, $StackName, $FunctionName)) {
+foreach ($name in @($RoleName, $PolicyName, $StackName, $FunctionName, $ExecutionRoleName)) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
         throw "Role, policy, stack and function names must use safe AWS characters"
     }
@@ -218,7 +219,7 @@ $policy = @{
                 "iam:TagRole",
                 "iam:UntagRole"
             )
-            Resource = "arn:aws:iam::${accountId}:role/${StackName}-LifecycleGeneratorRole-*"
+            Resource = "arn:aws:iam::${accountId}:role/${ExecutionRoleName}"
         },
         @{
             Sid = "ManageLifecycleAlarm"
@@ -241,6 +242,7 @@ Write-Host "  Role: $RoleName"
 Write-Host "  Inline policy: $PolicyName"
 Write-Host "  Stack: $StackName"
 Write-Host "  Function: $FunctionName"
+Write-Host "  Execution role: $ExecutionRoleName"
 Write-Host "  Database: $SourceDatabase"
 Write-Host "  Workgroup: $Workgroup"
 Write-Host "  Artifact prefix scoped: True"

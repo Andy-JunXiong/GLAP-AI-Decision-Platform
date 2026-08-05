@@ -92,6 +92,9 @@ artifact, data and query-result prefixes, the isolated CloudFormation stack,
 the staging Lambda, its stack-generated execution role and its alarm. It grants
 no Scheduler action and no production alias update. Re-run `action=plan` after
 the policy is applied; do not start the one-time seed while plan is failing.
+The execution role uses the fixed staging-only name
+`glap-stateful-lifecycle-generator-staging-role`; this prevents CloudFormation
+physical-name truncation from widening or bypassing the deployer policy scope.
 
 ## Deployment
 

@@ -31,11 +31,15 @@ Parameters:
   FunctionName:
     Type: String
     Default: glap-stateful-lifecycle-generator-staging
+  ExecutionRoleName:
+    Type: String
+    Default: glap-stateful-lifecycle-generator-staging-role
 
 Resources:
   LifecycleGeneratorRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Ref ExecutionRoleName
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

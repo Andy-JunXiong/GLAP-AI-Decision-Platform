@@ -82,6 +82,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         )
         self.assertIn("glap-stateful-lifecycle-generator-staging", template)
         self.assertIn("LifecycleDataObjectArn", template)
+        self.assertIn("RoleName: !Ref ExecutionRoleName", template)
         self.assertIn("fact_shipment_lifecycle_staging_v1", template)
         self.assertIn("fact_shipment_lifecycle_metrics_staging_v1", template)
         self.assertIn("fact_shipment_signal_candidate_staging_v1", template)
@@ -113,6 +114,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             self.assertIn("[string]$Profile = $env:AWS_PROFILE", script)
         self.assertIn("Athena engine version 3", stack)
         self.assertIn("--no-fail-on-empty-changeset", stack)
+        self.assertIn("CAPABILITY_NAMED_IAM", stack)
         self.assertIn("failureCount -ne 0", validation)
 
     def test_lifecycle_workflow_is_manual_and_never_changes_production_alias(self):
@@ -141,7 +143,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('"athena:GetWorkGroup"', script)
         self.assertIn('"cloudformation:CreateChangeSet"', script)
         self.assertIn('"iam:PassRole"', script)
-        self.assertIn('${StackName}-LifecycleGeneratorRole-*', script)
+        self.assertIn('role/${ExecutionRoleName}', script)
+        self.assertIn('glap-stateful-lifecycle-generator-staging-role', script)
         self.assertIn('${LifecycleDataBucket}/${dataPrefix}/*', script)
         self.assertIn('stateful-lifecycle-staging/artifacts', script)
         self.assertIn('stateful-lifecycle-staging/data', script)

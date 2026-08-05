@@ -4,6 +4,7 @@ param(
     [string]$Region = "us-east-1",
     [string]$StackName = "glap-stateful-lifecycle-staging",
     [string]$FunctionName = "glap-stateful-lifecycle-generator-staging",
+    [string]$ExecutionRoleName = "glap-stateful-lifecycle-generator-staging-role",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$Workgroup = "primary",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
@@ -16,9 +17,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-foreach ($identifier in @($StackName, $FunctionName)) {
+foreach ($identifier in @($StackName, $FunctionName, $ExecutionRoleName)) {
     if ($identifier -notmatch '^[A-Za-z][A-Za-z0-9-]{0,127}$') {
-        throw "StackName and FunctionName must use safe AWS names"
+        throw "StackName, FunctionName and ExecutionRoleName must use safe AWS names"
     }
 }
 foreach ($bucket in @($ArtifactBucket, $LifecycleDataBucket)) {
@@ -56,6 +57,7 @@ $archivePath = Join-Path $distDir "glap-stateful-lifecycle-generator.zip"
 Write-Host "Stateful lifecycle staging stack plan"
 Write-Host "  Stack: $StackName"
 Write-Host "  Function: $FunctionName"
+Write-Host "  Execution role: $ExecutionRoleName"
 Write-Host "  Region: $Region"
 Write-Host "  Source database: $SourceDatabase"
 Write-Host "  Workgroup: $Workgroup"
@@ -108,12 +110,13 @@ $parameterOverrides = @(
     "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
     "AthenaWorkgroup=$Workgroup",
     "SourceDatabase=$SourceDatabase",
-    "FunctionName=$FunctionName"
+    "FunctionName=$FunctionName",
+    "ExecutionRoleName=$ExecutionRoleName"
 )
 & aws cloudformation deploy `
     --stack-name $StackName `
     --template-file $templatePath `
-    --capabilities CAPABILITY_IAM `
+    --capabilities CAPABILITY_NAMED_IAM `
     --no-fail-on-empty-changeset `
     --parameter-overrides @parameterOverrides `
     @awsScope
