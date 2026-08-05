@@ -428,3 +428,36 @@ labels with at least 20 examples in each class per mode/provider. Cost-variance
 evaluation requires at least 200 observed labels and 10 distinct values. A
 provider below those thresholds remains explicitly blocked while history
 accumulates.
+
+## Forecast-validation AWS evidence — 5 August 2026
+
+After PR `#11` merged as commit `4348e8e`, plan-only workflow run
+`30996670988` passed. Run `30996715050` then updated only the six read-only
+analytics view definitions and passed the existing `2026-09-07` staging
+validation. It did not invoke lifecycle generation, create a schedule, change a
+production alias, or write a business table.
+
+Forecast plan run `30996809400` passed before private backtest run `30997015294`
+queried the closed `2026-08-04` through `2026-09-07` feature window.
+
+- Maersk Ocean had 35 observations with 100% calendar completeness, producing
+  21 held-out forecasts per model. DHL Air and KN Ocean each had six complete
+  observations and remained in `partial_history` rather than being evaluated
+  on an unsafe short window.
+- Recent-level was retained for Maersk with MAE `2.0476`, normalized MAE
+  `15.3571%`, RMSE `2.5355`, bias `0.3333`, MAPE `17.9231%`, and 95% residual
+  interval coverage of `90.4762%`. Moving-average, OLS, and weekday-seasonal
+  MAE values were `2.7279`, `2.7707`, and `3.6627`, respectively.
+- Label readiness remained `blocked_insufficient_observed_labels`: DHL had 7
+  observed and 11 pending outcomes, KN had 0 observed and 39 pending, and
+  Maersk had 20 observed and 482 pending. No supervised target was authorized
+  for training.
+- The feature and label queries scanned `160137` and `463988` bytes,
+  respectively, both far below the `104857600`-byte per-query budget.
+- The 14-day workflow artifact contains only mode/provider aggregates and model
+  evidence. A post-download guard found no shipment ID, route-service ID,
+  market lane, S3 URI, or AWS ARN.
+
+This validates the private forecasting workflow and the decision to retain the
+simple benchmark for the only provider with enough history. It does not close
+the DHL/KN backtest or supervised-label accumulation gates.
