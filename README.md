@@ -122,7 +122,7 @@ its source metrics.
 | Forecast baseline | 28-day `dt` history with Athena-calculated seven-day OLS volume forecast |
 | Stateful multimodal staging | Cross-date lifecycle for Maersk/KN Ocean and DHL Air; 15--20% simulated Air booking control |
 | Multimodal analytics foundation | Six read-only Athena views plus 8 fail-closed operations/feature/label checks |
-| Forecast validation | Manual private rolling backtest plus pending-safe supervised-label readiness gates |
+| Forecast validation | Private AWS backtest retained recent-level for Maersk; DHL/KN remain partial-history and supervised labels remain blocked |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is

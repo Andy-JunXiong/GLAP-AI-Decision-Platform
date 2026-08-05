@@ -50,6 +50,19 @@ implemented and validated in isolated AWS staging.
 This completes the data and analytics foundation. It does not constitute a
 trained forecasting model or authorize production-boundary changes.
 
+## Forecast-validation checkpoint -- 5 August 2026
+
+The first private AWS forecast validation retained the recent-level baseline
+for Maersk after 21 held-out dates. Its MAE was `2.0476`, lower than the moving
+average (`2.7279`), OLS (`2.7707`), and weekday-seasonal (`3.6627`) candidates.
+DHL Air and KN Ocean each had only six feature dates, so the report remained
+`partial_history` and did not manufacture an evaluation result.
+
+Supervised learning remains blocked. Observed outcome counts were 7 for DHL, 0
+for KN, and 20 for Maersk, all below the governed 200-label threshold and class
+balance rules. Pending outcomes were excluded. Both Athena reads stayed below
+one MiB and the workflow published no entity identifiers or public snapshot.
+
 ## Delivery sequence
 
 ```mermaid

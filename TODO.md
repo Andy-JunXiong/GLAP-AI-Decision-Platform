@@ -30,17 +30,24 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   and document feature availability, null handling, and training cutoff rules.
 - [ ] Backtest recent-level, moving-average, weekday-seasonal, and existing OLS
   booking-volume baselines by mode and provider using rolling time windows.
-- [ ] Report MAE, RMSE, bias, MAPE where defined, and interval coverage; retain
+  - [x] Run the first private AWS backtest over `2026-08-04` through
+    `2026-09-07`. Maersk had 35 complete days and 21 held-out forecasts; DHL
+    Air and KN Ocean each had only 6 days and remain explicitly ineligible.
+- [x] Report MAE, RMSE, bias, MAPE where defined, and interval coverage; retain
   the simple benchmark unless a candidate consistently beats it.
+  - AWS run `30997015294` retained recent-level for Maersk: MAE `2.0476`, RMSE
+    `2.5355`, bias `0.3333`, MAPE `17.9231%`, and interval coverage `90.4762%`.
 - [ ] Accumulate enough observed shipment labels before training SLA-breach,
   delay-risk, or cost-variance models; pending labels must never enter training.
   - [x] Add an aggregate mode/provider readiness gate with minimum observed and
     class-balance thresholds; actual staging cohorts must still accumulate.
-- [ ] Add feature completeness, drift, prediction-error, and Athena scan-cost
+- [x] Add feature completeness, drift, prediction-error, and Athena scan-cost
   monitoring before any recurring forecast execution is proposed.
   - [x] Emit local completeness, missing-date, seven-day drift, normalized-error,
-    interval-coverage, and per-query scan-budget evidence; AWS results pending.
-- [ ] Keep every forecast advisory and inside the authenticated/private boundary;
+    interval-coverage, and per-query scan-budget evidence.
+  - AWS feature and label queries scanned `160137` and `463988` bytes,
+    respectively, both inside the `104857600`-byte per-query budget.
+- [x] Keep every forecast advisory and inside the authenticated/private boundary;
   production scheduling or writes require a separate explicit approval.
 
 ## Current checkpoint — 3 August 2026
