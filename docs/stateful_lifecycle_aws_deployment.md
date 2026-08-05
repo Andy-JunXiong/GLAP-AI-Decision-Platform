@@ -473,4 +473,33 @@ advancing. It stops on the first failure.
 The extension payload contains only `logical_run_date`: it never requests a new
 seed population. The action neither deploys the stack nor creates a schedule or
 production alias. `replay_start_date` is the first new date and `replay_days`
-is limited to 45 so the manual job remains inside its two-hour timeout.
+is technically limited to 45, but the GitHub OIDC role currently issues a
+one-hour credential. Until the workflow enforces a lower bound, use no more
+than 20 dates per invocation and leave additional margin when observed stage
+duration approaches three minutes per date.
+
+## History-extension AWS evidence -- 5 August 2026
+
+PR `#13` merged as commit `e56b41b` after both Python 3.13 and 3.14 CI jobs
+passed in run `30997968931`. Plan run `30998092491` then validated the no-seed,
+no-deploy extension for `2026-09-08` through `2026-10-05`.
+
+Apply run `30998141662` completed 23 consecutive dates from `2026-09-08`
+through `2026-09-30`. Each date returned the exact four-stage contract and all
+32 checks passed. At the next invocation, the GitHub caller's OIDC credentials
+expired after one hour. The AWS CLI therefore failed before receiving the
+normal `2026-10-01` controller response.
+
+A five-day continuation plan passed in run `31002256538`. Continuation run
+`31002314446` then received a Lambda `FunctionError` immediately when retrying
+`2026-10-01`. Because the first invocation may have reached or partially
+changed same-day state before its caller credentials expired, do not replay the
+date again without a read-only state diagnosis.
+
+Forecast plan run `31002432750` validated a read-only diagnostic with a
+`2026-10-01` cutoff. The actual Athena query was deliberately not dispatched:
+the expanded private-data window requires explicit authorization. The next
+session must confirm the latest completed feature/label boundary, resume only
+the missing dates through `2026-10-05`, and then rerun the aggregate forecast
+backtest. No schedule, production alias, production table, or public
+entity-level artifact was created by these attempts.

@@ -3,6 +3,25 @@
 Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
+## End-of-day handoff -- 5 August 2026
+
+- [x] Merge the governed forecast-validation, AWS evidence, and no-reseed
+  history-extension changes through PRs `#11`, `#12`, and `#13`.
+- [x] Complete 23 additional staging dates, `2026-09-08` through
+  `2026-09-30`; every date passed four stages and all 32 checks.
+- [ ] Verify whether the expired caller session completed `2026-10-01` before
+  invoking another date. The retry returned a Lambda `FunctionError`, so the
+  latest date remains explicitly unverified beyond `2026-09-30`.
+- [ ] After explicit expanded-window Athena authorization, diagnose the cutoff,
+  extend only the remaining dates through `2026-10-05`, and rerun the private
+  rolling backtest.
+- [ ] Bound each history-extension invocation so it completes inside the
+  one-hour GitHub OIDC credential life; use no more than 20 dates until the
+  workflow enforces a safer limit.
+
+Detailed today/tomorrow/future notes are in the
+[`5 August development handoff`](docs/development_handoff_2026-08-05.md).
+
 ## Delivery checkpoint — 5 August 2026
 
 - [x] Complete the isolated 28-day AWS stateful-lifecycle replay and reconcile

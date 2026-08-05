@@ -63,6 +63,22 @@ for KN, and 20 for Maersk, all below the governed 200-label threshold and class
 balance rules. Pending outcomes were excluded. Both Athena reads stayed below
 one MiB and the workflow published no entity identifiers or public snapshot.
 
+## End-of-day execution checkpoint -- 5 August 2026
+
+The governed no-reseed extension completed 23 more consecutive staging dates,
+`2026-09-08` through `2026-09-30`. Every date passed generation, 19 lifecycle,
+5 compatibility, and 8 analytics checks. The next invocation crossed the
+one-hour GitHub OIDC credential boundary, and a retry returned a Lambda
+`FunctionError`; `2026-10-01` must therefore be diagnosed read-only before any
+further write.
+
+Tomorrow's first slice is to obtain authorization for the expanded private
+Athena window, verify the latest completed date, finish only the missing dates
+through `2026-10-05`, and rerun the four-baseline provider backtest. The
+history-extension workflow must also be bounded below the credential lifetime.
+The full operational handoff and longer-term sequence are recorded in
+[`development_handoff_2026-08-05.md`](development_handoff_2026-08-05.md).
+
 ## Delivery sequence
 
 ```mermaid

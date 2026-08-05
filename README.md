@@ -183,6 +183,7 @@ flowchart TB
 - [Multimodal operations, feature and label views](sql/09_multimodal_ops_analytics.sql)
 - [Multimodal forecast feature contract](docs/multimodal_forecast_feature_contract.md)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
+- [5 August 2026 development handoff](docs/development_handoff_2026-08-05.md)
 - [Prioritized project TODO](TODO.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)
 - [Zero-install interactive demo](offline/glap-demo.html)
