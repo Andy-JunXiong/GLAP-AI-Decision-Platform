@@ -355,3 +355,39 @@ through `2026-09-06` in order.
 
 This establishes the multimodal data foundation in isolated staging only.
 Recurring execution and production writes remain disabled.
+
+## Multimodal operational analytics AWS staging evidence — 5 August 2026
+
+The next read-only layer adds six governed Athena views over lifecycle staging:
+one shipment-grain analytic base, daily mode and provider rollups, an
+Air-vs-Ocean lane decision view, a past-only daily feature view, and a latest
+shipment outcome-label view. The deployment also adds the eight-check
+`multimodal_analytics_v1` fail-closed contract as the fourth manual controller
+stage.
+
+- Local validation passed all 99 repository tests.
+- Logical dates `2026-09-06` and `2026-09-07` each passed all 27 staging
+  checks: 19 lifecycle checks plus 8 analytics checks. The Sep 7 controller
+  also passed all 5 v2 compatibility checks.
+- The Sep 7 four-stage controller completed in about 163 seconds: generation
+  144.3 seconds, lifecycle validation 11.4 seconds, compatibility validation
+  3.3 seconds, and analytics validation 4.3 seconds.
+- Sep 7 mode rollups contained 15 DHL Air snapshots with 3 new bookings and 4
+  deliveries, and 570 Ocean snapshots with 13 new bookings and 19 deliveries.
+  DHL's operational unit is chargeable kilograms; KN and Maersk use containers.
+- The provider rollup contained DHL Air, KN Ocean, and Maersk Ocean without
+  duplicating shipment snapshots. Forecast features use only prior rows through
+  the feature cutoff, and pending outcome rows carry no future labels.
+- All nine observed Air market lanes had an Ocean reference. Planned Air time
+  saved ranged from 349 to 602 hours. Cost premium is deliberately calculated
+  on a standardized simulated weight basis, Air chargeable kilograms versus
+  Ocean gross kilograms, rather than misleadingly comparing a small Air
+  shipment with a multi-container Ocean shipment. The observed range was
+  3,728.07% to 4,173.52%.
+- The stack update still created no schedule and changed no production alias or
+  production table. The views are read-only and do not materialize another
+  daily data copy.
+
+This closes the governed operational-analytics foundation in isolated staging.
+It supplies analysis-ready history and prediction-ready features/labels, but it
+does not yet train or authorize a production forecasting model.

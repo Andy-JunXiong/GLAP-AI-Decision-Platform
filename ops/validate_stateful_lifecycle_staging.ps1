@@ -24,6 +24,7 @@ Write-Host "  Database: $SourceDatabase"
 Write-Host "  First date: $($dates[0].ToString('yyyy-MM-dd'))"
 Write-Host "  Last date: $($dates[-1].ToString('yyyy-MM-dd'))"
 Write-Host "  Days: $Days"
+Write-Host "  Contracts: lifecycle + multimodal analytics"
 Write-Host "  Expected result for every check: 0"
 
 if (-not $Apply) {
@@ -36,8 +37,12 @@ if ($Profile) {
     $awsScope += @("--profile", $Profile)
 }
 $root = Split-Path $PSScriptRoot -Parent
-$validationTemplate = Get-Content -LiteralPath `
-    (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") -Raw
+$validationTemplates = @(
+    Get-Content -LiteralPath `
+        (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") -Raw
+    Get-Content -LiteralPath `
+        (Join-Path $root "sql/10_multimodal_ops_validation.sql") -Raw
+)
 
 function Invoke-ValidationStatement {
     param(
@@ -88,16 +93,19 @@ function Invoke-ValidationStatement {
 
 foreach ($logicalDate in $dates) {
     $day = $logicalDate.ToString("yyyy-MM-dd")
-    $rendered = $validationTemplate.Replace("{{SOURCE_DATABASE}}", $SourceDatabase)
-    $rendered = $rendered.Replace("{{LOGICAL_RUN_DATE}}", $day)
-    if ($rendered -match '\{\{[^}]+\}\}') {
-        throw "Unresolved validation template token for $day"
-    }
-    $rendered = [regex]::Replace($rendered, '(?m)^\s*--.*$', '')
-    $statements = @($rendered -split ';' | Where-Object { $_.Trim() })
     $checkCount = 0
-    foreach ($statement in $statements) {
-        $checkCount += Invoke-ValidationStatement -Statement $statement.Trim() -LogicalDate $day
+    foreach ($validationTemplate in $validationTemplates) {
+        $rendered = $validationTemplate.Replace("{{SOURCE_DATABASE}}", $SourceDatabase)
+        $rendered = $rendered.Replace("{{LOGICAL_RUN_DATE}}", $day)
+        if ($rendered -match '\{\{[^}]+\}\}') {
+            throw "Unresolved validation template token for $day"
+        }
+        $rendered = [regex]::Replace($rendered, '(?m)^\s*--.*$', '')
+        $statements = @($rendered -split ';' | Where-Object { $_.Trim() })
+        foreach ($statement in $statements) {
+            $checkCount += Invoke-ValidationStatement `
+                -Statement $statement.Trim() -LogicalDate $day
+        }
     }
     Write-Host "$day`: $checkCount validation checks passed"
 }

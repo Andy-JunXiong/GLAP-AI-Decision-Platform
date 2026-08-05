@@ -98,6 +98,11 @@ class PipelineControllerTests(unittest.TestCase):
                 "function_name": "validator",
                 "quality_contract": "lifecycle_compat_v2",
             },
+            {
+                "name": "analytics_validation",
+                "function_name": "validator",
+                "quality_contract": "multimodal_analytics_v1",
+            },
         ]
         module = load_module()
         validated = module.load_stage_config(json.dumps(stages))
@@ -114,6 +119,17 @@ class PipelineControllerTests(unittest.TestCase):
                 }
             ),
             response({"status": "success", "quality_checks": PASSED_CHECKS}),
+            response(
+                {
+                    "status": "success",
+                    "quality_checks": {
+                        name: "passed"
+                        for name in module.QUALITY_CONTRACTS[
+                            "multimodal_analytics_v1"
+                        ]
+                    },
+                }
+            ),
         ]
         module.lambda_client = client
         with patch.object(module, "load_existing_run", return_value=None), patch.object(
@@ -125,10 +141,15 @@ class PipelineControllerTests(unittest.TestCase):
         self.assertEqual(result["status"], "succeeded")
         self.assertEqual(len(result["stages"][1]["quality_checks"]), 19)
         self.assertEqual(len(result["stages"][2]["quality_checks"]), 5)
+        self.assertEqual(len(result["stages"][3]["quality_checks"]), 8)
         lifecycle_payload = json.loads(client.invoke.call_args_list[1].kwargs["Payload"])
         compat_payload = json.loads(client.invoke.call_args_list[2].kwargs["Payload"])
         self.assertEqual(lifecycle_payload["quality_contract"], "lifecycle_v1")
         self.assertEqual(compat_payload["quality_contract"], "lifecycle_compat_v2")
+        analytics_payload = json.loads(client.invoke.call_args_list[3].kwargs["Payload"])
+        self.assertEqual(
+            analytics_payload["quality_contract"], "multimodal_analytics_v1"
+        )
 
     def test_failed_quality_gate_blocks_downstream_stage(self):
         client = MagicMock()

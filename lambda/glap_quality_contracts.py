@@ -41,10 +41,24 @@ LIFECYCLE_CHECK_NAMES = frozenset(
     }
 )
 
+MULTIMODAL_ANALYTICS_CHECK_NAMES = frozenset(
+    {
+        "duplicate_analytics_shipment_key",
+        "mode_rollup_does_not_reconcile",
+        "provider_rollup_does_not_reconcile",
+        "invalid_mode_unit_contract",
+        "invalid_sla_rate_contract",
+        "air_decision_missing_ocean_reference",
+        "duplicate_forecast_feature_key",
+        "invalid_outcome_label_contract",
+    }
+)
+
 QUALITY_CONTRACTS = {
     "pipeline_v1": PIPELINE_CHECK_NAMES,
     "lifecycle_v1": LIFECYCLE_CHECK_NAMES,
     "lifecycle_compat_v2": PIPELINE_CHECK_NAMES,
+    "multimodal_analytics_v1": MULTIMODAL_ANALYTICS_CHECK_NAMES,
 }
 
 
@@ -77,3 +91,34 @@ def render_lifecycle_validation_queries(
     if len(statements) != 2:
         raise ValueError("Lifecycle validation contract must contain exactly two statements")
     return statements
+
+
+def _analytics_validation_template() -> str:
+    packaged = Path(__file__).with_name("multimodal_ops_validation.sql")
+    repository = Path(__file__).resolve().parents[1] / "sql" / "10_multimodal_ops_validation.sql"
+    for path in (packaged, repository):
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+    raise RuntimeError("Multimodal analytics validation SQL is missing from the deployment package")
+
+
+def render_multimodal_analytics_validation_query(
+    logical_run_date: str,
+    source_database: str,
+    template: str | None = None,
+) -> str:
+    parsed = date.fromisoformat(logical_run_date)
+    if parsed.isoformat() != logical_run_date:
+        raise ValueError("logical_run_date must use YYYY-MM-DD")
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", source_database):
+        raise ValueError("source_database must be a safe Athena identifier")
+    rendered = (template if template is not None else _analytics_validation_template()).replace(
+        "{{SOURCE_DATABASE}}", source_database
+    ).replace("{{LOGICAL_RUN_DATE}}", logical_run_date)
+    if re.search(r"\{\{[^}]+\}\}", rendered):
+        raise ValueError("Multimodal analytics validation SQL has unresolved template tokens")
+    rendered = re.sub(r"^\s*--.*$", "", rendered, flags=re.MULTILINE)
+    statements = tuple(statement.strip() for statement in rendered.split(";") if statement.strip())
+    if len(statements) != 1:
+        raise ValueError("Multimodal analytics validation contract must contain exactly one statement")
+    return statements[0]

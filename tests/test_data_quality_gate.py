@@ -158,6 +158,43 @@ class DataQualityGateTests(unittest.TestCase):
         self.assertEqual(result["metrics"]["check_count"], 19)
         validate.assert_called_once_with("2026-09-01", "simulated_iceberg_m")
 
+    def test_multimodal_analytics_handler_emits_exact_check_contract(self):
+        module = load_module()
+        failures = {name: 0 for name in module.MULTIMODAL_ANALYTICS_CHECK_NAMES}
+        with patch.object(
+            module, "run_multimodal_analytics_validation", return_value=failures
+        ) as validate:
+            result = module.lambda_handler(
+                {
+                    "logical_run_date": "2026-09-07",
+                    "pipeline_stage": "analytics_validation",
+                    "quality_contract": "multimodal_analytics_v1",
+                },
+                None,
+            )
+        self.assertEqual(
+            set(result["quality_checks"]),
+            set(module.MULTIMODAL_ANALYTICS_CHECK_NAMES),
+        )
+        self.assertTrue(
+            all(value == "passed" for value in result["quality_checks"].values())
+        )
+        self.assertEqual(result["metrics"]["check_count"], 8)
+        validate.assert_called_once_with("2026-09-07", "simulated_iceberg_m")
+
+    def test_multimodal_analytics_query_is_single_safe_statement(self):
+        module = load_module()
+        query = module.render_multimodal_analytics_validation_query(
+            "2026-09-07", "simulated_iceberg_m"
+        )
+        self.assertIn("DATE '2026-09-07'", query)
+        self.assertIn("vw_multimodal_mode_decision_v1", query)
+        self.assertNotIn("{{", query)
+        with self.assertRaises(ValueError):
+            module.render_multimodal_analytics_validation_query(
+                "2026-09-07", "unsafe;drop"
+            )
+
     def test_validation_result_rejects_duplicate_checks(self):
         module = load_module()
         response = {

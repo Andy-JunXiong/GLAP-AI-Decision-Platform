@@ -76,6 +76,14 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             len(statements(ROOT / "sql" / "08_stateful_lifecycle_multimodal_seed.sql")),
             7,
         )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "09_multimodal_ops_analytics.sql")),
+            6,
+        )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "10_multimodal_ops_validation.sql")),
+            1,
+        )
 
     def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
         compatibility = (
@@ -96,6 +104,46 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("SIM-PRODUCT-", compatibility)
         self.assertNotRegex(compatibility, r"(?i)(insert\s+into|merge\s+into|delete\s+from)")
         self.assertNotIn("VIEW {{SOURCE_DATABASE}}.fact_shipment_v2", compatibility)
+
+    def test_multimodal_analytics_keep_shared_stages_and_mode_specific_units(self):
+        analytics = (
+            ROOT / "sql" / "09_multimodal_ops_analytics.sql"
+        ).read_text(encoding="utf-8")
+        for view in (
+            "vw_multimodal_shipment_daily_v1",
+            "vw_multimodal_ops_daily_v1",
+            "vw_multimodal_provider_daily_v1",
+            "vw_multimodal_mode_decision_v1",
+            "vw_multimodal_forecast_feature_daily_v1",
+            "vw_multimodal_outcome_label_v1",
+        ):
+            self.assertIn(f"VIEW {{{{SOURCE_DATABASE}}}}.{view}", analytics)
+        self.assertIn("'CHARGEABLE_KG'", analytics)
+        self.assertIn("'CONTAINER'", analytics)
+        self.assertIn("origin_breach_flag", analytics)
+        self.assertIn("p2p_breach_flag", analytics)
+        self.assertIn("destination_breach_flag", analytics)
+        self.assertIn("ROWS BETWEEN 7 PRECEDING AND 1 PRECEDING", analytics)
+        self.assertIn("'NO_FUTURE_DATA'", analytics)
+        self.assertIn("'ADVISORY_SIMULATION_ONLY'", analytics)
+        self.assertIn("'AIR_CHARGEABLE_KG_VS_OCEAN_GROSS_KG'", analytics)
+        self.assertIn("expected_cost_per_comparison_kg", analytics)
+
+    def test_multimodal_analytics_validation_is_fail_closed(self):
+        validation = (
+            ROOT / "sql" / "10_multimodal_ops_validation.sql"
+        ).read_text(encoding="utf-8")
+        for check in (
+            "duplicate_analytics_shipment_key",
+            "mode_rollup_does_not_reconcile",
+            "provider_rollup_does_not_reconcile",
+            "invalid_mode_unit_contract",
+            "invalid_sla_rate_contract",
+            "air_decision_missing_ocean_reference",
+            "duplicate_forecast_feature_key",
+            "invalid_outcome_label_contract",
+        ):
+            self.assertIn(f"'{check}'", validation)
 
     def test_validation_fails_on_immutable_milestone_and_cost_breaks(self):
         validation = (ROOT / "sql" / "06_stateful_lifecycle_validation.sql").read_text(
@@ -123,6 +171,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("if (-not $Apply)", script)
         self.assertIn("Plan only", script)
         self.assertIn("-LiteralPath", script)
+        self.assertIn("[switch]$AnalyticsOnly", script)
+        self.assertIn("AnalyticsOnly cannot be combined with IncludeSeed", script)
 
     def test_staging_template_is_unscheduled_and_prefix_scoped(self):
         template = (ROOT / "infrastructure" / "stateful-lifecycle-staging.yaml").read_text(
@@ -141,6 +191,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("glap-stateful-lifecycle-quality-gate-staging", template)
         self.assertIn('"quality_contract":"lifecycle_v1"', template)
         self.assertIn('"quality_contract":"lifecycle_compat_v2"', template)
+        self.assertIn('"quality_contract":"multimodal_analytics_v1"', template)
+        self.assertIn("vw_multimodal_mode_decision_v1", template)
         self.assertIn("PipelineStatusObjectArn", template)
         self.assertIn("PipelineStatusPrefix", template)
         self.assertIn("FindPrivateStatus", template)
@@ -175,6 +227,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("glap_pipeline_controller.py", stack)
         self.assertIn("glap_data_quality_gate.py", stack)
         self.assertIn("glap_quality_contracts.py", stack)
+        self.assertIn("multimodal_ops_validation.sql", stack)
         self.assertIn("lifecycle_validation.sql", stack)
         self.assertIn("failureCount -ne 0", validation)
 

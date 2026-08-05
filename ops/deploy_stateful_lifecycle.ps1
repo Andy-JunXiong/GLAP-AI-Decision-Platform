@@ -7,6 +7,7 @@ param(
     [Parameter(Mandatory)] [string]$AthenaOutputUri,
     [string]$Workgroup = "primary",
     [switch]$IncludeSeed,
+    [switch]$AnalyticsOnly,
     [switch]$Apply
 )
 
@@ -17,6 +18,9 @@ if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 }
 if ($SourceBucketUri -notmatch '^s3://[^/]+/.+' -or $AthenaOutputUri -notmatch '^s3://[^/]+/.+') {
     throw "SourceBucketUri and AthenaOutputUri must be prefix-scoped s3:// URIs"
+}
+if ($AnalyticsOnly -and $IncludeSeed) {
+    throw "AnalyticsOnly cannot be combined with IncludeSeed"
 }
 
 function Get-RenderedStatements {
@@ -101,12 +105,23 @@ if ($IncludeSeed) {
 }
 $configurationFiles += Join-Path $root "sql/08_stateful_lifecycle_multimodal_seed.sql"
 $viewFile = Join-Path $root "sql/07_stateful_lifecycle_compatibility_views.sql"
-$schemaStatements = @(Get-RenderedStatements -Path $schemaFile)
-$configurationStatements = @(
-    $configurationFiles | ForEach-Object { Get-RenderedStatements -Path $_ }
+$analyticsViewFile = Join-Path $root "sql/09_multimodal_ops_analytics.sql"
+$schemaStatements = @(
+    if (-not $AnalyticsOnly) { Get-RenderedStatements -Path $schemaFile }
 )
-$viewStatements = @(Get-RenderedStatements -Path $viewFile)
-$statements = @($schemaStatements + $configurationStatements + $viewStatements)
+$configurationStatements = @(
+    if (-not $AnalyticsOnly) {
+        $configurationFiles | ForEach-Object { Get-RenderedStatements -Path $_ }
+    }
+)
+$viewStatements = @(
+    if (-not $AnalyticsOnly) { Get-RenderedStatements -Path $viewFile }
+)
+$analyticsViewStatements = @(Get-RenderedStatements -Path $analyticsViewFile)
+$statements = @(
+    $schemaStatements + $configurationStatements + $viewStatements +
+    $analyticsViewStatements
+)
 $columnEvolutions = @{
     "dim_lifecycle_target_v1" = @{
         transport_mode = "string"; target_hours = "int"
@@ -142,8 +157,11 @@ Write-Host "Stateful lifecycle deployment plan"
 Write-Host "  Database: $SourceDatabase"
 Write-Host "  Data root: $($SourceBucketUri.TrimEnd('/'))"
 Write-Host "  SQL statements: $($statements.Count)"
-Write-Host "  Idempotent schema-evolution tables: $($columnEvolutions.Count)"
+Write-Host "  Idempotent schema-evolution tables: $(
+    if ($AnalyticsOnly) { 0 } else { $columnEvolutions.Count }
+)"
 Write-Host "  Seed included: $($IncludeSeed.IsPresent)"
+Write-Host "  Analytics only: $($AnalyticsOnly.IsPresent)"
 
 if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply after reviewing the target prefixes."
@@ -153,8 +171,10 @@ if (-not $Apply) {
 foreach ($statement in $schemaStatements) {
     Invoke-AthenaStatement -Statement $statement.Trim()
 }
-foreach ($tableName in ($columnEvolutions.Keys | Sort-Object)) {
-    Add-MissingIcebergColumns -TableName $tableName -Columns $columnEvolutions[$tableName]
+if (-not $AnalyticsOnly) {
+    foreach ($tableName in ($columnEvolutions.Keys | Sort-Object)) {
+        Add-MissingIcebergColumns -TableName $tableName -Columns $columnEvolutions[$tableName]
+    }
 }
 foreach ($statement in $configurationStatements) {
     Invoke-AthenaStatement -Statement $statement.Trim()
@@ -162,4 +182,7 @@ foreach ($statement in $configurationStatements) {
 foreach ($statement in $viewStatements) {
     Invoke-AthenaStatement -Statement $statement.Trim()
 }
-Write-Host "Stateful lifecycle schema and compatibility views deployed. Run sql/06_stateful_lifecycle_validation.sql before enabling any writer."
+foreach ($statement in $analyticsViewStatements) {
+    Invoke-AthenaStatement -Statement $statement.Trim()
+}
+Write-Host "Stateful lifecycle schema, compatibility views and multimodal analytics deployed. Run both validation contracts before enabling any writer."

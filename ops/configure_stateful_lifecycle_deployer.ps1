@@ -93,7 +93,13 @@ $tableNames = @(
     "vw_lifecycle_leg_metrics_v2_compat",
     "vw_lifecycle_cost_v2_compat",
     "vw_lifecycle_risk_v2_compat",
-    "vw_lifecycle_product_allocation_v2_compat"
+    "vw_lifecycle_product_allocation_v2_compat",
+    "vw_multimodal_shipment_daily_v1",
+    "vw_multimodal_ops_daily_v1",
+    "vw_multimodal_provider_daily_v1",
+    "vw_multimodal_mode_decision_v1",
+    "vw_multimodal_forecast_feature_daily_v1",
+    "vw_multimodal_outcome_label_v1"
 )
 $bucketArns = @($ArtifactBucket, $LifecycleDataBucket, $athenaBucket) |
     Sort-Object -Unique |

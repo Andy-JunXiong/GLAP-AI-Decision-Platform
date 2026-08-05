@@ -250,6 +250,12 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_cost_v2_compat
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_risk_v2_compat
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_product_allocation_v2_compat
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_shipment_daily_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_ops_daily_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_provider_daily_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_mode_decision_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_forecast_feature_daily_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_outcome_label_v1
               - Sid: UseLakeFormation
                 Effect: Allow
                 Action: lakeformation:GetDataAccess
@@ -360,7 +366,8 @@ Resources:
           PIPELINE_STAGES_JSON: !Sub >-
             [{"name":"stateful_lifecycle_generation","function_name":"${FunctionName}"},
             {"name":"lifecycle_validation","function_name":"${IntegrationQualityGateFunctionName}","quality_contract":"lifecycle_v1"},
-            {"name":"input_validation","function_name":"${IntegrationQualityGateFunctionName}","quality_contract":"lifecycle_compat_v2"}]
+            {"name":"input_validation","function_name":"${IntegrationQualityGateFunctionName}","quality_contract":"lifecycle_compat_v2"},
+            {"name":"analytics_validation","function_name":"${IntegrationQualityGateFunctionName}","quality_contract":"multimodal_analytics_v1"}]
 
 Outputs:
   LifecycleGeneratorFunctionName:

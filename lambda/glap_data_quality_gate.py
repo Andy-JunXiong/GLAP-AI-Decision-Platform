@@ -12,8 +12,10 @@ import boto3
 
 from glap_quality_contracts import (
     LIFECYCLE_CHECK_NAMES,
+    MULTIMODAL_ANALYTICS_CHECK_NAMES,
     PIPELINE_CHECK_NAMES,
     render_lifecycle_validation_queries,
+    render_multimodal_analytics_validation_query,
 )
 
 
@@ -374,6 +376,23 @@ def run_lifecycle_validation(logical_run_date: str, source_database: str) -> dic
     return failures
 
 
+def run_multimodal_analytics_validation(
+    logical_run_date: str, source_database: str
+) -> dict[str, int]:
+    failures = parse_validation_result(
+        execute_query(
+            render_multimodal_analytics_validation_query(
+                logical_run_date, source_database
+            ),
+            source_database,
+            100,
+        )
+    )
+    if set(failures) != set(MULTIMODAL_ANALYTICS_CHECK_NAMES):
+        raise ValueError("Multimodal analytics validation returned an incomplete quality contract")
+    return failures
+
+
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     event = event if isinstance(event, dict) else {}
     logical_run_date = validate_run_date(
@@ -405,6 +424,30 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 "failure_count": sum(failure_counts.values()),
             },
         }
+    if pipeline_stage == "analytics_validation":
+        if quality_contract != "multimodal_analytics_v1":
+            raise ValueError(
+                "analytics_validation requires multimodal_analytics_v1"
+            )
+        failure_counts = run_multimodal_analytics_validation(
+            logical_run_date, source_database
+        )
+        checks = {
+            name: "passed" if failure_counts[name] == 0 else "failed"
+            for name in sorted(MULTIMODAL_ANALYTICS_CHECK_NAMES)
+        }
+        return {
+            "status": "success",
+            "logical_run_date": logical_run_date,
+            "pipeline_stage": pipeline_stage,
+            "quality_contract": quality_contract,
+            "quality_checks": checks,
+            "failed_checks": [name for name, status in checks.items() if status == "failed"],
+            "metrics": {
+                "check_count": len(checks),
+                "failure_count": sum(failure_counts.values()),
+            },
+        }
     if pipeline_stage == "input_validation":
         query = build_input_quality_query(
             logical_run_date, source_database, quality_contract
@@ -417,7 +460,8 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         query_database = database
     else:
         raise ValueError(
-            "pipeline_stage must be lifecycle_validation, input_validation or output_validation"
+            "pipeline_stage must be lifecycle_validation, analytics_validation, "
+            "input_validation or output_validation"
         )
 
     checks, metrics = evaluate_quality_metrics(
