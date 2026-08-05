@@ -95,6 +95,9 @@ jobs:
           [[ "${{ inputs.integration_logical_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
           test "${{ inputs.replay_days }}" -ge 1
           test "${{ inputs.replay_days }}" -le 90
+          if [[ "${{ inputs.action }}" == "extend-integration-validate" ]]; then
+            test "${{ inputs.replay_days }}" -le 12
+          fi
           test "${{ inputs.population_size }}" -ge 1
           test "${{ inputs.population_size }}" -le 5000
 
@@ -151,7 +154,8 @@ jobs:
             -Region $env:AWS_REGION `
             -ControllerFunction $env:CONTROLLER_FUNCTION `
             -StartDate "${{ inputs.replay_start_date }}" `
-            -Days ${{ inputs.replay_days }}
+            -Days ${{ inputs.replay_days }} `
+            -MaxElapsedMinutes 50
           ./ops/validate_stateful_lifecycle_staging.ps1 `
             -Region $env:AWS_REGION `
             -SourceDatabase $env:SOURCE_DATABASE `
@@ -271,6 +275,7 @@ jobs:
             -ControllerFunction $env:CONTROLLER_FUNCTION `
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
+            -MaxElapsedMinutes 50 `
             -Apply
 
       - name: Write staging evidence summary
@@ -283,6 +288,7 @@ jobs:
             echo "- Logical dates: \`${{ inputs.replay_start_date }}\` + ${{ inputs.replay_days }} days"
             echo "- Initial population: \`${{ inputs.population_size }}\`"
             echo "- Integration logical date: \`${{ inputs.integration_logical_date }}\`"
+            echo "- Extension safety cap: \`12 dates / 50 elapsed minutes\`"
             echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"
             echo "- Schedule created: \`false\`"

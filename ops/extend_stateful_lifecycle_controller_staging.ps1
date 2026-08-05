@@ -4,7 +4,8 @@ param(
     [string]$Region = "us-east-1",
     [string]$ControllerFunction = "glap-stateful-lifecycle-controller-staging",
     [datetime]$StartDate = "2026-09-08",
-    [ValidateRange(1, 45)] [int]$Days = 28,
+    [ValidateRange(1, 12)] [int]$Days = 12,
+    [ValidateRange(10, 55)] [int]$MaxElapsedMinutes = 50,
     [switch]$Apply
 )
 
@@ -19,6 +20,7 @@ Write-Host "  Controller: $ControllerFunction"
 Write-Host "  First date: $($dates[0].ToString('yyyy-MM-dd'))"
 Write-Host "  Last date: $($dates[-1].ToString('yyyy-MM-dd'))"
 Write-Host "  Days: $Days"
+Write-Host "  Maximum elapsed time: $MaxElapsedMinutes minutes"
 Write-Host "  Seed population: False"
 Write-Host "  Expected checks per date: 19 lifecycle + 5 compatibility + 8 analytics"
 Write-Host "  Production alias or schedule: False"
@@ -39,9 +41,18 @@ $expectedStages = @(
     "analytics_validation"
 )
 $expectedCheckCounts = @(0, 19, 5, 8)
+$minimumRemainingMinutes = 5
+$stopwatch = [Diagnostics.Stopwatch]::StartNew()
 
 foreach ($logicalDate in $dates) {
     $day = $logicalDate.ToString("yyyy-MM-dd")
+    if ($stopwatch.Elapsed.TotalMinutes -ge ($MaxElapsedMinutes - $minimumRemainingMinutes)) {
+        throw (
+            "Credential safety budget exhausted before $day after " +
+            "$([Math]::Round($stopwatch.Elapsed.TotalMinutes, 2)) minutes. " +
+            "Resume from $day in a new invocation."
+        )
+    }
     $payload = @{ logical_run_date = $day } | ConvertTo-Json -Compress
     $payloadPath = [IO.Path]::GetTempFileName()
     $responsePath = [IO.Path]::GetTempFileName()
@@ -62,7 +73,22 @@ foreach ($logicalDate in $dates) {
         }
         $metadata = $metadataJson | ConvertFrom-Json
         if ($metadata.FunctionError) {
-            throw "Controller returned a Lambda FunctionError for $day"
+            $failureDetail = "sanitized failure detail unavailable"
+            try {
+                $failurePayload = Get-Content -LiteralPath $responsePath -Raw |
+                    ConvertFrom-Json
+                $candidate = [string]$failurePayload.errorMessage
+                if ($candidate -match (
+                    '^Pipeline failed at [a-z][a-z0-9_]{1,47}: ' +
+                    '(dependency_failure|invalid_response|quality_gate_failed|' +
+                    'quality_contract_invalid|unexpected_failure)$'
+                )) {
+                    $failureDetail = $candidate
+                }
+            } catch {
+                $failureDetail = "sanitized failure detail unavailable"
+            }
+            throw "Controller returned a Lambda FunctionError for $day ($failureDetail)"
         }
         $response = Get-Content -LiteralPath $responsePath -Raw | ConvertFrom-Json
         if ($response.status -ne "succeeded" -or $response.logical_run_date -ne $day) {
@@ -93,4 +119,8 @@ foreach ($logicalDate in $dates) {
     }
 }
 
-Write-Host "Controller extension completed for $Days logical dates without a seed or schedule."
+$stopwatch.Stop()
+Write-Host (
+    "Controller extension completed for $Days logical dates in " +
+    "$([Math]::Round($stopwatch.Elapsed.TotalMinutes, 2)) minutes without a seed or schedule."
+)
