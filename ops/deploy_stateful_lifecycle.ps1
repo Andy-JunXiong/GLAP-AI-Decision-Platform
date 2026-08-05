@@ -8,6 +8,7 @@ param(
     [string]$Workgroup = "primary",
     [switch]$IncludeSeed,
     [switch]$AnalyticsOnly,
+    [switch]$Q4ConfigurationOnly,
     [switch]$Apply
 )
 
@@ -21,6 +22,9 @@ if ($SourceBucketUri -notmatch '^s3://[^/]+/.+' -or $AthenaOutputUri -notmatch '
 }
 if ($AnalyticsOnly -and $IncludeSeed) {
     throw "AnalyticsOnly cannot be combined with IncludeSeed"
+}
+if ($Q4ConfigurationOnly -and ($AnalyticsOnly -or $IncludeSeed)) {
+    throw "Q4ConfigurationOnly cannot be combined with AnalyticsOnly or IncludeSeed"
 }
 
 function Get-RenderedStatements {
@@ -99,15 +103,24 @@ function Add-MissingIcebergColumns {
 
 $root = Split-Path $PSScriptRoot -Parent
 $schemaFile = Join-Path $root "sql/04_stateful_lifecycle_config.sql"
-$configurationFiles = @()
-if ($IncludeSeed) {
-    $configurationFiles += Join-Path $root "sql/05_stateful_lifecycle_seed.sql"
-}
-$configurationFiles += Join-Path $root "sql/08_stateful_lifecycle_multimodal_seed.sql"
+$q4ConfigurationFile = Join-Path $root "sql/11_stateful_lifecycle_q4_rate_rollover.sql"
+$configurationFiles = @(
+    if ($Q4ConfigurationOnly) {
+        $q4ConfigurationFile
+    } else {
+        if ($IncludeSeed) {
+            Join-Path $root "sql/05_stateful_lifecycle_seed.sql"
+        }
+        Join-Path $root "sql/08_stateful_lifecycle_multimodal_seed.sql"
+        $q4ConfigurationFile
+    }
+)
 $viewFile = Join-Path $root "sql/07_stateful_lifecycle_compatibility_views.sql"
 $analyticsViewFile = Join-Path $root "sql/09_multimodal_ops_analytics.sql"
 $schemaStatements = @(
-    if (-not $AnalyticsOnly) { Get-RenderedStatements -Path $schemaFile }
+    if (-not $AnalyticsOnly -and -not $Q4ConfigurationOnly) {
+        Get-RenderedStatements -Path $schemaFile
+    }
 )
 $configurationStatements = @(
     if (-not $AnalyticsOnly) {
@@ -115,9 +128,15 @@ $configurationStatements = @(
     }
 )
 $viewStatements = @(
-    if (-not $AnalyticsOnly) { Get-RenderedStatements -Path $viewFile }
+    if (-not $AnalyticsOnly -and -not $Q4ConfigurationOnly) {
+        Get-RenderedStatements -Path $viewFile
+    }
 )
-$analyticsViewStatements = @(Get-RenderedStatements -Path $analyticsViewFile)
+$analyticsViewStatements = @(
+    if (-not $Q4ConfigurationOnly) {
+        Get-RenderedStatements -Path $analyticsViewFile
+    }
+)
 $statements = @(
     $schemaStatements + $configurationStatements + $viewStatements +
     $analyticsViewStatements
@@ -158,10 +177,11 @@ Write-Host "  Database: $SourceDatabase"
 Write-Host "  Data root: $($SourceBucketUri.TrimEnd('/'))"
 Write-Host "  SQL statements: $($statements.Count)"
 Write-Host "  Idempotent schema-evolution tables: $(
-    if ($AnalyticsOnly) { 0 } else { $columnEvolutions.Count }
+    if ($AnalyticsOnly -or $Q4ConfigurationOnly) { 0 } else { $columnEvolutions.Count }
 )"
 Write-Host "  Seed included: $($IncludeSeed.IsPresent)"
 Write-Host "  Analytics only: $($AnalyticsOnly.IsPresent)"
+Write-Host "  Q4 configuration only: $($Q4ConfigurationOnly.IsPresent)"
 
 if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply after reviewing the target prefixes."
@@ -171,7 +191,7 @@ if (-not $Apply) {
 foreach ($statement in $schemaStatements) {
     Invoke-AthenaStatement -Statement $statement.Trim()
 }
-if (-not $AnalyticsOnly) {
+if (-not $AnalyticsOnly -and -not $Q4ConfigurationOnly) {
     foreach ($tableName in ($columnEvolutions.Keys | Sort-Object)) {
         Add-MissingIcebergColumns -TableName $tableName -Columns $columnEvolutions[$tableName]
     }

@@ -59,6 +59,21 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         ):
             self.assertIn(marker, multimodal)
 
+        q4_rollover = (
+            ROOT / "sql" / "11_stateful_lifecycle_q4_rate_rollover.sql"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "DATE '2026-10-01'",
+            "DATE '2026-12-31'",
+            "rate-2026-Q4-simulated-rollover-v1",
+            "fx-2026-Q4-simulated-rollover-v1",
+            "SIMULATED_Q3_ROLLOVER",
+            "rate-2026-Q3-multimodal-v1",
+        ):
+            self.assertIn(marker, q4_rollover)
+        self.assertEqual(q4_rollover.count("WHEN NOT MATCHED THEN INSERT"), 3)
+        self.assertNotIn("WHEN MATCHED", q4_rollover)
+
     def test_sql_files_render_to_expected_statement_counts_after_comment_removal(self):
         def statements(path):
             sql = path.read_text(encoding="utf-8")
@@ -83,6 +98,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertEqual(
             len(statements(ROOT / "sql" / "10_multimodal_ops_validation.sql")),
             1,
+        )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "11_stateful_lifecycle_q4_rate_rollover.sql")),
+            3,
         )
 
     def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
@@ -174,7 +193,13 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Plan only", script)
         self.assertIn("-LiteralPath", script)
         self.assertIn("[switch]$AnalyticsOnly", script)
+        self.assertIn("[switch]$Q4ConfigurationOnly", script)
         self.assertIn("AnalyticsOnly cannot be combined with IncludeSeed", script)
+        self.assertIn(
+            "Q4ConfigurationOnly cannot be combined with AnalyticsOnly or IncludeSeed",
+            script,
+        )
+        self.assertIn("11_stateful_lifecycle_q4_rate_rollover.sql", script)
 
     def test_staging_template_is_unscheduled_and_prefix_scoped(self):
         template = (ROOT / "infrastructure" / "stateful-lifecycle-staging.yaml").read_text(
@@ -266,11 +291,14 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("deploy-replay-validate", workflow)
         self.assertIn("deploy-integration-validate", workflow)
         self.assertIn("deploy-analytics-contract", workflow)
+        self.assertIn("deploy-q4-configuration", workflow)
         self.assertIn("extend-integration-validate", workflow)
         self.assertIn("deploy-recovery-controller", workflow)
         self.assertIn("recover-failed-integration-date", workflow)
         self.assertIn("Extend lifecycle through governed controller", workflow)
         self.assertIn("Recover one failed lifecycle date through governed controller", workflow)
+        self.assertIn("Deploy Q4 simulated rate configuration", workflow)
+        self.assertIn("-Q4ConfigurationOnly", workflow)
         self.assertIn("-RetryFailedRun", workflow)
         self.assertIn('test "${{ inputs.replay_days }}" -le 12', workflow)
         self.assertIn(

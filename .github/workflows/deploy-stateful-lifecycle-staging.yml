@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Plan, deploy, replay, extend, or recover isolated staging
+        description: Plan, configure, deploy, replay, extend, or recover isolated staging
         required: true
         type: choice
         default: plan
@@ -13,6 +13,7 @@ on:
           - deploy-replay-validate
           - deploy-integration-validate
           - deploy-analytics-contract
+          - deploy-q4-configuration
           - extend-integration-validate
           - deploy-recovery-controller
           - recover-failed-integration-date
@@ -135,7 +136,9 @@ jobs:
             AthenaOutputUri = $env:ATHENA_OUTPUT
             Workgroup = $env:ATHENA_WORKGROUP
           }
-          if ("${{ inputs.action }}" -eq "deploy-analytics-contract") {
+          if ("${{ inputs.action }}" -eq "deploy-q4-configuration") {
+            $schemaPlan.Q4ConfigurationOnly = $true
+          } elseif ("${{ inputs.action }}" -eq "deploy-analytics-contract") {
             $schemaPlan.AnalyticsOnly = $true
           }
           ./ops/deploy_stateful_lifecycle.ps1 @schemaPlan
@@ -194,6 +197,19 @@ jobs:
             $parameters.IncludeSeed = $true
           }
           ./ops/deploy_stateful_lifecycle.ps1 @parameters
+
+      - name: Deploy Q4 simulated rate configuration
+        if: inputs.action == 'deploy-q4-configuration'
+        shell: pwsh
+        run: |
+          ./ops/deploy_stateful_lifecycle.ps1 `
+            -Region $env:AWS_REGION `
+            -SourceDatabase $env:SOURCE_DATABASE `
+            -SourceBucketUri "s3://$env:DATA_BUCKET/$env:LIFECYCLE_DATA_PREFIX" `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -Workgroup $env:ATHENA_WORKGROUP `
+            -Q4ConfigurationOnly `
+            -Apply
 
       - name: Deploy unscheduled lifecycle and integration stack
         if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
@@ -315,6 +331,7 @@ jobs:
             echo "- Initial population: \`${{ inputs.population_size }}\`"
             echo "- Integration logical date: \`${{ inputs.integration_logical_date }}\`"
             echo "- Extension safety cap: \`12 dates / 50 elapsed minutes\`"
+            echo "- Q4 synthetic configuration only: \`${{ inputs.action == 'deploy-q4-configuration' }}\`"
             echo "- Explicit failed-date recovery: \`${{ inputs.action == 'recover-failed-integration-date' }}\`"
             echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"
