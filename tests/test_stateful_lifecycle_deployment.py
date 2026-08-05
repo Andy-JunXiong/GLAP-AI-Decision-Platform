@@ -25,6 +25,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
                 self.assertIn(table, ddl)
         self.assertNotIn("DROP TABLE", ddl.upper())
         self.assertNotIn("fact_shipment_v2 (", ddl)
+        self.assertNotRegex(ddl, r"\binteger\b")
 
     def test_seed_records_approved_targets_routes_and_synthetic_provenance(self):
         seed = (ROOT / "sql" / "05_stateful_lifecycle_seed.sql").read_text(encoding="utf-8")

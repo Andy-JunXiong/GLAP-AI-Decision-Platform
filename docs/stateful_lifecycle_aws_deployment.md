@@ -41,6 +41,8 @@ delivery have separate target and actual milestones.
 All PowerShell deployment commands are plan-only unless `-Apply` is explicit.
 They use `AWS_PROFILE` when it exists and otherwise use the temporary AWS
 credentials supplied by GitHub OIDC.
+The Iceberg DDL uses Athena engine v3 type names such as `int` rather than the
+Trino alias `integer`, which Athena rejects in `CREATE TABLE` column contracts.
 
 ## GitHub staging environment
 
