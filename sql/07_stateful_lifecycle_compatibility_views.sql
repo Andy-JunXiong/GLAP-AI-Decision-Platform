@@ -7,7 +7,7 @@ SELECT
     shipment_id,
     route_service_id AS route_id,
     carrier,
-    'OCEAN' AS ship_mode,
+    coalesce(transport_mode, 'OCEAN') AS ship_mode,
     origin_port,
     destination_port,
     etd AS estimate_departure_time,
@@ -15,13 +15,17 @@ SELECT
     eta AS estimate_arrival_time,
     ata AS actual_arrival_time,
     CASE
-        WHEN ata IS NULL OR discharged_at IS NULL THEN CAST(NULL AS double)
-        ELSE greatest(0.0, date_diff('minute', ata, discharged_at) / 60.0)
+        WHEN ata IS NULL OR coalesce(destination_release_at, discharged_at) IS NULL
+            THEN CAST(NULL AS double)
+        ELSE greatest(0.0, date_diff(
+            'minute', ata, coalesce(destination_release_at, discharged_at)
+        ) / 60.0)
     END AS customs_clearance_time,
     delivery_target_at AS estimate_delivery_date,
     delivered_at AS actual_delivery_date,
-    'SIMULATED_LIFECYCLE_V1' AS data_source,
-    equipment_type AS ocean_shipment_type,
+    'SIMULATED_MULTIMODAL_V1' AS data_source,
+    IF(coalesce(transport_mode, 'OCEAN') = 'OCEAN', equipment_type, NULL)
+        AS ocean_shipment_type,
     journey_exception_type AS customs_exception_type,
     dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1;
@@ -29,11 +33,11 @@ FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1;
 CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_event_v2_compat AS
 SELECT
     shipment_id,
-    CASE
-        WHEN event_type IN ('BOOKED', 'GATE_IN') THEN 1
-        WHEN event_type IN ('DEPARTED', 'ARRIVED') THEN 2
+    coalesce(leg_seq, CASE
+        WHEN event_type IN ('BOOKED', 'BOOKING_CONFIRMED', 'GATE_IN', 'ORIGIN_RECEIVED') THEN 1
+        WHEN event_type IN ('DEPARTED', 'ARRIVED', 'FLIGHT_DEPARTED', 'FLIGHT_ARRIVED') THEN 2
         ELSE 3
-    END AS leg_seq,
+    END) AS leg_seq,
     event_type,
     CAST(event_time AS varchar) AS event_ts,
     location AS location_code,
@@ -64,7 +68,7 @@ SELECT
     END AS severity_level,
     shipment.route_service_id AS route_id,
     shipment.carrier,
-    'OCEAN' AS ship_mode,
+    coalesce(shipment.transport_mode, 'OCEAN') AS ship_mode,
     shipment.origin_port,
     shipment.destination_port,
     try_cast(metric.dt AS date) AS run_date,
@@ -79,10 +83,11 @@ SELECT
     shipment_id,
     route_service_id AS route_id,
     carrier,
-    'OCEAN' AS ship_mode,
-    CAST(container_count * 24000.0 AS double) AS chargeable_weight,
-    CAST(container_count * 67.7 AS double) AS chargeable_volume,
-    container_count,
+    coalesce(transport_mode, 'OCEAN') AS ship_mode,
+    CAST(coalesce(chargeable_weight_kg, container_count * 24000.0) AS double)
+        AS chargeable_weight,
+    CAST(coalesce(volume_cbm, container_count * 67.7) AS double) AS chargeable_volume,
+    nullif(container_count, 0) AS container_count,
     CAST(expected_total_cost AS double) AS transport_cost,
     CAST(0.0 AS double) AS customs_cost,
     CAST(greatest(
@@ -94,7 +99,11 @@ SELECT
         AS total_cost,
     CAST(
         coalesce(actual_total_cost, accrued_total_cost, expected_total_cost)
-            / nullif(container_count, 0)
+            / nullif(
+                IF(coalesce(transport_mode, 'OCEAN') = 'AIR',
+                   chargeable_weight_kg, CAST(container_count AS decimal(18,2))),
+                DECIMAL '0.00'
+            )
         AS double
     ) AS cost_per_unit,
     dt
@@ -107,7 +116,8 @@ SELECT
         coalesce(metric.departure_delay_hours, 0.0),
         coalesce(metric.arrival_delay_hours, 0.0),
         coalesce(metric.delivery_delay_hours, 0.0)
-    ) / 96.0) AS delay_risk_score,
+    ) / IF(coalesce(shipment.transport_mode, 'OCEAN') = 'AIR', 24.0, 96.0))
+        AS delay_risk_score,
     IF(shipment.journey_exception_type IS NULL, 0.02, 0.08) AS damage_risk_score,
     IF(shipment.journey_exception_type IS NULL, 0.01, 0.06)
         AS compliance_risk_score,
@@ -116,7 +126,7 @@ SELECT
             coalesce(metric.departure_delay_hours, 0.0),
             coalesce(metric.arrival_delay_hours, 0.0),
             coalesce(metric.delivery_delay_hours, 0.0)
-        ) / 96.0),
+        ) / IF(coalesce(shipment.transport_mode, 'OCEAN') = 'AIR', 24.0, 96.0)),
         IF(shipment.journey_exception_type IS NULL, 0.02, 0.08),
         IF(shipment.journey_exception_type IS NULL, 0.01, 0.06)
     ) AS overall_risk_score,
@@ -132,7 +142,8 @@ SELECT
     shipment_id,
     concat('SIM-PRODUCT-', substr(to_hex(md5(to_utf8(shipment_id))), 1, 8))
         AS product_id,
-    container_count * 100 AS unit_qty,
-    CAST(container_count * 24000.0 AS double) AS allocated_weight,
+    coalesce(piece_count, container_count * 100) AS unit_qty,
+    CAST(coalesce(gross_weight_kg, container_count * 24000.0) AS double)
+        AS allocated_weight,
     dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1;

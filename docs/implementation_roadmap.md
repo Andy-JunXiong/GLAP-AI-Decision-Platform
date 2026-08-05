@@ -229,6 +229,9 @@ views, with no schedule, production alias, or current-v2 write.
 The next implementation slice is the governed analytics and prediction
 foundation: operational daily aggregates, feature and outcome-label history,
 completeness/drift monitoring, and a benchmark forecast with time-ordered
-backtesting. Authenticated production writes remain blocked until those outputs
+backtesting. The staging input now distinguishes Maersk/KN Ocean from DHL Air;
+mode-specific cost units and SLA baselines must remain separate in those
+features, while Origin/P2P/Destination and final outcome labels stay common.
+Authenticated production writes remain blocked until those outputs
 reconcile and a controlled current-controller integration plus production
 alias/rollback boundary is explicitly approved.

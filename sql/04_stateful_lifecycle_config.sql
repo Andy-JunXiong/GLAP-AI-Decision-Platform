@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.dim_lifecycle_target_v1 (
     effective_to date,
     status string,
     config_version string,
-    updated_at timestamp
+    updated_at timestamp,
+    transport_mode string,
+    target_hours int
 )
 LOCATION '{{SOURCE_BUCKET_URI}}/dim_lifecycle_target_v1/'
 TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
@@ -35,7 +37,14 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.dim_route_service_v1 (
     effective_to date,
     status string,
     config_version string,
-    updated_at timestamp
+    updated_at timestamp,
+    transport_mode string,
+    provider_type string,
+    operating_carrier string,
+    origin_location_type string,
+    destination_location_type string,
+    p2p_target_hours int,
+    equipment_type string
 )
 LOCATION '{{SOURCE_BUCKET_URI}}/dim_route_service_v1/'
 TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
@@ -58,7 +67,8 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.dim_rate_card_v1 (
     status string,
     rate_source string,
     config_version string,
-    updated_at timestamp
+    updated_at timestamp,
+    transport_mode string
 )
 LOCATION '{{SOURCE_BUCKET_URI}}/dim_rate_card_v1/'
 TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
@@ -92,6 +102,18 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.dim_fx_rate_v1 (
     updated_at timestamp
 )
 LOCATION '{{SOURCE_BUCKET_URI}}/dim_fx_rate_v1/'
+TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.dim_provider_v1 (
+    provider_code string,
+    provider_name string,
+    provider_type string,
+    supported_mode string,
+    status string,
+    config_version string,
+    updated_at timestamp
+)
+LOCATION '{{SOURCE_BUCKET_URI}}/dim_provider_v1/'
 TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
 
 -- Isolated staging snapshot. Promotion into fact_shipment_v2 happens only
@@ -131,7 +153,20 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v
     cost_currency string,
     simulation_seed string,
     created_at timestamp,
-    updated_at timestamp
+    updated_at timestamp,
+    transport_mode string,
+    provider_type string,
+    operating_carrier string,
+    origin_location_type string,
+    destination_location_type string,
+    origin_handover_target_at timestamp,
+    origin_handover_at timestamp,
+    destination_release_target_at timestamp,
+    destination_release_at timestamp,
+    piece_count int,
+    gross_weight_kg decimal(18,2),
+    volume_cbm decimal(18,3),
+    chargeable_weight_kg decimal(18,2)
 )
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_lifecycle_staging_v1/'
@@ -147,7 +182,11 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_lifecycle_event_sta
     location string,
     logical_run_date date,
     scenario_id string,
-    simulation_seed string
+    simulation_seed string,
+    transport_mode string,
+    segment_type string,
+    leg_seq int,
+    location_type string
 )
 PARTITIONED BY (logical_run_date)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_lifecycle_event_staging_v1/'
@@ -191,7 +230,11 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_lifecycle_metrics_s
     actual_p2p_hours double,
     sla_breach_flag boolean,
     sla_breach_stages string,
-    computed_at timestamp
+    computed_at timestamp,
+    origin_performance string,
+    origin_delay_hours double,
+    destination_release_performance string,
+    destination_release_delay_hours double
 )
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_lifecycle_metrics_staging_v1/'

@@ -31,6 +31,19 @@ REQUIRED_TARGETS = {
     "ATA_TO_DISCHARGED",
     "DISCHARGED_TO_DELIVERED",
 }
+MULTIMODAL_TARGETS = {
+    "BOOKING_TO_ORIGIN_HANDOVER",
+    "ORIGIN_HANDOVER_TO_DEPARTURE",
+    "ARRIVAL_TO_DESTINATION_RELEASE",
+    "DESTINATION_RELEASE_TO_DELIVERY",
+}
+# A 17-shipment deterministic cycle yields 17.65% DHL Air and splits the
+# remaining Ocean bookings evenly between Maersk and KN (41.18% each).
+PROVIDER_CYCLE = (
+    "DHL", "MAERSK", "KN", "MAERSK", "KN", "MAERSK",
+    "DHL", "KN", "MAERSK", "KN", "MAERSK", "KN",
+    "DHL", "MAERSK", "KN", "MAERSK", "KN",
+)
 
 
 def _stable_int(*parts: object, modulo: int) -> int:
@@ -46,16 +59,33 @@ def _days(value: datetime, count: int) -> datetime:
     return value + timedelta(days=count)
 
 
-def validate_targets(targets: dict[str, int]) -> None:
-    missing = REQUIRED_TARGETS - set(targets)
+def validate_targets(targets: dict[str, int], transport_mode: str | None = None) -> None:
+    if REQUIRED_TARGETS <= set(targets):
+        if any(not isinstance(targets[name], int) or targets[name] < 0 for name in REQUIRED_TARGETS):
+            raise ValueError("Lifecycle target days must be non-negative integers")
+        return
+    modes = (transport_mode,) if transport_mode else ("OCEAN", "AIR")
+    required = {f"{mode}:{stage}" for mode in modes for stage in MULTIMODAL_TARGETS}
+    missing = required - set(targets)
     if missing:
         raise ValueError(f"Missing lifecycle targets: {', '.join(sorted(missing))}")
-    if any(not isinstance(targets[name], int) or targets[name] < 0 for name in REQUIRED_TARGETS):
-        raise ValueError("Lifecycle target days must be non-negative integers")
+    if any(not isinstance(targets[name], int) or targets[name] < 0 for name in required):
+        raise ValueError("Lifecycle target hours must be non-negative integers")
+
+
+def _target_hours(
+    targets: dict[str, int], transport_mode: str, stage: str, legacy_stage: str
+) -> int:
+    key = f"{transport_mode}:{stage}"
+    if key in targets:
+        return int(targets[key])
+    if legacy_stage in targets:
+        return int(targets[legacy_stage]) * 24
+    raise ValueError(f"Missing lifecycle target: {key}")
 
 
 def validate_routes(routes: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    rows = list(routes)
+    rows = [dict(row) for row in routes]
     if not rows:
         raise ValueError("At least one active route service is required")
     identities: set[str] = set()
@@ -75,9 +105,45 @@ def validate_routes(routes: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         if row["route_service_id"] in identities:
             raise ValueError("Duplicate route_service_id")
         identities.add(row["route_service_id"])
-        if not isinstance(row["p2p_target_days"], int) or row["p2p_target_days"] <= 0:
-            raise ValueError("p2p_target_days must be a positive integer")
+        mode = str(row.get("transport_mode") or "OCEAN").upper()
+        if mode not in {"OCEAN", "AIR"}:
+            raise ValueError("transport_mode must be OCEAN or AIR")
+        row["transport_mode"] = mode
+        row["provider_type"] = row.get("provider_type") or (
+            "OCEAN_CARRIER" if row["carrier"] == "MAERSK" else "LOGISTICS_PROVIDER"
+        )
+        row["origin_location_type"] = row.get("origin_location_type") or (
+            "AIRPORT" if mode == "AIR" else "PORT"
+        )
+        row["destination_location_type"] = row.get("destination_location_type") or (
+            "AIRPORT" if mode == "AIR" else "PORT"
+        )
+        row["operating_carrier"] = row.get("operating_carrier") or row["carrier"]
+        row["equipment_type"] = row.get("equipment_type") or (
+            "AIR_CARGO" if mode == "AIR" else "40HC"
+        )
+        if row.get("p2p_target_hours") is None:
+            if not isinstance(row.get("p2p_target_days"), int) or row["p2p_target_days"] <= 0:
+                raise ValueError("Route requires positive p2p_target_hours or p2p_target_days")
+            row["p2p_target_hours"] = int(row["p2p_target_days"]) * 24
+        row["p2p_target_hours"] = int(row["p2p_target_hours"])
+        if row["p2p_target_hours"] <= 0:
+            raise ValueError("p2p_target_hours must be positive")
     return rows
+
+
+def _select_route(
+    routes: list[dict[str, Any]], booking_date: date, sequence: int, seed_version: str
+) -> dict[str, Any]:
+    providers = {str(row["carrier"]).upper() for row in routes}
+    shipment_id = f"SHP-{booking_date:%Y%m%d}-{sequence:04d}"
+    if {"MAERSK", "KN", "DHL"} <= providers:
+        slot = (booking_date.toordinal() * 16 + sequence - 1) % len(PROVIDER_CYCLE)
+        provider = PROVIDER_CYCLE[slot]
+        candidates = [row for row in routes if str(row["carrier"]).upper() == provider]
+    else:
+        candidates = routes
+    return candidates[_stable_int(seed_version, shipment_id, "route", modulo=len(candidates))]
 
 
 def calculate_tiered_charge(charge_days: int, tiers: Iterable[dict[str, Any]]) -> float:
@@ -129,7 +195,11 @@ def calculate_expected_cost(
         return date.fromisoformat(str(value))
 
     matching: dict[str, tuple[int, dict[str, Any]]] = {}
-    dimensions = ("origin_port", "destination_port", "carrier", "service_code", "equipment_type")
+    dimensions = (
+        "transport_mode", "origin_port", "destination_port", "carrier",
+        "service_code", "equipment_type",
+    )
+    transport_mode = str(shipment.get("transport_mode") or "OCEAN")
     for rate in rate_cards:
         if rate.get("status", "ACTIVE") != "ACTIVE":
             continue
@@ -139,10 +209,19 @@ def calculate_expected_cost(
             continue
         if effective_to and booking_date > effective_to:
             continue
-        if any(str(rate.get(name, "*")) not in {"*", str(shipment[name])} for name in dimensions):
+        rate_mode = str(rate.get("transport_mode") or "OCEAN")
+        if rate_mode not in {"*", transport_mode}:
+            continue
+        if any(
+            str(rate.get(name, "*")) not in {"*", str(shipment.get(name))}
+            for name in dimensions if name != "transport_mode"
+        ):
             continue
         basis = rate.get("calculation_basis")
-        if basis not in {"PER_SHIPMENT", "PER_CONTAINER", "PER_TEU", "PERCENT_OF_BASE"}:
+        if basis not in {
+            "PER_SHIPMENT", "PER_CONTAINER", "PER_TEU", "PER_PIECE",
+            "PER_CHARGEABLE_KG", "PERCENT_OF_BASE",
+        }:
             raise ValueError("Unsupported rate calculation basis")
         score = sum(str(rate.get(name, "*")) != "*" for name in dimensions)
         code = str(rate["charge_code"])
@@ -151,10 +230,14 @@ def calculate_expected_cost(
         elif score == matching[code][0]:
             raise ValueError(f"Ambiguous active rate for {code}")
 
-    if "OCEAN_FREIGHT" not in matching:
-        raise ValueError("No active OCEAN_FREIGHT rate matches shipment")
-    base_rate = matching["OCEAN_FREIGHT"][1]
-    base_quantity = float(shipment["container_count"])
+    base_code = "AIR_FREIGHT" if transport_mode == "AIR" else "OCEAN_FREIGHT"
+    if base_code not in matching:
+        raise ValueError(f"No active {base_code} rate matches shipment")
+    base_rate = matching[base_code][1]
+    base_quantity = (
+        float(shipment["chargeable_weight_kg"])
+        if transport_mode == "AIR" else float(shipment["container_count"])
+    )
     base_amount = float(base_rate["amount"]) * base_quantity
     lines: list[dict[str, Any]] = []
     total = 0.0
@@ -168,6 +251,12 @@ def calculate_expected_cost(
             source_amount = float(rate["amount"]) * quantity
         elif basis == "PER_TEU":
             quantity = float(shipment["container_count"]) * 2.0
+            source_amount = float(rate["amount"]) * quantity
+        elif basis == "PER_PIECE":
+            quantity = float(shipment["piece_count"])
+            source_amount = float(rate["amount"]) * quantity
+        elif basis == "PER_CHARGEABLE_KG":
+            quantity = float(shipment["chargeable_weight_kg"])
             source_amount = float(rate["amount"]) * quantity
         else:
             quantity = 1.0
@@ -214,12 +303,11 @@ def create_shipment(
     sequence: int,
     routes: Iterable[dict[str, Any]],
     targets: dict[str, int],
-    seed_version: str = "lifecycle-2026.08-v1",
+    seed_version: str = "lifecycle-2026.09-multimodal-v1",
     rate_card_version: str = "rate-2026.08-v1",
     rate_cards: Iterable[dict[str, Any]] | None = None,
     fx_rates: dict[tuple[str, str], float] | None = None,
 ) -> dict[str, Any]:
-    validate_targets(targets)
     route_rows = validate_routes(routes)
     route_rows = [
         row for row in route_rows
@@ -229,17 +317,50 @@ def create_shipment(
     if not route_rows:
         raise ValueError("No route service is effective on booking date")
     shipment_id = f"SHP-{booking_date:%Y%m%d}-{sequence:04d}"
-    route = route_rows[_stable_int(seed_version, shipment_id, "route", modulo=len(route_rows))]
+    route = _select_route(route_rows, booking_date, sequence, seed_version)
+    transport_mode = str(route["transport_mode"])
+    validate_targets(targets, transport_mode)
     booking_at = _at_noon(booking_date)
-    gate_in_target_at = _days(booking_at, targets["BOOKING_TO_GATE_IN"])
-    etd = _days(gate_in_target_at, targets["GATE_IN_TO_ETD"])
-    eta = _days(etd, int(route["p2p_target_days"]))
+    origin_target_hours = _target_hours(
+        targets, transport_mode, "BOOKING_TO_ORIGIN_HANDOVER", "BOOKING_TO_GATE_IN"
+    )
+    departure_hours = _target_hours(
+        targets, transport_mode, "ORIGIN_HANDOVER_TO_DEPARTURE", "GATE_IN_TO_ETD"
+    )
+    origin_handover_target_at = booking_at + timedelta(hours=origin_target_hours)
+    etd = origin_handover_target_at + timedelta(hours=departure_hours)
+    eta = etd + timedelta(hours=int(route["p2p_target_hours"]))
     exception_type, exception_hours = _exception(shipment_id, seed_version)
-    container_count = 1 + _stable_int(seed_version, shipment_id, "containers", modulo=3)
+    if transport_mode == "AIR":
+        container_count = 0
+        piece_count = 1 + _stable_int(seed_version, shipment_id, "pieces", modulo=12)
+        gross_weight_kg = float(
+            40 + _stable_int(seed_version, shipment_id, "gross-kg", modulo=961)
+        )
+        volume_cbm = round(
+            0.2 + _stable_int(seed_version, shipment_id, "volume-litres", modulo=5801) / 1000,
+            3,
+        )
+        chargeable_weight_kg = round(max(gross_weight_kg, volume_cbm * 167.0), 2)
+    else:
+        container_count = 1 + _stable_int(seed_version, shipment_id, "containers", modulo=3)
+        piece_count = container_count * 100
+        gross_weight_kg = float(container_count * 24000)
+        volume_cbm = round(container_count * 67.7, 2)
+        chargeable_weight_kg = gross_weight_kg
     shipment = {
         "shipment_id": shipment_id,
         "booking_at": booking_at,
-        "gate_in_target_at": gate_in_target_at,
+        "transport_mode": transport_mode,
+        "provider_type": route["provider_type"],
+        "operating_carrier": route["operating_carrier"],
+        "origin_location_type": route["origin_location_type"],
+        "destination_location_type": route["destination_location_type"],
+        "origin_handover_target_at": origin_handover_target_at,
+        "origin_handover_at": None,
+        "destination_release_target_at": None,
+        "destination_release_at": None,
+        "gate_in_target_at": origin_handover_target_at if transport_mode == "OCEAN" else None,
         "gate_in_at": None,
         "etd": etd,
         "atd": None,
@@ -261,8 +382,12 @@ def create_shipment(
         "rate_locked_at": booking_at,
         "service_code": route["service_code"],
         "service_level": route["service_level"],
-        "equipment_type": "40HC",
+        "equipment_type": route["equipment_type"],
         "container_count": container_count,
+        "piece_count": piece_count,
+        "gross_weight_kg": gross_weight_kg,
+        "volume_cbm": volume_cbm,
+        "chargeable_weight_kg": chargeable_weight_kg,
         "journey_exception_type": exception_type,
         "journey_exception_hours": exception_hours,
         "simulation_seed": seed_version,
@@ -286,17 +411,34 @@ def create_shipment(
 
 
 def _actual_milestones(shipment: dict[str, Any], targets: dict[str, int]) -> dict[str, datetime]:
+    transport_mode = str(shipment.get("transport_mode") or "OCEAN")
     exception = shipment.get("journey_exception_type")
     delay = timedelta(hours=int(shipment.get("journey_exception_hours") or 0))
-    gate_in = shipment["gate_in_target_at"] + (delay if exception == "ORIGIN_DELAY" else timedelta())
-    atd = max(shipment["etd"], gate_in + timedelta(days=targets["GATE_IN_TO_ETD"]))
+    origin_handover = shipment["origin_handover_target_at"] + (
+        delay if exception == "ORIGIN_DELAY" else timedelta()
+    )
+    departure_hours = _target_hours(
+        targets, transport_mode, "ORIGIN_HANDOVER_TO_DEPARTURE", "GATE_IN_TO_ETD"
+    )
+    atd = max(shipment["etd"], origin_handover + timedelta(hours=departure_hours))
     ata = shipment["eta"] + (delay if exception == "P2P_DELAY" else timedelta())
-    discharged = ata + timedelta(days=targets["ATA_TO_DISCHARGED"])
-    delivered = discharged + timedelta(days=targets["DISCHARGED_TO_DELIVERED"])
+    release_hours = _target_hours(
+        targets, transport_mode, "ARRIVAL_TO_DESTINATION_RELEASE", "ATA_TO_DISCHARGED"
+    )
+    delivery_hours = _target_hours(
+        targets, transport_mode, "DESTINATION_RELEASE_TO_DELIVERY", "DISCHARGED_TO_DELIVERED"
+    )
+    destination_release = ata + timedelta(hours=release_hours)
+    delivered = destination_release + timedelta(hours=delivery_hours)
     if exception == "DESTINATION_DELAY":
         delivered += delay
-    return {"gate_in_at": gate_in, "atd": atd, "ata": ata, "discharged_at": discharged,
-            "delivered_at": delivered}
+    return {
+        "origin_handover_at": origin_handover,
+        "atd": atd,
+        "ata": ata,
+        "destination_release_at": destination_release,
+        "delivered_at": delivered,
+    }
 
 
 def _milestone_performance(
@@ -316,8 +458,9 @@ def calculate_lifecycle_metrics(snapshot: dict[str, Any], logical_date: date) ->
     """Calculate auditable Origin, P2P and Destination milestone performance."""
 
     cutoff = datetime.combine(logical_date, time.max, tzinfo=UTC)
-    gate_status, gate_delay = _milestone_performance(
-        snapshot.get("gate_in_target_at"), snapshot.get("gate_in_at"), cutoff
+    origin_status, origin_delay = _milestone_performance(
+        snapshot.get("origin_handover_target_at", snapshot.get("gate_in_target_at")),
+        snapshot.get("origin_handover_at", snapshot.get("gate_in_at")), cutoff,
     )
     departure_status, departure_delay = _milestone_performance(
         snapshot.get("etd"), snapshot.get("atd"), cutoff
@@ -325,17 +468,21 @@ def calculate_lifecycle_metrics(snapshot: dict[str, Any], logical_date: date) ->
     arrival_status, arrival_delay = _milestone_performance(
         snapshot.get("eta"), snapshot.get("ata"), cutoff
     )
-    discharge_status, discharge_delay = _milestone_performance(
-        snapshot.get("discharge_target_at"), snapshot.get("discharged_at"), cutoff
+    release_status, release_delay = _milestone_performance(
+        snapshot.get("destination_release_target_at", snapshot.get("discharge_target_at")),
+        snapshot.get("destination_release_at", snapshot.get("discharged_at")), cutoff,
     )
     delivery_status, delivery_delay = _milestone_performance(
         snapshot.get("delivery_target_at"), snapshot.get("delivered_at"), cutoff
     )
+    mode = str(snapshot.get("transport_mode") or "OCEAN")
+    origin_stage = "ORIGIN_HANDOVER" if mode == "AIR" else "ORIGIN_GATE_IN"
+    release_stage = "DESTINATION_RELEASE" if mode == "AIR" else "DESTINATION_DISCHARGE"
     statuses = {
-        "ORIGIN_GATE_IN": gate_status,
+        origin_stage: origin_status,
         "P2P_DEPARTURE": departure_status,
         "P2P_ARRIVAL": arrival_status,
-        "DESTINATION_DISCHARGE": discharge_status,
+        release_stage: release_status,
         "FINAL_DELIVERY": delivery_status,
     }
     breached = [stage for stage, status in statuses.items() if status in {"LATE", "OVERDUE"}]
@@ -352,14 +499,18 @@ def calculate_lifecycle_metrics(snapshot: dict[str, Any], logical_date: date) ->
         "dt": logical_date.isoformat(),
         "lifecycle_stage": snapshot["lifecycle_stage"],
         "lifecycle_status": snapshot["lifecycle_status"],
-        "gate_in_performance": gate_status,
-        "gate_in_delay_hours": gate_delay,
+        "origin_performance": origin_status,
+        "origin_delay_hours": origin_delay,
+        "gate_in_performance": origin_status,
+        "gate_in_delay_hours": origin_delay,
         "departure_performance": departure_status,
         "departure_delay_hours": departure_delay,
         "arrival_performance": arrival_status,
         "arrival_delay_hours": arrival_delay,
-        "discharge_performance": discharge_status,
-        "discharge_delay_hours": discharge_delay,
+        "destination_release_performance": release_status,
+        "destination_release_delay_hours": release_delay,
+        "discharge_performance": release_status,
+        "discharge_delay_hours": release_delay,
         "delivery_performance": delivery_status,
         "delivery_delay_hours": delivery_delay,
         "planned_p2p_hours": planned_p2p_hours,
@@ -377,9 +528,11 @@ def build_candidate_signals(
 
     delay_fields = {
         "ORIGIN_GATE_IN": "gate_in_delay_hours",
+        "ORIGIN_HANDOVER": "origin_delay_hours",
         "P2P_DEPARTURE": "departure_delay_hours",
         "P2P_ARRIVAL": "arrival_delay_hours",
         "DESTINATION_DISCHARGE": "discharge_delay_hours",
+        "DESTINATION_RELEASE": "destination_release_delay_hours",
         "FINAL_DELIVERY": "delivery_delay_hours",
     }
     signals: list[dict[str, Any]] = []
@@ -388,7 +541,10 @@ def build_candidate_signals(
             continue
         metric_name = delay_fields[stage]
         value = float(metrics.get(metric_name) or 0)
-        severity = "CRITICAL" if value >= 72 else "HIGH" if value >= 48 else "MEDIUM" if value >= 24 else "LOW"
+        if str(snapshot.get("transport_mode") or "OCEAN") == "AIR":
+            severity = "CRITICAL" if value >= 24 else "HIGH" if value >= 12 else "MEDIUM" if value >= 6 else "LOW"
+        else:
+            severity = "CRITICAL" if value >= 72 else "HIGH" if value >= 48 else "MEDIUM" if value >= 24 else "LOW"
         fingerprint = hashlib.sha256(
             f"SLA_BREACH|{snapshot['shipment_id']}|{stage}".encode("utf-8")
         ).hexdigest()[:32]
@@ -437,18 +593,26 @@ def build_candidate_signals(
 
 
 def _event(shipment: dict[str, Any], event_type: str, event_time: datetime,
-           logical_date: date, location: str) -> dict[str, Any]:
+           logical_date: date, location: str, segment_type: str = "P2P",
+           leg_seq: int = 2) -> dict[str, Any]:
     event_id = hashlib.sha256(
         f"{shipment['shipment_id']}|{event_type}|{event_time.isoformat()}".encode("utf-8")
     ).hexdigest()[:24]
     return {
         "event_id": event_id,
         "shipment_id": shipment["shipment_id"],
+        "transport_mode": shipment.get("transport_mode", "OCEAN"),
+        "segment_type": segment_type,
+        "leg_seq": leg_seq,
         "event_type": event_type,
         "event_time": event_time,
         "observed_at": _at_noon(logical_date),
         "processed_at": _at_noon(logical_date),
         "location": location,
+        "location_type": (
+            shipment.get("origin_location_type", "PORT")
+            if segment_type == "ORIGIN" else shipment.get("destination_location_type", "PORT")
+        ),
         "logical_run_date": logical_date,
         "scenario_id": shipment.get("journey_exception_type"),
         "simulation_seed": shipment["simulation_seed"],
@@ -460,37 +624,70 @@ def advance_shipment(
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     """Advance one active shipment and return today's snapshot and new events."""
 
-    validate_targets(targets)
+    transport_mode = str(source.get("transport_mode") or "OCEAN")
+    validate_targets(targets, transport_mode)
     if (source.get("terminal_state") or source.get("lifecycle_status") == "CLOSED"
             or source.get("lifecycle_stage") in TERMINAL_STAGES):
         return None, []
     shipment = deepcopy(source)
+    shipment.setdefault("transport_mode", transport_mode)
+    shipment.setdefault("provider_type", "OCEAN_CARRIER" if shipment.get("carrier") == "MAERSK" else "LOGISTICS_PROVIDER")
+    shipment.setdefault("operating_carrier", shipment.get("carrier"))
+    shipment.setdefault("origin_location_type", "AIRPORT" if transport_mode == "AIR" else "PORT")
+    shipment.setdefault("destination_location_type", "AIRPORT" if transport_mode == "AIR" else "PORT")
+    shipment.setdefault("origin_handover_target_at", shipment.get("gate_in_target_at"))
+    shipment.setdefault("origin_handover_at", shipment.get("gate_in_at"))
+    shipment.setdefault("destination_release_target_at", shipment.get("discharge_target_at"))
+    shipment.setdefault("destination_release_at", shipment.get("discharged_at"))
+    shipment.setdefault("piece_count", int(shipment.get("container_count") or 0) * 100)
+    shipment.setdefault("gross_weight_kg", float(shipment.get("container_count") or 0) * 24000.0)
+    shipment.setdefault("volume_cbm", float(shipment.get("container_count") or 0) * 67.7)
+    shipment.setdefault("chargeable_weight_kg", shipment["gross_weight_kg"])
     immutable_etd = shipment["etd"]
     immutable_eta = shipment["eta"]
     actual = _actual_milestones(shipment, targets)
     cutoff = datetime.combine(logical_date, time.max, tzinfo=UTC)
     events: list[dict[str, Any]] = []
 
-    milestones = (
-        ("gate_in_at", "GATE_IN", "GATE_IN", shipment["origin_port"]),
-        ("atd", "DEPARTED", "IN_TRANSIT", shipment["origin_port"]),
-        ("ata", "ARRIVED", "ARRIVED_PORT", shipment["destination_port"]),
-        ("discharged_at", "DISCHARGED", "DESTINATION_PROCESSING", shipment["destination_port"]),
-        ("delivered_at", "DELIVERED", "DELIVERED", shipment["destination_port"]),
-    )
-    for field, event_type, stage, location in milestones:
+    if transport_mode == "AIR":
+        milestones = (
+            ("origin_handover_at", "ORIGIN_RECEIVED", "ORIGIN_HANDOVER", shipment["origin_port"], "ORIGIN", 1),
+            ("atd", "FLIGHT_DEPARTED", "IN_TRANSIT", shipment["origin_port"], "P2P", 2),
+            ("ata", "FLIGHT_ARRIVED", "ARRIVED_AIRPORT", shipment["destination_port"], "P2P", 2),
+            ("destination_release_at", "CARGO_AVAILABLE", "DESTINATION_PROCESSING", shipment["destination_port"], "DESTINATION", 3),
+            ("delivered_at", "DELIVERED", "DELIVERED", shipment["destination_port"], "DESTINATION", 3),
+        )
+    else:
+        milestones = (
+            ("origin_handover_at", "GATE_IN", "GATE_IN", shipment["origin_port"], "ORIGIN", 1),
+            ("atd", "DEPARTED", "IN_TRANSIT", shipment["origin_port"], "P2P", 2),
+            ("ata", "ARRIVED", "ARRIVED_PORT", shipment["destination_port"], "P2P", 2),
+            ("destination_release_at", "DISCHARGED", "DESTINATION_PROCESSING", shipment["destination_port"], "DESTINATION", 3),
+            ("delivered_at", "DELIVERED", "DELIVERED", shipment["destination_port"], "DESTINATION", 3),
+        )
+    for field, event_type, stage, location, segment_type, leg_seq in milestones:
         if shipment.get(field) is None and actual[field] <= cutoff:
             shipment[field] = actual[field]
+            if field == "origin_handover_at" and transport_mode == "OCEAN":
+                shipment["gate_in_at"] = actual[field]
+            if field == "destination_release_at" and transport_mode == "OCEAN":
+                shipment["discharged_at"] = actual[field]
             shipment["lifecycle_stage"] = stage
-            events.append(_event(shipment, event_type, actual[field], logical_date, location))
+            events.append(_event(
+                shipment, event_type, actual[field], logical_date, location, segment_type, leg_seq
+            ))
             if field == "ata":
-                shipment["discharge_target_at"] = _days(
-                    actual[field], targets["ATA_TO_DISCHARGED"]
+                release_hours = _target_hours(
+                    targets, transport_mode, "ARRIVAL_TO_DESTINATION_RELEASE", "ATA_TO_DISCHARGED"
                 )
-            if field == "discharged_at":
-                shipment["delivery_target_at"] = _days(
-                    actual[field], targets["DISCHARGED_TO_DELIVERED"]
+                shipment["destination_release_target_at"] = actual[field] + timedelta(hours=release_hours)
+                if transport_mode == "OCEAN":
+                    shipment["discharge_target_at"] = shipment["destination_release_target_at"]
+            if field == "destination_release_at":
+                delivery_hours = _target_hours(
+                    targets, transport_mode, "DESTINATION_RELEASE_TO_DELIVERY", "DISCHARGED_TO_DELIVERED"
                 )
+                shipment["delivery_target_at"] = actual[field] + timedelta(hours=delivery_hours)
 
     if shipment["lifecycle_stage"] == "BOOKED" and logical_date > shipment["booking_at"].date():
         shipment["lifecycle_stage"] = "ORIGIN_PROCESSING"
@@ -508,7 +705,7 @@ def run_day(
     logical_date: date,
     routes: Iterable[dict[str, Any]],
     targets: dict[str, int],
-    seed_version: str = "lifecycle-2026.08-v1",
+    seed_version: str = "lifecycle-2026.09-multimodal-v1",
     new_count: int | None = None,
     rate_cards: Iterable[dict[str, Any]] | None = None,
     fx_rates: dict[tuple[str, str], float] | None = None,
@@ -544,8 +741,10 @@ def run_day(
         snapshot, new_events = advance_shipment(shipment, logical_date, targets)
         assert snapshot is not None
         snapshots.append(snapshot)
-        events.append(_event(snapshot, "BOOKING_CONFIRMED", snapshot["booking_at"], logical_date,
-                             snapshot["origin_port"]))
+        events.append(_event(
+            snapshot, "BOOKING_CONFIRMED", snapshot["booking_at"], logical_date,
+            snapshot["origin_port"], "ORIGIN", 1,
+        ))
         events.extend(new_events)
 
     metrics = [calculate_lifecycle_metrics(snapshot, logical_date) for snapshot in snapshots]
@@ -572,7 +771,7 @@ def seed_population(
     routes: Iterable[dict[str, Any]],
     targets: dict[str, int],
     population_size: int = 450,
-    seed_version: str = "lifecycle-2026.08-v1",
+    seed_version: str = "lifecycle-2026.09-multimodal-v1",
     rate_cards: Iterable[dict[str, Any]] | None = None,
     fx_rates: dict[tuple[str, str], float] | None = None,
 ) -> list[dict[str, Any]]:
@@ -617,14 +816,14 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             event["routes"],
             event["targets"],
             int(event.get("population_size", 450)),
-            event.get("seed_version", "lifecycle-2026.08-v1"),
+            event.get("seed_version", "lifecycle-2026.09-multimodal-v1"),
         )
     result = run_day(
         active_shipments,
         logical_date,
         event["routes"],
         event["targets"],
-        event.get("seed_version", "lifecycle-2026.08-v1"),
+        event.get("seed_version", "lifecycle-2026.09-multimodal-v1"),
         event.get("new_count"),
     )
     # The controller needs counts, never entity records. Full rows remain in

@@ -29,9 +29,93 @@ ROUTES = [
         "config_version": "route-2026.08-v1",
     }
 ]
+MULTIMODAL_TARGETS = {
+    "OCEAN:BOOKING_TO_ORIGIN_HANDOVER": 168,
+    "OCEAN:ORIGIN_HANDOVER_TO_DEPARTURE": 24,
+    "OCEAN:ARRIVAL_TO_DESTINATION_RELEASE": 72,
+    "OCEAN:DESTINATION_RELEASE_TO_DELIVERY": 96,
+    "AIR:BOOKING_TO_ORIGIN_HANDOVER": 24,
+    "AIR:ORIGIN_HANDOVER_TO_DEPARTURE": 12,
+    "AIR:ARRIVAL_TO_DESTINATION_RELEASE": 12,
+    "AIR:DESTINATION_RELEASE_TO_DELIVERY": 24,
+}
+MULTIMODAL_ROUTES = [
+    dict(ROUTES[0], transport_mode="OCEAN", provider_type="OCEAN_CARRIER",
+         operating_carrier="MAERSK", origin_location_type="PORT",
+         destination_location_type="PORT", p2p_target_hours=336,
+         equipment_type="40HC"),
+    dict(ROUTES[0], route_service_id="KN-CNSHA-AUSYD", carrier="KN",
+         service_code="KN-OCEAN-STANDARD", transport_mode="OCEAN",
+         provider_type="LOGISTICS_PROVIDER", operating_carrier="SIMULATED_OCEAN_OPERATOR",
+         origin_location_type="PORT", destination_location_type="PORT",
+         p2p_target_hours=408, equipment_type="40HC"),
+    dict(ROUTES[0], route_service_id="DHL-PVG-SYD", origin_port="PVG",
+         destination_port="SYD", carrier="DHL", service_code="DHL-AIR-STANDARD",
+         transport_mode="AIR", provider_type="LOGISTICS_PROVIDER",
+         operating_carrier="SIMULATED_AIRLINE", origin_location_type="AIRPORT",
+         destination_location_type="AIRPORT", p2p_target_days=1,
+         p2p_target_hours=18, equipment_type="AIR_CARGO"),
+]
 
 
 class StatefulLifecycleGeneratorTests(unittest.TestCase):
+    def test_multimodal_provider_cycle_keeps_air_between_fifteen_and_twenty_percent(self):
+        shipments = []
+        start = date(2026, 9, 2)
+        for offset in range(28):
+            result = generator.run_day(
+                [], start + timedelta(days=offset), MULTIMODAL_ROUTES, MULTIMODAL_TARGETS
+            )
+            shipments.extend(result["snapshots"])
+        air_share = 100 * sum(row["transport_mode"] == "AIR" for row in shipments) / len(shipments)
+        self.assertGreaterEqual(air_share, 15)
+        self.assertLessEqual(air_share, 20)
+        providers = {row["carrier"] for row in shipments}
+        self.assertEqual(providers, {"MAERSK", "KN", "DHL"})
+
+    def test_dhl_air_uses_air_cargo_milestones_and_chargeable_weight(self):
+        air_route = [row for row in MULTIMODAL_ROUTES if row["carrier"] == "DHL"]
+        shipment = generator.create_shipment(
+            date(2026, 9, 2), 1, air_route, MULTIMODAL_TARGETS
+        )
+        self.assertEqual(shipment["transport_mode"], "AIR")
+        self.assertEqual(shipment["equipment_type"], "AIR_CARGO")
+        self.assertEqual(shipment["container_count"], 0)
+        self.assertGreaterEqual(shipment["chargeable_weight_kg"], shipment["gross_weight_kg"])
+        self.assertIsNone(shipment["gate_in_target_at"])
+        origin, events = generator.advance_shipment(
+            shipment, shipment["origin_handover_target_at"].date(), MULTIMODAL_TARGETS
+        )
+        self.assertEqual(events[0]["event_type"], "ORIGIN_RECEIVED")
+        self.assertEqual(events[0]["segment_type"], "ORIGIN")
+        self.assertEqual(events[0]["leg_seq"], 1)
+
+    def test_dhl_air_cost_uses_chargeable_kg_and_air_base(self):
+        air_route = [row for row in MULTIMODAL_ROUTES if row["carrier"] == "DHL"]
+        rates = [
+            {"rate_card_id": "air", "transport_mode": "AIR", "origin_port": "*",
+             "destination_port": "*", "carrier": "DHL", "service_code": "*",
+             "equipment_type": "AIR_CARGO", "charge_code": "AIR_FREIGHT",
+             "calculation_basis": "PER_CHARGEABLE_KG", "amount": 7.25,
+             "currency": "USD", "config_version": "air-v1", "status": "ACTIVE"},
+            {"rate_card_id": "fuel", "transport_mode": "AIR", "origin_port": "*",
+             "destination_port": "*", "carrier": "DHL", "service_code": "*",
+             "equipment_type": "AIR_CARGO", "charge_code": "AIR_FUEL_SURCHARGE",
+             "calculation_basis": "PERCENT_OF_BASE", "amount": 0,
+             "percentage_rate": 0.18, "currency": "USD", "config_version": "air-v1",
+             "status": "ACTIVE"},
+        ]
+        shipment = generator.create_shipment(
+            date(2026, 9, 2), 1, air_route, MULTIMODAL_TARGETS,
+            rate_cards=rates, fx_rates={("USD", "AUD"): 1.52},
+        )
+        expected = shipment["chargeable_weight_kg"] * 7.25 * 1.18 * 1.52
+        self.assertEqual(shipment["expected_total_cost"], round(expected, 2))
+        self.assertEqual(
+            shipment["expected_cost_lines"][0]["calculation_basis"],
+            "PER_CHARGEABLE_KG",
+        )
+
     def test_booking_targets_and_p2p_commitments_are_calculated_once(self):
         shipment = generator.create_shipment(date(2026, 8, 4), 1, ROUTES, TARGETS)
         self.assertEqual((shipment["gate_in_target_at"] - shipment["booking_at"]).days, 7)

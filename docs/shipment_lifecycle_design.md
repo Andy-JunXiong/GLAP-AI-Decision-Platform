@@ -115,6 +115,18 @@ PLANNED
 -> DELIVERED
 ```
 
+The lifecycle is mode-neutral at its three governed boundaries:
+
+| Boundary | Ocean events | Air events |
+| --- | --- | --- |
+| Origin | gate-in and terminal acceptance | pickup/origin receipt and airport acceptance |
+| P2P | vessel departure and arrival | flight departure and arrival |
+| Destination | discharge/release and delivery | cargo availability/release and delivery |
+
+`etd`, `atd`, `eta`, and `ata` remain the common immutable/observed P2P
+contract. Mode-specific events are appended to the event history and must not
+be forced into Ocean-only fields.
+
 For each governed logical run date, the generator will:
 
 1. read all shipments not in `DELIVERED` or `CANCELLED`;
@@ -164,6 +176,12 @@ With an average booking-to-delivery lifecycle of roughly 25--30 days, maintainin
 about 400--500 active shipments requires approximately 14--18 new shipments per
 normal day. Demand regimes may vary that rate, but should remain versioned and
 reproducible.
+
+The first multimodal simulation uses a deterministic 17-booking cycle: 7
+Maersk Ocean, 7 KN Ocean, and 3 DHL Air. This yields 41.18%, 41.18%, and 17.65%
+respectively, keeping Air inside the approved 15--20% range over a governed
+rolling cohort. The percentages are simulation controls, not market-share
+claims.
 
 The first stateful run must seed the active population across lifecycle stages;
 it must not create only newly booked shipments and wait several weeks for the

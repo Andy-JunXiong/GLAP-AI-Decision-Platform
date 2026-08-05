@@ -111,6 +111,7 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_card_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_tier_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_fx_rate_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_provider_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_event_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_cost_staging_v1
@@ -237,6 +238,7 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_card_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_tier_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_fx_rate_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_provider_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_event_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_cost_staging_v1

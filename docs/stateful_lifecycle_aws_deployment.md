@@ -3,7 +3,8 @@
 ## Current delivery boundary
 
 This repository slice creates the versioned lifecycle, route, rate, tier and FX
-contracts; an isolated staging snapshot/event/cost/metric/signal boundary; a
+contracts; provider and transport-mode contracts; an isolated staging
+snapshot/event/cost/metric/signal boundary; a
 deterministic state transition and expected-cost engine; a retry-safe Athena
 persistence adapter; an unscheduled staging Lambda template; and fail-closed
 validation SQL. It also includes six read-only v2 compatibility views and a
@@ -12,8 +13,9 @@ It does not replace `glap-daily-incremental-generator-v2` or write to governed
 v2 production tables.
 
 The P2P contract has exactly one immutable `etd` and `eta`. `atd` and `ata` are
-written once when observed. Origin gate-in, destination discharge and final
-delivery have separate target and actual milestones.
+written once when observed. Generic Origin handover and Destination release
+milestones support both modes; Ocean retains gate-in/discharge aliases while
+Air uses airport receipt/cargo-availability events and chargeable-weight cost.
 
 ## Files
 
@@ -24,6 +26,8 @@ delivery have separate target and actual milestones.
   versions, tiers and cost detail.
 - `sql/07_stateful_lifecycle_compatibility_views.sql` exposes the isolated data
   through six read-only views matching the deployed v2 input shapes.
+- `sql/08_stateful_lifecycle_multimodal_seed.sql` idempotently installs Maersk
+  and KN Ocean plus DHL Air provider, route, target, and synthetic rate profiles.
 - `lambda/glap_stateful_lifecycle_generator.py` provides deterministic replay,
   seed population, daily progression, expected-cost calculation, lifecycle SLA
   metrics and auditable SLA/cost signal candidates.
@@ -49,6 +53,24 @@ They use `AWS_PROFILE` when it exists and otherwise use the temporary AWS
 credentials supplied by GitHub OIDC.
 The Iceberg DDL uses Athena engine v3 type names such as `int` rather than the
 Trino alias `integer`, which Athena rejects in `CREATE TABLE` column contracts.
+The deployer inspects existing Glue columns and adds only missing multimodal
+columns before applying the idempotent configuration merge and recreating the
+read-only compatibility views.
+
+## Multimodal simulation contract
+
+- New bookings use a deterministic 17-shipment cycle: Maersk Ocean `7/17`, KN
+  Ocean `7/17`, and DHL Air `3/17` (17.65% Air).
+- Ocean keeps port nodes, `40HC`, container quantities, gate-in/discharge, and
+  per-container charges.
+- Air uses airport nodes, pieces, gross/volumetric/chargeable weight,
+  origin-received/flight/cargo-available milestones, and per-chargeable-kg
+  charges.
+- Common P2P ETD/ATD/ETA/ATA and final delivery semantics remain unchanged.
+- Provider rates, transit targets, and operating-carrier labels are explicitly
+  simulated and are not live quotes, schedules, or performance claims.
+- The fail-closed contract includes provider coverage, provider-to-mode/cargo
+  semantics, and a 28-day Air booking-share check after a 70-booking warm-up.
 
 ## GitHub staging environment
 

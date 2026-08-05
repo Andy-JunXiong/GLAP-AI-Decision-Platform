@@ -139,7 +139,7 @@ class DataQualityGateTests(unittest.TestCase):
         self.assertEqual(output_result["status"], "success")
         self.assertEqual(run_query.call_count, 2)
 
-    def test_lifecycle_handler_emits_exact_sixteen_check_contract(self):
+    def test_lifecycle_handler_emits_exact_multimodal_check_contract(self):
         module = load_module()
         failures = {name: 0 for name in module.LIFECYCLE_CHECK_NAMES}
         with patch.object(
@@ -155,7 +155,7 @@ class DataQualityGateTests(unittest.TestCase):
             )
         self.assertEqual(set(result["quality_checks"]), set(module.LIFECYCLE_CHECK_NAMES))
         self.assertTrue(all(value == "passed" for value in result["quality_checks"].values()))
-        self.assertEqual(result["metrics"]["check_count"], 16)
+        self.assertEqual(result["metrics"]["check_count"], 19)
         validate.assert_called_once_with("2026-09-01", "simulated_iceberg_m")
 
     def test_validation_result_rejects_duplicate_checks(self):

@@ -15,6 +15,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             "dim_rate_card_v1",
             "dim_rate_tier_v1",
             "dim_fx_rate_v1",
+            "dim_provider_v1",
             "fact_shipment_lifecycle_staging_v1",
             "fact_shipment_lifecycle_event_staging_v1",
             "fact_shipment_cost_staging_v1",
@@ -26,6 +27,12 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertNotIn("DROP TABLE", ddl.upper())
         self.assertNotIn("fact_shipment_v2 (", ddl)
         self.assertNotRegex(ddl, r"\binteger\b")
+        for column in (
+            "transport_mode string", "origin_handover_target_at timestamp",
+            "destination_release_target_at timestamp", "chargeable_weight_kg decimal",
+            "segment_type string", "leg_seq int",
+        ):
+            self.assertIn(column, ddl)
 
     def test_seed_records_approved_targets_routes_and_synthetic_provenance(self):
         seed = (ROOT / "sql" / "05_stateful_lifecycle_seed.sql").read_text(encoding="utf-8")
@@ -42,18 +49,32 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, seed)
 
+        multimodal = (
+            ROOT / "sql" / "08_stateful_lifecycle_multimodal_seed.sql"
+        ).read_text(encoding="utf-8")
+        for marker in (
+            "'MAERSK', 'Maersk'", "'KN', 'Kuehne+Nagel'", "'DHL', 'DHL'",
+            "'DHL-PVG-SYD'", "'AIR_FREIGHT'", "'PER_CHARGEABLE_KG'",
+            "SIMULATED_PROVIDER_PROFILE", "DATE '2026-09-02'",
+        ):
+            self.assertIn(marker, multimodal)
+
     def test_sql_files_render_to_expected_statement_counts_after_comment_removal(self):
         def statements(path):
             sql = path.read_text(encoding="utf-8")
             sql = re.sub(r"^\s*--.*$", "", sql, flags=re.MULTILINE)
             return [statement for statement in sql.split(";") if statement.strip()]
 
-        self.assertEqual(len(statements(ROOT / "sql" / "04_stateful_lifecycle_config.sql")), 10)
+        self.assertEqual(len(statements(ROOT / "sql" / "04_stateful_lifecycle_config.sql")), 11)
         self.assertEqual(len(statements(ROOT / "sql" / "05_stateful_lifecycle_seed.sql")), 5)
         self.assertEqual(len(statements(ROOT / "sql" / "06_stateful_lifecycle_validation.sql")), 2)
         self.assertEqual(
             len(statements(ROOT / "sql" / "07_stateful_lifecycle_compatibility_views.sql")),
             6,
+        )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "08_stateful_lifecycle_multimodal_seed.sql")),
+            7,
         )
 
     def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
@@ -70,7 +91,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         ):
             with self.subTest(view=view):
                 self.assertIn(f"VIEW {{{{SOURCE_DATABASE}}}}.{view}", compatibility)
-        self.assertIn("SIMULATED_LIFECYCLE_V1", compatibility)
+        self.assertIn("SIMULATED_MULTIMODAL_V1", compatibility)
+        self.assertIn("coalesce(transport_mode, 'OCEAN') AS ship_mode", compatibility)
         self.assertIn("SIM-PRODUCT-", compatibility)
         self.assertNotRegex(compatibility, r"(?i)(insert\s+into|merge\s+into|delete\s+from)")
         self.assertNotIn("VIEW {{SOURCE_DATABASE}}.fact_shipment_v2", compatibility)
@@ -88,6 +110,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             "invalid_rate_tier",
             "metric_snapshot_mismatch",
             "invalid_signal_contract",
+            "invalid_transport_contract",
+            "missing_provider_coverage",
+            "air_booking_share_out_of_range",
         ):
             with self.subTest(check=check):
                 self.assertIn(check, validation)
@@ -111,6 +136,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("fact_shipment_signal_candidate_staging_v1", template)
         self.assertIn("glue:UpdateTable", template)
         self.assertIn("dim_rate_tier_v1", template)
+        self.assertIn("dim_provider_v1", template)
         self.assertIn("glap-stateful-lifecycle-controller-staging", template)
         self.assertIn("glap-stateful-lifecycle-quality-gate-staging", template)
         self.assertIn('"quality_contract":"lifecycle_v1"', template)

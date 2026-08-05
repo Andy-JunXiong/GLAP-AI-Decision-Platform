@@ -26,6 +26,27 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
             self.assertNotIn("SELECT *", query.upper())
         self.assertIn("effective_from <=", queries["rates"])
         self.assertIn("effective_to IS NULL", queries["rates"])
+        self.assertIn("transport_mode", queries["targets"])
+        self.assertIn("p2p_target_hours", queries["routes"])
+        self.assertIn("transport_mode", queries["rates"])
+
+    def test_legacy_ocean_snapshot_is_coerced_into_multimodal_contract(self):
+        row = {column: None for column in adapter.SNAPSHOT_COLUMNS}
+        row.update(
+            {
+                "shipment_id": "SHP-1", "carrier": "MAERSK", "container_count": "2",
+                "gate_in_target_at": "2026-09-01 12:00:00",
+                "discharge_target_at": "2026-09-20 12:00:00",
+                "terminal_state": "false",
+            }
+        )
+        snapshot = adapter._coerce_snapshot(row)
+        self.assertEqual(snapshot["transport_mode"], "OCEAN")
+        self.assertEqual(snapshot["origin_location_type"], "PORT")
+        self.assertEqual(snapshot["origin_handover_target_at"], snapshot["gate_in_target_at"])
+        self.assertEqual(snapshot["destination_release_target_at"], snapshot["discharge_target_at"])
+        self.assertEqual(snapshot["gross_weight_kg"], 48000.0)
+        self.assertEqual(snapshot["piece_count"], 200)
 
     def test_active_snapshot_reads_only_previous_non_terminal_population(self):
         query = adapter.build_active_snapshot_query(date(2026, 8, 4))

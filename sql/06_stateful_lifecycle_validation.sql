@@ -21,6 +21,13 @@ current_signals AS (
     FROM {{SOURCE_DATABASE}}.fact_shipment_signal_candidate_staging_v1
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
 ),
+booking_cohort AS (
+    SELECT DISTINCT shipment_id, carrier, coalesce(transport_mode, 'OCEAN') AS transport_mode
+    FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
+    WHERE try_cast(dt AS date) BETWEEN date_add('day', -27, DATE '{{LOGICAL_RUN_DATE}}')
+                                   AND DATE '{{LOGICAL_RUN_DATE}}'
+      AND CAST(booking_at AS date) BETWEEN DATE '2026-09-02' AND DATE '{{LOGICAL_RUN_DATE}}'
+),
 checks AS (
     SELECT 'duplicate_snapshot_key' AS check_name, count(*) AS failure_count
     FROM (
@@ -35,10 +42,13 @@ checks AS (
     WHERE (atd IS NOT NULL AND atd < booking_at)
        OR (ata IS NOT NULL AND atd IS NULL)
        OR (ata IS NOT NULL AND ata < atd)
-       OR (discharged_at IS NOT NULL AND ata IS NULL)
-       OR (discharged_at IS NOT NULL AND discharged_at < ata)
-       OR (delivered_at IS NOT NULL AND discharged_at IS NULL)
-       OR (delivered_at IS NOT NULL AND delivered_at < discharged_at)
+       OR (coalesce(destination_release_at, discharged_at) IS NOT NULL AND ata IS NULL)
+       OR (coalesce(destination_release_at, discharged_at) IS NOT NULL
+           AND coalesce(destination_release_at, discharged_at) < ata)
+       OR (delivered_at IS NOT NULL
+           AND coalesce(destination_release_at, discharged_at) IS NULL)
+       OR (delivered_at IS NOT NULL
+           AND delivered_at < coalesce(destination_release_at, discharged_at))
     UNION ALL
     SELECT 'p2p_commitment_mutated', count(*)
     FROM current_snapshot AS current
@@ -50,7 +60,9 @@ checks AS (
     JOIN previous_snapshot AS previous USING (shipment_id)
     WHERE (previous.atd IS NOT NULL AND current.atd <> previous.atd)
        OR (previous.ata IS NOT NULL AND current.ata <> previous.ata)
-       OR (previous.discharged_at IS NOT NULL AND current.discharged_at <> previous.discharged_at)
+       OR (coalesce(previous.destination_release_at, previous.discharged_at) IS NOT NULL
+           AND coalesce(current.destination_release_at, current.discharged_at)
+               <> coalesce(previous.destination_release_at, previous.discharged_at))
        OR (previous.delivered_at IS NOT NULL AND current.delivered_at <> previous.delivered_at)
     UNION ALL
     SELECT 'invalid_terminal_state', count(*)
@@ -106,6 +118,8 @@ checks AS (
        OR arrival_performance NOT IN ('NOT_APPLICABLE', 'PENDING', 'ON_TIME', 'LATE', 'OVERDUE')
        OR discharge_performance NOT IN ('NOT_APPLICABLE', 'PENDING', 'ON_TIME', 'LATE', 'OVERDUE')
        OR delivery_performance NOT IN ('NOT_APPLICABLE', 'PENDING', 'ON_TIME', 'LATE', 'OVERDUE')
+       OR origin_performance NOT IN ('NOT_APPLICABLE', 'PENDING', 'ON_TIME', 'LATE', 'OVERDUE')
+       OR destination_release_performance NOT IN ('NOT_APPLICABLE', 'PENDING', 'ON_TIME', 'LATE', 'OVERDUE')
     UNION ALL
     SELECT 'duplicate_signal_key', count(*)
     FROM (
@@ -121,6 +135,40 @@ checks AS (
        OR severity NOT IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
        OR candidate_status NOT IN ('ACTIVE', 'RESOLVED')
        OR simulation_provenance <> 'SIMULATED'
+    UNION ALL
+    SELECT 'invalid_transport_contract', count(*)
+    FROM current_snapshot AS shipment
+    LEFT JOIN {{SOURCE_DATABASE}}.dim_provider_v1 AS provider
+      ON shipment.carrier = provider.provider_code AND provider.status = 'ACTIVE'
+    WHERE provider.provider_code IS NULL
+       OR coalesce(shipment.transport_mode, 'OCEAN') NOT IN ('OCEAN', 'AIR')
+       OR coalesce(shipment.transport_mode, 'OCEAN') <> provider.supported_mode
+       OR (shipment.carrier = 'DHL' AND shipment.transport_mode <> 'AIR')
+       OR (shipment.carrier IN ('MAERSK', 'KN')
+           AND coalesce(shipment.transport_mode, 'OCEAN') <> 'OCEAN')
+       OR (shipment.transport_mode = 'AIR' AND (
+            shipment.container_count <> 0 OR shipment.chargeable_weight_kg <= 0
+            OR shipment.origin_location_type <> 'AIRPORT'
+            OR shipment.destination_location_type <> 'AIRPORT'
+       ))
+       OR (coalesce(shipment.transport_mode, 'OCEAN') = 'OCEAN' AND (
+            shipment.container_count <= 0 OR shipment.origin_location_type <> 'PORT'
+            OR shipment.destination_location_type <> 'PORT'
+       ))
+    UNION ALL
+    SELECT 'missing_provider_coverage',
+           IF(count(DISTINCT carrier) = 3
+              AND count_if(carrier = 'MAERSK') > 0
+              AND count_if(carrier = 'KN') > 0
+              AND count_if(carrier = 'DHL') > 0, 0, 1)
+    FROM current_snapshot
+    WHERE CAST(booking_at AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+    UNION ALL
+    SELECT 'air_booking_share_out_of_range',
+           IF(count(*) < 70, 0,
+              IF(100.0 * count_if(transport_mode = 'AIR') / count(*) BETWEEN 15.0 AND 20.0,
+                 0, 1))
+    FROM booking_cohort
 )
 SELECT check_name, failure_count
 FROM checks
@@ -135,11 +183,11 @@ WITH route_duplicates AS (
     HAVING count(*) > 1
 ),
 rate_ambiguity AS (
-    SELECT origin_port, destination_port, carrier, service_code, equipment_type,
+    SELECT transport_mode, origin_port, destination_port, carrier, service_code, equipment_type,
            charge_code, effective_from, count(*) AS row_count
     FROM {{SOURCE_DATABASE}}.dim_rate_card_v1
     WHERE status = 'ACTIVE'
-    GROUP BY origin_port, destination_port, carrier, service_code, equipment_type,
+    GROUP BY transport_mode, origin_port, destination_port, carrier, service_code, equipment_type,
              charge_code, effective_from
     HAVING count(*) > 1
 ),

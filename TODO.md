@@ -68,6 +68,13 @@ Repository implementation checkpoint — 4 August 2026:
   checks, then all 5 existing-input contract checks. Workflow run `30972254011`
   passed without a schedule, Lambda alias, event-source mapping, EventBridge
   rule, or write to the current v2 tables.
+- [x] Extend the isolated contracts for Maersk and KN Ocean plus DHL Air,
+  preserving common Origin/P2P/Destination semantics and adding Air airport
+  milestones, pieces/chargeable weight, per-kg cost, provider metadata, and
+  mode-aware compatibility views. The deterministic 28-day local replay
+  produced 449 new bookings with 17.37% Air.
+- [ ] Prove the multimodal schema evolution and `2026-09-02` controller run in
+  AWS staging before enabling any recurring execution.
 
 - [x] Correct the public metric contract: v2 shipment volume, insights v3 root
   causes, actions v2 action distribution, no legacy v1 or trace claims.

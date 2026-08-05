@@ -35,6 +35,9 @@ LIFECYCLE_CHECK_NAMES = frozenset(
         "duplicate_route_config",
         "ambiguous_rate_card",
         "invalid_rate_tier",
+        "invalid_transport_contract",
+        "missing_provider_coverage",
+        "air_booking_share_out_of_range",
     }
 )
 

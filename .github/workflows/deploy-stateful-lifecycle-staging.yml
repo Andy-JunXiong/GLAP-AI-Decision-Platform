@@ -36,7 +36,7 @@ on:
         description: One isolated date after the replay range (YYYY-MM-DD)
         required: true
         type: string
-        default: "2026-09-01"
+        default: "2026-09-02"
 
 permissions:
   contents: read
@@ -222,7 +222,7 @@ jobs:
             --payload '{"logical_run_date":"${{ inputs.integration_logical_date }}"}' \
             integration-response.json)
           test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$metadata")" = ""
-          python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation"], stages; assert len(stages[1]["quality_checks"]) == 16 and len(stages[2]["quality_checks"]) == 5, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
+          python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation"], stages; assert len(stages[1]["quality_checks"]) == 19 and len(stages[2]["quality_checks"]) == 5, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
 
       - name: Write staging evidence summary
         if: success()

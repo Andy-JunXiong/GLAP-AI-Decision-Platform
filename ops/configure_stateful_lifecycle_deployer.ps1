@@ -82,6 +82,7 @@ $tableNames = @(
     "dim_rate_card_v1",
     "dim_rate_tier_v1",
     "dim_fx_rate_v1",
+    "dim_provider_v1",
     "fact_shipment_lifecycle_staging_v1",
     "fact_shipment_lifecycle_event_staging_v1",
     "fact_shipment_cost_staging_v1",

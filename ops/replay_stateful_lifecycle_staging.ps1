@@ -37,7 +37,7 @@ foreach ($logicalDate in $dates) {
         logical_run_date = $logicalDate.ToString("yyyy-MM-dd")
         seed_population = $isFirst
         population_size = $PopulationSize
-        seed_version = "lifecycle-2026.08-v1"
+        seed_version = "lifecycle-2026.09-multimodal-v1"
     } | ConvertTo-Json -Compress
     $payloadPath = [System.IO.Path]::GetTempFileName()
     $responsePath = [System.IO.Path]::GetTempFileName()

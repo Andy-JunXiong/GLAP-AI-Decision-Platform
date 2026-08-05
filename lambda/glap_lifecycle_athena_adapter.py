@@ -34,11 +34,16 @@ SNAPSHOT_COLUMNS = (
     "rate_locked_at", "service_level", "equipment_type", "container_count",
     "journey_exception_type", "journey_exception_hours", "expected_total_cost",
     "accrued_total_cost", "actual_total_cost", "cost_currency", "simulation_seed",
-    "created_at", "updated_at",
+    "created_at", "updated_at", "transport_mode", "provider_type",
+    "operating_carrier", "origin_location_type", "destination_location_type",
+    "origin_handover_target_at", "origin_handover_at",
+    "destination_release_target_at", "destination_release_at", "piece_count",
+    "gross_weight_kg", "volume_cbm", "chargeable_weight_kg",
 )
 EVENT_COLUMNS = (
     "event_id", "shipment_id", "event_type", "event_time", "observed_at", "processed_at",
     "location", "logical_run_date", "scenario_id", "simulation_seed",
+    "transport_mode", "segment_type", "leg_seq", "location_type",
 )
 COST_COLUMNS = (
     "shipment_id", "dt", "charge_code", "cost_stage", "calculation_basis", "quantity",
@@ -51,7 +56,8 @@ METRICS_COLUMNS = (
     "arrival_performance", "arrival_delay_hours", "discharge_performance",
     "discharge_delay_hours", "delivery_performance", "delivery_delay_hours",
     "planned_p2p_hours", "actual_p2p_hours", "sla_breach_flag", "sla_breach_stages",
-    "computed_at",
+    "computed_at", "origin_performance", "origin_delay_hours",
+    "destination_release_performance", "destination_release_delay_hours",
 )
 SIGNAL_COLUMNS = (
     "signal_fingerprint", "shipment_id", "dt", "signal_type", "signal_grain",
@@ -83,17 +89,19 @@ def build_configuration_queries(logical_date: date) -> dict[str, str]:
     day = logical_date.isoformat()
     database = _identifier(DATABASE, "database")
     return {
-        "targets": f"""SELECT stage_code, target_days FROM {database}.{_identifier(TARGET_TABLE, 'target table')}
+        "targets": f"""SELECT stage_code, target_days, transport_mode, target_hours FROM {database}.{_identifier(TARGET_TABLE, 'target table')}
 WHERE status = 'ACTIVE' AND effective_from <= DATE '{day}'
   AND (effective_to IS NULL OR effective_to >= DATE '{day}')""",
         "routes": f"""SELECT route_service_id, origin_port, destination_port, carrier, service_code,
-service_level, p2p_target_days, effective_from, effective_to, config_version
+service_level, p2p_target_days, p2p_target_hours, transport_mode, provider_type,
+operating_carrier, origin_location_type, destination_location_type, equipment_type,
+effective_from, effective_to, config_version
 FROM {database}.{_identifier(ROUTE_TABLE, 'route table')}
 WHERE status = 'ACTIVE' AND effective_from <= DATE '{day}'
   AND (effective_to IS NULL OR effective_to >= DATE '{day}')""",
         "rates": f"""SELECT rate_card_id, origin_port, destination_port, carrier, service_code,
 equipment_type, charge_code, calculation_basis, amount, percentage_rate, currency,
-effective_from, effective_to, status, config_version
+effective_from, effective_to, status, config_version, transport_mode
 FROM {database}.{_identifier(RATE_TABLE, 'rate table')}
 WHERE status = 'ACTIVE' AND effective_from <= DATE '{day}'
   AND (effective_to IS NULL OR effective_to >= DATE '{day}')""",
@@ -180,17 +188,42 @@ def _coerce_snapshot(row: dict[str, str | None]) -> dict[str, Any]:
     for field in (
         "booking_at", "gate_in_target_at", "gate_in_at", "etd", "atd", "eta", "ata",
         "discharge_target_at", "discharged_at", "delivery_target_at", "delivered_at",
-        "rate_locked_at", "created_at", "updated_at",
+        "rate_locked_at", "created_at", "updated_at", "origin_handover_target_at",
+        "origin_handover_at", "destination_release_target_at", "destination_release_at",
     ):
         result[field] = (
             datetime.fromisoformat(str(row[field])).replace(tzinfo=timezone.utc)
             if row.get(field) else None
         )
     result["terminal_state"] = str(row.get("terminal_state")).lower() == "true"
-    for field in ("container_count", "journey_exception_hours"):
+    for field in ("container_count", "piece_count", "journey_exception_hours"):
         result[field] = int(row[field]) if row.get(field) else 0
-    for field in ("expected_total_cost", "accrued_total_cost", "actual_total_cost"):
+    for field in (
+        "expected_total_cost", "accrued_total_cost", "actual_total_cost",
+        "gross_weight_kg", "volume_cbm", "chargeable_weight_kg",
+    ):
         result[field] = float(row[field]) if row.get(field) else None
+    result["transport_mode"] = str(row.get("transport_mode") or "OCEAN")
+    result["provider_type"] = str(row.get("provider_type") or (
+        "OCEAN_CARRIER" if row.get("carrier") == "MAERSK" else "LOGISTICS_PROVIDER"
+    ))
+    result["operating_carrier"] = str(row.get("operating_carrier") or row.get("carrier") or "")
+    result["origin_location_type"] = str(row.get("origin_location_type") or "PORT")
+    result["destination_location_type"] = str(row.get("destination_location_type") or "PORT")
+    result["origin_handover_target_at"] = result["origin_handover_target_at"] or result["gate_in_target_at"]
+    result["origin_handover_at"] = result["origin_handover_at"] or result["gate_in_at"]
+    result["destination_release_target_at"] = (
+        result["destination_release_target_at"] or result["discharge_target_at"]
+    )
+    result["destination_release_at"] = result["destination_release_at"] or result["discharged_at"]
+    if result["gross_weight_kg"] is None:
+        result["gross_weight_kg"] = float(result["container_count"] * 24000)
+    if result["volume_cbm"] is None:
+        result["volume_cbm"] = float(result["container_count"] * 67.7)
+    if result["chargeable_weight_kg"] is None:
+        result["chargeable_weight_kg"] = result["gross_weight_kg"]
+    if not result["piece_count"]:
+        result["piece_count"] = result["container_count"] * 100
     return result
 
 
@@ -237,10 +270,22 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     client = boto3.client("athena", region_name=os.getenv("AWS_REGION", "us-east-1"))
     config_queries = build_configuration_queries(logical_date)
     target_rows = _run_query(client, config_queries["targets"])
-    targets = {str(row["stage_code"]): int(str(row["target_days"])) for row in target_rows}
+    legacy_to_generic = {
+        "BOOKING_TO_GATE_IN": "BOOKING_TO_ORIGIN_HANDOVER",
+        "GATE_IN_TO_ETD": "ORIGIN_HANDOVER_TO_DEPARTURE",
+        "ATA_TO_DISCHARGED": "ARRIVAL_TO_DESTINATION_RELEASE",
+        "DISCHARGED_TO_DELIVERED": "DESTINATION_RELEASE_TO_DELIVERY",
+    }
+    targets: dict[str, int] = {}
+    for row in target_rows:
+        stage = str(row["stage_code"])
+        mode = str(row.get("transport_mode") or "OCEAN")
+        hours = int(str(row.get("target_hours") or int(str(row["target_days"])) * 24))
+        targets[f"{mode}:{legacy_to_generic.get(stage, stage)}"] = hours
     routes = _run_query(client, config_queries["routes"])
     for row in routes:
         row["p2p_target_days"] = int(str(row["p2p_target_days"]))
+        row["p2p_target_hours"] = int(str(row.get("p2p_target_hours") or row["p2p_target_days"] * 24))
     rates = _run_query(client, config_queries["rates"])
     fx_rows = _run_query(client, config_queries["fx"])
     fx_rates = {
@@ -251,11 +296,11 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     if not active and event.get("seed_population", False):
         active = engine.seed_population(
             logical_date, routes, targets, int(event.get("population_size", 450)),
-            event.get("seed_version", "lifecycle-2026.08-v1"), rates, fx_rates,
+            event.get("seed_version", "lifecycle-2026.09-multimodal-v1"), rates, fx_rates,
         )
     result = engine.run_day(
         active, logical_date, routes, targets,
-        event.get("seed_version", "lifecycle-2026.08-v1"), event.get("new_count"), rates, fx_rates,
+        event.get("seed_version", "lifecycle-2026.09-multimodal-v1"), event.get("new_count"), rates, fx_rates,
     )
     snapshots = result.pop("snapshots")
     events = result.pop("events")
