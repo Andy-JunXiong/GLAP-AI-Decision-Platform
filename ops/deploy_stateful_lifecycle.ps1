@@ -64,7 +64,10 @@ function Invoke-AthenaStatement {
 }
 
 $root = Split-Path $PSScriptRoot -Parent
-$files = @((Join-Path $root "sql/04_stateful_lifecycle_config.sql"))
+$files = @(
+    (Join-Path $root "sql/04_stateful_lifecycle_config.sql"),
+    (Join-Path $root "sql/07_stateful_lifecycle_compatibility_views.sql")
+)
 if ($IncludeSeed) {
     $files += Join-Path $root "sql/05_stateful_lifecycle_seed.sql"
 }
@@ -84,4 +87,4 @@ if (-not $Apply) {
 foreach ($statement in $statements) {
     Invoke-AthenaStatement -Statement $statement.Trim()
 }
-Write-Host "Stateful lifecycle schema deployment completed. Run sql/06_stateful_lifecycle_validation.sql before enabling any writer."
+Write-Host "Stateful lifecycle schema and compatibility views deployed. Run sql/06_stateful_lifecycle_validation.sql before enabling any writer."

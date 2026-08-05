@@ -9,6 +9,10 @@ param(
     [string]$StackName = "glap-stateful-lifecycle-staging",
     [string]$FunctionName = "glap-stateful-lifecycle-generator-staging",
     [string]$ExecutionRoleName = "glap-stateful-lifecycle-generator-staging-role",
+    [string]$IntegrationControllerFunctionName = "glap-stateful-lifecycle-controller-staging",
+    [string]$IntegrationControllerRoleName = "glap-stateful-lifecycle-controller-staging-role",
+    [string]$IntegrationQualityGateFunctionName = "glap-stateful-lifecycle-quality-gate-staging",
+    [string]$IntegrationQualityGateRoleName = "glap-stateful-lifecycle-quality-gate-staging-role",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
     [string]$ArtifactPrefix = "stateful-lifecycle-staging/artifacts",
     [Parameter(Mandatory)] [string]$LifecycleDataBucket,
@@ -19,7 +23,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-foreach ($name in @($RoleName, $PolicyName, $StackName, $FunctionName, $ExecutionRoleName)) {
+foreach ($name in @(
+    $RoleName,
+    $PolicyName,
+    $StackName,
+    $FunctionName,
+    $ExecutionRoleName,
+    $IntegrationControllerFunctionName,
+    $IntegrationControllerRoleName,
+    $IntegrationQualityGateFunctionName,
+    $IntegrationQualityGateRoleName
+)) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
         throw "Role, policy, stack and function names must use safe AWS characters"
     }
@@ -72,7 +86,13 @@ $tableNames = @(
     "fact_shipment_lifecycle_event_staging_v1",
     "fact_shipment_cost_staging_v1",
     "fact_shipment_lifecycle_metrics_staging_v1",
-    "fact_shipment_signal_candidate_staging_v1"
+    "fact_shipment_signal_candidate_staging_v1",
+    "vw_lifecycle_shipment_v2_compat",
+    "vw_lifecycle_shipment_event_v2_compat",
+    "vw_lifecycle_leg_metrics_v2_compat",
+    "vw_lifecycle_cost_v2_compat",
+    "vw_lifecycle_risk_v2_compat",
+    "vw_lifecycle_product_allocation_v2_compat"
 )
 $bucketArns = @($ArtifactBucket, $LifecycleDataBucket, $athenaBucket) |
     Sort-Object -Unique |
@@ -202,7 +222,11 @@ $policy = @{
             )
             Resource = @(
                 "arn:aws:lambda:${Region}:${accountId}:function:${FunctionName}",
-                "arn:aws:lambda:${Region}:${accountId}:function:${FunctionName}:*"
+                "arn:aws:lambda:${Region}:${accountId}:function:${FunctionName}:*",
+                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationControllerFunctionName}",
+                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationControllerFunctionName}:*",
+                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationQualityGateFunctionName}",
+                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationQualityGateFunctionName}:*"
             )
         },
         @{
@@ -219,7 +243,11 @@ $policy = @{
                 "iam:TagRole",
                 "iam:UntagRole"
             )
-            Resource = "arn:aws:iam::${accountId}:role/${ExecutionRoleName}"
+            Resource = @(
+                "arn:aws:iam::${accountId}:role/${ExecutionRoleName}",
+                "arn:aws:iam::${accountId}:role/${IntegrationControllerRoleName}",
+                "arn:aws:iam::${accountId}:role/${IntegrationQualityGateRoleName}"
+            )
         },
         @{
             Sid = "ManageLifecycleAlarm"
@@ -243,6 +271,8 @@ Write-Host "  Inline policy: $PolicyName"
 Write-Host "  Stack: $StackName"
 Write-Host "  Function: $FunctionName"
 Write-Host "  Execution role: $ExecutionRoleName"
+Write-Host "  Integration controller: $IntegrationControllerFunctionName"
+Write-Host "  Integration quality gate: $IntegrationQualityGateFunctionName"
 Write-Host "  Database: $SourceDatabase"
 Write-Host "  Workgroup: $Workgroup"
 Write-Host "  Artifact prefix scoped: True"

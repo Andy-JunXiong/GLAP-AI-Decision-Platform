@@ -51,6 +51,29 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertEqual(len(statements(ROOT / "sql" / "04_stateful_lifecycle_config.sql")), 10)
         self.assertEqual(len(statements(ROOT / "sql" / "05_stateful_lifecycle_seed.sql")), 5)
         self.assertEqual(len(statements(ROOT / "sql" / "06_stateful_lifecycle_validation.sql")), 2)
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "07_stateful_lifecycle_compatibility_views.sql")),
+            6,
+        )
+
+    def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
+        compatibility = (
+            ROOT / "sql" / "07_stateful_lifecycle_compatibility_views.sql"
+        ).read_text(encoding="utf-8")
+        for view in (
+            "vw_lifecycle_shipment_v2_compat",
+            "vw_lifecycle_shipment_event_v2_compat",
+            "vw_lifecycle_leg_metrics_v2_compat",
+            "vw_lifecycle_cost_v2_compat",
+            "vw_lifecycle_risk_v2_compat",
+            "vw_lifecycle_product_allocation_v2_compat",
+        ):
+            with self.subTest(view=view):
+                self.assertIn(f"VIEW {{{{SOURCE_DATABASE}}}}.{view}", compatibility)
+        self.assertIn("SIMULATED_LIFECYCLE_V1", compatibility)
+        self.assertIn("SIM-PRODUCT-", compatibility)
+        self.assertNotRegex(compatibility, r"(?i)(insert\s+into|merge\s+into|delete\s+from)")
+        self.assertNotIn("VIEW {{SOURCE_DATABASE}}.fact_shipment_v2", compatibility)
 
     def test_validation_fails_on_immutable_milestone_and_cost_breaks(self):
         validation = (ROOT / "sql" / "06_stateful_lifecycle_validation.sql").read_text(
@@ -88,6 +111,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("fact_shipment_signal_candidate_staging_v1", template)
         self.assertIn("glue:UpdateTable", template)
         self.assertIn("dim_rate_tier_v1", template)
+        self.assertIn("glap-stateful-lifecycle-controller-staging", template)
+        self.assertIn("glap-stateful-lifecycle-quality-gate-staging", template)
+        self.assertIn('"quality_contract":"lifecycle_v1"', template)
+        self.assertIn('"quality_contract":"lifecycle_compat_v2"', template)
+        self.assertIn("PipelineStatusObjectArn", template)
         self.assertNotIn("AWS::Scheduler::Schedule", template)
         self.assertNotIn("pipeline-reliability", template)
 
@@ -116,6 +144,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Athena engine version 3", stack)
         self.assertIn("--no-fail-on-empty-changeset", stack)
         self.assertIn("CAPABILITY_NAMED_IAM", stack)
+        self.assertIn("glap_pipeline_controller.py", stack)
+        self.assertIn("glap_data_quality_gate.py", stack)
+        self.assertIn("glap_quality_contracts.py", stack)
+        self.assertIn("lifecycle_validation.sql", stack)
         self.assertIn("failureCount -ne 0", validation)
 
     def test_lifecycle_workflow_is_manual_and_never_changes_production_alias(self):
@@ -126,6 +158,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("default: plan", workflow)
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
         self.assertIn("deploy-replay-validate", workflow)
+        self.assertIn("deploy-integration-validate", workflow)
+        self.assertIn("Validate lifecycle pipeline integration", workflow)
+        self.assertIn("lifecycle_validation", workflow)
+        self.assertIn("input_validation", workflow)
         self.assertIn("get-bucket-location", workflow)
         self.assertNotIn("head-bucket", workflow)
         self.assertIn("stateful-lifecycle-staging/artifacts", workflow)
@@ -146,6 +182,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('"iam:PassRole"', script)
         self.assertIn('role/${ExecutionRoleName}', script)
         self.assertIn('glap-stateful-lifecycle-generator-staging-role', script)
+        self.assertIn('glap-stateful-lifecycle-controller-staging-role', script)
+        self.assertIn('glap-stateful-lifecycle-quality-gate-staging-role', script)
+        self.assertIn('vw_lifecycle_shipment_v2_compat', script)
         self.assertIn('${LifecycleDataBucket}/${dataPrefix}/*', script)
         self.assertIn('stateful-lifecycle-staging/artifacts', script)
         self.assertIn('stateful-lifecycle-staging/data', script)

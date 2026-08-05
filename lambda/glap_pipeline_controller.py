@@ -19,15 +19,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import boto3
 from botocore.config import Config
 
+from glap_quality_contracts import QUALITY_CONTRACTS
+
 
 SUCCESS_STATES = {"ok", "success", "succeeded"}
-QUALITY_CHECK_NAMES = {
-    "missing_dates",
-    "empty_inputs",
-    "duplicate_business_keys",
-    "abnormal_volume_change",
-    "stale_stage_outputs",
-}
 SAFE_STAGE_NAME = re.compile(r"^[a-z][a-z0-9_]{1,47}$")
 
 lambda_client = boto3.client(
@@ -79,12 +74,19 @@ def load_stage_config(raw: str | None = None) -> list[dict[str, Any]]:
             raise ValueError(f"Duplicate pipeline stage name: {name}")
         if not isinstance(function_name, str) or not function_name.strip():
             raise ValueError(f"Pipeline stage {name} requires function_name")
+        quality_contract = stage.get("quality_contract")
+        quality_gate = stage.get("quality_gate") is True or quality_contract is not None
+        if quality_gate and quality_contract is None:
+            quality_contract = "pipeline_v1"
+        if quality_contract is not None and quality_contract not in QUALITY_CONTRACTS:
+            raise ValueError(f"Unsupported quality contract: {quality_contract}")
         names.add(name)
         validated.append(
             {
                 "name": name,
                 "function_name": function_name,
-                "quality_gate": stage.get("quality_gate") is True,
+                "quality_gate": quality_gate,
+                "quality_contract": quality_contract,
             }
         )
     return validated
@@ -174,12 +176,14 @@ def parse_stage_payload(response: dict[str, Any]) -> dict[str, Any]:
     return body
 
 
-def validate_quality_checks(body: dict[str, Any]) -> list[dict[str, str]]:
+def validate_quality_checks(
+    body: dict[str, Any], required_names: frozenset[str]
+) -> list[dict[str, str]]:
     raw_checks = body.get("quality_checks")
-    if not isinstance(raw_checks, dict) or set(raw_checks) != QUALITY_CHECK_NAMES:
+    if not isinstance(raw_checks, dict) or set(raw_checks) != set(required_names):
         raise StageFailure("quality_contract_invalid")
     checks = []
-    for name in sorted(QUALITY_CHECK_NAMES):
+    for name in sorted(required_names):
         state = str(raw_checks[name]).lower()
         if state not in {"passed", "failed"}:
             raise StageFailure("quality_contract_invalid")
@@ -190,13 +194,23 @@ def validate_quality_checks(body: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def invoke_stage(stage: dict[str, Any], event: dict[str, Any]) -> list[dict[str, str]]:
+    invocation_event = dict(event)
+    quality_contract = stage.get("quality_contract") or (
+        "pipeline_v1" if stage.get("quality_gate") is True else None
+    )
+    if quality_contract:
+        invocation_event["quality_contract"] = quality_contract
     response = lambda_client.invoke(
         FunctionName=stage["function_name"],
         InvocationType="RequestResponse",
-        Payload=json.dumps(event).encode("utf-8"),
+        Payload=json.dumps(invocation_event).encode("utf-8"),
     )
     body = parse_stage_payload(response)
-    return validate_quality_checks(body) if stage["quality_gate"] else []
+    return (
+        validate_quality_checks(body, QUALITY_CONTRACTS[quality_contract])
+        if stage["quality_gate"]
+        else []
+    )
 
 
 def execute_pipeline(

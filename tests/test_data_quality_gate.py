@@ -7,7 +7,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda" / "glap_data_quality_gate.py"
+LAMBDA_DIR = Path(__file__).resolve().parents[1] / "lambda"
+MODULE_PATH = LAMBDA_DIR / "glap_data_quality_gate.py"
+if str(LAMBDA_DIR) not in sys.path:
+    sys.path.insert(0, str(LAMBDA_DIR))
 
 
 def load_module(athena_client=None):
@@ -73,6 +76,22 @@ class DataQualityGateTests(unittest.TestCase):
         self.assertIn("simulated_iceberg_m.fact_shipment_v2", query)
         self.assertNotIn("SELECT *", query.upper())
 
+    def test_lifecycle_compatibility_query_uses_all_six_read_only_views(self):
+        module = load_module()
+        query = module.build_input_quality_query(
+            "2026-09-01", quality_contract="lifecycle_compat_v2"
+        )
+        for view in (
+            "vw_lifecycle_shipment_v2_compat",
+            "vw_lifecycle_shipment_event_v2_compat",
+            "vw_lifecycle_leg_metrics_v2_compat",
+            "vw_lifecycle_cost_v2_compat",
+            "vw_lifecycle_risk_v2_compat",
+            "vw_lifecycle_product_allocation_v2_compat",
+        ):
+            self.assertIn(view, query)
+        self.assertNotIn("fact_shipment_v2", query)
+
     def test_rejects_unsafe_database_and_invalid_date(self):
         module = load_module()
         with self.assertRaises(ValueError):
@@ -119,6 +138,39 @@ class DataQualityGateTests(unittest.TestCase):
         self.assertEqual(input_result["status"], "success")
         self.assertEqual(output_result["status"], "success")
         self.assertEqual(run_query.call_count, 2)
+
+    def test_lifecycle_handler_emits_exact_sixteen_check_contract(self):
+        module = load_module()
+        failures = {name: 0 for name in module.LIFECYCLE_CHECK_NAMES}
+        with patch.object(
+            module, "run_lifecycle_validation", return_value=failures
+        ) as validate:
+            result = module.lambda_handler(
+                {
+                    "logical_run_date": "2026-09-01",
+                    "pipeline_stage": "lifecycle_validation",
+                    "quality_contract": "lifecycle_v1",
+                },
+                None,
+            )
+        self.assertEqual(set(result["quality_checks"]), set(module.LIFECYCLE_CHECK_NAMES))
+        self.assertTrue(all(value == "passed" for value in result["quality_checks"].values()))
+        self.assertEqual(result["metrics"]["check_count"], 16)
+        validate.assert_called_once_with("2026-09-01", "simulated_iceberg_m")
+
+    def test_validation_result_rejects_duplicate_checks(self):
+        module = load_module()
+        response = {
+            "ResultSet": {
+                "Rows": [
+                    {"Data": [{"VarCharValue": "check_name"}, {"VarCharValue": "failure_count"}]},
+                    {"Data": [{"VarCharValue": "duplicate"}, {"VarCharValue": "0"}]},
+                    {"Data": [{"VarCharValue": "duplicate"}, {"VarCharValue": "0"}]},
+                ]
+            }
+        }
+        with self.assertRaises(ValueError):
+            module.parse_validation_result(response)
 
     def test_parse_result_requires_one_data_row(self):
         module = load_module()

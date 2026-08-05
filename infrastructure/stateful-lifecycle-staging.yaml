@@ -1,12 +1,17 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   Isolated GLAP stateful lifecycle staging writer. It has no schedule and is not
-  connected to the production success-gated controller.
+  connected to the production success-gated controller. Its separate manual
+  integration controller proves lifecycle and v2 compatibility gates in order.
 
 Parameters:
   ArtifactBucket:
     Type: String
   GeneratorArtifactKey:
+    Type: String
+  ControllerArtifactKey:
+    Type: String
+  QualityGateArtifactKey:
     Type: String
   AthenaOutputUri:
     Type: String
@@ -22,6 +27,12 @@ Parameters:
     Type: String
     Description: Prefix-scoped object ARN ending in /* for lifecycle staging only.
     AllowedPattern: ^arn:[^:]+:s3:::[^/]+/.+\*$
+  PipelineStatusS3Uri:
+    Type: String
+    AllowedPattern: ^s3://[^/]+/.+$
+  PipelineStatusObjectArn:
+    Type: String
+    AllowedPattern: ^arn:[^:]+:s3:::[^/]+/.+$
   AthenaWorkgroup:
     Type: String
     Default: primary
@@ -34,6 +45,18 @@ Parameters:
   ExecutionRoleName:
     Type: String
     Default: glap-stateful-lifecycle-generator-staging-role
+  IntegrationControllerFunctionName:
+    Type: String
+    Default: glap-stateful-lifecycle-controller-staging
+  IntegrationControllerRoleName:
+    Type: String
+    Default: glap-stateful-lifecycle-controller-staging-role
+  IntegrationQualityGateFunctionName:
+    Type: String
+    Default: glap-stateful-lifecycle-quality-gate-staging
+  IntegrationQualityGateRoleName:
+    Type: String
+    Default: glap-stateful-lifecycle-quality-gate-staging-role
 
 Resources:
   LifecycleGeneratorRole:
@@ -164,8 +187,175 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  IntegrationQualityGateRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref IntegrationQualityGateRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LifecycleCompatibilityReadOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${IntegrationQualityGateFunctionName}:*
+              - Sid: RunAthenaChecks
+                Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                  - athena:GetWorkGroup
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AthenaWorkgroup}
+              - Sid: ReadLifecycleContracts
+                Effect: Allow
+                Action:
+                  - glue:GetDatabase
+                  - glue:GetTable
+                  - glue:GetTables
+                  - glue:GetPartitions
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${SourceDatabase}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_lifecycle_target_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_route_service_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_card_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_rate_tier_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/dim_fx_rate_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_event_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_cost_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_metrics_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_signal_candidate_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_shipment_v2_compat
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_shipment_event_v2_compat
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_leg_metrics_v2_compat
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_cost_v2_compat
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_risk_v2_compat
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_product_allocation_v2_compat
+              - Sid: UseLakeFormation
+                Effect: Allow
+                Action: lakeformation:GetDataAccess
+                Resource: "*"
+              - Sid: ListLifecycleBucket
+                Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource: !Ref LifecycleDataBucketArn
+              - Sid: ReadLifecyclePrefix
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Ref LifecycleDataObjectArn
+              - Sid: UseAthenaResults
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}/${AthenaResultsPrefix}*
+              - Sid: LocateAthenaResults
+                Effect: Allow
+                Action: s3:GetBucketLocation
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}
+
+  IntegrationQualityGateFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref IntegrationQualityGateFunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt IntegrationQualityGateRole.Arn
+      Timeout: 180
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref QualityGateArtifactKey
+      Environment:
+        Variables:
+          ATHENA_DATABASE: !Ref SourceDatabase
+          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
+          MAX_VOLUME_CHANGE_PCT: 50
+
+  IntegrationControllerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref IntegrationControllerRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLifecycleIntegrationOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${IntegrationControllerFunctionName}:*
+              - Sid: InvokeConfiguredStages
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt LifecycleGeneratorFunction.Arn
+                  - !GetAtt IntegrationQualityGateFunction.Arn
+              - Sid: PersistPrivateStatus
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Ref PipelineStatusObjectArn
+
+  IntegrationControllerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref IntegrationControllerFunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt IntegrationControllerRole.Arn
+      Timeout: 900
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref ControllerArtifactKey
+      Environment:
+        Variables:
+          PIPELINE_TIMEZONE: Australia/Sydney
+          PIPELINE_STATUS_S3_URI: !Ref PipelineStatusS3Uri
+          PIPELINE_STAGES_JSON: !Sub >-
+            [{"name":"stateful_lifecycle_generation","function_name":"${FunctionName}"},
+            {"name":"lifecycle_validation","function_name":"${IntegrationQualityGateFunctionName}","quality_contract":"lifecycle_v1"},
+            {"name":"input_validation","function_name":"${IntegrationQualityGateFunctionName}","quality_contract":"lifecycle_compat_v2"}]
+
 Outputs:
   LifecycleGeneratorFunctionName:
     Value: !Ref LifecycleGeneratorFunction
   LifecycleGeneratorRoleArn:
     Value: !GetAtt LifecycleGeneratorRole.Arn
+  IntegrationControllerFunctionName:
+    Value: !Ref IntegrationControllerFunction
+  IntegrationQualityGateFunctionName:
+    Value: !Ref IntegrationQualityGateFunction
+  PipelineStatusS3Uri:
+    Value: !Ref PipelineStatusS3Uri

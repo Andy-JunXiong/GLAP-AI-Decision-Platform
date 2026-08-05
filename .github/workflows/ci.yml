@@ -61,6 +61,7 @@ jobs:
           test -s sql/04_stateful_lifecycle_config.sql
           test -s sql/05_stateful_lifecycle_seed.sql
           test -s sql/06_stateful_lifecycle_validation.sql
+          test -s sql/07_stateful_lifecycle_compatibility_views.sql
 
       - name: Validate pipeline reliability template
         shell: bash
@@ -84,16 +85,19 @@ jobs:
         run: |
           mkdir -p dist/controller
           cp lambda/glap_pipeline_controller.py dist/controller/lambda_function.py
-          (cd dist/controller && zip -q ../glap-pipeline-controller.zip lambda_function.py)
-          test "$(unzip -Z1 dist/glap-pipeline-controller.zip)" = "lambda_function.py"
+          cp lambda/glap_quality_contracts.py dist/controller/glap_quality_contracts.py
+          (cd dist/controller && zip -q ../glap-pipeline-controller.zip lambda_function.py glap_quality_contracts.py)
+          test "$(unzip -Z1 dist/glap-pipeline-controller.zip | sort | tr '\n' ' ')" = "glap_quality_contracts.py lambda_function.py "
 
       - name: Verify data quality gate package entry point
         shell: bash
         run: |
           mkdir -p dist/quality
           cp lambda/glap_data_quality_gate.py dist/quality/lambda_function.py
-          (cd dist/quality && zip -q ../glap-data-quality-gate.zip lambda_function.py)
-          test "$(unzip -Z1 dist/glap-data-quality-gate.zip)" = "lambda_function.py"
+          cp lambda/glap_quality_contracts.py dist/quality/glap_quality_contracts.py
+          cp sql/06_stateful_lifecycle_validation.sql dist/quality/lifecycle_validation.sql
+          (cd dist/quality && zip -q ../glap-data-quality-gate.zip lambda_function.py glap_quality_contracts.py lifecycle_validation.sql)
+          test "$(unzip -Z1 dist/glap-data-quality-gate.zip | sort | tr '\n' ' ')" = "glap_quality_contracts.py lambda_function.py lifecycle_validation.sql "
 
       - name: Verify staging stage stub package entry point
         shell: bash

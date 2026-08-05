@@ -10,16 +10,81 @@ from typing import Any
 
 import boto3
 
+from glap_quality_contracts import (
+    LIFECYCLE_CHECK_NAMES,
+    PIPELINE_CHECK_NAMES,
+    render_lifecycle_validation_queries,
+)
+
 
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 TERMINAL_FAILURE_STATES = {"FAILED", "CANCELLED"}
-QUALITY_CHECK_NAMES = (
-    "missing_dates",
-    "empty_inputs",
-    "duplicate_business_keys",
-    "abnormal_volume_change",
-    "stale_stage_outputs",
-)
+QUALITY_CHECK_NAMES = tuple(sorted(PIPELINE_CHECK_NAMES))
+
+INPUT_CONTRACTS = {
+    "pipeline_v1": {
+        "shipment_table": "fact_shipment_v2",
+        "tables": (
+            ("fact_shipment_v2", "try_cast(dt AS date)", "ROW(shipment_id, dt)"),
+            (
+                "fact_shipment_event_v2",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, leg_seq, event_type, event_ts, dt)",
+            ),
+            (
+                "fact_shipment_leg_metrics_core_v2",
+                "run_date",
+                "ROW(shipment_id, leg_seq, dt)",
+            ),
+            ("fact_shipment_cost_v2", "try_cast(dt AS date)", "ROW(shipment_id, dt)"),
+            (
+                "fact_shipment_risk_v2",
+                "coalesce(risk_dt, try_cast(dt AS date))",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "shipment_product_allocation_v2",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, product_id, dt)",
+            ),
+        ),
+    },
+    "lifecycle_compat_v2": {
+        "shipment_table": "vw_lifecycle_shipment_v2_compat",
+        "tables": (
+            (
+                "vw_lifecycle_shipment_v2_compat",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "vw_lifecycle_shipment_event_v2_compat",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, leg_seq, event_type, event_ts, dt)",
+            ),
+            (
+                "vw_lifecycle_leg_metrics_v2_compat",
+                "run_date",
+                "ROW(shipment_id, leg_seq, dt)",
+            ),
+            (
+                "vw_lifecycle_cost_v2_compat",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "vw_lifecycle_risk_v2_compat",
+                "coalesce(risk_dt, try_cast(dt AS date))",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "vw_lifecycle_product_allocation_v2_compat",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, product_id, dt)",
+            ),
+        ),
+    },
+}
 
 ATHENA_DATABASE = os.getenv("ATHENA_DATABASE", "curated_iceberg")
 ATHENA_SOURCE_DATABASE = os.getenv("ATHENA_SOURCE_DATABASE", "simulated_iceberg_m")
@@ -86,53 +151,19 @@ GROUP BY volumes.observed_volume, volumes.previous_volume
 def build_input_quality_query(
     logical_run_date: str,
     source_database: str = ATHENA_SOURCE_DATABASE,
+    quality_contract: str = "pipeline_v1",
 ) -> str:
     logical_run_date = validate_run_date(logical_run_date)
     source_database = validate_identifier(source_database, "Athena source database")
+    try:
+        contract = INPUT_CONTRACTS[quality_contract]
+    except KeyError as exc:
+        raise ValueError("Unsupported input quality contract") from exc
     stats = [
-        _stat_sql(
-            source_database,
-            "fact_shipment_v2",
-            "try_cast(dt AS date)",
-            "ROW(shipment_id, dt)",
-            logical_run_date,
-        ),
-        _stat_sql(
-            source_database,
-            "fact_shipment_event_v2",
-            "try_cast(dt AS date)",
-            "ROW(shipment_id, leg_seq, event_type, event_ts, dt)",
-            logical_run_date,
-        ),
-        _stat_sql(
-            source_database,
-            "fact_shipment_leg_metrics_core_v2",
-            "run_date",
-            "ROW(shipment_id, leg_seq, dt)",
-            logical_run_date,
-        ),
-        _stat_sql(
-            source_database,
-            "fact_shipment_cost_v2",
-            "try_cast(dt AS date)",
-            "ROW(shipment_id, dt)",
-            logical_run_date,
-        ),
-        _stat_sql(
-            source_database,
-            "fact_shipment_risk_v2",
-            "coalesce(risk_dt, try_cast(dt AS date))",
-            "ROW(shipment_id, dt)",
-            logical_run_date,
-        ),
-        _stat_sql(
-            source_database,
-            "shipment_product_allocation_v2",
-            "try_cast(dt AS date)",
-            "ROW(shipment_id, product_id, dt)",
-            logical_run_date,
-        ),
+        _stat_sql(source_database, table, date_expression, key_expression, logical_run_date)
+        for table, date_expression, key_expression in contract["tables"]
     ]
+    shipment_table = contract["shipment_table"]
     volume_sql = f"""
 SELECT
     count(DISTINCT IF(try_cast(dt AS date) = DATE '{logical_run_date}', shipment_id))
@@ -140,7 +171,7 @@ SELECT
     count(DISTINCT IF(
         try_cast(dt AS date) = date_add('day', -1, DATE '{logical_run_date}'), shipment_id
     )) AS previous_volume
-FROM {source_database}.fact_shipment_v2
+FROM {source_database}.{shipment_table}
 """.strip()
     return (
         "WITH table_stats AS (\n"
@@ -282,7 +313,7 @@ def parse_athena_result(response: dict[str, Any]) -> dict[str, str | None]:
     return dict(zip(headers, values))
 
 
-def run_query(query: str, database: str) -> dict[str, str | None]:
+def execute_query(query: str, database: str, max_results: int) -> dict[str, Any]:
     if not ATHENA_OUTPUT:
         raise ValueError("ATHENA_OUTPUT is required")
     execution_id = athena.start_query_execution(
@@ -303,9 +334,44 @@ def run_query(query: str, database: str) -> dict[str, str | None]:
             athena.stop_query_execution(QueryExecutionId=execution_id)
             raise TimeoutError("Athena quality query timed out after 180 seconds")
         time.sleep(1)
-    return parse_athena_result(
-        athena.get_query_results(QueryExecutionId=execution_id, MaxResults=10)
-    )
+    return athena.get_query_results(QueryExecutionId=execution_id, MaxResults=max_results)
+
+
+def run_query(query: str, database: str) -> dict[str, str | None]:
+    return parse_athena_result(execute_query(query, database, 10))
+
+
+def parse_validation_result(response: dict[str, Any]) -> dict[str, int]:
+    rows = response.get("ResultSet", {}).get("Rows", [])
+    if len(rows) < 2:
+        raise ValueError("Lifecycle validation query returned no checks")
+    headers = [cell.get("VarCharValue") for cell in rows[0].get("Data", [])]
+    if headers[:2] != ["check_name", "failure_count"]:
+        raise ValueError("Lifecycle validation query returned an invalid contract")
+    parsed: dict[str, int] = {}
+    for row in rows[1:]:
+        values = [cell.get("VarCharValue") for cell in row.get("Data", [])]
+        if len(values) < 2 or not values[0] or values[0] in parsed:
+            raise ValueError("Lifecycle validation query returned duplicate or missing checks")
+        try:
+            parsed[values[0]] = int(values[1])
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Lifecycle validation failure_count must be an integer") from exc
+    return parsed
+
+
+def run_lifecycle_validation(logical_run_date: str, source_database: str) -> dict[str, int]:
+    failures: dict[str, int] = {}
+    for query in render_lifecycle_validation_queries(logical_run_date, source_database):
+        for name, count in parse_validation_result(
+            execute_query(query, source_database, 100)
+        ).items():
+            if name in failures:
+                raise ValueError("Lifecycle validation returned a duplicate check")
+            failures[name] = count
+    if set(failures) != set(LIFECYCLE_CHECK_NAMES):
+        raise ValueError("Lifecycle validation returned an incomplete quality contract")
+    return failures
 
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
@@ -314,18 +380,45 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         event.get("logical_run_date") or event.get("run_date")
     )
     pipeline_stage = event.get("pipeline_stage")
+    quality_contract = event.get("quality_contract") or "pipeline_v1"
     database = validate_identifier(ATHENA_DATABASE, "Athena database")
     source_database = validate_identifier(
         ATHENA_SOURCE_DATABASE, "Athena source database"
     )
+    if pipeline_stage == "lifecycle_validation":
+        if quality_contract != "lifecycle_v1":
+            raise ValueError("lifecycle_validation requires lifecycle_v1")
+        failure_counts = run_lifecycle_validation(logical_run_date, source_database)
+        checks = {
+            name: "passed" if failure_counts[name] == 0 else "failed"
+            for name in sorted(LIFECYCLE_CHECK_NAMES)
+        }
+        return {
+            "status": "success",
+            "logical_run_date": logical_run_date,
+            "pipeline_stage": pipeline_stage,
+            "quality_contract": quality_contract,
+            "quality_checks": checks,
+            "failed_checks": [name for name, status in checks.items() if status == "failed"],
+            "metrics": {
+                "check_count": len(checks),
+                "failure_count": sum(failure_counts.values()),
+            },
+        }
     if pipeline_stage == "input_validation":
-        query = build_input_quality_query(logical_run_date, source_database)
+        query = build_input_quality_query(
+            logical_run_date, source_database, quality_contract
+        )
         query_database = source_database
     elif pipeline_stage == "output_validation":
+        if quality_contract != "pipeline_v1":
+            raise ValueError("output_validation requires pipeline_v1")
         query = build_output_quality_query(logical_run_date, database, source_database)
         query_database = database
     else:
-        raise ValueError("pipeline_stage must be input_validation or output_validation")
+        raise ValueError(
+            "pipeline_stage must be lifecycle_validation, input_validation or output_validation"
+        )
 
     checks, metrics = evaluate_quality_metrics(
         run_query(query, query_database),
@@ -335,6 +428,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "status": "success",
         "logical_run_date": logical_run_date,
         "pipeline_stage": pipeline_stage,
+        "quality_contract": quality_contract,
         "quality_checks": checks,
         "failed_checks": [name for name, status in checks.items() if status == "failed"],
         "metrics": metrics,

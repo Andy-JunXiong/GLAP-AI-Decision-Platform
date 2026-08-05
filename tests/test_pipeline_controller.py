@@ -9,7 +9,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda" / "glap_pipeline_controller.py"
+LAMBDA_DIR = Path(__file__).resolve().parents[1] / "lambda"
+MODULE_PATH = LAMBDA_DIR / "glap_pipeline_controller.py"
+if str(LAMBDA_DIR) not in sys.path:
+    sys.path.insert(0, str(LAMBDA_DIR))
 
 
 def load_module(lambda_client=None, s3_client=None):
@@ -68,6 +71,64 @@ class PipelineControllerTests(unittest.TestCase):
             module.load_stage_config(json.dumps(STAGES + [STAGES[0]]))
         with self.assertRaises(ValueError):
             module.load_stage_config(json.dumps([{"name": "Bad Stage", "function_name": "x"}] * 2))
+        with self.assertRaisesRegex(ValueError, "Unsupported quality contract"):
+            module.load_stage_config(
+                json.dumps(
+                    [
+                        {"name": "generation", "function_name": "x"},
+                        {
+                            "name": "gate",
+                            "function_name": "y",
+                            "quality_contract": "unknown_v1",
+                        },
+                    ]
+                )
+            )
+
+    def test_lifecycle_contracts_are_forwarded_and_fail_closed(self):
+        stages = [
+            {"name": "stateful_lifecycle_generation", "function_name": "generator"},
+            {
+                "name": "lifecycle_validation",
+                "function_name": "validator",
+                "quality_contract": "lifecycle_v1",
+            },
+            {
+                "name": "input_validation",
+                "function_name": "validator",
+                "quality_contract": "lifecycle_compat_v2",
+            },
+        ]
+        module = load_module()
+        validated = module.load_stage_config(json.dumps(stages))
+        client = MagicMock()
+        client.invoke.side_effect = [
+            response({"status": "success"}),
+            response(
+                {
+                    "status": "success",
+                    "quality_checks": {
+                        name: "passed"
+                        for name in module.QUALITY_CONTRACTS["lifecycle_v1"]
+                    },
+                }
+            ),
+            response({"status": "success", "quality_checks": PASSED_CHECKS}),
+        ]
+        module.lambda_client = client
+        with patch.object(module, "load_existing_run", return_value=None), patch.object(
+            module, "persist_run"
+        ):
+            result = module.execute_pipeline(
+                validated, "2026-09-01", "s3://safe/status.json"
+            )
+        self.assertEqual(result["status"], "succeeded")
+        self.assertEqual(len(result["stages"][1]["quality_checks"]), 16)
+        self.assertEqual(len(result["stages"][2]["quality_checks"]), 5)
+        lifecycle_payload = json.loads(client.invoke.call_args_list[1].kwargs["Payload"])
+        compat_payload = json.loads(client.invoke.call_args_list[2].kwargs["Payload"])
+        self.assertEqual(lifecycle_payload["quality_contract"], "lifecycle_v1")
+        self.assertEqual(compat_payload["quality_contract"], "lifecycle_compat_v2")
 
     def test_failed_quality_gate_blocks_downstream_stage(self):
         client = MagicMock()

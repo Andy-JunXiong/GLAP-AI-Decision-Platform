@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Plan only or deploy, replay, and validate isolated staging
+        description: Plan, replay validation, or one-day pipeline integration
         required: true
         type: choice
         default: plan
         options:
           - plan
           - deploy-replay-validate
+          - deploy-integration-validate
       load_initial_seed:
         description: Load Q3 seed once; leave false on repeat deployments
         required: true
@@ -31,6 +32,11 @@ on:
         required: true
         type: number
         default: 450
+      integration_logical_date:
+        description: One isolated date after the replay range (YYYY-MM-DD)
+        required: true
+        type: string
+        default: "2026-09-01"
 
 permissions:
   contents: read
@@ -52,6 +58,7 @@ jobs:
       ATHENA_WORKGROUP: primary
       STACK_NAME: glap-stateful-lifecycle-staging
       FUNCTION_NAME: glap-stateful-lifecycle-generator-staging
+      CONTROLLER_FUNCTION: glap-stateful-lifecycle-controller-staging
       ARTIFACT_PREFIX: stateful-lifecycle-staging/artifacts
       LIFECYCLE_DATA_PREFIX: stateful-lifecycle-staging/data
       ARTIFACT_BUCKET: ${{ vars.AWS_LIFECYCLE_ARTIFACT_BUCKET }}
@@ -72,6 +79,8 @@ jobs:
           python -m compileall -q lambda tests
           python -m unittest discover -s tests -p "test_stateful_lifecycle_generator.py" -v
           python -m unittest discover -s tests -p "test_lifecycle_athena_adapter.py" -v
+          python -m unittest discover -s tests -p "test_pipeline_controller.py" -v
+          python -m unittest discover -s tests -p "test_data_quality_gate.py" -v
           python -m unittest discover -s tests -p "test_stateful_lifecycle_deployment.py" -v
 
       - name: Verify required private environment variables
@@ -81,6 +90,7 @@ jobs:
           test -n "$DATA_BUCKET"
           [[ "$ATHENA_OUTPUT" =~ ^s3://[^/]+/.+ ]]
           [[ "${{ inputs.replay_start_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+          [[ "${{ inputs.integration_logical_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
           test "${{ inputs.replay_days }}" -ge 1
           test "${{ inputs.replay_days }}" -le 90
           test "${{ inputs.population_size }}" -ge 1
@@ -139,7 +149,7 @@ jobs:
             -Days ${{ inputs.replay_days }}
 
       - name: Create lifecycle schema and optional first seed
-        if: inputs.action == 'deploy-replay-validate'
+        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate'
         shell: pwsh
         run: |
           $parameters = @{
@@ -150,13 +160,14 @@ jobs:
             Workgroup = $env:ATHENA_WORKGROUP
             Apply = $true
           }
-          if ("${{ inputs.load_initial_seed }}" -eq "true") {
+          if ("${{ inputs.load_initial_seed }}" -eq "true" -and
+              "${{ inputs.action }}" -eq "deploy-replay-validate") {
             $parameters.IncludeSeed = $true
           }
           ./ops/deploy_stateful_lifecycle.ps1 @parameters
 
-      - name: Deploy unscheduled lifecycle Lambda stack
-        if: inputs.action == 'deploy-replay-validate'
+      - name: Deploy unscheduled lifecycle and integration stack
+        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate'
         shell: pwsh
         run: |
           ./ops/deploy_stateful_lifecycle_stack.ps1 `
@@ -169,7 +180,9 @@ jobs:
             -LifecycleDataBucket $env:DATA_BUCKET `
             -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
             -AthenaOutputUri $env:ATHENA_OUTPUT `
-            -ArtifactKey "$env:ARTIFACT_PREFIX/${{ github.sha }}.zip" `
+            -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
+            -ControllerArtifactKey "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip" `
+            -QualityGateArtifactKey "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip" `
             -Apply
 
       - name: Replay 28 logical dates
@@ -197,6 +210,20 @@ jobs:
             -Days ${{ inputs.replay_days }} `
             -Apply
 
+      - name: Validate lifecycle pipeline integration
+        if: inputs.action == 'deploy-integration-validate'
+        shell: bash
+        run: |
+          metadata=$(aws lambda invoke \
+            --function-name "$CONTROLLER_FUNCTION" \
+            --cli-binary-format raw-in-base64-out \
+            --cli-read-timeout 900 \
+            --cli-connect-timeout 60 \
+            --payload '{"logical_run_date":"${{ inputs.integration_logical_date }}"}' \
+            integration-response.json)
+          test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$metadata")" = ""
+          python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation"], stages; assert len(stages[1]["quality_checks"]) == 16 and len(stages[2]["quality_checks"]) == 5, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
+
       - name: Write staging evidence summary
         if: success()
         shell: bash
@@ -206,6 +233,8 @@ jobs:
             echo "- Requested action: \`${{ inputs.action }}\`"
             echo "- Logical dates: \`${{ inputs.replay_start_date }}\` + ${{ inputs.replay_days }} days"
             echo "- Initial population: \`${{ inputs.population_size }}\`"
+            echo "- Integration logical date: \`${{ inputs.integration_logical_date }}\`"
+            echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"
             echo "- Schedule created: \`false\`"
           } >> "$GITHUB_STEP_SUMMARY"
