@@ -63,6 +63,33 @@ flowchart TB
 - Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,
   root-cause, and decision tables remain historical evidence only.
 
+## Isolated stateful multimodal staging boundary
+
+The lifecycle and analytics foundation is deployed beside, not inside, the
+production runtime boundary:
+
+```mermaid
+flowchart LR
+    MANUAL[Manual invocation only] --> CTRL[Isolated success-gated controller]
+    CTRL --> GEN[Stateful lifecycle generator]
+    GEN --> ICE[Staging Iceberg lifecycle history]
+    ICE --> LIFE[19 lifecycle checks]
+    LIFE --> COMPAT[5 v2 compatibility checks]
+    COMPAT --> ANALYTICS[8 multimodal analytics checks]
+    ICE --> VIEWS[Six read-only operations / feature / label views]
+    VIEWS --> PRIVATE[Private analysis and forecast backtesting]
+```
+
+Maersk and KN use Ocean routes, port milestones, containers, and per-container
+cost. DHL uses Air routes, airport milestones, chargeable kilograms, and per-kg
+cost. Origin, P2P, Destination, final delivery, SLA, and outcome semantics are
+common. Lane decisions normalize simulated weight only for an explicit
+Air-vs-Ocean cost comparison; operational commercial units remain separate.
+
+The staging stack has no Scheduler resource, production alias, or permission to
+write the current v2 production tables. Its next consumer is private,
+time-ordered forecast backtesting, not autonomous production decisions.
+
 ## Planned internal operations boundary — not deployed
 
 The next implementation phase adds authenticated writes without granting them

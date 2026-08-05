@@ -27,6 +27,12 @@ and keeps human approval, execution evidence and outcomes traceable.
 > synthetic logistics data. Runtime and deployment evidence is real; scenario
 > costs and business outcomes are explicitly labelled synthetic.
 
+> **5 August 2026 delivery checkpoint:** the stateful multimodal lifecycle and
+> its read-only operations-analytics foundation are validated in isolated AWS
+> staging. Maersk/KN Ocean and DHL Air share Origin/P2P/Destination semantics,
+> while their milestones and cost units remain mode-specific. This staging path
+> has no recurring schedule, production alias, or production-table write.
+
 ## Explore the interactive product story
 
 The most complete product walkthrough is a self-contained browser demo:
@@ -114,6 +120,8 @@ its source metrics.
 | Staging safety | dry-run validation and staging-only alias promoter |
 | Published OPS analytics | scheduled current-flywheel and existing-result aggregates with per-stage freshness |
 | Forecast baseline | 28-day `dt` history with Athena-calculated seven-day OLS volume forecast |
+| Stateful multimodal staging | Cross-date lifecycle for Maersk/KN Ocean and DHL Air; 15--20% simulated Air booking control |
+| Multimodal analytics foundation | Six read-only Athena views plus 8 fail-closed operations/feature/label checks |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is
@@ -171,6 +179,7 @@ flowchart TB
 - [Stateful lifecycle AWS staging deployment](docs/stateful_lifecycle_aws_deployment.md)
 - [Public OPS snapshot contract](docs/ops_snapshot.md)
 - [Athena OPS analytics and forecast SQL](sql/03_ops_analytics.sql)
+- [Multimodal operations, feature and label views](sql/09_multimodal_ops_analytics.sql)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
 - [Prioritized project TODO](TODO.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)
@@ -202,9 +211,11 @@ decision-brief-demo/ deployable web product demo
   financial results.
 - Current decision generation is deterministic and explainable; autonomous model
   learning and measured production impact are future capabilities.
-- The deployed generator still produces a largely independent daily synthetic
-  population. The approved next design carries shipment IDs and milestones
-  across logical dates; see the [stateful shipment lifecycle design](docs/shipment_lifecycle_design.md).
+- The current production-boundary generator remains separate from the isolated
+  lifecycle staging path. Stateful cross-date shipment progression and
+  multimodal analytics are proven in staging, but recurring execution and
+  production-v2 promotion remain disabled; see the
+  [stateful shipment lifecycle design](docs/shipment_lifecycle_design.md).
 
 ## Author
 

@@ -1,10 +1,25 @@
 # Stateful Shipment Lifecycle Design
 
-**Status:** approved design direction; not yet implemented
+**Status:** lifecycle and multimodal analytics foundation implemented and
+validated in isolated AWS staging; production boundary not enabled
 
 **Decision date:** 4 August 2026
 
 **Scope:** synthetic AWS operations pipeline and its aggregate public evidence
+
+## Implementation checkpoint -- 5 August 2026
+
+The repository and isolated AWS staging now implement the lifecycle foundation
+described here. A 28-day AWS replay proved cross-date identity, immutable P2P
+commitments, milestone progression, final closure, and journey-level exception
+incidence. The staging contract was then extended to Maersk/KN Ocean and DHL
+Air, followed by six read-only operational analytics, feature, and label views.
+
+The `2026-09-07` manual controller run passed generation, 19 lifecycle checks,
+5 v2 compatibility checks, and 8 multimodal analytics checks. The environment
+still has no lifecycle schedule, production alias change, or write into the
+current v2 production boundary. Exception-to-action state, delayed outcomes,
+human-approved policy feedback, and trained forecasts remain later phases.
 
 ## Decision summary
 

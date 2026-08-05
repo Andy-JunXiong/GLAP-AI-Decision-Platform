@@ -3,6 +3,42 @@
 Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
+## Delivery checkpoint — 5 August 2026
+
+- [x] Complete the isolated 28-day AWS stateful-lifecycle replay and reconcile
+  every logical date without enabling a schedule or production alias.
+- [x] Extend the lifecycle foundation to three providers: Maersk Ocean, KN
+  Ocean, and DHL Air, with Air held inside the approved 15--20% simulated
+  booking range.
+- [x] Preserve common Origin, P2P, Destination, and final-delivery semantics
+  while keeping Air airport milestones, chargeable kilograms, and per-kg costs
+  separate from Ocean port milestones, containers, and per-container costs.
+- [x] Deploy six read-only multimodal analytics views for shipment, mode,
+  provider, lane decision, forecast features, and outcome labels.
+- [x] Add the eight-check `multimodal_analytics_v1` fail-closed contract as the
+  fourth isolated controller stage.
+- [x] Validate `2026-09-07` in AWS: 19 lifecycle, 5 compatibility, and 8
+  analytics checks passed. The four-stage run completed in about 163 seconds.
+- [x] Keep the analytics views virtual and staging-only; no production table,
+  production alias, recurring schedule, or materialized daily copy was added.
+- [x] Pass all 99 local tests and GitHub Actions CI runs `30980919130` and
+  `30980981580`.
+
+## Active next slice — Forecast validation
+
+- [ ] Freeze a versioned `multimodal_forecast_feature_daily_v1` feature contract
+  and document feature availability, null handling, and training cutoff rules.
+- [ ] Backtest recent-level, moving-average, weekday-seasonal, and existing OLS
+  booking-volume baselines by mode and provider using rolling time windows.
+- [ ] Report MAE, RMSE, bias, MAPE where defined, and interval coverage; retain
+  the simple benchmark unless a candidate consistently beats it.
+- [ ] Accumulate enough observed shipment labels before training SLA-breach,
+  delay-risk, or cost-variance models; pending labels must never enter training.
+- [ ] Add feature completeness, drift, prediction-error, and Athena scan-cost
+  monitoring before any recurring forecast execution is proposed.
+- [ ] Keep every forecast advisory and inside the authenticated/private boundary;
+  production scheduling or writes require a separate explicit approval.
+
 ## Current checkpoint — 3 August 2026
 
 - [x] Publish a versioned AWS OPS snapshot through GitHub OIDC with an explicit

@@ -27,6 +27,29 @@ This design does not replace the current reliability chain. It reuses the six
 governed v2 inputs and six current AI outputs, and keeps every business
 calculation in AWS. Public Pages remains a sanitized aggregate publisher.
 
+## Implementation checkpoint -- 5 August 2026
+
+The stateful multimodal foundation and its first governed analytics layer are
+implemented and validated in isolated AWS staging.
+
+- A 28-day replay carried shipment identities across dates, preserved immutable
+  ETD/ETA, stopped active updates after delivery, and passed 448 lifecycle
+  checks with 4.58% journey-level exception incidence.
+- Maersk and KN operate as Ocean providers and DHL as Air. The first governed
+  five-day cohort held Air at 18.07% while preserving common Origin, P2P,
+  Destination, and delivery semantics.
+- Six read-only analytics views now expose shipment-grain evidence, daily mode
+  and provider operations, standardized lane decisions, past-only forecast
+  features, and latest outcome labels.
+- The isolated controller now runs generation, 19 lifecycle checks, 5 v2
+  compatibility checks, and 8 analytics checks. The `2026-09-07` run passed all
+  stages in about 163 seconds.
+- No recurring schedule, production alias, current-v2 write, or materialized
+  daily analytics copy was added.
+
+This completes the data and analytics foundation. It does not constitute a
+trained forecasting model or authorize production-boundary changes.
+
 ## Delivery sequence
 
 ```mermaid
@@ -121,6 +144,12 @@ Current reusable assets:
 | `fact_ai_actions_v2` | Current governed actions and action distribution |
 | `fact_ai_outcomes_v2` | Current governed synthetic outcomes |
 | `fact_ai_learning_v1` | Current governed learning aggregate |
+| `vw_multimodal_shipment_daily_v1` | Reconciled shipment snapshot with common lifecycle metrics and explicit mode units |
+| `vw_multimodal_ops_daily_v1` | Daily Air/Ocean operations and SLA performance |
+| `vw_multimodal_provider_daily_v1` | Daily DHL, KN, and Maersk provider performance |
+| `vw_multimodal_mode_decision_v1` | Advisory lane speed, cost, and risk comparison on standardized simulated weight |
+| `vw_multimodal_forecast_feature_daily_v1` | Past-only mode/provider forecasting features with explicit cutoff |
+| `vw_multimodal_outcome_label_v1` | Latest observed or pending shipment outcome labels |
 
 `fact_shipment_events_extended_iceberg`, legacy v1 root-cause and feedback
 tables, and the latest-decision trace views may exist in AWS, but they are not
@@ -219,21 +248,22 @@ Acceptance criteria:
 
 ## Recommended next implementation slice
 
-The corrected P0 public metric contract and isolated stateful lifecycle staging
-slice are now running together behind the existing-input contract. The private
-28-day replay passed with 448 lifecycle checks and 4.58% journey exception
-incidence. The subsequent `2026-09-01` manual integration passed all 16
-lifecycle checks and all 5 compatibility-input checks through six read-only v2
-views, with no schedule, production alias, or current-v2 write.
+The next implementation slice is forecast validation on the governed feature
+and label contracts that now exist in staging.
 
-The next implementation slice is the governed analytics and prediction
-foundation: operational daily aggregates, feature and outcome-label history,
-completeness/drift monitoring, and a benchmark forecast with time-ordered
-backtesting. The AWS staging input now distinguishes Maersk/KN Ocean from DHL
-Air; its first five-day governed cohort held Air at 18.07% and passed the full
-Origin/P2P/Destination event path plus 19 lifecycle and 5 compatibility checks.
-Mode-specific cost units and SLA baselines must remain separate in those
-features, while Origin/P2P/Destination and final outcome labels stay common.
-Authenticated production writes remain blocked until those outputs
-reconcile and a controlled current-controller integration plus production
-alias/rollback boundary is explicitly approved.
+1. Freeze feature contract version, availability rules, training cutoff, and
+   pending-label exclusion behavior.
+2. Run rolling time-ordered backtests for recent-level, moving-average,
+   weekday-seasonal, and existing OLS booking-volume baselines by mode and
+   provider.
+3. Compare MAE, RMSE, bias, MAPE where defined, and interval coverage. Keep the
+   simplest healthy baseline unless a candidate consistently improves held-out
+   windows.
+4. Accumulate sufficient observed labels before evaluating supervised SLA,
+   delay-risk, or cost-variance candidates.
+5. Add completeness, drift, prediction-error, and Athena scan-cost evidence
+   before requesting any recurring forecast execution.
+
+Forecasts remain advisory and private. Authenticated production writes,
+automatic policy changes, scheduling, and alias promotion remain blocked until
+separately reviewed and explicitly approved.
