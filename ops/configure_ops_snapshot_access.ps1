@@ -322,6 +322,25 @@ try {
     Remove-Item -LiteralPath $databaseResourcePath -Force -ErrorAction SilentlyContinue
 }
 if (-not $databaseGrant) { $lakeFormationGranted = $false }
+if ($SourceDatabase -ne $database) {
+    $sourceDatabaseResource = ConvertTo-CompressedJson -Value @{
+        Database = @{ Name = $SourceDatabase }
+    }
+    $sourceDatabaseResourcePath = Write-TemporaryJsonFile -Json $sourceDatabaseResource
+    try {
+        $sourceDatabaseGrant = Invoke-AwsAllowFailure -Arguments @(
+            "lakeformation", "grant-permissions",
+            "--principal", "DataLakePrincipalIdentifier=$roleArn",
+            "--resource", "file://$sourceDatabaseResourcePath",
+            "--permissions", "DESCRIBE",
+            "--profile", $AdminProfile,
+            "--region", $Region
+        )
+    } finally {
+        Remove-Item -LiteralPath $sourceDatabaseResourcePath -Force -ErrorAction SilentlyContinue
+    }
+    if (-not $sourceDatabaseGrant) { $lakeFormationGranted = $false }
+}
 foreach ($tableName in $catalogObjects) {
     $tableResource = ConvertTo-CompressedJson -Value @{
         Table = @{ DatabaseName = $database; Name = $tableName }
@@ -342,9 +361,23 @@ foreach ($tableName in $catalogObjects) {
     if (-not $tableGrant) { $lakeFormationGranted = $false }
 }
 foreach ($tableName in $sourceTables) {
-    $null = Invoke-AwsJson -Arguments @(
-        "glue", "get-table", "--database-name", $SourceDatabase, "--name", $tableName
-    ) -Profile $ReadProfile
+    $tableResource = ConvertTo-CompressedJson -Value @{
+        Table = @{ DatabaseName = $SourceDatabase; Name = $tableName }
+    }
+    $tableResourcePath = Write-TemporaryJsonFile -Json $tableResource
+    try {
+        $tableGrant = Invoke-AwsAllowFailure -Arguments @(
+            "lakeformation", "grant-permissions",
+            "--principal", "DataLakePrincipalIdentifier=$roleArn",
+            "--resource", "file://$tableResourcePath",
+            "--permissions", "SELECT", "DESCRIBE",
+            "--profile", $AdminProfile,
+            "--region", $Region
+        )
+    } finally {
+        Remove-Item -LiteralPath $tableResourcePath -Force -ErrorAction SilentlyContinue
+    }
+    if (-not $tableGrant) { $lakeFormationGranted = $false }
 }
 
 $variables = @{

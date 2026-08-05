@@ -51,7 +51,7 @@ requires these private repository/environment variables:
 | --- | --- |
 | `AWS_STAGING_ROLE_ARN` | OIDC role assumed only by the staging workflow |
 | `AWS_LIFECYCLE_ARTIFACT_BUCKET` | Existing private bucket for the Lambda ZIP |
-| `AWS_LIFECYCLE_DATA_BUCKET` | Existing private bucket; writes are restricted to `stateful-lifecycle-staging/` |
+| `AWS_LIFECYCLE_DATA_BUCKET` | Existing private bucket; writes are restricted to `stateful-lifecycle-staging/data/` |
 | `AWS_LIFECYCLE_ATHENA_OUTPUT` | Prefix-scoped private Athena result URI; `AWS_OPS_ATHENA_OUTPUT` is the fallback |
 
 Run `action=plan` first. The first `deploy-replay-validate` execution must set
@@ -59,13 +59,45 @@ Run `action=plan` first. The first `deploy-replay-validate` execution must set
 not create a schedule, modify a production alias, or connect the function to
 the production controller.
 
+### One-time deployer permission bootstrap
+
+The existing `glap-github-staging-deployer` role may only have permissions for
+the older Lambda staging release path. Before the first lifecycle workflow run,
+an IAM administrator must add the lifecycle-specific inline policy. Review the
+plan first:
+
+```powershell
+.\ops\configure_stateful_lifecycle_deployer.ps1 `
+  -AdminProfile "<iam-admin-profile>" `
+  -ArtifactBucket "<private-artifact-bucket>" `
+  -LifecycleDataBucket "<private-data-bucket>" `
+  -AthenaOutputUri "s3://<private-query-bucket>/athena-results/"
+```
+
+Apply only after checking the three prefixes and role name:
+
+```powershell
+.\ops\configure_stateful_lifecycle_deployer.ps1 `
+  -AdminProfile "<iam-admin-profile>" `
+  -ArtifactBucket "<private-artifact-bucket>" `
+  -LifecycleDataBucket "<private-data-bucket>" `
+  -AthenaOutputUri "s3://<private-query-bucket>/athena-results/" `
+  -Apply
+```
+
+The inline policy is scoped to the lifecycle workgroup/database contracts,
+artifact, data and query-result prefixes, the isolated CloudFormation stack,
+the staging Lambda, its stack-generated execution role and its alarm. It grants
+no Scheduler action and no production alias update. Re-run `action=plan` after
+the policy is applied; do not start the one-time seed while plan is failing.
+
 ## Deployment
 
 First inspect a plan without changing AWS:
 
 ```powershell
 .\ops\deploy_stateful_lifecycle.ps1 `
-  -SourceBucketUri "s3://<private-bucket>/stateful-lifecycle-staging" `
+  -SourceBucketUri "s3://<private-bucket>/stateful-lifecycle-staging/data" `
   -AthenaOutputUri "s3://<private-query-bucket>/athena-results/"
 ```
 
@@ -73,7 +105,7 @@ Create the isolated tables:
 
 ```powershell
 .\ops\deploy_stateful_lifecycle.ps1 `
-  -SourceBucketUri "s3://<private-bucket>/stateful-lifecycle-staging" `
+  -SourceBucketUri "s3://<private-bucket>/stateful-lifecycle-staging/data" `
   -AthenaOutputUri "s3://<private-query-bucket>/athena-results/" `
   -Apply
 ```
@@ -82,7 +114,7 @@ After reviewing the seed SQL, load its first version once:
 
 ```powershell
 .\ops\deploy_stateful_lifecycle.ps1 `
-  -SourceBucketUri "s3://<private-bucket>/stateful-lifecycle-staging" `
+  -SourceBucketUri "s3://<private-bucket>/stateful-lifecycle-staging/data" `
   -AthenaOutputUri "s3://<private-query-bucket>/athena-results/" `
   -IncludeSeed `
   -Apply

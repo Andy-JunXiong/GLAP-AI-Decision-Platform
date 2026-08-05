@@ -8,9 +8,9 @@ param(
     [string]$Workgroup = "primary",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
     [Parameter(Mandatory)] [string]$LifecycleDataBucket,
-    [string]$LifecycleDataPrefix = "stateful-lifecycle-staging",
+    [string]$LifecycleDataPrefix = "stateful-lifecycle-staging/data",
     [Parameter(Mandatory)] [string]$AthenaOutputUri,
-    [string]$ArtifactKey = "stateful-lifecycle-staging/glap-stateful-lifecycle-generator.zip",
+    [string]$ArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-generator.zip",
     [switch]$Apply
 )
 

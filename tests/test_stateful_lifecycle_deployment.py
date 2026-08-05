@@ -122,9 +122,32 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("default: plan", workflow)
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
         self.assertIn("deploy-replay-validate", workflow)
+        self.assertIn("get-bucket-location", workflow)
+        self.assertNotIn("head-bucket", workflow)
+        self.assertIn("stateful-lifecycle-staging/artifacts", workflow)
+        self.assertIn("stateful-lifecycle-staging/data", workflow)
         self.assertIn("Production alias changed: \\`false\\`", workflow)
         self.assertNotIn("update-alias", workflow)
         self.assertNotIn("scheduler", workflow.lower())
+
+    def test_deployer_policy_bootstrap_is_plan_only_and_staging_scoped(self):
+        script = (
+            ROOT / "ops" / "configure_stateful_lifecycle_deployer.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("Plan only", script)
+        self.assertIn('"athena:GetWorkGroup"', script)
+        self.assertIn('"cloudformation:CreateChangeSet"', script)
+        self.assertIn('"iam:PassRole"', script)
+        self.assertIn('${StackName}-LifecycleGeneratorRole-*', script)
+        self.assertIn('${LifecycleDataBucket}/${dataPrefix}/*', script)
+        self.assertIn('stateful-lifecycle-staging/artifacts', script)
+        self.assertIn('stateful-lifecycle-staging/data', script)
+        self.assertIn("Production alias or schedule permission: False", script)
+        self.assertNotIn("lambda:UpdateAlias", script)
+        self.assertNotIn("scheduler:", script.lower())
+        self.assertIn("Remove-Item -LiteralPath $policyPath", script)
 
 
 if __name__ == "__main__":

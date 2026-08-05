@@ -56,6 +56,11 @@ Repository implementation checkpoint — 4 August 2026:
   not modify a production alias.
 - [ ] Run the private 28-day replay in AWS staging and reconcile every logical
   date before changing the production alias.
+  - 5 August preflight: GitHub environment targets are configured, lifecycle
+    tests and OIDC succeeded, then the plan stopped before writes because the
+    staging deployer lacks `athena:GetWorkGroup`. Apply the reviewed,
+    lifecycle-scoped policy from
+    `ops/configure_stateful_lifecycle_deployer.ps1`, then rerun `action=plan`.
 
 - [x] Correct the public metric contract: v2 shipment volume, insights v3 root
   causes, actions v2 action distribution, no legacy v1 or trace claims.
@@ -114,6 +119,11 @@ Repository checkpoint — 4 August 2026:
   flywheel function now runs only inside the success-gated chain.
 - [ ] Ensure downstream processing and Pages refresh cannot claim `current` after
   any upstream validation or stage failure.
+  - 5 August Pages export stopped safely before publication because the updated
+    canonical shipment query needs source-database Glue/Lake Formation access.
+    Re-run `ops/configure_ops_snapshot_access.ps1` with the AWS admin/read
+    profiles, then re-dispatch Pages; keep required pipeline verification off
+    until the first governed controller run is confirmed.
 
 ## P1 — Authenticated operator write-back loop
 

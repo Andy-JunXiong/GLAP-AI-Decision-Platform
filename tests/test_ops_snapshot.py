@@ -350,6 +350,8 @@ class OpsSnapshotTests(unittest.TestCase):
             with self.subTest(view=view):
                 self.assertIn(view, setup)
                 self.assertIn(view, analyst_sql)
+        self.assertIn("Database = @{ Name = $SourceDatabase }", setup)
+        self.assertIn("DatabaseName = $SourceDatabase; Name = $tableName", setup)
         self.assertIn("UNNEST(sequence(1, 7))", analyst_sql)
         self.assertIn("avg_effectiveness_score", analyst_sql)
 

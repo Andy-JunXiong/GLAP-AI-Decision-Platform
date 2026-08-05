@@ -52,6 +52,8 @@ jobs:
       ATHENA_WORKGROUP: primary
       STACK_NAME: glap-stateful-lifecycle-staging
       FUNCTION_NAME: glap-stateful-lifecycle-generator-staging
+      ARTIFACT_PREFIX: stateful-lifecycle-staging/artifacts
+      LIFECYCLE_DATA_PREFIX: stateful-lifecycle-staging/data
       ARTIFACT_BUCKET: ${{ vars.AWS_LIFECYCLE_ARTIFACT_BUCKET }}
       DATA_BUCKET: ${{ vars.AWS_LIFECYCLE_DATA_BUCKET }}
       ATHENA_OUTPUT: ${{ vars.AWS_LIFECYCLE_ATHENA_OUTPUT || vars.AWS_OPS_ATHENA_OUTPUT }}
@@ -100,8 +102,8 @@ jobs:
             --query 'WorkGroup.Configuration.EngineVersion.EffectiveEngineVersion' \
             --output text)
           test "$engine" = "Athena engine version 3"
-          aws s3api head-bucket --bucket "$ARTIFACT_BUCKET"
-          aws s3api head-bucket --bucket "$DATA_BUCKET"
+          aws s3api get-bucket-location --bucket "$ARTIFACT_BUCKET" >/dev/null
+          aws s3api get-bucket-location --bucket "$DATA_BUCKET" >/dev/null
 
       - name: Render deployment plans
         shell: pwsh
@@ -109,7 +111,7 @@ jobs:
           ./ops/deploy_stateful_lifecycle.ps1 `
             -Region $env:AWS_REGION `
             -SourceDatabase $env:SOURCE_DATABASE `
-            -SourceBucketUri "s3://$env:DATA_BUCKET/stateful-lifecycle-staging" `
+            -SourceBucketUri "s3://$env:DATA_BUCKET/$env:LIFECYCLE_DATA_PREFIX" `
             -AthenaOutputUri $env:ATHENA_OUTPUT `
             -Workgroup $env:ATHENA_WORKGROUP
           ./ops/deploy_stateful_lifecycle_stack.ps1 `
@@ -120,6 +122,7 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -ArtifactBucket $env:ARTIFACT_BUCKET `
             -LifecycleDataBucket $env:DATA_BUCKET `
+            -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
             -AthenaOutputUri $env:ATHENA_OUTPUT
           ./ops/replay_stateful_lifecycle_staging.ps1 `
             -Region $env:AWS_REGION `
@@ -142,7 +145,7 @@ jobs:
           $parameters = @{
             Region = $env:AWS_REGION
             SourceDatabase = $env:SOURCE_DATABASE
-            SourceBucketUri = "s3://$env:DATA_BUCKET/stateful-lifecycle-staging"
+            SourceBucketUri = "s3://$env:DATA_BUCKET/$env:LIFECYCLE_DATA_PREFIX"
             AthenaOutputUri = $env:ATHENA_OUTPUT
             Workgroup = $env:ATHENA_WORKGROUP
             Apply = $true
@@ -164,8 +167,9 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -ArtifactBucket $env:ARTIFACT_BUCKET `
             -LifecycleDataBucket $env:DATA_BUCKET `
+            -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
             -AthenaOutputUri $env:ATHENA_OUTPUT `
-            -ArtifactKey "stateful-lifecycle-staging/${{ github.sha }}.zip" `
+            -ArtifactKey "$env:ARTIFACT_PREFIX/${{ github.sha }}.zip" `
             -Apply
 
       - name: Replay 28 logical dates
