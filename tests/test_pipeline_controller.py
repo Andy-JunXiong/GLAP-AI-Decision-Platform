@@ -275,6 +275,8 @@ class PipelineControllerTests(unittest.TestCase):
             )
         self.assertEqual(result["status"], "succeeded")
         self.assertEqual(client.invoke.call_count, 3)
+        generation_payload = json.loads(client.invoke.call_args_list[0].kwargs["Payload"])
+        self.assertTrue(generation_payload["retry_failed_run"])
 
     def test_explicit_retry_rejects_non_retryable_same_day_failure(self):
         client = MagicMock()
