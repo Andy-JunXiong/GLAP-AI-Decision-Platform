@@ -290,6 +290,7 @@ def execute_pipeline(
                     "run_date": logical_run_date,
                     "pipeline_stage": stage["name"],
                     "dry_run": dry_run,
+                    "retry_failed_run": retry_failed_run,
                 },
             )
         except StageFailure as exc:

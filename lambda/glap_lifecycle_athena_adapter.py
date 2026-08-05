@@ -138,8 +138,13 @@ def _sql_literal(value: Any) -> str:
     return "'" + str(value).replace("'", "''") + "'"
 
 
-def build_merge_sql(table: str, columns: tuple[str, ...], key_columns: tuple[str, ...],
-                    rows: Iterable[dict[str, Any]]) -> list[str]:
+def build_merge_sql(
+    table: str,
+    columns: tuple[str, ...],
+    key_columns: tuple[str, ...],
+    rows: Iterable[dict[str, Any]],
+    update_matched: bool = False,
+) -> list[str]:
     """Build retry-safe Iceberg MERGE statements in bounded batches."""
 
     table = _identifier(table, "target table")
@@ -154,11 +159,18 @@ def build_merge_sql(table: str, columns: tuple[str, ...], key_columns: tuple[str
         source_columns = ", ".join(columns)
         join = " AND ".join(f"target.{key} = source.{key}" for key in key_columns)
         insert_values = ", ".join(f"source.{column}" for column in columns)
+        update_columns = [column for column in columns if column not in key_columns]
+        matched_clause = ""
+        if update_matched and update_columns:
+            assignments = ", ".join(
+                f"{column} = source.{column}" for column in update_columns
+            )
+            matched_clause = f"\nWHEN MATCHED THEN UPDATE SET {assignments}"
         statements.append(f"""MERGE INTO {_identifier(DATABASE, 'database')}.{table} AS target
 USING (VALUES
 {values}
 ) AS source ({source_columns})
-ON {join}
+ON {join}{matched_clause}
 WHEN NOT MATCHED THEN INSERT ({source_columns}) VALUES ({insert_values})""")
     return statements
 
@@ -318,13 +330,28 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 "rate_card_version": line["rate_card_version"], "cost_status": "EXPECTED",
                 "created_at": snapshot["created_at"],
             })
+    update_matched = event.get("retry_failed_run") is True
     statements = (
-        build_merge_sql(SNAPSHOT_TABLE, SNAPSHOT_COLUMNS, ("shipment_id", "dt"), snapshots)
-        + build_merge_sql(EVENT_TABLE, EVENT_COLUMNS, ("event_id",), events)
-        + build_merge_sql(COST_TABLE, COST_COLUMNS, ("shipment_id", "dt", "charge_code"), cost_rows)
-        + build_merge_sql(METRICS_TABLE, METRICS_COLUMNS, ("shipment_id", "dt"), metrics)
+        build_merge_sql(
+            SNAPSHOT_TABLE, SNAPSHOT_COLUMNS, ("shipment_id", "dt"), snapshots, update_matched
+        )
+        + build_merge_sql(EVENT_TABLE, EVENT_COLUMNS, ("event_id",), events, update_matched)
         + build_merge_sql(
-            SIGNAL_TABLE, SIGNAL_COLUMNS, ("signal_fingerprint", "dt"), signals
+            COST_TABLE,
+            COST_COLUMNS,
+            ("shipment_id", "dt", "charge_code"),
+            cost_rows,
+            update_matched,
+        )
+        + build_merge_sql(
+            METRICS_TABLE, METRICS_COLUMNS, ("shipment_id", "dt"), metrics, update_matched
+        )
+        + build_merge_sql(
+            SIGNAL_TABLE,
+            SIGNAL_COLUMNS,
+            ("signal_fingerprint", "dt"),
+            signals,
+            update_matched,
         )
     )
     if not event.get("dry_run", False):

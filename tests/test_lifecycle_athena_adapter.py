@@ -69,6 +69,22 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertIn("'SHP''1'", statements[0])
         self.assertNotIn("WHEN MATCHED", statements[0])
 
+    def test_explicit_recovery_updates_existing_non_key_values(self):
+        rows = [{"event_id": "EV-1", "shipment_id": "SHP-1"}]
+        statements = adapter.build_merge_sql(
+            "fact_shipment_lifecycle_event_staging_v1",
+            ("event_id", "shipment_id"),
+            ("event_id",),
+            rows,
+            update_matched=True,
+        )
+        matched_clause = next(
+            line for line in statements[0].splitlines() if line.startswith("WHEN MATCHED")
+        )
+        self.assertIn("shipment_id = source.shipment_id", matched_clause)
+        self.assertNotIn("event_id = source.event_id", matched_clause)
+        self.assertIn("WHEN NOT MATCHED", statements[0])
+
     def test_merge_batches_at_one_hundred_rows(self):
         rows = [{"event_id": f"EV-{index}"} for index in range(201)]
         statements = adapter.build_merge_sql("events", ("event_id",), ("event_id",), rows)
