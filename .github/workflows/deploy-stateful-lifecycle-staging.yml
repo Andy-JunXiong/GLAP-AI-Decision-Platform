@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Plan, replay, integration, or read-only analytics contract deployment
+        description: Plan, deploy, replay, extend, or recover isolated staging
         required: true
         type: choice
         default: plan
@@ -14,6 +14,8 @@ on:
           - deploy-integration-validate
           - deploy-analytics-contract
           - extend-integration-validate
+          - deploy-recovery-controller
+          - recover-failed-integration-date
       load_initial_seed:
         description: Load Q3 seed once; leave false on repeat deployments
         required: true
@@ -98,6 +100,9 @@ jobs:
           if [[ "${{ inputs.action }}" == "extend-integration-validate" ]]; then
             test "${{ inputs.replay_days }}" -le 12
           fi
+          if [[ "${{ inputs.action }}" == "recover-failed-integration-date" ]]; then
+            test "${{ inputs.replay_days }}" -eq 1
+          fi
           test "${{ inputs.population_size }}" -ge 1
           test "${{ inputs.population_size }}" -le 5000
 
@@ -150,12 +155,17 @@ jobs:
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
             -PopulationSize ${{ inputs.population_size }}
-          ./ops/extend_stateful_lifecycle_controller_staging.ps1 `
-            -Region $env:AWS_REGION `
-            -ControllerFunction $env:CONTROLLER_FUNCTION `
-            -StartDate "${{ inputs.replay_start_date }}" `
-            -Days ${{ inputs.replay_days }} `
-            -MaxElapsedMinutes 50
+          $extensionPlan = @{
+            Region = $env:AWS_REGION
+            ControllerFunction = $env:CONTROLLER_FUNCTION
+            StartDate = "${{ inputs.replay_start_date }}"
+            Days = ${{ inputs.replay_days }}
+            MaxElapsedMinutes = 50
+          }
+          if ("${{ inputs.action }}" -eq "recover-failed-integration-date") {
+            $extensionPlan.RetryFailedRun = $true
+          }
+          ./ops/extend_stateful_lifecycle_controller_staging.ps1 @extensionPlan
           ./ops/validate_stateful_lifecycle_staging.ps1 `
             -Region $env:AWS_REGION `
             -SourceDatabase $env:SOURCE_DATABASE `
@@ -183,7 +193,7 @@ jobs:
           ./ops/deploy_stateful_lifecycle.ps1 @parameters
 
       - name: Deploy unscheduled lifecycle and integration stack
-        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate'
+        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
         shell: pwsh
         run: |
           ./ops/deploy_stateful_lifecycle_stack.ps1 `
@@ -278,6 +288,19 @@ jobs:
             -MaxElapsedMinutes 50 `
             -Apply
 
+      - name: Recover one failed lifecycle date through governed controller
+        if: inputs.action == 'recover-failed-integration-date'
+        shell: pwsh
+        run: |
+          ./ops/extend_stateful_lifecycle_controller_staging.ps1 `
+            -Region $env:AWS_REGION `
+            -ControllerFunction $env:CONTROLLER_FUNCTION `
+            -StartDate "${{ inputs.replay_start_date }}" `
+            -Days 1 `
+            -MaxElapsedMinutes 50 `
+            -RetryFailedRun `
+            -Apply
+
       - name: Write staging evidence summary
         if: success()
         shell: bash
@@ -289,6 +312,7 @@ jobs:
             echo "- Initial population: \`${{ inputs.population_size }}\`"
             echo "- Integration logical date: \`${{ inputs.integration_logical_date }}\`"
             echo "- Extension safety cap: \`12 dates / 50 elapsed minutes\`"
+            echo "- Explicit failed-date recovery: \`${{ inputs.action == 'recover-failed-integration-date' }}\`"
             echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"
             echo "- Schedule created: \`false\`"

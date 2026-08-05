@@ -6,12 +6,16 @@ param(
     [datetime]$StartDate = "2026-09-08",
     [ValidateRange(1, 12)] [int]$Days = 12,
     [ValidateRange(10, 55)] [int]$MaxElapsedMinutes = 50,
+    [switch]$RetryFailedRun,
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
 if ($ControllerFunction -notmatch '^[A-Za-z0-9-_]{1,64}$') {
     throw "ControllerFunction is not a safe Lambda name"
+}
+if ($RetryFailedRun -and $Days -ne 1) {
+    throw "RetryFailedRun requires exactly one logical date"
 }
 
 $dates = 0..($Days - 1) | ForEach-Object { $StartDate.Date.AddDays($_) }
@@ -21,6 +25,7 @@ Write-Host "  First date: $($dates[0].ToString('yyyy-MM-dd'))"
 Write-Host "  Last date: $($dates[-1].ToString('yyyy-MM-dd'))"
 Write-Host "  Days: $Days"
 Write-Host "  Maximum elapsed time: $MaxElapsedMinutes minutes"
+Write-Host "  Explicit failed-date recovery: $RetryFailedRun"
 Write-Host "  Seed population: False"
 Write-Host "  Expected checks per date: 19 lifecycle + 5 compatibility + 8 analytics"
 Write-Host "  Production alias or schedule: False"
@@ -53,7 +58,11 @@ foreach ($logicalDate in $dates) {
             "Resume from $day in a new invocation."
         )
     }
-    $payload = @{ logical_run_date = $day } | ConvertTo-Json -Compress
+    $payloadContract = @{ logical_run_date = $day }
+    if ($RetryFailedRun) {
+        $payloadContract.retry_failed_run = $true
+    }
+    $payload = $payloadContract | ConvertTo-Json -Compress
     $payloadPath = [IO.Path]::GetTempFileName()
     $responsePath = [IO.Path]::GetTempFileName()
     try {

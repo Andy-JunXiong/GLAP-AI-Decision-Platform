@@ -249,6 +249,70 @@ class PipelineControllerTests(unittest.TestCase):
                     module.lambda_handler({"logical_run_date": "2026-08-04"}, None)
         client.invoke.assert_not_called()
 
+    def test_explicit_retry_recovers_only_first_stage_dependency_failure(self):
+        client = MagicMock()
+        client.invoke.side_effect = [
+            response({"status": "success"}),
+            response({"status": "success", "quality_checks": PASSED_CHECKS}),
+            response({"status": "success"}),
+        ]
+        module = load_module(lambda_client=client)
+        existing = {
+            "logical_run_date": "2026-08-04",
+            "status": "failed",
+            "failed_stage": "generation",
+            "failure_category": "dependency_failure",
+            "stages": [],
+        }
+        with patch.object(module, "load_existing_run", return_value=existing), patch.object(
+            module, "persist_run"
+        ):
+            result = module.execute_pipeline(
+                STAGES,
+                "2026-08-04",
+                "s3://safe/status.json",
+                retry_failed_run=True,
+            )
+        self.assertEqual(result["status"], "succeeded")
+        self.assertEqual(client.invoke.call_count, 3)
+
+    def test_explicit_retry_rejects_non_retryable_same_day_failure(self):
+        client = MagicMock()
+        module = load_module(lambda_client=client)
+        existing = {
+            "logical_run_date": "2026-08-04",
+            "status": "failed",
+            "failed_stage": "input_validation",
+            "failure_category": "quality_gate_failed",
+            "stages": [],
+        }
+        with patch.object(module, "load_existing_run", return_value=existing), patch.object(
+            module, "persist_run"
+        ):
+            with self.assertRaisesRegex(ValueError, "first-stage dependency failure"):
+                module.execute_pipeline(
+                    STAGES,
+                    "2026-08-04",
+                    "s3://safe/status.json",
+                    retry_failed_run=True,
+                )
+        client.invoke.assert_not_called()
+
+    def test_explicit_retry_requires_an_existing_failure_for_the_same_date(self):
+        client = MagicMock()
+        module = load_module(lambda_client=client)
+        with patch.object(module, "load_existing_run", return_value=None), patch.object(
+            module, "persist_run"
+        ):
+            with self.assertRaisesRegex(ValueError, "existing failed run for the same date"):
+                module.execute_pipeline(
+                    STAGES,
+                    "2026-08-04",
+                    "s3://safe/status.json",
+                    retry_failed_run=True,
+                )
+        client.invoke.assert_not_called()
+
     def test_dry_run_does_not_overwrite_latest_status(self):
         client = MagicMock()
         module = load_module(lambda_client=client)
