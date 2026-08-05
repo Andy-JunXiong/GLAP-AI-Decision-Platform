@@ -122,6 +122,7 @@ its source metrics.
 | Forecast baseline | 28-day `dt` history with Athena-calculated seven-day OLS volume forecast |
 | Stateful multimodal staging | Cross-date lifecycle for Maersk/KN Ocean and DHL Air; 15--20% simulated Air booking control |
 | Multimodal analytics foundation | Six read-only Athena views plus 8 fail-closed operations/feature/label checks |
+| Forecast validation | Manual private rolling backtest plus pending-safe supervised-label readiness gates |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is
@@ -180,6 +181,7 @@ flowchart TB
 - [Public OPS snapshot contract](docs/ops_snapshot.md)
 - [Athena OPS analytics and forecast SQL](sql/03_ops_analytics.sql)
 - [Multimodal operations, feature and label views](sql/09_multimodal_ops_analytics.sql)
+- [Multimodal forecast feature contract](docs/multimodal_forecast_feature_contract.md)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
 - [Prioritized project TODO](TODO.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)

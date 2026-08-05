@@ -241,6 +241,7 @@ WITH source AS (
 )
 SELECT
     feature_date,
+    day_of_week(feature_date) AS feature_day_of_week,
     transport_mode,
     provider_code,
     shipment_snapshot_count,
@@ -268,6 +269,7 @@ SELECT
         ROWS BETWEEN 7 PRECEDING AND 1 PRECEDING
     ), 2) AS sla_breach_rate_trailing_7d_avg,
     feature_date AS feature_cutoff_date,
+    'multimodal_forecast_feature_daily_v1' AS feature_contract_version,
     'NO_FUTURE_DATA' AS leakage_policy,
     'SIMULATED_MULTIMODAL_V1' AS data_provenance
 FROM source;

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Plan, replay validation, or one-day pipeline integration
+        description: Plan, replay, integration, or read-only analytics contract deployment
         required: true
         type: choice
         default: plan
@@ -12,6 +12,7 @@ on:
           - plan
           - deploy-replay-validate
           - deploy-integration-validate
+          - deploy-analytics-contract
       load_initial_seed:
         description: Load Q3 seed once; leave false on repeat deployments
         required: true
@@ -118,12 +119,17 @@ jobs:
       - name: Render deployment plans
         shell: pwsh
         run: |
-          ./ops/deploy_stateful_lifecycle.ps1 `
-            -Region $env:AWS_REGION `
-            -SourceDatabase $env:SOURCE_DATABASE `
-            -SourceBucketUri "s3://$env:DATA_BUCKET/$env:LIFECYCLE_DATA_PREFIX" `
-            -AthenaOutputUri $env:ATHENA_OUTPUT `
-            -Workgroup $env:ATHENA_WORKGROUP
+          $schemaPlan = @{
+            Region = $env:AWS_REGION
+            SourceDatabase = $env:SOURCE_DATABASE
+            SourceBucketUri = "s3://$env:DATA_BUCKET/$env:LIFECYCLE_DATA_PREFIX"
+            AthenaOutputUri = $env:ATHENA_OUTPUT
+            Workgroup = $env:ATHENA_WORKGROUP
+          }
+          if ("${{ inputs.action }}" -eq "deploy-analytics-contract") {
+            $schemaPlan.AnalyticsOnly = $true
+          }
+          ./ops/deploy_stateful_lifecycle.ps1 @schemaPlan
           ./ops/deploy_stateful_lifecycle_stack.ps1 `
             -Region $env:AWS_REGION `
             -StackName $env:STACK_NAME `
@@ -183,6 +189,32 @@ jobs:
             -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
             -ControllerArtifactKey "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip" `
             -QualityGateArtifactKey "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip" `
+            -Apply
+
+      - name: Deploy read-only analytics contract
+        if: inputs.action == 'deploy-analytics-contract'
+        shell: pwsh
+        run: |
+          ./ops/deploy_stateful_lifecycle.ps1 `
+            -Region $env:AWS_REGION `
+            -SourceDatabase $env:SOURCE_DATABASE `
+            -SourceBucketUri "s3://$env:DATA_BUCKET/$env:LIFECYCLE_DATA_PREFIX" `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -Workgroup $env:ATHENA_WORKGROUP `
+            -AnalyticsOnly `
+            -Apply
+
+      - name: Validate deployed analytics contract
+        if: inputs.action == 'deploy-analytics-contract'
+        shell: pwsh
+        run: |
+          ./ops/validate_stateful_lifecycle_staging.ps1 `
+            -Region $env:AWS_REGION `
+            -SourceDatabase $env:SOURCE_DATABASE `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -Workgroup $env:ATHENA_WORKGROUP `
+            -StartDate "${{ inputs.integration_logical_date }}" `
+            -Days 1 `
             -Apply
 
       - name: Replay 28 logical dates

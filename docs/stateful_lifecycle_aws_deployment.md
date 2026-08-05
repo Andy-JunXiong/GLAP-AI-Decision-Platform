@@ -393,3 +393,38 @@ stage.
 This closes the governed operational-analytics foundation in isolated staging.
 It supplies analysis-ready history and prediction-ready features/labels, but it
 does not yet train or authorize a production forecasting model.
+
+## Private forecast-validation workflow
+
+Forecast validation uses the manual
+`backtest-multimodal-forecast-staging.yml` workflow. Its default action is
+`plan`; the explicit `backtest` action reads only
+`vw_multimodal_forecast_feature_daily_v1`, validates the frozen feature
+contract, and runs rolling one-step-ahead recent-level, seven-observation moving
+average, weekday-seasonal, and OLS baselines independently by mode/provider.
+
+The report includes MAE, RMSE, signed bias, MAPE where actual volume is non-zero,
+95% residual interval coverage, training windows, provider history coverage,
+seven-day booking drift, and Athena bytes scanned. A challenger is recommended
+only when it lowers both MAE and RMSE and beats the recent-level baseline on at
+least 60% of at least seven comparable held-out dates. Otherwise the simple
+baseline remains.
+
+The workflow may initially report `partial_history` or `insufficient_history`
+for providers introduced during the multimodal evolution. That is a valid
+evidence state and must not be represented as a failed model. Reports remain
+private workflow artifacts for 14 days; Pages publication, recurring execution,
+production writes, and policy changes are all disabled.
+
+The frozen feature columns must first be applied with the existing lifecycle
+workflow's explicit `deploy-analytics-contract` action. That action follows the
+plan-only `AnalyticsOnly` deployment path and validates an existing logical
+date; it updates view definitions only and does not invoke the generator.
+
+The backtest workflow also runs a separate aggregate label-readiness query. It
+exports no shipment IDs and excludes all `PENDING` outcomes from training
+counts. SLA-breach and delay-risk evaluation require at least 200 observed
+labels with at least 20 examples in each class per mode/provider. Cost-variance
+evaluation requires at least 200 observed labels and 10 distinct values. A
+provider below those thresholds remains explicitly blocked while history
+accumulates.
