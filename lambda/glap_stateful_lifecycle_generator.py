@@ -421,7 +421,10 @@ def _actual_milestones(shipment: dict[str, Any], targets: dict[str, int]) -> dic
         targets, transport_mode, "ORIGIN_HANDOVER_TO_DEPARTURE", "GATE_IN_TO_ETD"
     )
     atd = max(shipment["etd"], origin_handover + timedelta(hours=departure_hours))
-    ata = shipment["eta"] + (delay if exception == "P2P_DELAY" else timedelta())
+    planned_p2p = shipment["eta"] - shipment["etd"]
+    ata = atd + planned_p2p
+    if exception == "P2P_DELAY":
+        ata += delay
     release_hours = _target_hours(
         targets, transport_mode, "ARRIVAL_TO_DESTINATION_RELEASE", "ATA_TO_DISCHARGED"
     )

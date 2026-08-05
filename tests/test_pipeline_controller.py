@@ -282,14 +282,14 @@ class PipelineControllerTests(unittest.TestCase):
         existing = {
             "logical_run_date": "2026-08-04",
             "status": "failed",
-            "failed_stage": "input_validation",
+            "failed_stage": "decision_flywheel",
             "failure_category": "quality_gate_failed",
             "stages": [],
         }
         with patch.object(module, "load_existing_run", return_value=existing), patch.object(
             module, "persist_run"
         ):
-            with self.assertRaisesRegex(ValueError, "first-stage dependency failure"):
+            with self.assertRaisesRegex(ValueError, "configured quality-gate failure"):
                 module.execute_pipeline(
                     STAGES,
                     "2026-08-04",
@@ -297,6 +297,33 @@ class PipelineControllerTests(unittest.TestCase):
                     retry_failed_run=True,
                 )
         client.invoke.assert_not_called()
+
+    def test_explicit_retry_recovers_configured_quality_gate_failure(self):
+        client = MagicMock()
+        client.invoke.side_effect = [
+            response({"status": "success"}),
+            response({"status": "success", "quality_checks": PASSED_CHECKS}),
+            response({"status": "success"}),
+        ]
+        module = load_module(lambda_client=client)
+        existing = {
+            "logical_run_date": "2026-08-04",
+            "status": "failed",
+            "failed_stage": "input_validation",
+            "failure_category": "quality_gate_failed",
+            "stages": [],
+        }
+        with patch.object(module, "load_existing_run", return_value=existing), patch.object(
+            module, "persist_run"
+        ):
+            result = module.execute_pipeline(
+                STAGES,
+                "2026-08-04",
+                "s3://safe/status.json",
+                retry_failed_run=True,
+            )
+        self.assertEqual(result["status"], "succeeded")
+        self.assertEqual(client.invoke.call_count, 3)
 
     def test_explicit_retry_requires_an_existing_failure_for_the_same_date(self):
         client = MagicMock()

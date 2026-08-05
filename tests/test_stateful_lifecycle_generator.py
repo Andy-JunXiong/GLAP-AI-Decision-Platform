@@ -90,6 +90,21 @@ class StatefulLifecycleGeneratorTests(unittest.TestCase):
         self.assertEqual(events[0]["segment_type"], "ORIGIN")
         self.assertEqual(events[0]["leg_seq"], 1)
 
+    def test_air_origin_delay_preserves_actual_milestone_order(self):
+        air_route = [row for row in MULTIMODAL_ROUTES if row["carrier"] == "DHL"]
+        shipment = generator.create_shipment(
+            date(2026, 9, 2), 1, air_route, MULTIMODAL_TARGETS
+        )
+        shipment["journey_exception_type"] = "ORIGIN_DELAY"
+        shipment["journey_exception_hours"] = 48
+
+        actual = generator._actual_milestones(shipment, MULTIMODAL_TARGETS)
+
+        self.assertGreaterEqual(actual["ata"], actual["atd"])
+        self.assertEqual(actual["ata"] - actual["atd"], shipment["eta"] - shipment["etd"])
+        self.assertGreaterEqual(actual["destination_release_at"], actual["ata"])
+        self.assertGreaterEqual(actual["delivered_at"], actual["destination_release_at"])
+
     def test_dhl_air_cost_uses_chargeable_kg_and_air_base(self):
         air_route = [row for row in MULTIMODAL_ROUTES if row["carrier"] == "DHL"]
         rates = [
