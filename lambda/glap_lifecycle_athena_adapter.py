@@ -10,6 +10,7 @@ import time
 from typing import Any, Iterable
 
 import glap_stateful_lifecycle_generator as engine
+from glap_temporal_boundary import resolve_temporal_context
 
 
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -279,6 +280,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     except ImportError as exc:  # pragma: no cover - AWS runtime supplies boto3
         raise RuntimeError("boto3 is required for Athena persistence") from exc
     logical_date = date.fromisoformat(event["logical_run_date"])
+    temporal_context = resolve_temporal_context(event["logical_run_date"], event)
     client = boto3.client("athena", region_name=os.getenv("AWS_REGION", "us-east-1"))
     config_queries = build_configuration_queries(logical_date)
     target_rows = _run_query(client, config_queries["targets"])
@@ -359,6 +361,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             _run_query(client, statement)
     return {
         **result,
+        **temporal_context,
         "cost_rows_created": len(cost_rows),
         "metric_rows_created": len(metrics),
         "signal_rows_created": len(signals),

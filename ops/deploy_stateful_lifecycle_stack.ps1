@@ -116,9 +116,12 @@ Copy-Item -LiteralPath (Join-Path $root "lambda/glap_lifecycle_athena_adapter.py
     -Destination (Join-Path $packageDir "lambda_function.py") -Force
 Copy-Item -LiteralPath (Join-Path $root "lambda/glap_stateful_lifecycle_generator.py") `
     -Destination (Join-Path $packageDir "glap_stateful_lifecycle_generator.py") -Force
+Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+    -Destination (Join-Path $packageDir "glap_temporal_boundary.py") -Force
 Compress-Archive -LiteralPath `
     (Join-Path $packageDir "lambda_function.py"), `
-    (Join-Path $packageDir "glap_stateful_lifecycle_generator.py") `
+    (Join-Path $packageDir "glap_stateful_lifecycle_generator.py"), `
+    (Join-Path $packageDir "glap_temporal_boundary.py") `
     -DestinationPath $archivePath -Force
 
 New-Item -ItemType Directory -Path $controllerPackageDir -Force | Out-Null
@@ -126,9 +129,12 @@ Copy-Item -LiteralPath (Join-Path $root "lambda/glap_pipeline_controller.py") `
     -Destination (Join-Path $controllerPackageDir "lambda_function.py") -Force
 Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
     -Destination (Join-Path $controllerPackageDir "glap_quality_contracts.py") -Force
+Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+    -Destination (Join-Path $controllerPackageDir "glap_temporal_boundary.py") -Force
 Compress-Archive -LiteralPath `
     (Join-Path $controllerPackageDir "lambda_function.py"), `
-    (Join-Path $controllerPackageDir "glap_quality_contracts.py") `
+    (Join-Path $controllerPackageDir "glap_quality_contracts.py"), `
+    (Join-Path $controllerPackageDir "glap_temporal_boundary.py") `
     -DestinationPath $controllerArchivePath -Force
 
 New-Item -ItemType Directory -Path $qualityPackageDir -Force | Out-Null
@@ -172,6 +178,7 @@ $parameterOverrides = @(
     "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
     "PipelineStatusS3Uri=s3://$LifecycleDataBucket/$statusKey",
     "PipelineStatusObjectArn=arn:aws:s3:::$LifecycleDataBucket/$statusKey",
+    "PipelineStatusObjectsArn=arn:aws:s3:::$LifecycleDataBucket/$statusPrefix/*",
     "PipelineStatusPrefix=$statusPrefix",
     "AthenaWorkgroup=$Workgroup",
     "SourceDatabase=$SourceDatabase",

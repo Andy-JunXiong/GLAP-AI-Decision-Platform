@@ -30,6 +30,10 @@ they must never be used to predict that same day's booking count. Lag and
 trailing fields are calculated with windows ending at least one row before the
 feature date. The contract does not forward-fill future or pending values.
 
+Operational callers may select only dates on or before the current
+`Australia/Sydney` business date. Future logical dates require an explicit,
+staging-only `FUTURE_SIMULATION` scenario and are not operational history.
+
 ## Null rules
 
 | Field class | Rule |
@@ -59,6 +63,10 @@ do not yet have enough history to evaluate. Both Athena reads record a default
 status. This contract does not authorize recurring execution, production
 writes, or policy changes.
 
+A future-simulation backtest can validate time ordering and evaluation code,
+but its metrics are not real forecast-performance or model-promotion evidence.
+Operational model decisions must use actual-calendar data only.
+
 ## Private AWS execution
 
 The manual `backtest-multimodal-forecast-staging.yml` workflow queries only the
@@ -77,9 +85,10 @@ logical date. It does not invoke lifecycle generation or update a table.
 ## Supervised-label readiness gate
 
 The same private workflow reads an aggregate-only summary from
-`vw_multimodal_outcome_label_v1`; it never exports shipment identifiers. The
-selected cutoff must equal the latest available label date so a historical
-cutoff cannot silently omit shipments that completed later.
+`vw_multimodal_outcome_label_v1`; it never exports shipment identifiers. For an
+operational run, the selected cutoff cannot exceed the current Sydney date and
+the query excludes outcomes observed after that cutoff. A future scenario must
+be explicit and cannot contribute to operational readiness.
 
 The initial governed thresholds apply independently to every mode/provider:
 

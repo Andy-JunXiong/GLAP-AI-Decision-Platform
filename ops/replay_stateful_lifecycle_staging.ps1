@@ -6,21 +6,33 @@ param(
     [datetime]$StartDate = "2026-08-04",
     [ValidateRange(1, 90)] [int]$Days = 28,
     [ValidateRange(1, 5000)] [int]$PopulationSize = 450,
+    [ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]
+    [string]$ExecutionMode = "OPERATIONAL",
+    [string]$ScenarioId = "",
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "temporal_boundary.ps1")
 if ($FunctionName -notmatch '^[A-Za-z0-9-_]{1,64}$') {
     throw "FunctionName is not a safe Lambda name"
 }
 
 $dates = 0..($Days - 1) | ForEach-Object { $StartDate.Date.AddDays($_) }
+$temporalContext = Resolve-TemporalContext `
+    -LastLogicalDate $dates[-1] `
+    -ExecutionMode $ExecutionMode `
+    -ScenarioId $ScenarioId
 Write-Host "Stateful lifecycle staging replay plan"
 Write-Host "  Function: $FunctionName"
 Write-Host "  First date: $($dates[0].ToString('yyyy-MM-dd'))"
 Write-Host "  Last date: $($dates[-1].ToString('yyyy-MM-dd'))"
 Write-Host "  Days: $Days"
 Write-Host "  Initial active population: $PopulationSize"
+Write-Host "  Execution mode: $($temporalContext.execution_mode)"
+Write-Host "  Time basis: $($temporalContext.time_basis)"
+Write-Host "  Sydney as-of date: $($temporalContext.as_of_date)"
+Write-Host "  Scenario: $($temporalContext.scenario_id)"
 
 if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply after schema, seed and IAM validation."
@@ -38,6 +50,10 @@ foreach ($logicalDate in $dates) {
         seed_population = $isFirst
         population_size = $PopulationSize
         seed_version = "lifecycle-2026.09-multimodal-v1"
+        execution_mode = $temporalContext.execution_mode
+        time_basis = $temporalContext.time_basis
+        as_of_date = $temporalContext.as_of_date
+        scenario_id = $temporalContext.scenario_id
     } | ConvertTo-Json -Compress
     $payloadPath = [System.IO.Path]::GetTempFileName()
     $responsePath = [System.IO.Path]::GetTempFileName()

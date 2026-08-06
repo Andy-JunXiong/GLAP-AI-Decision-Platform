@@ -6,11 +6,15 @@ param(
     [datetime]$StartDate = "2026-09-08",
     [ValidateRange(1, 12)] [int]$Days = 12,
     [ValidateRange(10, 55)] [int]$MaxElapsedMinutes = 50,
+    [ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]
+    [string]$ExecutionMode = "OPERATIONAL",
+    [string]$ScenarioId = "",
     [switch]$RetryFailedRun,
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "temporal_boundary.ps1")
 if ($ControllerFunction -notmatch '^[A-Za-z0-9-_]{1,64}$') {
     throw "ControllerFunction is not a safe Lambda name"
 }
@@ -19,11 +23,19 @@ if ($RetryFailedRun -and $Days -ne 1) {
 }
 
 $dates = 0..($Days - 1) | ForEach-Object { $StartDate.Date.AddDays($_) }
+$temporalContext = Resolve-TemporalContext `
+    -LastLogicalDate $dates[-1] `
+    -ExecutionMode $ExecutionMode `
+    -ScenarioId $ScenarioId
 Write-Host "Stateful lifecycle controller extension plan"
 Write-Host "  Controller: $ControllerFunction"
 Write-Host "  First date: $($dates[0].ToString('yyyy-MM-dd'))"
 Write-Host "  Last date: $($dates[-1].ToString('yyyy-MM-dd'))"
 Write-Host "  Days: $Days"
+Write-Host "  Execution mode: $($temporalContext.execution_mode)"
+Write-Host "  Time basis: $($temporalContext.time_basis)"
+Write-Host "  Sydney as-of date: $($temporalContext.as_of_date)"
+Write-Host "  Scenario: $($temporalContext.scenario_id)"
 Write-Host "  Maximum elapsed time: $MaxElapsedMinutes minutes"
 Write-Host "  Explicit failed-date recovery: $RetryFailedRun"
 Write-Host "  Seed population: False"
@@ -58,7 +70,13 @@ foreach ($logicalDate in $dates) {
             "Resume from $day in a new invocation."
         )
     }
-    $payloadContract = @{ logical_run_date = $day }
+    $payloadContract = @{
+        logical_run_date = $day
+        execution_mode = $temporalContext.execution_mode
+        time_basis = $temporalContext.time_basis
+        as_of_date = $temporalContext.as_of_date
+        scenario_id = $temporalContext.scenario_id
+    }
     if ($RetryFailedRun) {
         $payloadContract.retry_failed_run = $true
     }

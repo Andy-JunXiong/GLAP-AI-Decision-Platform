@@ -2,6 +2,7 @@ import importlib.util
 import io
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 import sys
 import types
@@ -224,6 +225,44 @@ class PipelineControllerTests(unittest.TestCase):
         client.invoke.assert_not_called()
         persist.assert_not_called()
 
+    def test_legacy_future_status_is_archived_before_operational_run(self):
+        client = MagicMock()
+        client.invoke.side_effect = [
+            response({"status": "success"}),
+            response({"status": "success", "quality_checks": PASSED_CHECKS}),
+            response({"status": "success"}),
+        ]
+        module = load_module(lambda_client=client)
+        legacy = {
+            "schema_version": "1.0",
+            "logical_run_date": "2026-10-05",
+            "status": "succeeded",
+            "stages": [],
+        }
+        context = {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "as_of_date": "2026-08-06",
+            "scenario_id": None,
+        }
+        with patch.object(module, "load_existing_run", return_value=legacy), patch.object(
+            module, "persist_run"
+        ) as persist:
+            result = module.execute_pipeline(
+                STAGES,
+                "2026-08-06",
+                "s3://safe/status/latest.json",
+                temporal_context=context,
+            )
+        self.assertEqual(result["status"], "succeeded")
+        archived_run, archived_uri = persist.call_args_list[0].args
+        self.assertEqual(
+            archived_uri,
+            "s3://safe/status/simulations/legacy-pre-boundary-2026/latest.json",
+        )
+        self.assertEqual(archived_run["execution_mode"], "FUTURE_SIMULATION")
+        self.assertEqual(archived_run["scenario_id"], "legacy-pre-boundary-2026")
+
     def test_same_day_failure_is_reused_fail_closed(self):
         client = MagicMock()
         module = load_module(lambda_client=client)
@@ -382,6 +421,56 @@ class PipelineControllerTests(unittest.TestCase):
         ), patch.object(module, "execute_pipeline", return_value=failed_run):
             with self.assertRaisesRegex(RuntimeError, "quality_gate_failed"):
                 module.lambda_handler({"logical_run_date": "2026-08-04"}, None)
+
+    def test_handler_rejects_future_operational_date(self):
+        module = load_module()
+        now = datetime(2026, 8, 6, 2, tzinfo=timezone.utc)
+        with patch.dict(
+            os.environ,
+            {
+                "PIPELINE_STAGES_JSON": json.dumps(STAGES),
+                "PIPELINE_STATUS_S3_URI": "s3://safe/status/latest.json",
+            },
+            clear=True,
+        ), patch.object(module, "utc_now", return_value=now), patch.object(
+            module, "execute_pipeline"
+        ) as execute:
+            with self.assertRaisesRegex(ValueError, "exceeds Sydney as_of_date"):
+                module.lambda_handler({"logical_run_date": "2026-09-01"}, None)
+        execute.assert_not_called()
+
+    def test_future_simulation_uses_isolated_status_and_propagates_context(self):
+        module = load_module()
+        now = datetime(2026, 8, 6, 2, tzinfo=timezone.utc)
+        succeeded = {"status": "succeeded"}
+        with patch.dict(
+            os.environ,
+            {
+                "PIPELINE_STAGES_JSON": json.dumps(STAGES),
+                "PIPELINE_STATUS_S3_URI": "s3://safe/status/latest.json",
+                "ALLOW_FUTURE_SIMULATION": "true",
+                "PIPELINE_ENVIRONMENT": "staging",
+            },
+            clear=True,
+        ), patch.object(module, "utc_now", return_value=now), patch.object(
+            module, "execute_pipeline", return_value=succeeded
+        ) as execute:
+            result = module.lambda_handler(
+                {
+                    "logical_run_date": "2026-10-05",
+                    "execution_mode": "FUTURE_SIMULATION",
+                    "scenario_id": "q4-lifecycle-2026",
+                },
+                None,
+            )
+        self.assertEqual(result, succeeded)
+        self.assertEqual(
+            execute.call_args.args[2],
+            "s3://safe/status/simulations/q4-lifecycle-2026/latest.json",
+        )
+        context = execute.call_args.kwargs["temporal_context"]
+        self.assertEqual(context["time_basis"], "FUTURE_SIMULATION")
+        self.assertEqual(context["as_of_date"], "2026-08-06")
 
 
 if __name__ == "__main__":

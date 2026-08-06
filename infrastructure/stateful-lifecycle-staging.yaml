@@ -33,6 +33,10 @@ Parameters:
   PipelineStatusObjectArn:
     Type: String
     AllowedPattern: ^arn:[^:]+:s3:::[^/]+/.+$
+  PipelineStatusObjectsArn:
+    Type: String
+    Description: Prefix-scoped status object ARN ending in /* for isolated scenarios.
+    AllowedPattern: ^arn:[^:]+:s3:::[^/]+/.+\*$
   PipelineStatusPrefix:
     Type: String
     AllowedPattern: ^[A-Za-z0-9][A-Za-z0-9!_.*'()/=-]+$
@@ -174,6 +178,8 @@ Resources:
           RATE_CARD_TABLE: dim_rate_card_v1
           FX_RATE_TABLE: dim_fx_rate_v1
           DEFAULT_REPORTING_CURRENCY: AUD
+          PIPELINE_ENVIRONMENT: staging
+          ALLOW_FUTURE_SIMULATION: "true"
 
   LifecycleGeneratorErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -336,7 +342,9 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
-                Resource: !Ref PipelineStatusObjectArn
+                Resource:
+                  - !Ref PipelineStatusObjectArn
+                  - !Ref PipelineStatusObjectsArn
               - Sid: FindPrivateStatus
                 Effect: Allow
                 Action: s3:ListBucket
@@ -362,6 +370,8 @@ Resources:
       Environment:
         Variables:
           PIPELINE_TIMEZONE: Australia/Sydney
+          PIPELINE_ENVIRONMENT: staging
+          ALLOW_FUTURE_SIMULATION: "true"
           PIPELINE_STATUS_S3_URI: !Ref PipelineStatusS3Uri
           PIPELINE_STAGES_JSON: !Sub >-
             [{"name":"stateful_lifecycle_generation","function_name":"${FunctionName}"},

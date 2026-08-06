@@ -294,7 +294,9 @@ run
 [`30971969667`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30971969667)
 passed before integration workflow run
 [`30972254011`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30972254011)
-executed the `2026-09-01` logical date.
+executed the `2026-09-01` logical date. Relative to the `2026-08-05` execution
+date, this was a future-dated synthetic staging scenario, not real September
+history.
 
 - The chain completed `stateful_lifecycle_generation`, `lifecycle_validation`,
   and `input_validation` successfully in about 139 seconds. Generation used
@@ -330,8 +332,9 @@ applied the missing Iceberg columns, idempotent provider configuration, views,
 and unscheduled Lambda package. The integration workflow completed in 5 minutes
 59 seconds, including the one-time schema and stack updates.
 
-The isolated controller then completed each logical date from `2026-09-02`
-through `2026-09-06` in order.
+The isolated controller then completed each future-scenario logical date from
+`2026-09-02` through `2026-09-06` in order. This is technical staging evidence,
+not observed calendar history.
 
 - Every date passed all 19 lifecycle checks and all 5 compatibility-input
   checks.
@@ -346,7 +349,7 @@ through `2026-09-06` in order.
   weight. Their booking cost detail used `AIR_FREIGHT`,
   `AIR_FUEL_SURCHARGE`, `ORIGIN_HANDLING`, `SECURITY_SCREENING`, and
   `DESTINATION_HANDLING`.
-- Existing Ocean history remained in place. Compatibility views emit the
+- Existing synthetic Ocean scenario rows remained in place. Compatibility views emit the
   governed mode, preserve common P2P and delivery fields, and keep Ocean-only
   equipment null for Air.
 - The updated stack still contains no Scheduler resource. Controller and
@@ -368,7 +371,7 @@ stage.
 - Local validation passed all 99 repository tests, and
   [CI run `30980919130`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/30980919130)
   passed for commit `635a590`.
-- Logical dates `2026-09-06` and `2026-09-07` each passed all 27 staging
+- Future-scenario logical dates `2026-09-06` and `2026-09-07` each passed all 27 staging
   checks: 19 lifecycle checks plus 8 analytics checks. The Sep 7 controller
   also passed all 5 v2 compatibility checks.
 - The Sep 7 four-stage controller completed in about 163 seconds: generation
@@ -380,19 +383,20 @@ stage.
 - The provider rollup contained DHL Air, KN Ocean, and Maersk Ocean without
   duplicating shipment snapshots. Forecast features use only prior rows through
   the feature cutoff, and pending outcome rows carry no future labels.
-- All nine observed Air market lanes had an Ocean reference. Planned Air time
+- All nine generated Air market lanes had an Ocean reference. Planned Air time
   saved ranged from 349 to 602 hours. Cost premium is deliberately calculated
   on a standardized simulated weight basis, Air chargeable kilograms versus
   Ocean gross kilograms, rather than misleadingly comparing a small Air
-  shipment with a multi-container Ocean shipment. The observed range was
+  shipment with a multi-container Ocean shipment. The scenario range was
   3,728.07% to 4,173.52%.
 - The stack update still created no schedule and changed no production alias or
   production table. The views are read-only and do not materialize another
   daily data copy.
 
 This closes the governed operational-analytics foundation in isolated staging.
-It supplies analysis-ready history and prediction-ready features/labels, but it
-does not yet train or authorize a production forecasting model.
+It supplies analysis-ready synthetic scenario data and prediction-path test
+features/labels, but it does not establish real performance, train, or authorize
+a production forecasting model.
 
 ## Private forecast-validation workflow
 
@@ -416,6 +420,11 @@ evidence state and must not be represented as a failed model. Reports remain
 private workflow artifacts for 14 days; Pages publication, recurring execution,
 production writes, and policy changes are all disabled.
 
+Operational runs and reports may use dates only through the current Sydney
+business date. A later cutoff requires explicit `FUTURE_SIMULATION` mode and a
+scenario ID, is isolated from operational status, and can validate mechanics
+only. See the [temporal truthfulness contract](temporal_truthfulness.md).
+
 The frozen feature columns must first be applied with the existing lifecycle
 workflow's explicit `deploy-analytics-contract` action. That action follows the
 plan-only `AnalyticsOnly` deployment path and validates an existing logical
@@ -434,11 +443,12 @@ accumulates.
 After PR `#11` merged as commit `4348e8e`, plan-only workflow run
 `30996670988` passed. Run `30996715050` then updated only the six read-only
 analytics view definitions and passed the existing `2026-09-07` staging
-validation. It did not invoke lifecycle generation, create a schedule, change a
-production alias, or write a business table.
+future-scenario validation. It did not invoke lifecycle generation, create a
+schedule, change a production alias, or write a business table.
 
-Forecast plan run `30996809400` passed before private backtest run `30997015294`
-queried the closed `2026-08-04` through `2026-09-07` feature window.
+Forecast plan run `30996809400` passed before private scenario backtest run
+`30997015294` queried the generated `2026-08-04` through `2026-09-07` feature
+window. Dates after `2026-08-05` were future scenario dates.
 
 - Maersk Ocean had 35 observations with 100% calendar completeness, producing
   21 held-out forecasts per model. DHL Air and KN Ocean each had six complete
@@ -458,14 +468,15 @@ queried the closed `2026-08-04` through `2026-09-07` feature window.
   evidence. A post-download guard found no shipment ID, route-service ID,
   market lane, S3 URI, or AWS ARN.
 
-This validates the private forecasting workflow and the decision to retain the
-simple benchmark for the only provider with enough history. It does not close
-the DHL/KN backtest or supervised-label accumulation gates.
+This validates the private forecasting workflow mechanics. It does not prove
+real model performance or close any operational backtest or supervised-label
+accumulation gate.
 
-## Governed history extension
+## Governed scenario extension
 
 Use the manual lifecycle workflow action `extend-integration-validate` to add
-consecutive logical dates after the latest successful staging date. The action
+consecutive staging scenario dates after the latest successful scenario date.
+Operational use is restricted to the current Sydney date or earlier. The action
 invokes the isolated controller once per date and requires generation, 19
 lifecycle checks, 5 compatibility checks, and 8 analytics checks to pass before
 advancing. It stops on the first failure.
@@ -478,15 +489,16 @@ one-hour credential. Until the workflow enforces a lower bound, use no more
 than 20 dates per invocation and leave additional margin when observed stage
 duration approaches three minutes per date.
 
-## History-extension AWS evidence -- 5 August 2026
+## Future-scenario extension AWS evidence -- 5 August 2026
 
 PR `#13` merged as commit `e56b41b` after both Python 3.13 and 3.14 CI jobs
 passed in run `30997968931`. Plan run `30998092491` then validated the no-seed,
 no-deploy extension for `2026-09-08` through `2026-10-05`.
 
-Apply run `30998141662` completed 23 consecutive dates from `2026-09-08`
-through `2026-09-30`. Each date returned the exact four-stage contract and all
-32 checks passed. At the next invocation, the GitHub caller's OIDC credentials
+Apply run `30998141662` completed 23 consecutive future-scenario dates from
+`2026-09-08` through `2026-09-30`. Each date returned the exact four-stage
+contract and all 32 checks passed. This proves scenario pipeline behavior, not
+real September operations. At the next invocation, the GitHub caller's OIDC credentials
 expired after one hour. The AWS CLI therefore failed before receiving the
 normal `2026-10-01` controller response.
 

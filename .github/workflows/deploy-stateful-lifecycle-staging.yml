@@ -17,6 +17,19 @@ on:
           - extend-integration-validate
           - deploy-recovery-controller
           - recover-failed-integration-date
+      execution_mode:
+        description: Real calendar boundary or explicitly isolated future simulation
+        required: true
+        type: choice
+        default: OPERATIONAL
+        options:
+          - OPERATIONAL
+          - FUTURE_SIMULATION
+      scenario_id:
+        description: Required safe identifier only for FUTURE_SIMULATION
+        required: false
+        type: string
+        default: ""
       load_initial_seed:
         description: Load Q3 seed once; leave false on repeat deployments
         required: true
@@ -31,7 +44,7 @@ on:
         description: Number of logical dates
         required: true
         type: number
-        default: 28
+        default: 3
       population_size:
         description: Initial active shipment population
         required: true
@@ -41,7 +54,7 @@ on:
         description: One isolated date after the replay range (YYYY-MM-DD)
         required: true
         type: string
-        default: "2026-09-02"
+        default: "2026-08-06"
 
 permissions:
   contents: read
@@ -96,6 +109,15 @@ jobs:
           [[ "$ATHENA_OUTPUT" =~ ^s3://[^/]+/.+ ]]
           [[ "${{ inputs.replay_start_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
           [[ "${{ inputs.integration_logical_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+          replay_last=$(date -u -d "${{ inputs.replay_start_date }} + $(( ${{ inputs.replay_days }} - 1 )) days" +%F)
+          sydney_today=$(TZ=Australia/Sydney date +%F)
+          if [[ "${{ inputs.execution_mode }}" == "OPERATIONAL" ]]; then
+            test -z "${{ inputs.scenario_id }}"
+            [[ "$replay_last" < "$sydney_today" || "$replay_last" == "$sydney_today" ]]
+            [[ "${{ inputs.integration_logical_date }}" < "$sydney_today" || "${{ inputs.integration_logical_date }}" == "$sydney_today" ]]
+          else
+            [[ "${{ inputs.scenario_id }}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$ ]]
+          fi
           test "${{ inputs.replay_days }}" -ge 1
           test "${{ inputs.replay_days }}" -le 90
           if [[ "${{ inputs.action }}" == "extend-integration-validate" ]]; then
@@ -157,7 +179,9 @@ jobs:
             -FunctionName $env:FUNCTION_NAME `
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
-            -PopulationSize ${{ inputs.population_size }}
+            -PopulationSize ${{ inputs.population_size }} `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}"
           $action = "${{ inputs.action }}"
           if ($action -in @("plan", "extend-integration-validate", "recover-failed-integration-date")) {
             $extensionPlan = @{
@@ -166,6 +190,8 @@ jobs:
               StartDate = "${{ inputs.replay_start_date }}"
               Days = [Math]::Min([int]"${{ inputs.replay_days }}", 12)
               MaxElapsedMinutes = 50
+              ExecutionMode = "${{ inputs.execution_mode }}"
+              ScenarioId = "${{ inputs.scenario_id }}"
             }
             if ($action -eq "recover-failed-integration-date") {
               $extensionPlan.RetryFailedRun = $true
@@ -243,6 +269,27 @@ jobs:
             -AnalyticsOnly `
             -Apply
 
+      - name: Verify deployed temporal truthfulness guard
+        if: inputs.action == 'deploy-recovery-controller'
+        shell: bash
+        run: |
+          tomorrow=$(TZ=Australia/Sydney date -d tomorrow +%F)
+          operational_metadata=$(aws lambda invoke \
+            --function-name "$CONTROLLER_FUNCTION" \
+            --cli-binary-format raw-in-base64-out \
+            --payload "{\"logical_run_date\":\"$tomorrow\",\"execution_mode\":\"OPERATIONAL\",\"dry_run\":true}" \
+            operational-boundary-response.json)
+          test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$operational_metadata")" = "Unhandled"
+          python -c 'import json; data=json.load(open("operational-boundary-response.json")); assert "exceeds Sydney as_of_date" in data["errorMessage"], data'
+
+          simulation_metadata=$(aws lambda invoke \
+            --function-name "$CONTROLLER_FUNCTION" \
+            --cli-binary-format raw-in-base64-out \
+            --payload "{\"logical_run_date\":\"$tomorrow\",\"execution_mode\":\"FUTURE_SIMULATION\",\"scenario_id\":\"temporal-boundary-smoke\",\"dry_run\":true}" \
+            simulation-boundary-response.json)
+          test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$simulation_metadata")" = ""
+          python -c 'import json; data=json.load(open("simulation-boundary-response.json")); assert data["status"] == "succeeded" and data["dry_run"] is True, data; assert data["execution_mode"] == "FUTURE_SIMULATION" and data["time_basis"] == "FUTURE_SIMULATION", data; assert data["scenario_id"] == "temporal-boundary-smoke", data; assert all(stage["status"] == "not_invoked" for stage in data["stages"]), data'
+
       - name: Validate deployed analytics contract
         if: inputs.action == 'deploy-analytics-contract'
         shell: pwsh
@@ -266,6 +313,8 @@ jobs:
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
             -PopulationSize ${{ inputs.population_size }} `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Reconcile every logical date
@@ -290,7 +339,7 @@ jobs:
             --cli-binary-format raw-in-base64-out \
             --cli-read-timeout 900 \
             --cli-connect-timeout 60 \
-            --payload '{"logical_run_date":"${{ inputs.integration_logical_date }}"}' \
+            --payload '{"logical_run_date":"${{ inputs.integration_logical_date }}","execution_mode":"${{ inputs.execution_mode }}","scenario_id":"${{ inputs.scenario_id }}"}' \
             integration-response.json)
           test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$metadata")" = ""
           python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation", "analytics_validation"], stages; assert len(stages[1]["quality_checks"]) == 19 and len(stages[2]["quality_checks"]) == 5 and len(stages[3]["quality_checks"]) == 8, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
@@ -305,6 +354,8 @@ jobs:
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
             -MaxElapsedMinutes 50 `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Recover one failed lifecycle date through governed controller
@@ -317,6 +368,8 @@ jobs:
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days 1 `
             -MaxElapsedMinutes 50 `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -RetryFailedRun `
             -Apply
 
@@ -327,6 +380,9 @@ jobs:
           {
             echo "## Stateful lifecycle staging"
             echo "- Requested action: \`${{ inputs.action }}\`"
+            echo "- Execution mode: \`${{ inputs.execution_mode }}\`"
+            echo "- Scenario ID: \`${{ inputs.scenario_id }}\`"
+            echo "- Time basis: \`${{ inputs.execution_mode == 'FUTURE_SIMULATION' && 'FUTURE_SIMULATION' || 'ACTUAL_CALENDAR' }}\`"
             echo "- Logical dates: \`${{ inputs.replay_start_date }}\` + ${{ inputs.replay_days }} days"
             echo "- Initial population: \`${{ inputs.population_size }}\`"
             echo "- Integration logical date: \`${{ inputs.integration_logical_date }}\`"

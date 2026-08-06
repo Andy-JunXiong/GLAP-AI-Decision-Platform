@@ -6,16 +6,20 @@ param(
     [Parameter(Mandatory)] [string]$AthenaOutputUri,
     [string]$Workgroup = "primary",
     [datetime]$CohortStartDate = "2026-08-04",
-    [datetime]$CutoffDate = "2026-09-07",
+    [datetime]$CutoffDate = "2026-08-06",
     [ValidateRange(1, 100000)] [int]$MinimumObserved = 200,
     [ValidateRange(1, 100000)] [int]$MinimumClass = 20,
     [ValidateRange(2, 100000)] [int]$MinimumCostDistinct = 10,
     [ValidateRange(1, 1099511627776)] [int64]$MaxScanBytes = 104857600,
     [string]$OutputDirectory = "artifacts/forecast-backtest",
+    [ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]
+    [string]$ExecutionMode = "OPERATIONAL",
+    [string]$ScenarioId = "",
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "temporal_boundary.ps1")
 if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "SourceDatabase is not a safe Athena identifier"
 }
@@ -25,6 +29,10 @@ if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+') {
 if ($CohortStartDate.Date -gt $CutoffDate.Date) {
     throw "CohortStartDate must not be after CutoffDate"
 }
+$temporalContext = Resolve-TemporalContext `
+    -LastLogicalDate $CutoffDate `
+    -ExecutionMode $ExecutionMode `
+    -ScenarioId $ScenarioId
 
 $root = Split-Path $PSScriptRoot -Parent
 $rootPath = [IO.Path]::GetFullPath($root).TrimEnd(
@@ -50,6 +58,10 @@ Write-Host "  Booking cohort: $firstDay through $lastDay"
 Write-Host "  Required observed labels: $MinimumObserved per mode/provider"
 Write-Host "  Required binary class labels: $MinimumClass per class"
 Write-Host "  Pending labels used for training: False"
+Write-Host "  Execution mode: $($temporalContext.execution_mode)"
+Write-Host "  Time basis: $($temporalContext.time_basis)"
+Write-Host "  Sydney as-of date: $($temporalContext.as_of_date)"
+Write-Host "  Scenario: $($temporalContext.scenario_id)"
 Write-Host "  Production writes: False"
 
 if (-not $Apply) {
@@ -65,6 +77,7 @@ $query = @"
 WITH boundary AS (
     SELECT max(label_observed_through_date) AS source_latest_date
     FROM $SourceDatabase.vw_multimodal_outcome_label_v1
+    WHERE label_observed_through_date <= DATE '$lastDay'
 ), cohort AS (
     SELECT labels.*
     FROM $SourceDatabase.vw_multimodal_outcome_label_v1 AS labels
@@ -160,6 +173,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+$report | Add-Member -NotePropertyName temporal_context -NotePropertyValue ([ordered]@{
+    execution_mode = $temporalContext.execution_mode
+    time_basis = $temporalContext.time_basis
+    as_of_date = $temporalContext.as_of_date
+    scenario_id = $temporalContext.scenario_id
+})
 $scannedBytes = [int64]$execution.QueryExecution.Statistics.DataScannedInBytes
 $report | Add-Member -NotePropertyName athena_evidence -NotePropertyValue ([ordered]@{
     query_execution_id = $queryId

@@ -6,14 +6,18 @@ param(
     [Parameter(Mandatory)] [string]$AthenaOutputUri,
     [string]$Workgroup = "primary",
     [datetime]$StartDate = "2026-08-04",
-    [datetime]$EndDate = "2026-09-07",
+    [datetime]$EndDate = "2026-08-06",
     [ValidateRange(2, 90)] [int]$MinimumHistory = 14,
     [ValidateRange(1, 1099511627776)] [int64]$MaxScanBytes = 104857600,
     [string]$OutputDirectory = "artifacts/forecast-backtest",
+    [ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]
+    [string]$ExecutionMode = "OPERATIONAL",
+    [string]$ScenarioId = "",
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "temporal_boundary.ps1")
 if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "SourceDatabase is not a safe Athena identifier"
 }
@@ -23,6 +27,10 @@ if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+') {
 if ($StartDate.Date -gt $EndDate.Date) {
     throw "StartDate must not be after EndDate"
 }
+$temporalContext = Resolve-TemporalContext `
+    -LastLogicalDate $EndDate `
+    -ExecutionMode $ExecutionMode `
+    -ScenarioId $ScenarioId
 
 $root = Split-Path $PSScriptRoot -Parent
 $rootPath = [IO.Path]::GetFullPath($root).TrimEnd(
@@ -46,6 +54,10 @@ Write-Host "Multimodal forecast backtest plan"
 Write-Host "  Source: $SourceDatabase.vw_multimodal_forecast_feature_daily_v1"
 Write-Host "  Window: $firstDay through $lastDay"
 Write-Host "  Minimum history: $MinimumHistory rows per mode/provider"
+Write-Host "  Execution mode: $($temporalContext.execution_mode)"
+Write-Host "  Time basis: $($temporalContext.time_basis)"
+Write-Host "  Sydney as-of date: $($temporalContext.as_of_date)"
+Write-Host "  Scenario: $($temporalContext.scenario_id)"
 Write-Host "  Output: $outputPath"
 Write-Host "  Production writes: False"
 Write-Host "  Recurring schedule: False"
@@ -136,6 +148,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+$report | Add-Member -NotePropertyName temporal_context -NotePropertyValue ([ordered]@{
+    execution_mode = $temporalContext.execution_mode
+    time_basis = $temporalContext.time_basis
+    as_of_date = $temporalContext.as_of_date
+    scenario_id = $temporalContext.scenario_id
+})
 $scannedBytes = [int64]$execution.QueryExecution.Statistics.DataScannedInBytes
 $report | Add-Member -NotePropertyName athena_evidence -NotePropertyValue ([ordered]@{
     query_execution_id = $queryId
