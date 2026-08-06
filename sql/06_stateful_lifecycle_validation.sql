@@ -5,28 +5,64 @@ WITH current_snapshot AS (
     SELECT *
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 previous_snapshot AS (
     SELECT *
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
     WHERE try_cast(dt AS date) = date_add('day', -1, DATE '{{LOGICAL_RUN_DATE}}')
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 current_metrics AS (
     SELECT *
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_metrics_staging_v1
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 current_signals AS (
     SELECT *
     FROM {{SOURCE_DATABASE}}.fact_shipment_signal_candidate_staging_v1
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 booking_cohort AS (
     SELECT DISTINCT shipment_id, carrier, coalesce(transport_mode, 'OCEAN') AS transport_mode
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
     WHERE try_cast(dt AS date) BETWEEN date_add('day', -27, DATE '{{LOGICAL_RUN_DATE}}')
                                    AND DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
       AND CAST(booking_at AS date) BETWEEN DATE '2026-09-02' AND DATE '{{LOGICAL_RUN_DATE}}'
+),
+temporal_rows AS (
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_event_staging_v1
+    WHERE logical_run_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_shipment_cost_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_metrics_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_shipment_signal_candidate_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 checks AS (
     SELECT 'duplicate_snapshot_key' AS check_name, count(*) AS failure_count
@@ -91,6 +127,7 @@ checks AS (
         SELECT shipment_id, round(sum(amount), 2) AS expected_cost
         FROM {{SOURCE_DATABASE}}.fact_shipment_cost_staging_v1
         WHERE cost_status = 'EXPECTED'
+          AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
         GROUP BY shipment_id
     ) AS cost USING (shipment_id)
     WHERE shipment.expected_total_cost IS NOT NULL
@@ -169,6 +206,20 @@ checks AS (
               IF(100.0 * count_if(transport_mode = 'AIR') / count(*) BETWEEN 15.0 AND 20.0,
                  0, 1))
     FROM booking_cohort
+    UNION ALL
+    SELECT 'invalid_temporal_provenance', count(*)
+    FROM temporal_rows
+    WHERE as_of_date IS NULL
+       OR execution_mode NOT IN ('OPERATIONAL', 'FUTURE_SIMULATION')
+       OR time_basis <> IF(
+            execution_mode = 'OPERATIONAL', 'ACTUAL_CALENDAR', 'FUTURE_SIMULATION'
+       )
+       OR temporal_scope_id <> IF(
+            execution_mode = 'OPERATIONAL',
+            'OPERATIONAL', concat('SIMULATION:', execution_scenario_id)
+       )
+       OR (execution_mode = 'OPERATIONAL' AND execution_scenario_id IS NOT NULL)
+       OR (execution_mode = 'FUTURE_SIMULATION' AND execution_scenario_id IS NULL)
 )
 SELECT check_name, failure_count
 FROM checks

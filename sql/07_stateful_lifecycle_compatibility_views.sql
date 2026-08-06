@@ -2,7 +2,7 @@
 -- They match the deployed v2 input shapes without writing to current v2 tables.
 -- All derived identity, allocation and risk values remain explicitly simulated.
 
-CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_v2_compat AS
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_v2_compat_context AS
 SELECT
     shipment_id,
     route_service_id AS route_id,
@@ -27,10 +27,15 @@ SELECT
     IF(coalesce(transport_mode, 'OCEAN') = 'OCEAN', equipment_type, NULL)
         AS ocean_shipment_type,
     journey_exception_type AS customs_exception_type,
+    temporal_scope_id,
+    execution_mode,
+    time_basis,
+    as_of_date,
+    execution_scenario_id,
     dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1;
 
-CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_event_v2_compat AS
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_event_v2_compat_context AS
 SELECT
     shipment_id,
     coalesce(leg_seq, CASE
@@ -42,10 +47,15 @@ SELECT
     CAST(event_time AS varchar) AS event_ts,
     location AS location_code,
     'SIMULATED' AS event_source_flag,
+    temporal_scope_id,
+    execution_mode,
+    time_basis,
+    as_of_date,
+    execution_scenario_id,
     CAST(logical_run_date AS varchar) AS dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_event_staging_v1;
 
-CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_leg_metrics_v2_compat AS
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_leg_metrics_v2_compat_context AS
 SELECT
     metric.shipment_id,
     2 AS leg_seq,
@@ -72,13 +82,19 @@ SELECT
     shipment.origin_port,
     shipment.destination_port,
     try_cast(metric.dt AS date) AS run_date,
+    metric.temporal_scope_id,
+    metric.execution_mode,
+    metric.time_basis,
+    metric.as_of_date,
+    metric.execution_scenario_id,
     metric.dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_metrics_staging_v1 AS metric
 JOIN {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1 AS shipment
-  ON metric.shipment_id = shipment.shipment_id
- AND metric.dt = shipment.dt;
+ ON metric.shipment_id = shipment.shipment_id
+ AND metric.dt = shipment.dt
+ AND metric.temporal_scope_id = shipment.temporal_scope_id;
 
-CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_cost_v2_compat AS
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_cost_v2_compat_context AS
 SELECT
     shipment_id,
     route_service_id AS route_id,
@@ -106,10 +122,15 @@ SELECT
             )
         AS double
     ) AS cost_per_unit,
+    temporal_scope_id,
+    execution_mode,
+    time_basis,
+    as_of_date,
+    execution_scenario_id,
     dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1;
 
-CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_risk_v2_compat AS
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_risk_v2_compat_context AS
 SELECT
     shipment.shipment_id,
     least(1.0, greatest(
@@ -131,13 +152,19 @@ SELECT
         IF(shipment.journey_exception_type IS NULL, 0.01, 0.06)
     ) AS overall_risk_score,
     try_cast(shipment.dt AS date) AS risk_dt,
+    shipment.temporal_scope_id,
+    shipment.execution_mode,
+    shipment.time_basis,
+    shipment.as_of_date,
+    shipment.execution_scenario_id,
     shipment.dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1 AS shipment
 JOIN {{SOURCE_DATABASE}}.fact_shipment_lifecycle_metrics_staging_v1 AS metric
-  ON shipment.shipment_id = metric.shipment_id
- AND shipment.dt = metric.dt;
+ ON shipment.shipment_id = metric.shipment_id
+ AND shipment.dt = metric.dt
+ AND shipment.temporal_scope_id = metric.temporal_scope_id;
 
-CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_product_allocation_v2_compat AS
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_product_allocation_v2_compat_context AS
 SELECT
     shipment_id,
     concat('SIM-PRODUCT-', substr(to_hex(md5(to_utf8(shipment_id))), 1, 8))
@@ -145,5 +172,48 @@ SELECT
     coalesce(piece_count, container_count * 100) AS unit_qty,
     CAST(coalesce(gross_weight_kg, container_count * 24000.0) AS double)
         AS allocated_weight,
+    temporal_scope_id,
+    execution_mode,
+    time_basis,
+    as_of_date,
+    execution_scenario_id,
     dt
 FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1;
+
+-- Default compatibility names are fail-closed operational surfaces. Explicit
+-- simulations must use the *_context views and filter one temporal_scope_id.
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_v2_compat AS
+SELECT * FROM {{SOURCE_DATABASE}}.vw_lifecycle_shipment_v2_compat_context
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR';
+
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_shipment_event_v2_compat AS
+SELECT * FROM {{SOURCE_DATABASE}}.vw_lifecycle_shipment_event_v2_compat_context
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR';
+
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_leg_metrics_v2_compat AS
+SELECT * FROM {{SOURCE_DATABASE}}.vw_lifecycle_leg_metrics_v2_compat_context
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR';
+
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_cost_v2_compat AS
+SELECT * FROM {{SOURCE_DATABASE}}.vw_lifecycle_cost_v2_compat_context
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR';
+
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_risk_v2_compat AS
+SELECT * FROM {{SOURCE_DATABASE}}.vw_lifecycle_risk_v2_compat_context
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR';
+
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_product_allocation_v2_compat AS
+SELECT * FROM {{SOURCE_DATABASE}}.vw_lifecycle_product_allocation_v2_compat_context
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR';

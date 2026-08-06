@@ -342,7 +342,7 @@ jobs:
             --payload '{"logical_run_date":"${{ inputs.integration_logical_date }}","execution_mode":"${{ inputs.execution_mode }}","scenario_id":"${{ inputs.scenario_id }}"}' \
             integration-response.json)
           test "$(python -c 'import json,sys; print(json.load(sys.stdin).get("FunctionError", ""))' <<< "$metadata")" = ""
-          python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation", "analytics_validation"], stages; assert len(stages[1]["quality_checks"]) == 19 and len(stages[2]["quality_checks"]) == 5 and len(stages[3]["quality_checks"]) == 8, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
+          python -c 'import json; data=json.load(open("integration-response.json")); stages=data["stages"]; assert data["status"] == "succeeded", data; assert [s["name"] for s in stages] == ["stateful_lifecycle_generation", "lifecycle_validation", "input_validation", "analytics_validation"], stages; assert len(stages[1]["quality_checks"]) == 20 and len(stages[2]["quality_checks"]) == 5 and len(stages[3]["quality_checks"]) == 8, stages; assert all(c["status"] == "passed" for s in stages[1:] for c in s["quality_checks"]), stages'
 
       - name: Extend lifecycle through governed controller
         if: inputs.action == 'extend-integration-validate'

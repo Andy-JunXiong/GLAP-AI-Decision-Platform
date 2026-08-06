@@ -21,6 +21,26 @@ under `simulations/<scenario_id>/latest.json` instead of the operational
 `latest.json`; reports also record the execution mode, scenario ID, Sydney
 as-of date, and `FUTURE_SIMULATION` time basis.
 
+## Row identity and query isolation
+
+Every lifecycle snapshot, event, cost, metric, and signal row carries the same
+five-field temporal identity:
+
+- `temporal_scope_id`: `OPERATIONAL` or `SIMULATION:<scenario_id>`;
+- `execution_mode` and `time_basis`;
+- the system-derived `as_of_date`; and
+- `execution_scenario_id`, which is null for operational rows.
+
+`temporal_scope_id` is part of every Iceberg MERGE key and previous-day lookup.
+As a result, the same shipment and logical date may exist in multiple explicit
+scenarios without overwriting or continuing one another. Quality validation
+also selects one scope and rejects internally inconsistent temporal labels.
+
+Default compatibility, OPS, forecast-feature, and outcome-label views expose
+only `OPERATIONAL` / `ACTUAL_CALENDAR` rows. Their explicitly named
+`*_context*` counterparts retain all scopes for governed scenario work and
+must always be queried with one `temporal_scope_id`.
+
 ## Evidence rules
 
 - Future simulations may test lifecycle transitions, quality gates, recovery,
@@ -44,3 +64,10 @@ label evidence. On the first later operational run, a legacy untagged future
 status is archived under the `legacy-pre-boundary-2026` scenario before the
 operational pointer is replaced. Operational evidence can accumulate only as
 calendar dates actually arrive and governed runs complete.
+
+The one-time `sql/12_temporal_scope_backfill.sql` migration permanently marks
+pre-existing rows after `2026-08-06` as
+`SIMULATION:legacy-pre-boundary-2026`. The migration is plan-only unless
+`ops/backfill_temporal_scope.ps1 -Apply` is explicitly approved. This permanent
+row label prevents old September or October scenario rows from becoming
+operational merely because the calendar later reaches those dates.

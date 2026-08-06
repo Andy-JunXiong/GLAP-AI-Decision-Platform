@@ -16,6 +16,10 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   path only and are not real forecast-performance evidence.
 - [x] Keep supervised training blocked: future-scenario outcomes do not count
   as operationally observed labels or establish label readiness.
+- [x] Add permanent row-level temporal identities, scenario-aware write keys,
+  quality checks, and operational-only default analytics in the repository.
+- [ ] After merge approval, deploy the five-column schema evolution and apply
+  the reviewed `2026-08-06` legacy-row backfill before replacing the views.
 - [ ] Accumulate real closed outcomes only as their Sydney calendar dates
   arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and

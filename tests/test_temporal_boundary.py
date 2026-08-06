@@ -17,6 +17,19 @@ NOW = datetime(2026, 8, 6, 2, tzinfo=timezone.utc)
 
 
 class TemporalBoundaryTests(unittest.TestCase):
+    def test_temporal_scope_id_is_stable_and_non_null(self):
+        self.assertEqual(
+            boundary.temporal_scope_id(
+                {"execution_mode": "OPERATIONAL", "scenario_id": None}
+            ),
+            "OPERATIONAL",
+        )
+        self.assertEqual(
+            boundary.temporal_scope_id(
+                {"execution_mode": "FUTURE_SIMULATION", "scenario_id": "capacity-shock"}
+            ),
+            "SIMULATION:capacity-shock",
+        )
     def test_operational_mode_accepts_today_and_rejects_future(self):
         context = boundary.resolve_temporal_context(
             "2026-08-06", {}, now=NOW, allow_future_simulation=False

@@ -142,6 +142,8 @@ Copy-Item -LiteralPath (Join-Path $root "lambda/glap_data_quality_gate.py") `
     -Destination (Join-Path $qualityPackageDir "lambda_function.py") -Force
 Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
     -Destination (Join-Path $qualityPackageDir "glap_quality_contracts.py") -Force
+Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+    -Destination (Join-Path $qualityPackageDir "glap_temporal_boundary.py") -Force
 Copy-Item -LiteralPath (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") `
     -Destination (Join-Path $qualityPackageDir "lifecycle_validation.sql") -Force
 Copy-Item -LiteralPath (Join-Path $root "sql/10_multimodal_ops_validation.sql") `
@@ -149,6 +151,7 @@ Copy-Item -LiteralPath (Join-Path $root "sql/10_multimodal_ops_validation.sql") 
 Compress-Archive -LiteralPath `
     (Join-Path $qualityPackageDir "lambda_function.py"), `
     (Join-Path $qualityPackageDir "glap_quality_contracts.py"), `
+    (Join-Path $qualityPackageDir "glap_temporal_boundary.py"), `
     (Join-Path $qualityPackageDir "lifecycle_validation.sql"), `
     (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
     -DestinationPath $qualityArchivePath -Force

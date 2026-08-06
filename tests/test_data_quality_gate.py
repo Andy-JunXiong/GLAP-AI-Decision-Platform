@@ -155,8 +155,10 @@ class DataQualityGateTests(unittest.TestCase):
             )
         self.assertEqual(set(result["quality_checks"]), set(module.LIFECYCLE_CHECK_NAMES))
         self.assertTrue(all(value == "passed" for value in result["quality_checks"].values()))
-        self.assertEqual(result["metrics"]["check_count"], 19)
-        validate.assert_called_once_with("2026-09-01", "simulated_iceberg_m")
+        self.assertEqual(result["metrics"]["check_count"], 20)
+        validate.assert_called_once_with(
+            "2026-09-01", "simulated_iceberg_m", "OPERATIONAL"
+        )
 
     def test_multimodal_analytics_handler_emits_exact_check_contract(self):
         module = load_module()
@@ -180,7 +182,9 @@ class DataQualityGateTests(unittest.TestCase):
             all(value == "passed" for value in result["quality_checks"].values())
         )
         self.assertEqual(result["metrics"]["check_count"], 8)
-        validate.assert_called_once_with("2026-09-07", "simulated_iceberg_m")
+        validate.assert_called_once_with(
+            "2026-09-07", "simulated_iceberg_m", "OPERATIONAL"
+        )
 
     def test_multimodal_analytics_query_is_single_safe_statement(self):
         module = load_module()
@@ -188,12 +192,30 @@ class DataQualityGateTests(unittest.TestCase):
             "2026-09-07", "simulated_iceberg_m"
         )
         self.assertIn("DATE '2026-09-07'", query)
-        self.assertIn("vw_multimodal_mode_decision_v1", query)
+        self.assertIn("vw_multimodal_mode_decision_context_v1", query)
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", query)
         self.assertNotIn("{{", query)
         with self.assertRaises(ValueError):
             module.render_multimodal_analytics_validation_query(
                 "2026-09-07", "unsafe;drop"
             )
+
+    def test_future_simulation_quality_queries_are_scenario_isolated(self):
+        module = load_module()
+        query = module.build_input_quality_query(
+            "2026-09-07",
+            "simulated_iceberg_m",
+            "lifecycle_compat_v2",
+            "SIMULATION:capacity-shock",
+        )
+        self.assertIn("vw_lifecycle_shipment_v2_compat_context", query)
+        self.assertIn("temporal_scope_id = 'SIMULATION:capacity-shock'", query)
+        analytics = module.render_multimodal_analytics_validation_query(
+            "2026-09-07",
+            "simulated_iceberg_m",
+            temporal_scope_id="SIMULATION:capacity-shock",
+        )
+        self.assertIn("temporal_scope_id = 'SIMULATION:capacity-shock'", analytics)
 
     def test_validation_result_rejects_duplicate_checks(self):
         module = load_module()

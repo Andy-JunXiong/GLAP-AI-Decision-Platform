@@ -166,7 +166,12 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v
     piece_count int,
     gross_weight_kg decimal(18,2),
     volume_cbm decimal(18,3),
-    chargeable_weight_kg decimal(18,2)
+    chargeable_weight_kg decimal(18,2),
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
 )
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_lifecycle_staging_v1/'
@@ -186,7 +191,12 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_lifecycle_event_sta
     transport_mode string,
     segment_type string,
     leg_seq int,
-    location_type string
+    location_type string,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
 )
 PARTITIONED BY (logical_run_date)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_lifecycle_event_staging_v1/'
@@ -205,7 +215,12 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_cost_staging_v1 (
     rate_card_id string,
     rate_card_version string,
     cost_status string,
-    created_at timestamp
+    created_at timestamp,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
 )
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_cost_staging_v1/'
@@ -234,7 +249,12 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_lifecycle_metrics_s
     origin_performance string,
     origin_delay_hours double,
     destination_release_performance string,
-    destination_release_delay_hours double
+    destination_release_delay_hours double,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
 )
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_lifecycle_metrics_staging_v1/'
@@ -253,7 +273,12 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_signal_candidate_st
     severity string,
     candidate_status string,
     simulation_provenance string,
-    computed_at timestamp
+    computed_at timestamp,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
 )
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_signal_candidate_staging_v1/'

@@ -85,7 +85,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertEqual(len(statements(ROOT / "sql" / "06_stateful_lifecycle_validation.sql")), 2)
         self.assertEqual(
             len(statements(ROOT / "sql" / "07_stateful_lifecycle_compatibility_views.sql")),
-            6,
+            12,
         )
         self.assertEqual(
             len(statements(ROOT / "sql" / "08_stateful_lifecycle_multimodal_seed.sql")),
@@ -93,7 +93,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         )
         self.assertEqual(
             len(statements(ROOT / "sql" / "09_multimodal_ops_analytics.sql")),
-            6,
+            12,
         )
         self.assertEqual(
             len(statements(ROOT / "sql" / "10_multimodal_ops_validation.sql")),
@@ -102,6 +102,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertEqual(
             len(statements(ROOT / "sql" / "11_stateful_lifecycle_q4_rate_rollover.sql")),
             3,
+        )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "12_temporal_scope_backfill.sql")),
+            5,
         )
 
     def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
