@@ -13,6 +13,8 @@ Parameters:
     Type: String
   QualityGateArtifactKey:
     Type: String
+  ActionMutationArtifactKey:
+    Type: String
   AthenaOutputUri:
     Type: String
     AllowedPattern: ^s3://[^/]+/.+$
@@ -64,8 +66,106 @@ Parameters:
   IntegrationQualityGateRoleName:
     Type: String
     Default: glap-stateful-lifecycle-quality-gate-staging-role
+  ActionMutationFunctionName:
+    Type: String
+    Default: glap-lifecycle-action-mutation-staging
+  ActionMutationRoleName:
+    Type: String
+    Default: glap-lifecycle-action-mutation-staging-role
 
 Resources:
+  ActionMutationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref ActionMutationRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PrivateActionMutationOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ActionMutationFunctionName}:*
+              - Sid: RunAthena
+                Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                  - athena:GetWorkGroup
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AthenaWorkgroup}
+              - Sid: ReadActionCatalog
+                Effect: Allow
+                Action:
+                  - glue:GetDatabase
+                  - glue:GetTable
+                  - glue:GetPartitions
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${SourceDatabase}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_audit_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1
+              - Sid: ReadWritePrivateLifecyclePrefix
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:AbortMultipartUpload
+                Resource: !Ref LifecycleDataObjectArn
+              - Sid: ListPrivateLifecycleBucket
+                Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource: !Ref LifecycleDataBucketArn
+              - Sid: UseAthenaResults
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}/${AthenaResultsPrefix}*
+              - Sid: LocateAthenaResults
+                Effect: Allow
+                Action: s3:GetBucketLocation
+                Resource: !Sub arn:${AWS::Partition}:s3:::${AthenaResultsBucketName}
+
+  ActionMutationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref ActionMutationFunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt ActionMutationRole.Arn
+      Timeout: 180
+      MemorySize: 256
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref ActionMutationArtifactKey
+      Environment:
+        Variables:
+          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
+          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          LIFECYCLE_ACTION_CURRENT_VIEW: vw_lifecycle_action_current_staging_v1
+          LIFECYCLE_ACTION_AUDIT_TABLE: fact_lifecycle_action_audit_staging_v1
+          PIPELINE_ENVIRONMENT: staging
+          ALLOW_FUTURE_SIMULATION: "true"
+
   LifecycleGeneratorRole:
     Type: AWS::IAM::Role
     Properties:
@@ -125,6 +225,8 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_outcome_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_policy_proposal_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_audit_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1
               - Sid: UseLakeFormation
                 Effect: Allow
                 Action: lakeformation:GetDataAccess
@@ -181,6 +283,7 @@ Resources:
           LIFECYCLE_ACTION_TABLE: fact_lifecycle_action_staging_v1
           LIFECYCLE_OUTCOME_TABLE: fact_lifecycle_outcome_staging_v1
           POLICY_PROPOSAL_TABLE: fact_policy_proposal_staging_v1
+          LIFECYCLE_ACTION_CURRENT_VIEW: vw_lifecycle_action_current_staging_v1
           ROUTE_SERVICE_TABLE: dim_route_service_v1
           LIFECYCLE_TARGET_TABLE: dim_lifecycle_target_v1
           RATE_CARD_TABLE: dim_rate_card_v1
@@ -262,6 +365,8 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_outcome_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_policy_proposal_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_audit_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_shipment_v2_compat
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_shipment_event_v2_compat
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_leg_metrics_v2_compat
@@ -414,3 +519,5 @@ Outputs:
     Value: !Ref IntegrationQualityGateFunction
   PipelineStatusS3Uri:
     Value: !Ref PipelineStatusS3Uri
+  ActionMutationFunctionName:
+    Value: !Ref ActionMutationFunction

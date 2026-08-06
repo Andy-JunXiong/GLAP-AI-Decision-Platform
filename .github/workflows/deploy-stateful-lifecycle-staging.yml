@@ -292,6 +292,7 @@ jobs:
             -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
             -ControllerArtifactKey "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip" `
             -QualityGateArtifactKey "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip" `
+            -ActionMutationArtifactKey "$env:ARTIFACT_PREFIX/action-mutation-${{ github.sha }}.zip" `
             -Apply
 
       - name: Deploy read-only analytics contract

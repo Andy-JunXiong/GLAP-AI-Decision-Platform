@@ -39,7 +39,7 @@ Write-Host "  Scenario: $($temporalContext.scenario_id)"
 Write-Host "  Maximum elapsed time: $MaxElapsedMinutes minutes"
 Write-Host "  Explicit failed-date recovery: $RetryFailedRun"
 Write-Host "  Seed population: False"
-Write-Host "  Expected checks per date: 26 lifecycle + 5 compatibility + 8 analytics"
+Write-Host "  Expected checks per date: 28 lifecycle + 5 compatibility + 8 analytics"
 Write-Host "  Production alias or schedule: False"
 
 if (-not $Apply) {
@@ -57,7 +57,7 @@ $expectedStages = @(
     "input_validation",
     "analytics_validation"
 )
-$expectedCheckCounts = @(0, 26, 5, 8)
+$expectedCheckCounts = @(0, 28, 5, 8)
 $minimumRemainingMinutes = 5
 $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 

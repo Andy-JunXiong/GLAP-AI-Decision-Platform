@@ -9,6 +9,8 @@ param(
     [string]$IntegrationControllerRoleName = "glap-stateful-lifecycle-controller-staging-role",
     [string]$IntegrationQualityGateFunctionName = "glap-stateful-lifecycle-quality-gate-staging",
     [string]$IntegrationQualityGateRoleName = "glap-stateful-lifecycle-quality-gate-staging-role",
+    [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
+    [string]$ActionMutationRoleName = "glap-lifecycle-action-mutation-staging-role",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$Workgroup = "primary",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
@@ -18,6 +20,7 @@ param(
     [string]$ArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-generator.zip",
     [string]$ControllerArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-controller.zip",
     [string]$QualityGateArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-quality-gate.zip",
+    [string]$ActionMutationArtifactKey = "stateful-lifecycle-staging/artifacts/glap-action-mutation.zip",
     [switch]$Apply
 )
 
@@ -30,7 +33,9 @@ foreach ($identifier in @(
     $IntegrationControllerFunctionName,
     $IntegrationControllerRoleName,
     $IntegrationQualityGateFunctionName,
-    $IntegrationQualityGateRoleName
+    $IntegrationQualityGateRoleName,
+    $ActionMutationFunctionName,
+    $ActionMutationRoleName
 )) {
     if ($identifier -notmatch '^[A-Za-z][A-Za-z0-9-]{0,127}$') {
         throw "StackName, FunctionName and ExecutionRoleName must use safe AWS names"
@@ -51,7 +56,10 @@ if ($LifecycleDataPrefix -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,511}$' 
     $LifecycleDataPrefix.Contains("..")) {
     throw "LifecycleDataPrefix is not a safe prefix"
 }
-foreach ($key in @($ArtifactKey, $ControllerArtifactKey, $QualityGateArtifactKey)) {
+foreach ($key in @(
+    $ArtifactKey, $ControllerArtifactKey, $QualityGateArtifactKey,
+    $ActionMutationArtifactKey
+)) {
     if ($key -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,1023}$' -or
         $key.Contains("..")) {
         throw "Artifact keys must be safe object keys"
@@ -75,6 +83,8 @@ $controllerPackageDir = Join-Path $distDir "stateful-lifecycle-controller-packag
 $controllerArchivePath = Join-Path $distDir "glap-stateful-lifecycle-controller.zip"
 $qualityPackageDir = Join-Path $distDir "stateful-lifecycle-quality-package"
 $qualityArchivePath = Join-Path $distDir "glap-stateful-lifecycle-quality-gate.zip"
+$mutationPackageDir = Join-Path $distDir "action-mutation-package"
+$mutationArchivePath = Join-Path $distDir "glap-action-mutation.zip"
 
 Write-Host "Stateful lifecycle staging stack plan"
 Write-Host "  Stack: $StackName"
@@ -88,6 +98,8 @@ Write-Host "  Workgroup: $Workgroup"
 Write-Host "  Artifact: s3://$ArtifactBucket/$ArtifactKey"
 Write-Host "  Controller artifact: s3://$ArtifactBucket/$ControllerArtifactKey"
 Write-Host "  Quality artifact: s3://$ArtifactBucket/$QualityGateArtifactKey"
+Write-Host "  Action mutation: $ActionMutationFunctionName"
+Write-Host "  Mutation artifact: s3://$ArtifactBucket/$ActionMutationArtifactKey"
 Write-Host "  Lifecycle data: s3://$LifecycleDataBucket/$dataPrefix/"
 Write-Host "  Athena results prefix configured: True"
 Write-Host "  Schedule created: False"
@@ -159,6 +171,16 @@ Compress-Archive -LiteralPath `
     (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
     -DestinationPath $qualityArchivePath -Force
 
+New-Item -ItemType Directory -Path $mutationPackageDir -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $root "lambda/glap_action_mutation.py") `
+    -Destination (Join-Path $mutationPackageDir "lambda_function.py") -Force
+Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+    -Destination (Join-Path $mutationPackageDir "glap_temporal_boundary.py") -Force
+Compress-Archive -LiteralPath `
+    (Join-Path $mutationPackageDir "lambda_function.py"), `
+    (Join-Path $mutationPackageDir "glap_temporal_boundary.py") `
+    -DestinationPath $mutationArchivePath -Force
+
 & aws s3 cp $archivePath "s3://$ArtifactBucket/$ArtifactKey" @awsScope --only-show-errors
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to upload the lifecycle Lambda artifact"
@@ -171,12 +193,17 @@ if ($LASTEXITCODE -ne 0) {
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to upload the lifecycle integration quality artifact"
 }
+& aws s3 cp $mutationArchivePath "s3://$ArtifactBucket/$ActionMutationArtifactKey" @awsScope --only-show-errors
+if ($LASTEXITCODE -ne 0) {
+    throw "Unable to upload the Action mutation artifact"
+}
 
 $parameterOverrides = @(
     "ArtifactBucket=$ArtifactBucket",
     "GeneratorArtifactKey=$ArtifactKey",
     "ControllerArtifactKey=$ControllerArtifactKey",
     "QualityGateArtifactKey=$QualityGateArtifactKey",
+    "ActionMutationArtifactKey=$ActionMutationArtifactKey",
     "AthenaOutputUri=$AthenaOutputUri",
     "AthenaResultsBucketName=$athenaResultsBucket",
     "AthenaResultsPrefix=$athenaResultsPrefix",
@@ -193,7 +220,9 @@ $parameterOverrides = @(
     "IntegrationControllerFunctionName=$IntegrationControllerFunctionName",
     "IntegrationControllerRoleName=$IntegrationControllerRoleName",
     "IntegrationQualityGateFunctionName=$IntegrationQualityGateFunctionName",
-    "IntegrationQualityGateRoleName=$IntegrationQualityGateRoleName"
+    "IntegrationQualityGateRoleName=$IntegrationQualityGateRoleName",
+    "ActionMutationFunctionName=$ActionMutationFunctionName",
+    "ActionMutationRoleName=$ActionMutationRoleName"
 )
 & aws cloudformation deploy `
     --stack-name $StackName `

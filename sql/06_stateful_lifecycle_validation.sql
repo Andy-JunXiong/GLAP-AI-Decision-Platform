@@ -35,6 +35,11 @@ current_outcomes AS (
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
       AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
+current_action_audit AS (
+    SELECT * FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_audit_staging_v1
+    WHERE created_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+),
 booking_cohort AS (
     SELECT DISTINCT shipment_id, carrier, coalesce(transport_mode, 'OCEAN') AS transport_mode
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
@@ -95,6 +100,12 @@ temporal_rows AS (
     SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
            execution_scenario_id
     FROM {{SOURCE_DATABASE}}.fact_policy_proposal_staging_v1
+    WHERE created_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_audit_staging_v1
     WHERE created_date = DATE '{{LOGICAL_RUN_DATE}}'
       AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
@@ -252,6 +263,23 @@ checks AS (
        OR provenance <> 'SIMULATED_LEARNING_EVIDENCE'
        OR (status = 'PENDING_HUMAN_REVIEW'
            AND (approved_by IS NOT NULL OR effective_date IS NOT NULL)))
+    UNION ALL
+    SELECT 'duplicate_action_request_id', count(*)
+    FROM (
+        SELECT request_id FROM current_action_audit
+        GROUP BY request_id HAVING count(*) > 1
+    )
+    UNION ALL
+    SELECT 'invalid_action_audit_transition', count(*)
+    FROM current_action_audit
+    WHERE actor IS NULL OR trim(actor) = '' OR length(reason) < 3
+       OR event_type NOT IN ('APPROVE', 'REJECT', 'COMPLETE')
+       OR new_status <> CASE
+            WHEN previous_status = 'PROPOSED' AND event_type = 'APPROVE' THEN 'APPROVED'
+            WHEN previous_status = 'PROPOSED' AND event_type = 'REJECT' THEN 'REJECTED'
+            WHEN previous_status = 'APPROVED' AND event_type = 'COMPLETE' THEN 'COMPLETED'
+            ELSE 'INVALID'
+          END
     UNION ALL
     SELECT 'invalid_transport_contract', count(*)
     FROM current_snapshot AS shipment

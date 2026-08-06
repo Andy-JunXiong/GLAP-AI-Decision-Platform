@@ -38,6 +38,8 @@ LIFECYCLE_CHECK_NAMES = frozenset(
         "duplicate_outcome_key",
         "invalid_outcome_contract",
         "invalid_policy_proposal_contract",
+        "duplicate_action_request_id",
+        "invalid_action_audit_transition",
         "duplicate_route_config",
         "ambiguous_rate_card",
         "invalid_rate_tier",

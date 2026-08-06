@@ -25,6 +25,9 @@ METRICS_TABLE = os.getenv("SHIPMENT_METRICS_TABLE", "fact_shipment_lifecycle_met
 SIGNAL_TABLE = os.getenv("SHIPMENT_SIGNAL_TABLE", "fact_shipment_signal_candidate_staging_v1")
 ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
 ACTION_TABLE = os.getenv("LIFECYCLE_ACTION_TABLE", "fact_lifecycle_action_staging_v1")
+ACTION_CURRENT_VIEW = os.getenv(
+    "LIFECYCLE_ACTION_CURRENT_VIEW", "vw_lifecycle_action_current_staging_v1"
+)
 OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
 POLICY_PROPOSAL_TABLE = os.getenv(
     "POLICY_PROPOSAL_TABLE", "fact_policy_proposal_staging_v1"
@@ -113,6 +116,7 @@ def validate_configuration() -> None:
         (COST_TABLE, "cost table"), (METRICS_TABLE, "metrics table"),
         (SIGNAL_TABLE, "signal table"),
         (ALERT_TABLE, "alert table"), (ACTION_TABLE, "action table"),
+        (ACTION_CURRENT_VIEW, "action current view"),
         (OUTCOME_TABLE, "outcome table"),
         (POLICY_PROPOSAL_TABLE, "policy proposal table"),
         (ROUTE_TABLE, "route table"), (TARGET_TABLE, "target table"),
@@ -173,7 +177,7 @@ def build_closed_loop_state_queries(logical_date: date, scope_id: str) -> dict[s
 FROM {database}.{_identifier(ALERT_TABLE, 'alert table')}
 WHERE try_cast(dt AS date) = DATE '{previous}' AND temporal_scope_id = {scope}""",
         "actions": f"""SELECT {', '.join(ACTION_COLUMNS)}
-FROM {database}.{_identifier(ACTION_TABLE, 'action table')}
+FROM {database}.{_identifier(ACTION_CURRENT_VIEW, 'action current view')}
 WHERE temporal_scope_id = {scope}""",
         "outcomes": f"""SELECT {', '.join(OUTCOME_COLUMNS)}
 FROM {database}.{_identifier(OUTCOME_TABLE, 'outcome table')}

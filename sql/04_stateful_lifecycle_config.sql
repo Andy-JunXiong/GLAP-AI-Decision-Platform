@@ -381,3 +381,61 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_policy_proposal_staging_v1 (
 PARTITIONED BY (created_date)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_policy_proposal_staging_v1/'
 TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_lifecycle_action_audit_staging_v1 (
+    event_id string,
+    request_id string,
+    action_id string,
+    event_type string,
+    previous_status string,
+    new_status string,
+    actor string,
+    reason string,
+    occurred_at timestamp,
+    approved_by string,
+    approved_at timestamp,
+    completed_at timestamp,
+    created_date date,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
+)
+PARTITIONED BY (created_date)
+LOCATION '{{SOURCE_BUCKET_URI}}/fact_lifecycle_action_audit_staging_v1/'
+TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_action_current_staging_v1 AS
+WITH latest_event AS (
+    SELECT *, row_number() OVER (
+        PARTITION BY temporal_scope_id, action_id
+        ORDER BY occurred_at DESC, event_id DESC
+    ) AS event_rank
+    FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_audit_staging_v1
+)
+SELECT
+    action.action_id,
+    action.alert_fingerprint,
+    action.shipment_id,
+    action.action_type,
+    action.alert_type,
+    action.alert_severity,
+    action.policy_version,
+    coalesce(event.new_status, action.status) AS status,
+    action.approval_required,
+    coalesce(event.approved_by, action.approved_by) AS approved_by,
+    coalesce(event.approved_at, action.approved_at) AS approved_at,
+    coalesce(event.completed_at, action.completed_at) AS completed_at,
+    action.provenance,
+    action.created_date,
+    action.temporal_scope_id,
+    action.execution_mode,
+    action.time_basis,
+    action.as_of_date,
+    action.execution_scenario_id
+FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_staging_v1 AS action
+LEFT JOIN latest_event AS event
+  ON action.temporal_scope_id = event.temporal_scope_id
+ AND action.action_id = event.action_id
+ AND event.event_rank = 1;
