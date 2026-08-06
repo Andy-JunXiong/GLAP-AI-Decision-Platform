@@ -32,6 +32,21 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 - [x] Refresh the System inventory to the 6 August inspection and remove stale
   resource totals, relative timestamps, individual shipment examples, fake
   write confirmations, and unsupported savings or outcome claims.
+- [x] Merge PRs `#22` through `#25` to enforce the Sydney date boundary, store
+  permanent row-level scenario identity, deploy the bounded legacy backfill,
+  and record AWS evidence showing zero future operational rows.
+- [x] Merge PRs `#26` through `#28` to deploy the governed as-of baseline,
+  publish it beside the existing flywheel, and align every public page to its
+  actual evidence class.
+- [x] Merge PR `#29` and publish the larger 18 px desktop / 16 px mobile
+  readability scale across the site and dense System views.
+- [x] Observe the actual-calendar `2026-08-06` success-gated AWS run: all six
+  stages succeeded and both five-check validation gates passed.
+- [ ] Merge PR `#30` only after separate explicit approval, then verify the
+  first schema-1.7 Pages export and detailed Pipeline Health screen on `main`.
+- [ ] If Pipeline Health remains `unverified`, use its public-safe diagnostic
+  to correct the exact read boundary and rerun Pages; do not weaken the
+  fail-closed requirement or claim that the pipeline is current.
 - [ ] Accumulate real closed outcomes only as their Sydney calendar dates
   arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and
@@ -210,8 +225,8 @@ Repository checkpoint — 4 August 2026:
 - [x] Replace staging stubs with governed current-function targets, back up the
   prior configurations privately, disable five time-only/legacy schedules, and
   enable the success-gated 00:05 schedule with rollback protection.
-- [ ] Observe the first real success-gated run on 5 August, verify six stages and
-  ten checks, then enable required OPS verification.
+- [x] Observe the first actual-calendar success-gated run on 6 August, verify
+  all six stages and ten checks, then enable required OPS verification.
 
 - [ ] Replace time-only sequencing with success-gated orchestration from data
   generation and validation through the current v3/v2 flywheel.
@@ -227,11 +242,11 @@ Repository checkpoint — 4 August 2026:
   flywheel function now runs only inside the success-gated chain.
 - [ ] Ensure downstream processing and Pages refresh cannot claim `current` after
   any upstream validation or stage failure.
-  - 5 August Pages export stopped safely before publication because the updated
-    canonical shipment query needs source-database Glue/Lake Formation access.
-    Re-run `ops/configure_ops_snapshot_access.ps1` with the AWS admin/read
-    profiles, then re-dispatch Pages; keep required pipeline verification off
-    until the first governed controller run is confirmed.
+  - 6 August: the controller itself passed all stages and checks, but the
+    pre-`#30` exporter still publishes `unverified` because it swallows the
+    status-object read error. PR `#30` preserves fail-closed behavior and adds a
+    public-safe diagnostic; verify the first post-merge Pages run before
+    calling the public health view current.
 
 ## P1 — Authenticated operator write-back loop
 

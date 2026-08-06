@@ -87,6 +87,27 @@ The full evidence trail and next actions are recorded in
 The operational/simulation boundary is defined in
 [`temporal_truthfulness.md`](temporal_truthfulness.md).
 
+## Public evidence checkpoint -- 6 August 2026
+
+The repository and public site now apply the temporal boundary end to end.
+PRs `#22`--`#25` enforce Sydney-date truthfulness at run, row, query, quality,
+and backfill boundaries. PR `#26` adds a ten-check governed operational-calendar
+baseline, while PRs `#27` and `#28` publish that baseline without mixing it with
+the existing decision flywheel and align every public page to an explicit
+evidence class. PR `#29` makes the resulting product readable at normal browser
+zoom.
+
+Read-only AWS evidence confirms the `2026-08-06` actual-calendar controller run
+passed all six stages and ten checks. Detailed public Pipeline Health is ready
+in draft PR `#30`, but it is not merged or live. Its first post-merge Pages run
+is the next release gate: the public status remains fail closed until the exact
+six-stage and two-gate status object is successfully read and reconciled to the
+governed source date.
+
+The calendar still governs learning readiness. Future simulations can exercise
+mechanics, but only actual-calendar outcomes accumulated over time may support
+operational backtests, supervised training, or production-readiness claims.
+
 ## Delivery sequence
 
 ```mermaid
@@ -286,22 +307,27 @@ Acceptance criteria:
 
 ## Recommended next implementation slice
 
-The next implementation slice is forecast validation on the governed feature
-and label contracts that now exist in staging.
+The immediate release slice is truthful Pipeline Health, followed by the next
+closed-loop lifecycle capability. Forecast-model work is calendar-gated and is
+not the immediate implementation priority.
 
-1. Freeze feature contract version, availability rules, training cutoff, and
-   pending-label exclusion behavior.
-2. Run rolling time-ordered backtests for recent-level, moving-average,
-   weekday-seasonal, and existing OLS booking-volume baselines by mode and
-   provider.
-3. Compare MAE, RMSE, bias, MAPE where defined, and interval coverage. Keep the
-   simplest healthy baseline unless a candidate consistently improves held-out
-   windows.
-4. Accumulate sufficient observed labels before evaluating supervised SLA,
-   delay-risk, or cost-variance candidates.
-5. Add completeness, drift, prediction-error, and Athena scan-cost evidence
-   before requesting any recurring forecast execution.
+1. Merge draft PR `#30` only after explicit approval, then verify its first
+   `main` Pages export. Accept `current` only when the exact six stages and all
+   ten checks reconcile to the governed source date.
+2. If the exporter remains `unverified`, use the safe diagnostic to repair the
+   narrow status-object read boundary and rerun publication without weakening
+   fail-closed behavior.
+3. Add stable, auditable `SLA_BREACH` and `COST_ANOMALY` lifecycle alerts, then
+   add delayed and reproducible synthetic Outcomes for controlled end-to-end
+   testing.
+4. Feed those Outcomes into a human-reviewed policy proposal, never an
+   automatic generator or production-policy update.
+5. Accumulate eligible actual-calendar outcomes as dates arrive and re-run
+   label readiness. Resume forecast or supervised-model comparison only after
+   the real-calendar evidence gates pass.
+6. After the closed-loop contracts are stable, begin the authenticated
+   write-back API and internal operations cockpit described in P1 and P4.
 
-Forecasts remain advisory and private. Authenticated production writes,
-automatic policy changes, scheduling, and alias promotion remain blocked until
-separately reviewed and explicitly approved.
+Public Pages remains read-only and aggregate-only. Recurring lifecycle or
+forecast schedules, production aliases, authenticated writes, and automatic
+policy changes require separate review and explicit approval.
