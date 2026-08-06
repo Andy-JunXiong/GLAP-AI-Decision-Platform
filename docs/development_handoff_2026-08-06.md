@@ -8,9 +8,10 @@ merged into `main`. The public GitHub Pages site currently includes the
 schema-1.6 governed snapshot, the full-site evidence review, and the larger
 typography delivered by `#29`.
 
-PR `#30` is a tested, mergeable draft. It is not merged and its Pipeline Health
-screen is not live. It must remain separate until the user explicitly approves
-that merge and the first post-merge Pages export is verified.
+PR `#30` was explicitly approved, merged, and verified after this handoff was
+first written. The live schema-1.7 Pipeline Health screen now reports the
+governed `2026-08-06` run as `current`, with all six stages and all ten checks
+successful.
 
 The Australia/Sydney business date is the evidence boundary. As of
 `2026-08-06`, September and October lifecycle rows are future simulations. They
@@ -74,9 +75,9 @@ at 1,450 px. The user's open browser tab initially retained old CSS; refreshing
 the page loaded the deployed scale. No data contract or evidence meaning was
 changed by this work.
 
-### 5. Pipeline Health prepared, not released -- PR `#30`
+### 5. Pipeline Health released and verified -- PR `#30`
 
-The draft adds a Control Tower summary and an OPS Pipeline Health view with the
+The release adds a Control Tower summary and an OPS Pipeline Health view with the
 six governed stages, completion time, duration, two validation gates, ten
 quality checks, safe failure guidance, and a recovery-runbook link. It also
 prevents feature branches from deploying Pages and requires exact stage/check
@@ -84,9 +85,10 @@ completion before the public snapshot may say `current`.
 
 Read-only AWS inspection confirmed the actual-calendar `2026-08-06` controller
 run succeeded across all six stages and both five-check validation gates. The
-current pre-`#30` exporter on `main` still publishes pipeline status as
-`unverified` because it hides the status-object read error. The draft adds a
-public-safe diagnostic while continuing to fail closed.
+first post-merge export exposed a missing `urlparse` import and correctly stayed
+`unverified`. Commit `e44478d` fixed that defect, added bounded read retries and
+safe diagnostics, and the republished snapshot verified `current` without
+weakening fail-closed behavior.
 
 ## Current release boundary
 
@@ -96,22 +98,18 @@ public-safe diagnostic while continuing to fail closed.
 | Governed as-of operational baseline | Merged, deployed, and published as synthetic engineering evidence |
 | Full-site evidence alignment | Merged and live on GitHub Pages |
 | Larger typography | Merged and live after browser refresh |
-| Detailed Pipeline Health | PR `#30` draft; tested but not merged or live |
+| Detailed Pipeline Health | Merged, live, and verified `current` for `2026-08-06` |
 | Recurring stateful lifecycle/forecast schedule | Not approved |
 | Production alias or autonomous policy promotion | Not approved |
 | Public entity-level data or write operations | Prohibited by current boundary |
 
 ## First next step
 
-1. Review and explicitly approve PR `#30` separately.
-2. After merge, watch the first `main` GitHub Pages run and inspect the
-   published schema-1.7 snapshot.
-3. Call Pipeline Health `current` only if it shows the exact six stages in
-   order and both validation gates with all ten checks passed for the governed
-   source date.
-4. If it remains `unverified`, use the new safe diagnostic to correct only the
-   missing least-privilege read boundary, rerun Pages, and retain fail-closed
-   status until verification succeeds.
+1. Connect the governed closed-loop domain to private append-only AWS staging
+   tables for Alerts, Actions, Outcomes, and policy proposals.
+2. Preserve the existing Sydney-date boundary and scenario-aware write keys.
+3. Exercise the chain with a controlled multi-day replay before proposing any
+   recurring schedule or authenticated write API.
 
 ## Near-term plan
 
@@ -145,10 +143,12 @@ public-safe diagnostic while continuing to fail closed.
 ## Verification summary
 
 - PRs `#22`--`#29` are merged into `main`.
-- PR `#30` is open, mergeable, and draft; its head CI run passed.
+- PR `#30` is merged; the follow-up exporter fix is deployed and verified live.
 - `#29` completed 141 repository tests and browser-scale regression checks.
 - `#30` completed 144 repository tests, Python and JavaScript validation,
-  desktop/mobile browser QA, and fail-closed branch-deployment validation.
+  desktop/mobile browser QA, and fail-closed branch-deployment validation. The
+  follow-up exporter fix passed 152 repository tests and CI run `31092139564`;
+  Pages run `31092139541` published the verified schema-1.7 snapshot.
 - No work today authorized a production alias, public write path, public entity
   record, recurring lifecycle/forecast schedule, or automatic policy change.
 

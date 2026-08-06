@@ -42,11 +42,11 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   readability scale across the site and dense System views.
 - [x] Observe the actual-calendar `2026-08-06` success-gated AWS run: all six
   stages succeeded and both five-check validation gates passed.
-- [ ] Merge PR `#30` only after separate explicit approval, then verify the
-  first schema-1.7 Pages export and detailed Pipeline Health screen on `main`.
-- [ ] If Pipeline Health remains `unverified`, use its public-safe diagnostic
-  to correct the exact read boundary and rerun Pages; do not weaken the
-  fail-closed requirement or claim that the pipeline is current.
+- [x] Merge PR `#30` after separate explicit approval and verify the first
+  schema-1.7 Pages export and detailed Pipeline Health screen on `main`.
+- [x] Fix the exporter `urlparse` import defect that kept Pipeline Health
+  `unverified`, add bounded status-object retries and safe diagnostics, then
+  verify the republished snapshot as `current` with 6/6 stages and 10/10 checks.
 - [ ] Accumulate real closed outcomes only as their Sydney calendar dates
   arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and
