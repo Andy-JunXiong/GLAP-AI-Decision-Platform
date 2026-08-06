@@ -3,24 +3,26 @@
 Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
-## End-of-day handoff -- 5 August 2026
+## End-of-day handoff -- 6 August 2026
 
-- [x] Merge the governed forecast-validation, AWS evidence, and no-reseed
-  history-extension changes through PRs `#11`, `#12`, and `#13`.
-- [x] Complete 23 additional staging dates, `2026-09-08` through
-  `2026-09-30`; every date passed four stages and all 32 checks.
-- [ ] Verify whether the expired caller session completed `2026-10-01` before
-  invoking another date. The retry returned a Lambda `FunctionError`, so the
-  latest date remains explicitly unverified beyond `2026-09-30`.
-- [ ] After explicit expanded-window Athena authorization, diagnose the cutoff,
-  extend only the remaining dates through `2026-10-05`, and rerun the private
-  rolling backtest.
-- [ ] Bound each history-extension invocation so it completes inside the
-  one-hour GitHub OIDC credential life; use no more than 20 dates until the
-  workflow enforces a safer limit.
+- [x] Merge PRs `#14` through `#19`, including bounded history extension,
+  governed failed-date recovery, Q4 synthetic configuration, ordered Air
+  milestones, and recovery-only matched-row repair.
+- [x] Recover `2026-10-01` and `2026-10-02`, then extend the isolated lifecycle
+  through `2026-10-05`; every successful date passed generation and all 32
+  lifecycle, compatibility, and analytics checks.
+- [x] Run the private rolling backtest through `2026-10-05`. DHL, KN, and
+  Maersk all have 100% calendar completeness and remain on the transparent
+  recent-level benchmark.
+- [x] Keep supervised training blocked: observed labels and positive-class or
+  cost-variance diversity remain below the governed thresholds.
+- [ ] Accumulate more closed KN outcomes, rare positive SLA/delay labels, and
+  varied observed cost outcomes before reassessing supervised readiness.
+- [ ] Keep production aliases, recurring lifecycle/forecast schedules, and
+  public entity-level publication out of scope pending separate approval.
 
-Detailed today/tomorrow/future notes are in the
-[`5 August development handoff`](docs/development_handoff_2026-08-05.md).
+Detailed evidence and next actions are in the
+[`6 August development handoff`](docs/development_handoff_2026-08-06.md).
 
 ## Delivery checkpoint — 5 August 2026
 

@@ -63,21 +63,26 @@ for KN, and 20 for Maersk, all below the governed 200-label threshold and class
 balance rules. Pending outcomes were excluded. Both Athena reads stayed below
 one MiB and the workflow published no entity identifiers or public snapshot.
 
-## End-of-day execution checkpoint -- 5 August 2026
+## Execution and forecast checkpoint -- 6 August 2026
 
-The governed no-reseed extension completed 23 more consecutive staging dates,
-`2026-09-08` through `2026-09-30`. Every date passed generation, 19 lifecycle,
-5 compatibility, and 8 analytics checks. The next invocation crossed the
-one-hour GitHub OIDC credential boundary, and a retry returned a Lambda
-`FunctionError`; `2026-10-01` must therefore be diagnosed read-only before any
-further write.
+The isolated lifecycle history is now complete through `2026-10-05`. Governed
+recovery repaired `2026-10-01` and the failed `2026-10-02` snapshot; the
+controller then extended `2026-10-03` through `2026-10-05` serially. Every
+successful date passed generation, 19 lifecycle checks, 5 compatibility checks,
+and 8 analytics checks. Recovery remains same-date, explicit, and fail-closed;
+matched-row updates are enabled only on that recovery path.
 
-Tomorrow's first slice is to obtain authorization for the expanded private
-Athena window, verify the latest completed date, finish only the missing dates
-through `2026-10-05`, and rerun the four-baseline provider backtest. The
-history-extension workflow must also be bounded below the credential lifetime.
-The full operational handoff and longer-term sequence are recorded in
-[`development_handoff_2026-08-05.md`](development_handoff_2026-08-05.md).
+The final private backtest is `ready` with 100% calendar completeness for DHL
+Air (34 days), KN Ocean (34 days), and Maersk Ocean (63 days). The selection
+policy retained `recent_level` for all three providers. Supervised training is
+still correctly blocked: DHL has 85 observed labels, KN 2, and Maersk 423, but
+provider minimums, positive-class minimums, and cost-label diversity are not all
+met. Pending labels remain excluded from every training path.
+
+No production alias, recurring lifecycle or forecast schedule, current-v2
+write, public entity-level artifact, or automatic policy promotion was added.
+The full evidence trail and next actions are recorded in
+[`development_handoff_2026-08-06.md`](development_handoff_2026-08-06.md).
 
 ## Delivery sequence
 
