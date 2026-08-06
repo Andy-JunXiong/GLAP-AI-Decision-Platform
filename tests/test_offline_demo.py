@@ -25,9 +25,9 @@ class OfflineDemoTests(unittest.TestCase):
         for label in (
             "Control Tower",
             "Signal monitoring",
-            "Decision queue",
-            "Shipments & inventory",
-            "Outcomes & value",
+            "Decisions",
+            "Shipment baseline",
+            "Outcome maturity",
             "Decision Brief",
         ):
             with self.subTest(label=label):
@@ -81,7 +81,7 @@ class OfflineDemoTests(unittest.TestCase):
             "AWS EXISTING ASSETS",
             "ordinary_least_squares_28d",
             "renderAnalytics(snapshot)",
-            "Simulated average improvement",
+            'id="analyticsLaneProfile"',
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
@@ -93,15 +93,49 @@ class OfflineDemoTests(unittest.TestCase):
             'id="reject"',
             'id="reasonModal"',
             'id="ledgerRows"',
-            "Prior approval invalidated",
+            "Prior scenario approval invalidated",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
 
-    def test_expected_and_observed_value_are_distinguished(self):
-        self.assertIn("Expected impact compared with observed result", self.html)
-        self.assertIn("awaiting observed outcome", self.html)
-        self.assertIn("Expected benefit", self.html)
+    def test_every_page_separates_governed_and_scenario_evidence(self):
+        for marker in (
+            'id="signalLaneTable"',
+            'id="publishedDecisionCount"',
+            'id="shipmentLaneTable"',
+            'id="outcomeReadiness"',
+            'id="analyticsLaneProfile"',
+            "scenario approvals stay in browser",
+            "No measured savings or production performance claim",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
+    def test_stale_claims_and_fake_actions_do_not_return(self):
+        for forbidden in (
+            "12 min ago",
+            "Validated storage avoided",
+            "Stockouts prevented",
+            "Rolling 90-day accuracy",
+            "23 Jul · 09:30 AEST",
+            "Shipment and outcome records have been updated",
+            "data-demo-action",
+            'id="shipmentTable"',
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.html)
+
+    def test_schema_16_breakdowns_are_rendered(self):
+        for marker in (
+            'schema_version:"1.6"',
+            "breakdowns.market_lanes",
+            "population_profile",
+            "outcome_labels",
+            'id="analyticsModeCount"',
+            'id="analyticsProviderCount"',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
 
     def test_system_evidence_views_are_present(self):
         for view in (
@@ -113,6 +147,16 @@ class OfflineDemoTests(unittest.TestCase):
         ):
             with self.subTest(view=view):
                 self.assertIn(view, self.html)
+        for marker in (
+            "15 Lambda",
+            "127 objects",
+            "4 enabled and 5 disabled",
+            "fact_shipment_lifecycle_staging_v1",
+            "vw_multimodal_operational_baseline_v1",
+            "6 OK and 1 insufficient data",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
 
 
 class RepositoryShowcaseTests(unittest.TestCase):

@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "generated_at": "2026-07-23T00:00:00Z",
   "source_updated_at": "2026-07-23T00:00:00Z",
   "as_of_date": "2026-07-23",
@@ -65,6 +65,22 @@
     "status": "unavailable",
     "as_of_date": null,
     "metrics": {},
+    "breakdowns": {
+      "transport_modes": [],
+      "providers": [],
+      "market_lanes": []
+    },
+    "outcome_labels": {
+      "observed": 0,
+      "pending": 0,
+      "total": 0
+    },
+    "population_profile": {
+      "transport_mode_count": 0,
+      "provider_count": 0,
+      "market_lane_count": 0,
+      "multimodal_status": "UNAVAILABLE"
+    },
     "maturity": {
       "status": "NOT_READY",
       "minimum_delivered_shipments": 200,
