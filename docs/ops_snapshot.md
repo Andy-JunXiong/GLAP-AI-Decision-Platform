@@ -7,7 +7,7 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The `1.5` snapshot contains only:
+The `1.6` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
@@ -19,16 +19,22 @@ The `1.5` snapshot contains only:
 - aggregate alert, action, and root-cause distributions from governed AWS v3/v2
   result tables;
 - aggregate pipeline query status and data-completeness checks.
-- the aggregate `ALL` row from the stateful operational-calendar baseline,
-  including shipment, booking, delivery, SLA-breach and governed signal counts;
+- the aggregate `ALL` row plus allowlisted transport-mode, provider, and
+  market-lane rows from the stateful operational-calendar baseline, including
+  shipment, booking, delivery, SLA-breach, governed signal, and aggregate cost
+  counts;
+- an outcome-label summary (`observed`, `pending`, `total`) and a population
+  profile that prevents the UI from claiming multimodal comparison when only
+  one transport mode is present;
 - an outcome-maturity gate that keeps on-time and realized-cost measures
   unavailable until deliveries exist and requires 200 delivered outcomes before
   reporting `ENGINEERING_READY`.
 - optional success-gated pipeline stage timing, completion state, safe failure
   category, quality-check results, and a public runbook link.
 
-It excludes shipment IDs, entity keys, routes, carriers, account IDs, ARNs, S3 paths,
-query execution IDs and individual decisions. Forecast points contain only
+It excludes shipment IDs, entity keys, customer records, account IDs, ARNs, S3
+paths, query execution IDs and individual decisions. Dimension values are
+restricted to aggregate mode, provider, and market-lane labels. Forecast points contain only
 daily total volume, a residual interval, and projected at-risk totals. They are
 labelled as a statistical baseline, not an operational commitment.
 
@@ -37,6 +43,11 @@ unlike denominators: the existing v2/v3 decision-flywheel snapshot and the
 stateful lifecycle baseline. The latter always retains
 `SIMULATED_MULTIMODAL_V1`, `real_world_evidence=false`, and
 `ENGINEERING_EVALUATION_ONLY`; its real-world status remains blocked.
+
+The public site uses this same contract across Control Tower, Signals,
+Shipments, Outcomes, and Analytics. Decisions shows the existing published
+aggregate separately from a browser-only scenario lab. Scenario approval never
+writes AWS state, changes shipment data, or contributes an observed outcome.
 
 ## GitHub configuration
 

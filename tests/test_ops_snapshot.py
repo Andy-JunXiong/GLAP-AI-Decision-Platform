@@ -52,6 +52,8 @@ def athena_forecast_rows():
 def operational_baseline_row(delivered_count: str = "0"):
     delivered = int(delivered_count)
     return {
+        "dimension_type": "ALL",
+        "dimension_value": "ALL",
         "baseline_as_of_date": "2026-08-03",
         "source_start_date": "2026-08-01",
         "source_max_metric_date": "2026-08-03",
@@ -142,10 +144,16 @@ class OpsSnapshotTests(unittest.TestCase):
             "simulated_iceberg_m", "2026-08-06"
         )
         self.assertIn("vw_multimodal_operational_baseline_v1", query)
-        self.assertIn("dimension_type = 'ALL'", query)
-        self.assertIn("dimension_value = 'ALL'", query)
+        self.assertIn("dimension_type", query)
+        self.assertIn("dimension_value", query)
+        self.assertIn("'TRANSPORT_MODE'", query)
+        self.assertIn("'PROVIDER'", query)
+        self.assertIn("'MARKET_LANE'", query)
         self.assertIn("baseline_as_of_date <= DATE '2026-08-06'", query)
-        self.assertIn("LIMIT 1", query)
+        self.assertIn("max(baseline_as_of_date)", query)
+        self.assertIn("JOIN latest_baseline", query)
+        self.assertNotIn("dimension_type = 'ALL'", query)
+        self.assertNotIn("LIMIT 1", query)
         self.assertNotIn("shipment_id", query)
 
     def test_rejects_unsafe_database_identifier(self):
@@ -230,7 +238,7 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["forecast"]["status"], "ready")
         self.assertEqual(snapshot["forecast"]["calculation_engine"], "aws_athena_engine_v3")
         self.assertEqual(len(snapshot["forecast"]["points"]), 7)
-        self.assertEqual(snapshot["schema_version"], "1.5")
+        self.assertEqual(snapshot["schema_version"], "1.6")
         self.assertEqual(snapshot["provenance"]["outcome_evidence"], "simulated")
         self.assertEqual(snapshot["operational_baseline"]["status"], "available")
         self.assertEqual(
@@ -262,6 +270,50 @@ class OpsSnapshotTests(unittest.TestCase):
         future["baseline_as_of_date"] = "2026-08-07"
         with self.assertRaises(ValueError):
             exporter.parse_operational_baseline(future, "2026-08-06")
+
+    def test_operational_baseline_rows_publish_safe_breakdowns(self):
+        lane = {
+            **operational_baseline_row(),
+            "dimension_type": "MARKET_LANE",
+            "dimension_value": "PUS-BNE",
+            "shipment_count": "48",
+            "new_booking_count": "5",
+            "sla_breach_shipment_count": "2",
+            "sla_breach_shipment_rate_pct": "4.17",
+            "signal_candidate_count": "12",
+            "high_severity_signal_count": "12",
+            "expected_cost_total": "800000",
+        }
+        mode = {
+            **operational_baseline_row(),
+            "dimension_type": "TRANSPORT_MODE",
+            "dimension_value": "OCEAN",
+        }
+        provider = {
+            **operational_baseline_row(),
+            "dimension_type": "PROVIDER",
+            "dimension_value": "MAERSK",
+        }
+        baseline = exporter.parse_operational_baseline_rows(
+            [operational_baseline_row(), lane, mode, provider], "2026-08-06"
+        )
+        self.assertEqual(baseline["breakdowns"]["market_lanes"][0]["name"], "PUS-BNE")
+        self.assertEqual(baseline["breakdowns"]["market_lanes"][0]["shipment_count"], 48)
+        self.assertEqual(baseline["outcome_labels"], {"observed": 0, "pending": 498, "total": 498})
+        self.assertEqual(baseline["population_profile"]["transport_mode_count"], 1)
+        self.assertEqual(baseline["population_profile"]["multimodal_status"], "SINGLE_MODE_OBSERVED")
+
+        unsafe = dict(lane, dimension_value="PUS-BNE<script>")
+        with self.assertRaises(ValueError):
+            exporter.parse_operational_baseline_rows(
+                [operational_baseline_row(), unsafe], "2026-08-06"
+            )
+
+        duplicate = dict(lane)
+        with self.assertRaises(ValueError):
+            exporter.parse_operational_baseline_rows(
+                [operational_baseline_row(), lane, duplicate], "2026-08-06"
+            )
 
     def test_partial_pipeline_is_not_reported_fresh(self):
         row = {

@@ -25,6 +25,13 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 - [x] Add the repository contract that publishes the stateful baseline beside,
   rather than in place of, the existing v2/v3 Control Tower population; block
   outcome and realized-cost claims until the maturity gate is satisfied.
+- [x] Extend the public snapshot to schema 1.6 with safe mode, provider, and
+  market-lane aggregates, then align every public page to the same evidence
+  boundary: governed aggregates, synthetic engineering baseline, or an
+  explicitly browser-only scenario lab.
+- [x] Refresh the System inventory to the 6 August inspection and remove stale
+  resource totals, relative timestamps, individual shipment examples, fake
+  write confirmations, and unsupported savings or outcome claims.
 - [ ] Accumulate real closed outcomes only as their Sydney calendar dates
   arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and

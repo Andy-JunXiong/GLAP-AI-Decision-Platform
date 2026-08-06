@@ -1,8 +1,8 @@
 """Export public-safe GLAP operational analytics from Athena.
 
 The exporter publishes aggregate counts, stage freshness, daily totals, and a
-transparent seven-day volume baseline. It never exports shipment identifiers,
-entity keys, routes, carriers, query locations, account identifiers, or ARNs.
+transparent seven-day volume baseline. It never exports shipment or customer
+identifiers, entity keys, query locations, account identifiers, or ARNs.
 """
 
 from __future__ import annotations
@@ -515,39 +515,54 @@ def build_operational_baseline_query(
     source_database: str,
     logical_run_date: str | date,
 ) -> str:
-    """Read one aggregate-only stateful baseline without exposing entity rows."""
+    """Read public-safe aggregate baseline dimensions without entity rows."""
 
     source_database = validate_identifier(source_database, "Athena source database")
     logical_date = validate_logical_date(logical_run_date).isoformat()
     return f"""
+WITH latest_baseline AS (
+    SELECT max(baseline_as_of_date) AS baseline_as_of_date
+    FROM {source_database}.vw_multimodal_operational_baseline_v1
+    WHERE baseline_as_of_date <= DATE '{logical_date}'
+)
 SELECT
-    CAST(baseline_as_of_date AS varchar) AS baseline_as_of_date,
-    CAST(source_start_date AS varchar) AS source_start_date,
-    CAST(source_max_metric_date AS varchar) AS source_max_metric_date,
-    shipment_count,
-    new_booking_count,
-    delivered_count,
-    on_time_delivery_count,
-    late_delivery_count,
-    on_time_delivery_rate_pct,
-    avg_delivery_delay_hours,
-    sla_breach_shipment_count,
-    sla_breach_shipment_rate_pct,
-    expected_cost_total,
-    current_cost_total,
-    cost_variance_pct,
-    signal_candidate_count,
-    high_severity_signal_count,
-    real_world_evidence,
-    data_provenance,
-    evidence_class,
-    decision_use
-FROM {source_database}.vw_multimodal_operational_baseline_v1
-WHERE dimension_type = 'ALL'
-  AND dimension_value = 'ALL'
-  AND baseline_as_of_date <= DATE '{logical_date}'
-ORDER BY baseline_as_of_date DESC
-LIMIT 1
+    CAST(baseline.baseline_as_of_date AS varchar) AS baseline_as_of_date,
+    CAST(baseline.source_start_date AS varchar) AS source_start_date,
+    CAST(baseline.source_max_metric_date AS varchar) AS source_max_metric_date,
+    baseline.dimension_type,
+    baseline.dimension_value,
+    baseline.shipment_count,
+    baseline.new_booking_count,
+    baseline.delivered_count,
+    baseline.on_time_delivery_count,
+    baseline.late_delivery_count,
+    baseline.on_time_delivery_rate_pct,
+    baseline.avg_delivery_delay_hours,
+    baseline.sla_breach_shipment_count,
+    baseline.sla_breach_shipment_rate_pct,
+    baseline.expected_cost_total,
+    baseline.current_cost_total,
+    baseline.cost_variance_pct,
+    baseline.signal_candidate_count,
+    baseline.high_severity_signal_count,
+    baseline.real_world_evidence,
+    baseline.data_provenance,
+    baseline.evidence_class,
+    baseline.decision_use
+FROM {source_database}.vw_multimodal_operational_baseline_v1 baseline
+JOIN latest_baseline latest
+  ON baseline.baseline_as_of_date = latest.baseline_as_of_date
+WHERE baseline.dimension_type IN ('ALL', 'TRANSPORT_MODE', 'PROVIDER', 'MARKET_LANE')
+ORDER BY
+    baseline.baseline_as_of_date DESC,
+    CASE baseline.dimension_type
+        WHEN 'ALL' THEN 0
+        WHEN 'TRANSPORT_MODE' THEN 1
+        WHEN 'PROVIDER' THEN 2
+        ELSE 3
+    END,
+    baseline.shipment_count DESC,
+    baseline.dimension_value
 """.strip()
 
 
@@ -931,11 +946,101 @@ def parse_operational_baseline(
     }
 
 
+def parse_operational_baseline_rows(
+    rows: list[dict[str, str | None]],
+    logical_run_date: str | date,
+) -> dict[str, Any]:
+    """Publish an ALL baseline plus allowlisted aggregate breakdowns."""
+
+    if not rows:
+        raise ValueError("Operational baseline returned no aggregate rows")
+    all_rows = [
+        row
+        for row in rows
+        if row.get("dimension_type") == "ALL" and row.get("dimension_value") == "ALL"
+    ]
+    if len(all_rows) != 1:
+        raise ValueError("Operational baseline must contain exactly one ALL row")
+
+    baseline = parse_operational_baseline(all_rows[0], logical_run_date)
+    total_shipments = baseline["metrics"]["shipment_count"]
+    breakdowns: dict[str, list[dict[str, Any]]] = {
+        "transport_modes": [],
+        "providers": [],
+        "market_lanes": [],
+    }
+    output_keys = {
+        "TRANSPORT_MODE": "transport_modes",
+        "PROVIDER": "providers",
+        "MARKET_LANE": "market_lanes",
+    }
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        dimension_type = row.get("dimension_type")
+        dimension_value = row.get("dimension_value")
+        if dimension_type == "ALL":
+            continue
+        if dimension_type not in output_keys or not isinstance(dimension_value, str):
+            raise ValueError("Operational baseline returned an unsafe dimension")
+        if (
+            len(dimension_value) > 64
+            or not re.fullmatch(r"[A-Z0-9][A-Z0-9 _./-]*", dimension_value)
+        ):
+            raise ValueError("Operational baseline returned an unsafe dimension value")
+        key = (dimension_type, dimension_value)
+        if key in seen:
+            raise ValueError("Operational baseline returned a duplicate dimension")
+        seen.add(key)
+
+        parsed = parse_operational_baseline(row, logical_run_date)
+        metrics = parsed["metrics"]
+        if metrics["shipment_count"] > total_shipments:
+            raise ValueError("Operational baseline breakdown exceeds the ALL population")
+        breakdowns[output_keys[dimension_type]].append(
+            {
+                "name": dimension_value,
+                "shipment_count": metrics["shipment_count"],
+                "new_booking_count": metrics["new_booking_count"],
+                "delivered_count": metrics["delivered_count"],
+                "sla_breach_shipment_count": metrics["sla_breach_shipment_count"],
+                "sla_breach_shipment_rate_pct": metrics["sla_breach_shipment_rate_pct"],
+                "signal_candidate_count": metrics["signal_candidate_count"],
+                "high_severity_signal_count": metrics["high_severity_signal_count"],
+                "expected_cost_total": metrics["expected_cost_total"],
+                "current_cost_total": metrics["current_cost_total"],
+                "cost_variance_pct": metrics["cost_variance_pct"],
+            }
+        )
+
+    for values in breakdowns.values():
+        values.sort(key=lambda item: (-item["shipment_count"], item["name"]))
+    delivered = baseline["metrics"]["delivered_count"]
+    baseline["breakdowns"] = breakdowns
+    baseline["outcome_labels"] = {
+        "observed": delivered,
+        "pending": total_shipments - delivered,
+        "total": total_shipments,
+    }
+    baseline["population_profile"] = {
+        "transport_mode_count": len(breakdowns["transport_modes"]),
+        "provider_count": len(breakdowns["providers"]),
+        "market_lane_count": len(breakdowns["market_lanes"]),
+        "multimodal_status": (
+            "MULTIMODAL_OBSERVED"
+            if len(breakdowns["transport_modes"]) > 1
+            else "SINGLE_MODE_OBSERVED"
+        ),
+    }
+    return baseline
+
+
 def build_snapshot(
     row: dict[str, str | None],
     forecast_rows: list[dict[str, str | None]] | None = None,
     existing_analytics_rows: list[dict[str, str | None]] | None = None,
-    operational_baseline_row: dict[str, str | None] | None = None,
+    operational_baseline_row: (
+        dict[str, str | None] | list[dict[str, str | None]] | None
+    ) = None,
     now: datetime | None = None,
     pipeline_run: dict[str, Any] | None = None,
     pipeline_status_required: bool = False,
@@ -994,13 +1099,34 @@ def build_snapshot(
             "existing_assets": parse_existing_analytics(existing_analytics_rows or []),
         }
     )
+    baseline_rows = (
+        operational_baseline_row
+        if isinstance(operational_baseline_row, list)
+        else [operational_baseline_row] if operational_baseline_row else []
+    )
+    if baseline_rows and "dimension_type" not in baseline_rows[0]:
+        baseline_rows = [
+            {**baseline_rows[0], "dimension_type": "ALL", "dimension_value": "ALL"}
+        ]
     operational_baseline = (
-        parse_operational_baseline(operational_baseline_row, newest_date)
-        if operational_baseline_row
+        parse_operational_baseline_rows(baseline_rows, newest_date)
+        if baseline_rows
         else {
             "status": "unavailable",
             "as_of_date": None,
             "metrics": {},
+            "breakdowns": {
+                "transport_modes": [],
+                "providers": [],
+                "market_lanes": [],
+            },
+            "outcome_labels": {"observed": 0, "pending": 0, "total": 0},
+            "population_profile": {
+                "transport_mode_count": 0,
+                "provider_count": 0,
+                "market_lane_count": 0,
+                "multimodal_status": "UNAVAILABLE",
+            },
             "maturity": {
                 "status": "NOT_READY",
                 "minimum_delivered_shipments": MIN_ENGINEERING_DELIVERED_SHIPMENTS,
@@ -1024,7 +1150,7 @@ def build_snapshot(
     fresh = age_hours <= 36 and pipeline_current
 
     return {
-        "schema_version": "1.5",
+        "schema_version": "1.6",
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "source_updated_at": source_updated_at.isoformat().replace("+00:00", "Z"),
         "as_of_date": newest_date.isoformat(),
@@ -1161,7 +1287,7 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
         parse_athena_result(metric_response),
         parse_athena_rows(forecast_response),
         parse_athena_rows(existing_analytics_response),
-        parse_athena_result(operational_baseline_response),
+        parse_athena_rows(operational_baseline_response),
         pipeline_run=pipeline_run,
         pipeline_status_required=pipeline_status_required,
     )
