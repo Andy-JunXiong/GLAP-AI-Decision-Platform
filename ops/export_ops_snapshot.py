@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import time
 from typing import Any
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
@@ -645,14 +646,27 @@ def _safe_pipeline_load_error(exc: Exception) -> str:
     code = str(error.get("Code") or "")
     return {
         "AccessDenied": "access_denied",
+        "AccessDeniedException": "access_denied",
+        "403": "access_denied",
         "NoSuchBucket": "bucket_unavailable",
         "NoSuchKey": "object_unavailable",
+        "404": "object_unavailable",
         "InvalidObjectState": "object_unavailable",
     }.get(
         code,
         "invalid_json"
         if isinstance(exc, json.JSONDecodeError)
-        else "unexpected_error",
+        else {
+            "EndpointConnectionError": "endpoint_unavailable",
+            "ConnectTimeoutError": "endpoint_unavailable",
+            "ReadTimeoutError": "endpoint_unavailable",
+            "ConnectionClosedError": "endpoint_unavailable",
+            "ResponseStreamingError": "object_read_error",
+            "IncompleteReadError": "object_read_error",
+            "FlexibleChecksumError": "object_read_error",
+            "UnicodeDecodeError": "invalid_encoding",
+            "KeyError": "invalid_response",
+        }.get(type(exc).__name__, "unexpected_error"),
     )
 
 
@@ -1252,15 +1266,32 @@ def build_snapshot(
     }
 
 
-def load_pipeline_run(client: Any, status_uri: str) -> dict[str, Any]:
+def load_pipeline_run(
+    client: Any,
+    status_uri: str,
+    attempts: int = 3,
+    retry_delay_seconds: float = 1.0,
+    sleep_fn: Any = time.sleep,
+) -> dict[str, Any]:
     parsed = urlparse(status_uri)
     if parsed.scheme != "s3" or not parsed.netloc or not parsed.path.lstrip("/"):
         raise ValueError("PIPELINE_STATUS_S3_URI must be a complete s3:// URI")
-    response = client.get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
-    value = json.loads(response["Body"].read())
-    if not isinstance(value, dict):
-        raise ValueError("Pipeline status object must contain a JSON object")
-    return value
+    if attempts < 1:
+        raise ValueError("Pipeline status attempts must be positive")
+    for attempt in range(attempts):
+        try:
+            response = client.get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
+            value = json.loads(response["Body"].read())
+            if not isinstance(value, dict):
+                raise ValueError("Pipeline status object must contain a JSON object")
+            return value
+        except (json.JSONDecodeError, UnicodeDecodeError, KeyError, ValueError):
+            raise
+        except Exception:
+            if attempt + 1 == attempts:
+                raise
+            sleep_fn(retry_delay_seconds * (attempt + 1))
+    raise RuntimeError("Pipeline status retry loop exited unexpectedly")
 
 
 def run_query(client: Any, query: str, database: str, output: str, workgroup: str) -> dict[str, Any]:

@@ -520,6 +520,61 @@ class OpsSnapshotTests(unittest.TestCase):
             "unexpected_error",
         )
 
+        class FlexibleChecksumError(Exception):
+            pass
+
+        self.assertEqual(
+            exporter._safe_pipeline_load_error(FlexibleChecksumError("private detail")),
+            "object_read_error",
+        )
+
+    def test_pipeline_status_read_retries_transient_client_failure(self):
+        class Body:
+            def read(self):
+                return b'{"status":"succeeded"}'
+
+        class Client:
+            calls = 0
+
+            def get_object(self, **_kwargs):
+                self.calls += 1
+                if self.calls < 3:
+                    raise RuntimeError("transient")
+                return {"Body": Body()}
+
+        delays = []
+        client = Client()
+        result = exporter.load_pipeline_run(
+            client,
+            "s3://private-status/pipeline/latest.json",
+            retry_delay_seconds=0.25,
+            sleep_fn=delays.append,
+        )
+        self.assertEqual(result, {"status": "succeeded"})
+        self.assertEqual(client.calls, 3)
+        self.assertEqual(delays, [0.25, 0.5])
+
+    def test_pipeline_status_invalid_json_fails_without_retry(self):
+        class Body:
+            def read(self):
+                return b"not-json"
+
+        class Client:
+            calls = 0
+
+            def get_object(self, **_kwargs):
+                self.calls += 1
+                return {"Body": Body()}
+
+        client = Client()
+        with self.assertRaises(json.JSONDecodeError):
+            exporter.load_pipeline_run(
+                client,
+                "s3://private-status/pipeline/latest.json",
+                sleep_fn=lambda _delay: None,
+            )
+        self.assertEqual(client.calls, 1)
+
     def test_committed_fallback_is_explicitly_not_live(self):
         path = ROOT / "offline" / "data" / "ops-snapshot.json"
         snapshot = json.loads(path.read_text(encoding="utf-8"))
