@@ -7,7 +7,7 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The `1.6` snapshot contains only:
+The `1.7` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
@@ -18,7 +18,7 @@ The `1.6` snapshot contains only:
   calculated by Athena engine v3;
 - aggregate alert, action, and root-cause distributions from governed AWS v3/v2
   result tables;
-- aggregate pipeline query status and data-completeness checks.
+- aggregate pipeline query status and data-completeness checks;
 - the aggregate `ALL` row plus allowlisted transport-mode, provider, and
   market-lane rows from the stateful operational-calendar baseline, including
   shipment, booking, delivery, SLA-breach, governed signal, and aggregate cost
@@ -30,7 +30,16 @@ The `1.6` snapshot contains only:
   unavailable until deliveries exist and requires 200 delivered outcomes before
   reporting `ENGINEERING_READY`.
 - optional success-gated pipeline stage timing, completion state, safe failure
-  category, quality-check results, and a public runbook link.
+  category, quality-check results, and a public runbook link;
+- explicit expected, completed, and successful stage counts plus the number of
+  passed public quality checks.
+
+Pipeline Health reports `current` only when the operational, actual-calendar
+latest-run contract contains the exact governed six-stage order, all six stages
+succeeded, both validation stages contain the complete five-check contract,
+all ten checks passed, and the logical run date matches the aggregate source
+date. A partial stage list, one validation gate, a future simulation, or a
+missing status object is never rendered as healthy.
 
 It excludes shipment IDs, entity keys, customer records, account IDs, ARNs, S3
 paths, query execution IDs and individual decisions. Dimension values are

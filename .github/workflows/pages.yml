@@ -80,13 +80,16 @@ jobs:
           touch _site/.nojekyll
 
       - name: Configure GitHub Pages
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
       - name: Deploy to GitHub Pages
+        if: ${{ github.ref == 'refs/heads/main' }}
         id: deployment
         uses: actions/deploy-pages@v4

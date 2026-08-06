@@ -125,14 +125,30 @@ class OfflineDemoTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.html)
 
-    def test_schema_16_breakdowns_are_rendered(self):
+    def test_schema_17_breakdowns_are_rendered(self):
         for marker in (
-            'schema_version:"1.6"',
+            'schema_version:"1.7"',
             "breakdowns.market_lanes",
             "population_profile",
             "outcome_labels",
             'id="analyticsModeCount"',
             'id="analyticsProviderCount"',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
+    def test_pipeline_health_is_visible_and_fail_closed(self):
+        for marker in (
+            'id="pipelineSummary"',
+            'data-system-target="ops"',
+            'id="pipelineHealthBadge"',
+            'id="pipelineStageList"',
+            'id="pipelineQualityChecks"',
+            'id="pipelineRunbookLink"',
+            "renderPipelineHealth(snapshot)",
+            'pipeline.quality_checks_total===10',
+            'pipeline.verification_mode==="pipeline_run"',
+            "Six-stage evidence is not available",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
@@ -198,6 +214,12 @@ class RepositoryShowcaseTests(unittest.TestCase):
         self.assertIn("ops/export_ops_snapshot.py", workflow)
         self.assertIn("sql/13_operational_baseline.sql", workflow)
         self.assertIn("AWS_OPS_READ_ROLE_ARN", workflow)
+        self.assertIn("AWS_OPS_PIPELINE_STATUS_URI", workflow)
+        self.assertIn("AWS_OPS_PIPELINE_STATUS_REQUIRED", workflow)
+        self.assertGreaterEqual(
+            workflow.count("github.ref == 'refs/heads/main'"),
+            3,
+        )
         self.assertIn("actions/configure-pages@v5", workflow)
         self.assertIn("actions/upload-pages-artifact@v4", workflow)
         self.assertIn("actions/deploy-pages@v4", workflow)

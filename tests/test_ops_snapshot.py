@@ -238,7 +238,7 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["forecast"]["status"], "ready")
         self.assertEqual(snapshot["forecast"]["calculation_engine"], "aws_athena_engine_v3")
         self.assertEqual(len(snapshot["forecast"]["points"]), 7)
-        self.assertEqual(snapshot["schema_version"], "1.6")
+        self.assertEqual(snapshot["schema_version"], "1.7")
         self.assertEqual(snapshot["provenance"]["outcome_evidence"], "simulated")
         self.assertEqual(snapshot["operational_baseline"]["status"], "available")
         self.assertEqual(
@@ -361,35 +361,22 @@ class OpsSnapshotTests(unittest.TestCase):
             "failure_category": None,
             "stages": [
                 {
-                    "name": "generation",
+                    "name": name,
                     "started_at": "2026-08-04T00:05:00Z",
-                    "completed_at": "2026-08-04T00:06:00Z",
-                    "duration_ms": 60000,
-                    "status": "succeeded",
-                    "failure_category": None,
-                    "quality_checks": [],
-                },
-                {
-                    "name": "input_validation",
-                    "started_at": "2026-08-04T00:06:00Z",
-                    "completed_at": "2026-08-04T00:06:30Z",
-                    "duration_ms": 30000,
-                    "status": "succeeded",
-                    "failure_category": None,
-                    "quality_checks": [
-                        {"name": name, "status": "passed"}
-                        for name in sorted(exporter.PIPELINE_QUALITY_CHECKS)
-                    ],
-                },
-                {
-                    "name": "decision_flywheel",
-                    "started_at": "2026-08-04T00:06:30Z",
                     "completed_at": "2026-08-04T00:07:00Z",
-                    "duration_ms": 30000,
+                    "duration_ms": 20000,
                     "status": "succeeded",
                     "failure_category": None,
-                    "quality_checks": [],
-                },
+                    "quality_checks": (
+                        [
+                            {"name": check, "status": "passed"}
+                            for check in sorted(exporter.PIPELINE_QUALITY_CHECKS)
+                        ]
+                        if name in exporter.PIPELINE_QUALITY_STAGES
+                        else []
+                    ),
+                }
+                for name in exporter.PIPELINE_STAGE_ORDER
             ],
         }
         verified = exporter.build_snapshot(
@@ -402,6 +389,10 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(verified["freshness"]["status"], "fresh")
         self.assertEqual(verified["pipeline"]["status"], "current")
         self.assertEqual(verified["pipeline"]["duration_ms"], 120000)
+        self.assertEqual(verified["pipeline"]["stage_count"], 6)
+        self.assertEqual(verified["pipeline"]["stages_succeeded"], 6)
+        self.assertEqual(verified["pipeline"]["quality_checks_succeeded"], 10)
+        self.assertEqual(verified["pipeline"]["quality_checks_total"], 10)
 
         previous_day = dict(pipeline_run, logical_run_date="2026-08-03")
         stale_run = exporter.build_snapshot(
@@ -412,6 +403,34 @@ class OpsSnapshotTests(unittest.TestCase):
         )
         self.assertEqual(stale_run["freshness"]["status"], "stale")
         self.assertEqual(stale_run["pipeline"]["status"], "unverified")
+
+    def test_incomplete_stage_or_quality_contract_cannot_report_current(self):
+        row = {key: "2026-08-04" for key in exporter.STAGE_DATE_COLUMNS.values()}
+        incomplete_run = {
+            "logical_run_date": "2026-08-04",
+            "status": "succeeded",
+            "stages": [
+                {
+                    "name": "input_validation",
+                    "status": "succeeded",
+                    "quality_checks": [
+                        {"name": name, "status": "passed"}
+                        for name in sorted(exporter.PIPELINE_QUALITY_CHECKS)
+                    ],
+                }
+            ],
+        }
+        snapshot = exporter.build_snapshot(
+            row,
+            operational_baseline_row=operational_baseline_row(),
+            now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+            pipeline_run=incomplete_run,
+            pipeline_status_required=True,
+        )
+        self.assertEqual(snapshot["freshness"]["status"], "stale")
+        self.assertEqual(snapshot["pipeline"]["status"], "unverified")
+        self.assertEqual(snapshot["pipeline"]["stage_count"], 1)
+        self.assertEqual(snapshot["pipeline"]["quality_checks_succeeded"], 5)
 
     def test_failed_pipeline_run_cannot_report_current(self):
         row = {
@@ -482,6 +501,24 @@ class OpsSnapshotTests(unittest.TestCase):
         for forbidden in ("arn:", "s3://", "private/function", "exception text"):
             self.assertNotIn(forbidden, serialized)
         self.assertEqual(snapshot["pipeline"]["failure_category"], "unexpected_failure")
+
+    def test_pipeline_load_errors_are_reduced_to_safe_codes(self):
+        class FakeClientError(Exception):
+            response = {
+                "Error": {
+                    "Code": "AccessDenied",
+                    "Message": "private bucket and role details",
+                }
+            }
+
+        self.assertEqual(
+            exporter._safe_pipeline_load_error(FakeClientError()),
+            "access_denied",
+        )
+        self.assertEqual(
+            exporter._safe_pipeline_load_error(RuntimeError("s3://private/path")),
+            "unexpected_error",
+        )
 
     def test_committed_fallback_is_explicitly_not_live(self):
         path = ROOT / "offline" / "data" / "ops-snapshot.json"
