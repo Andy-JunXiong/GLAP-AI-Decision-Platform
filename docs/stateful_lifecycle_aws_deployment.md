@@ -524,6 +524,23 @@ CloudFormation independently reported `UPDATE_COMPLETE` for
 `2026-08-06T02:37:31.609000+00:00`. The workflow evidence also confirms that
 no schedule was created and no production alias was changed.
 
+### Operational-calendar baseline contract
+
+Use the manual `deploy-operational-baseline` action with
+`integration_logical_date=2026-08-06` to create and validate
+`vw_multimodal_operational_baseline_v1`. The view freezes the operational scope
+at that Sydney as-of date and provides one overall row plus transport-mode,
+provider, and market-lane breakdowns for shipment volume, delivery performance,
+delay, cost variance, and governed signal candidates.
+
+This is an operational-calendar engineering baseline over staging data, not
+real-world company performance. Every row therefore carries
+`real_world_evidence=false`, provenance `SIMULATED_MULTIMODAL_V1`, evidence
+class `SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, and decision use
+`ENGINEERING_EVALUATION_ONLY`. Ten fail-closed checks reconcile the view to the
+bounded operational source and reject cutoff drift, scenario leakage, invalid
+evidence claims, duplicate dimensions, or invalid metric ranges.
+
 ## Future-scenario extension AWS evidence -- 5 August 2026
 
 PR `#13` merged as commit `e56b41b` after both Python 3.13 and 3.14 CI jobs

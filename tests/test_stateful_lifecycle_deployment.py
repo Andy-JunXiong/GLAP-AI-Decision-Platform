@@ -107,6 +107,14 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             len(statements(ROOT / "sql" / "12_temporal_scope_backfill.sql")),
             5,
         )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "13_operational_baseline.sql")),
+            1,
+        )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "14_operational_baseline_validation.sql")),
+            1,
+        )
 
     def test_temporal_backfill_is_manual_bounded_and_verified(self):
         script = (ROOT / "ops" / "backfill_temporal_scope.ps1").read_text(
@@ -121,6 +129,62 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("future_operational_view_rows", script)
         self.assertIn("Backfill and verify row-level temporal isolation", workflow)
         self.assertIn("./ops/backfill_temporal_scope.ps1", workflow)
+
+    def test_operational_baseline_is_bounded_synthetic_and_fail_closed(self):
+        baseline = (ROOT / "sql" / "13_operational_baseline.sql").read_text(
+            encoding="utf-8"
+        )
+        validation = (
+            ROOT / "sql" / "14_operational_baseline_validation.sql"
+        ).read_text(encoding="utf-8")
+        script = (ROOT / "ops" / "deploy_operational_baseline.ps1").read_text(
+            encoding="utf-8"
+        )
+        workflow = (
+            ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
+        ).read_text(encoding="utf-8")
+        deployer = (
+            ROOT / "ops" / "configure_stateful_lifecycle_deployer.ps1"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("vw_multimodal_operational_baseline_v1", baseline)
+        self.assertIn("metric_date <= DATE '{{AS_OF_DATE}}'", baseline)
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", baseline)
+        self.assertIn("execution_scenario_id IS NULL", baseline)
+        self.assertIn("'TRANSPORT_MODE'", baseline)
+        self.assertIn("'PROVIDER'", baseline)
+        self.assertIn("'MARKET_LANE'", baseline)
+        self.assertIn("false AS real_world_evidence", baseline)
+        self.assertIn("'SIMULATED_MULTIMODAL_V1'", baseline)
+        self.assertIn("'SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE'", baseline)
+        self.assertIn("'ENGINEERING_EVALUATION_ONLY'", baseline)
+        self.assertNotRegex(
+            baseline,
+            r"(?i)(insert\s+into|merge\s+into|update\s+|delete\s+from|drop\s+)",
+        )
+
+        for check in (
+            "missing_baseline_output",
+            "missing_or_duplicate_all_dimension",
+            "duplicate_dimension_key",
+            "invalid_cutoff_or_temporal_contract",
+            "invalid_evidence_classification",
+            "overall_shipment_count_does_not_reconcile",
+            "mode_shipment_count_does_not_reconcile",
+            "provider_shipment_count_does_not_reconcile",
+            "lane_shipment_count_does_not_reconcile",
+            "invalid_baseline_metric_range",
+        ):
+            self.assertIn(f"'{check}'", validation)
+
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("Resolve-TemporalContext", script)
+        self.assertIn("exactly 10 fail-closed checks", script)
+        self.assertIn("Real-world evidence: False", script)
+        self.assertIn("deploy-operational-baseline", workflow)
+        self.assertIn("Deploy and validate operational as-of baseline", workflow)
+        self.assertIn("Real-world evidence claimed: \\`false\\`", workflow)
+        self.assertIn("vw_multimodal_operational_baseline_v1", deployer)
 
     def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
         compatibility = (
@@ -317,6 +381,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("deploy-replay-validate", workflow)
         self.assertIn("deploy-integration-validate", workflow)
         self.assertIn("deploy-analytics-contract", workflow)
+        self.assertIn("deploy-operational-baseline", workflow)
         self.assertIn("deploy-q4-configuration", workflow)
         self.assertIn("extend-integration-validate", workflow)
         self.assertIn("deploy-recovery-controller", workflow)
