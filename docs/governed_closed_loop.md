@@ -1,7 +1,7 @@
 # Governed exception-to-outcome contract
 
 **Business-date boundary:** Australia/Sydney
-**Implementation status:** repository logic and tests complete; new AWS persistence tables are not deployed
+**Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06
 
 The governed closed loop connects lifecycle evidence without allowing synthetic
 learning to change either the generator or an effective policy automatically:
@@ -56,10 +56,25 @@ Operational model-readiness inputs must satisfy every condition below:
 `FUTURE_SIMULATION` outcomes are useful for workflow testing only. They never
 count as observed labels, operational backtest evidence, or promotion evidence.
 
-## Deployment boundary
+## Deployment evidence and boundary
 
-[`glap_governed_closed_loop.py`](../lambda/glap_governed_closed_loop.py) is a
-pure, deterministic domain layer. It is ready to be connected to private,
-append-only alert/action/outcome/proposal tables. This change does not create
-those tables, enable a recurring schedule, expose entity records publicly, or
+[`glap_governed_closed_loop.py`](../lambda/glap_governed_closed_loop.py) remains
+a pure, deterministic domain layer. The existing private lifecycle adapter now
+persists its state to four isolated Iceberg staging tables using
+scenario-aware, retry-safe keys.
+
+The `2026-08-06` actual-calendar staging run produced 15 Alert rows and 15
+proposed Action rows. A repeat run produced zero new Actions. Athena
+reconciliation found 15/15 distinct Alert keys, 15/15 distinct Action keys,
+zero future-simulation rows, and no Outcomes or policy proposals before their
+human-completion and observation gates. All six new closed-loop quality checks
+passed.
+
+The full 26-check lifecycle gate retained one pre-existing failure:
+`missing_provider_coverage`. The actual-calendar baseline for this date contains
+only Maersk Ocean; future DHL/KN simulation rows were not used to manufacture
+operational coverage.
+
+This deployment does not enable a recurring schedule, create a production
+alias, expose entity records publicly, complete an Action automatically, or
 activate a policy.

@@ -125,6 +125,26 @@ weakening fail-closed behavior.
 5. Verify alarms, retry behavior, DLQ handling, and recovery guidance for the
    success-gated controller.
 
+## Closed-loop staging continuation
+
+After the original handoff, the private staging stack was extended with
+append-only Alert, Action, Outcome, and policy-proposal Iceberg contracts. The
+adapter now advances stable alert state, proposes human-review-required Actions,
+observes completed Actions only after their lag, and emits review-only policy
+proposals after the configured maturity threshold.
+
+The actual-calendar `2026-08-06` write persisted 15 Alerts and 15 proposed
+Actions. The same-date retry created zero additional Actions. Read-only Athena
+reconciliation found 15 distinct Alert keys, 15 distinct Action keys, no future
+simulation rows, and no premature Outcomes or policy proposals. The six new
+closed-loop checks passed. The full 26-check lifecycle contract still reports
+the pre-existing `missing_provider_coverage` failure because the eligible
+actual-calendar population contains only Maersk Ocean. No future DHL/KN scenario
+evidence was counted to clear that gate.
+
+No schedule, production alias, public entity output, automatic Action approval,
+or automatic policy activation was added.
+
 ## Longer-term plan
 
 1. Build the authenticated internal Operations API and role model for viewer,

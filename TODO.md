@@ -62,6 +62,15 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 - [x] Add a fail-closed eligibility filter that counts only closed
   `OPERATIONAL` / `ACTUAL_CALENDAR` Outcomes observed on or before the Sydney
   as-of date. Future simulations and pending rows remain excluded.
+- [x] Deploy four private Iceberg staging contracts for Alerts, Actions,
+  Outcomes, and policy proposals; connect them to the lifecycle adapter with
+  temporal-scope-aware idempotent keys and six new fail-closed checks.
+- [x] Verify the `2026-08-06` operational write and retry: 15 unique Alerts,
+  15 unique proposed Actions, zero duplicate Actions on retry, zero premature
+  Outcomes/proposals, and zero future-simulation rows in the four new tables.
+- [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
+  exists on or before the Sydney cutoff; do not use future simulations to pass
+  the remaining `missing_provider_coverage` lifecycle check.
 
 Detailed evidence and next actions are in the
 [`6 August development handoff`](docs/development_handoff_2026-08-06.md).
