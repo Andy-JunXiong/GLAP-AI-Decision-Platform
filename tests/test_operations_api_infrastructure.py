@@ -43,6 +43,20 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("GLAP_OPERATIONS_JWT_AUDIENCE", workflow)
         self.assertIn("GLAP_OPERATIONS_INTERNAL_ORIGIN", workflow)
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
+        self.assertIn("Resolve protected staging configuration privately", workflow)
+        self.assertIn("::add-mask::$issuer", workflow)
+        self.assertIn('} >> "$GITHUB_ENV"', workflow)
+        self.assertIn("Expected exactly one Cognito pool candidate", workflow)
+        self.assertIn("Expected exactly one internal HTTPS origin candidate", workflow)
+        discovery = workflow.split(
+            "Resolve protected staging configuration privately", 1
+        )[1].split("Validate protected staging configuration", 1)[0]
+        self.assertNotIn("GITHUB_STEP_SUMMARY", discovery)
+        self.assertNotIn("describe-user-pool-client", discovery)
+        self.assertLess(
+            workflow.index("Configure AWS staging credentials"),
+            workflow.index("Resolve protected staging configuration privately"),
+        )
         self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.action == 'deploy'", workflow)
         self.assertIn("Public Pages write access: \\`false\\`", workflow)
         self.assertNotIn("schedule:", workflow)
