@@ -18,6 +18,61 @@ The Australia/Sydney business date is the evidence boundary. As of
 may prove that code, recovery, and evaluation mechanics work, but they are not
 real history, observed company performance, or training evidence.
 
+## Final daily closeout
+
+### What we delivered
+
+1. Published truthful Pipeline Health with exact stage/check reconciliation and
+   repaired the exporter defect that initially kept it `unverified`.
+2. Enforced the Sydney-date boundary throughout lifecycle rows, analytics,
+   backtests, and public evidence so future scenarios cannot become operational
+   history or model-readiness evidence.
+3. Deployed the governed closed loop to private AWS staging: stable Alerts,
+   proposed Actions, delayed Outcomes, and review-only policy proposals.
+4. Added the private Action approval path with named-human enforcement,
+   append-only audit events, valid state transitions, idempotent requests, and
+   an audit-derived current-state view.
+5. Exercised one controlled Action through approval and completion, then
+   connected it to a calendar-gated pending Outcome.
+
+### What we achieved
+
+- the live public snapshot reports the governed `2026-08-06` pipeline as
+  `current`, with 6/6 stages and 10/10 checks;
+- private staging contains 15 unique Alerts and 15 unique proposed Actions, and
+  a same-date retry created no duplicate Actions;
+- the controlled Action retained exactly two audit events,
+  `APPROVE,COMPLETE`; its current state is `COMPLETED`, and its repeated approval
+  request returned the original event;
+- the closed loop created one `PENDING` Outcome due `2026-08-09`, with no
+  observed date and no policy proposal as of `2026-08-06`;
+- the expanded 28-check lifecycle gate passed both new Action-audit checks. Its
+  only remaining failure is the pre-existing `missing_provider_coverage` gate.
+
+### Next working-session plan
+
+1. Define viewer, operator, approver, and administrator permissions and the
+   authenticated internal Operations API contract.
+2. Put that API in front of the private Action mutation Lambda and connect the
+   Decision Queue and Action Board without exposing writes to public Pages.
+3. On or after the Sydney business date `2026-08-09`, observe the pending
+   Outcome through an actual-calendar run. Do not advance the operational date
+   early or count a future simulation as observed evidence.
+4. Add alarms, retry/DLQ evidence, concurrency tests, and recovery guidance for
+   the new write path.
+
+### Future plan
+
+1. Complete the authenticated internal operations cockpit from Risk Hotspots
+   through Decision Review, Action Board, and Outcome Review.
+2. Accumulate eligible actual-calendar Outcomes and allow them to produce only
+   human-reviewed policy proposals with explicit rollback versions.
+3. Reassess provider coverage, backtests, and supervised-label readiness only
+   when qualifying DHL/KN and observed Outcome history exists by calendar date.
+4. Consider recurring schedules, production aliases, policy consumers, and
+   model upgrades only after security, reliability, audit, cost, and recovery
+   gates pass under separate approval.
+
 ## What was completed today
 
 ### 1. Governed recovery and future-scenario validation -- PRs `#14`--`#21`
@@ -99,6 +154,9 @@ weakening fail-closed behavior.
 | Full-site evidence alignment | Merged and live on GitHub Pages |
 | Larger typography | Merged and live after browser refresh |
 | Detailed Pipeline Health | Merged, live, and verified `current` for `2026-08-06` |
+| Governed Alert/Action/Outcome persistence | Deployed and exercised in private staging |
+| Manual Action approval and append-only audit | Deployed and verified in private staging |
+| First completed-Action Outcome | `PENDING`, due `2026-08-09`; not observed evidence yet |
 | Recurring stateful lifecycle/forecast schedule | Not approved |
 | Production alias or autonomous policy promotion | Not approved |
 | Public entity-level data or write operations | Prohibited by current boundary |
@@ -120,17 +178,16 @@ weakening fail-closed behavior.
 
 ## Near-term plan
 
-1. Accumulate closed outcomes only when their Sydney calendar dates actually
-   arrive. Re-run operational label-readiness checks without counting future
-   simulations.
-2. Add stable lifecycle `SLA_BREACH` and `COST_ANOMALY` alerts beside the
-   existing risk signal, with aggregate public output and private entity grain.
-3. Add delayed, deterministic, context-dependent synthetic outcomes so the
-   full recommendation-to-action-to-outcome loop can be tested reproducibly.
-4. Route learning into a human-reviewed policy proposal. Do not let learning
-   automatically alter the generator or a production decision policy.
-5. Verify alarms, retry behavior, DLQ handling, and recovery guidance for the
-   success-gated controller.
+1. Build the authenticated role and API boundary for the already deployed
+   private Action mutation path.
+2. Connect Decision Queue and Action Board interactions to approve, reject, and
+   complete requests with their existing idempotency and audit guarantees.
+3. Accumulate closed Outcomes only when their Sydney calendar dates actually
+   arrive, then re-run operational label-readiness checks without counting
+   future simulations.
+4. Resolve provider coverage only from eligible actual-calendar DHL/KN rows.
+5. Verify alarms, retry behavior, DLQ handling, concurrency, and recovery
+   guidance for the controller and write path.
 
 ## Closed-loop staging continuation
 
@@ -203,6 +260,9 @@ schedule, or production alias.
   desktop/mobile browser QA, and fail-closed branch-deployment validation. The
   follow-up exporter fix passed 152 repository tests and CI run `31092139564`;
   Pages run `31092139541` published the verified schema-1.7 snapshot.
+- The governed closed-loop and Action-audit continuation is on `main` through
+  commits `34520be`, `9d28389`, `e1f3745`, and `57a61ac`. The final CI run
+  `31097544407` succeeded; the focused Action/deployment suite passed 22 tests.
 - No work today authorized a production alias, public write path, public entity
   record, recurring lifecycle/forecast schedule, or automatic policy change.
 

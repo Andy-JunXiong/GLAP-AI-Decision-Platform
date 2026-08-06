@@ -307,32 +307,30 @@ Acceptance criteria:
 
 ## Recommended next implementation slice
 
-The immediate release slice is truthful Pipeline Health, followed by the next
-closed-loop lifecycle capability. Forecast-model work is calendar-gated and is
-not the immediate implementation priority.
+Truthful Pipeline Health, the private closed-loop persistence layer, and the
+manual Action mutation/audit path are now implemented and verified. The next
+slice is the authenticated operator journey; forecast-model work remains
+calendar-gated and is not the immediate implementation priority.
 
-1. Merge draft PR `#30` only after explicit approval, then verify its first
-   `main` Pages export. Accept `current` only when the exact six stages and all
-   ten checks reconcile to the governed source date.
-2. If the exporter remains `unverified`, use the safe diagnostic to repair the
-   narrow status-object read boundary and rerun publication without weakening
-   fail-closed behavior.
-3. Add stable, auditable `SLA_BREACH` and `COST_ANOMALY` lifecycle alerts, then
-   add delayed and reproducible synthetic Outcomes for controlled end-to-end
-   testing.
-4. Feed those Outcomes into a human-reviewed policy proposal, never an
-   automatic generator or production-policy update.
-5. Accumulate eligible actual-calendar outcomes as dates arrive and re-run
-   label readiness. Resume forecast or supervised-model comparison only after
-   the real-calendar evidence gates pass.
-6. After the closed-loop contracts are stable, begin the authenticated
-   write-back API and internal operations cockpit described in P1 and P4.
+1. Define the viewer, operator, approver, and administrator permission matrix
+   and versioned internal Operations API contract.
+2. Put the authenticated API in front of the private Action mutation Lambda,
+   preserving named-human enforcement, valid transitions, stable request IDs,
+   and append-only audit history.
+3. Connect Decision Queue and Action Board screens to the API while keeping
+   GitHub Pages read-only and aggregate-only.
+4. Add alarms, DLQ/retry evidence, concurrency controls, and recovery guidance
+   before considering any production write path.
+5. On or after `2026-08-09` Sydney time, run the actual-calendar observation for
+   the pending Outcome. Never use a future simulation as observed evidence.
+6. Accumulate eligible actual-calendar Outcomes and provider coverage before
+   resuming forecast or supervised-model readiness decisions.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic
 policy changes require separate review and explicit approval.
 
-## Repository checkpoint -- governed closed-loop domain
+## Repository checkpoint -- deployed governed closed loop and Action audit
 
 The repository now contains the deterministic domain contract for the next
 closed-loop slice. Stable `SLA_BREACH` and `COST_ANOMALY` candidates reconcile
@@ -345,7 +343,14 @@ Actual-calendar eligibility is fail closed: only closed `OPERATIONAL` Outcomes
 with `time_basis=ACTUAL_CALENDAR` and an observed date on or before the Sydney
 as-of date may enter readiness evidence. Future simulations remain excluded.
 
-This checkpoint implements and tests the storage-agnostic logic. Private AWS
-persistence, authenticated write APIs, recurring execution, and policy
-activation remain outside the deployed boundary and require separate approval.
-See [`governed_closed_loop.md`](governed_closed_loop.md).
+Private AWS staging now persists the governed Alerts, proposed Actions, delayed
+Outcomes, review-only policy proposals, and append-only Action audit events. A
+manual-only mutation Lambda enforces named-human approval, valid transitions,
+and request idempotency; a view derives current Action state without overwriting
+history. One controlled Action reached `COMPLETED`, and its same-date lifecycle
+continuation produced one `PENDING` Outcome due `2026-08-09`.
+
+The remaining boundary is explicit: the Outcome is not observed evidence as of
+`2026-08-06`; authenticated write APIs, recurring execution, production aliases,
+and policy activation remain outside the deployed boundary and require separate
+approval. See [`governed_closed_loop.md`](governed_closed_loop.md).

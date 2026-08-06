@@ -91,6 +91,28 @@ Detailed evidence and next actions are in the
 The governing date boundary is in the
 [`temporal truthfulness contract`](docs/temporal_truthfulness.md).
 
+### Next working session
+
+- [ ] Define authenticated viewer, operator, approver, and administrator roles
+  plus versioned Operations API request/response contracts.
+- [ ] Connect the private Action mutation Lambda to that authenticated API and
+  implement the Decision Queue and Action Board journey.
+- [ ] Add write-path alarms, DLQ/retry evidence, concurrency tests, and recovery
+  guidance without enabling a recurring lifecycle schedule.
+- [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
+  step for the pending Outcome; do not simulate an early operational result.
+
+### Future plan
+
+- [ ] Complete the authenticated internal cockpit from Risk Hotspots through
+  Decision Review, Action Board, and Outcome Review.
+- [ ] Accumulate actual-calendar closed Outcomes and route sufficient evidence
+  only into separately reviewed policy proposals with rollback versions.
+- [ ] Reassess provider coverage and forecast/model readiness only when eligible
+  real-calendar DHL/KN and observed label history exists.
+- [ ] Review schedules, production aliases, policy consumers, and model upgrades
+  only after access, reliability, audit, recovery, and cost gates pass.
+
 ## Delivery checkpoint — 5 August 2026
 
 - [x] Complete the isolated 28-day AWS stateful-lifecycle replay and reconcile
