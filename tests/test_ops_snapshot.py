@@ -544,6 +544,9 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertIn("vw_multimodal_operational_baseline_v1", analyst_sql)
         self.assertIn("Database = @{ Name = $SourceDatabase }", setup)
         self.assertIn("DatabaseName = $SourceDatabase; Name = $tableName", setup)
+        self.assertIn("InspectPipelineStatusBucket", setup)
+        self.assertIn("ListPipelineStatusObject", setup)
+        self.assertIn('"s3:prefix" = $pipelineStatusLocation.Prefix', setup)
         self.assertIn("UNNEST(sequence(1, 7))", analyst_sql)
         self.assertIn("avg_effectiveness_score", analyst_sql)
 
