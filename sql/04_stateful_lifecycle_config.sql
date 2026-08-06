@@ -410,7 +410,15 @@ CREATE OR REPLACE VIEW {{SOURCE_DATABASE}}.vw_lifecycle_action_current_staging_v
 WITH latest_event AS (
     SELECT *, row_number() OVER (
         PARTITION BY temporal_scope_id, action_id
-        ORDER BY occurred_at DESC, event_id DESC
+        ORDER BY
+            occurred_at DESC,
+            CASE event_type
+                WHEN 'COMPLETE' THEN 3
+                WHEN 'REJECT' THEN 2
+                WHEN 'APPROVE' THEN 1
+                ELSE 0
+            END DESC,
+            event_id DESC
     ) AS event_rank
     FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_audit_staging_v1
 )
