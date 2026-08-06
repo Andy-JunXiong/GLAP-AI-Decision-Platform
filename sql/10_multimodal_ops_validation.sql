@@ -3,18 +3,21 @@
 
 WITH base AS (
     SELECT *
-    FROM {{SOURCE_DATABASE}}.vw_multimodal_shipment_daily_v1
+    FROM {{SOURCE_DATABASE}}.vw_multimodal_shipment_daily_context_v1
     WHERE metric_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 mode_rollup AS (
     SELECT *
-    FROM {{SOURCE_DATABASE}}.vw_multimodal_ops_daily_v1
+    FROM {{SOURCE_DATABASE}}.vw_multimodal_ops_daily_context_v1
     WHERE metric_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 provider_rollup AS (
     SELECT *
-    FROM {{SOURCE_DATABASE}}.vw_multimodal_provider_daily_v1
+    FROM {{SOURCE_DATABASE}}.vw_multimodal_provider_daily_context_v1
     WHERE metric_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 checks AS (
     SELECT 'duplicate_analytics_shipment_key' AS check_name, count(*) AS failure_count
@@ -51,23 +54,26 @@ checks AS (
     WHERE sla_breach_rate_pct NOT BETWEEN 0.0 AND 100.0
     UNION ALL
     SELECT 'air_decision_missing_ocean_reference', count(*)
-    FROM {{SOURCE_DATABASE}}.vw_multimodal_mode_decision_v1
+    FROM {{SOURCE_DATABASE}}.vw_multimodal_mode_decision_context_v1
     WHERE metric_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
       AND transport_mode = 'AIR'
       AND comparison_status <> 'COMPARABLE'
     UNION ALL
     SELECT 'duplicate_forecast_feature_key', count(*)
     FROM (
         SELECT feature_date, transport_mode, provider_code
-        FROM {{SOURCE_DATABASE}}.vw_multimodal_forecast_feature_daily_v1
+        FROM {{SOURCE_DATABASE}}.vw_multimodal_forecast_feature_daily_context_v1
         WHERE feature_date = DATE '{{LOGICAL_RUN_DATE}}'
+          AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
         GROUP BY feature_date, transport_mode, provider_code
         HAVING count(*) > 1
     )
     UNION ALL
     SELECT 'invalid_outcome_label_contract', count(*)
-    FROM {{SOURCE_DATABASE}}.vw_multimodal_outcome_label_v1
+    FROM {{SOURCE_DATABASE}}.vw_multimodal_outcome_label_context_v1
     WHERE label_observed_through_date <= DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
       AND (
           outcome_status NOT IN ('PENDING', 'OBSERVED')
           OR (outcome_status = 'PENDING' AND (

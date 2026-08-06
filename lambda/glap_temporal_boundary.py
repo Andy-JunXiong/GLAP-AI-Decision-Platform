@@ -103,3 +103,19 @@ def resolve_temporal_context(
         "as_of_date": as_of_date.isoformat(),
         "scenario_id": scenario_id,
     }
+
+
+def temporal_scope_id(context: Mapping[str, Any]) -> str:
+    """Return the non-null row identity used to isolate temporal contexts."""
+
+    execution_mode = str(context.get("execution_mode") or "").strip().upper()
+    if execution_mode == OPERATIONAL:
+        if context.get("scenario_id"):
+            raise ValueError("OPERATIONAL temporal scope must not set scenario_id")
+        return OPERATIONAL
+    if execution_mode == FUTURE_SIMULATION:
+        scenario_id = str(context.get("scenario_id") or "").strip()
+        if not SAFE_SCENARIO_ID.fullmatch(scenario_id):
+            raise ValueError("FUTURE_SIMULATION temporal scope requires a safe scenario_id")
+        return f"SIMULATION:{scenario_id}"
+    raise ValueError("Unsupported execution_mode for temporal scope")

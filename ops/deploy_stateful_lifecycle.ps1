@@ -159,16 +159,30 @@ $columnEvolutions = @{
         origin_handover_target_at = "timestamp"; origin_handover_at = "timestamp";
         destination_release_target_at = "timestamp"; destination_release_at = "timestamp";
         piece_count = "int"; gross_weight_kg = "decimal(18,2)";
-        volume_cbm = "decimal(18,3)"; chargeable_weight_kg = "decimal(18,2)"
+        volume_cbm = "decimal(18,3)"; chargeable_weight_kg = "decimal(18,2)";
+        temporal_scope_id = "string"; execution_mode = "string";
+        time_basis = "string"; as_of_date = "date"; execution_scenario_id = "string"
     }
     "fact_shipment_lifecycle_event_staging_v1" = @{
         transport_mode = "string"; segment_type = "string";
-        leg_seq = "int"; location_type = "string"
+        leg_seq = "int"; location_type = "string";
+        temporal_scope_id = "string"; execution_mode = "string";
+        time_basis = "string"; as_of_date = "date"; execution_scenario_id = "string"
+    }
+    "fact_shipment_cost_staging_v1" = @{
+        temporal_scope_id = "string"; execution_mode = "string";
+        time_basis = "string"; as_of_date = "date"; execution_scenario_id = "string"
     }
     "fact_shipment_lifecycle_metrics_staging_v1" = @{
         origin_performance = "string"; origin_delay_hours = "double";
         destination_release_performance = "string";
-        destination_release_delay_hours = "double"
+        destination_release_delay_hours = "double";
+        temporal_scope_id = "string"; execution_mode = "string";
+        time_basis = "string"; as_of_date = "date"; execution_scenario_id = "string"
+    }
+    "fact_shipment_signal_candidate_staging_v1" = @{
+        temporal_scope_id = "string"; execution_mode = "string";
+        time_basis = "string"; as_of_date = "date"; execution_scenario_id = "string"
     }
 }
 

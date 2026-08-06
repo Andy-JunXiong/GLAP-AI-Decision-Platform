@@ -10,7 +10,7 @@ import time
 from typing import Any, Iterable
 
 import glap_stateful_lifecycle_generator as engine
-from glap_temporal_boundary import resolve_temporal_context
+from glap_temporal_boundary import resolve_temporal_context, temporal_scope_id
 
 
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -27,6 +27,11 @@ TARGET_TABLE = os.getenv("LIFECYCLE_TARGET_TABLE", "dim_lifecycle_target_v1")
 RATE_TABLE = os.getenv("RATE_CARD_TABLE", "dim_rate_card_v1")
 FX_TABLE = os.getenv("FX_RATE_TABLE", "dim_fx_rate_v1")
 
+TEMPORAL_COLUMNS = (
+    "temporal_scope_id", "execution_mode", "time_basis", "as_of_date",
+    "execution_scenario_id",
+)
+
 SNAPSHOT_COLUMNS = (
     "shipment_id", "dt", "booking_at", "gate_in_target_at", "gate_in_at", "etd", "atd",
     "eta", "ata", "discharge_target_at", "discharged_at", "delivery_target_at",
@@ -39,17 +44,17 @@ SNAPSHOT_COLUMNS = (
     "operating_carrier", "origin_location_type", "destination_location_type",
     "origin_handover_target_at", "origin_handover_at",
     "destination_release_target_at", "destination_release_at", "piece_count",
-    "gross_weight_kg", "volume_cbm", "chargeable_weight_kg",
+    "gross_weight_kg", "volume_cbm", "chargeable_weight_kg", *TEMPORAL_COLUMNS,
 )
 EVENT_COLUMNS = (
     "event_id", "shipment_id", "event_type", "event_time", "observed_at", "processed_at",
     "location", "logical_run_date", "scenario_id", "simulation_seed",
-    "transport_mode", "segment_type", "leg_seq", "location_type",
+    "transport_mode", "segment_type", "leg_seq", "location_type", *TEMPORAL_COLUMNS,
 )
 COST_COLUMNS = (
     "shipment_id", "dt", "charge_code", "cost_stage", "calculation_basis", "quantity",
     "unit_rate", "amount", "currency", "rate_card_id", "rate_card_version", "cost_status",
-    "created_at",
+    "created_at", *TEMPORAL_COLUMNS,
 )
 METRICS_COLUMNS = (
     "shipment_id", "dt", "lifecycle_stage", "lifecycle_status", "gate_in_performance",
@@ -58,12 +63,12 @@ METRICS_COLUMNS = (
     "discharge_delay_hours", "delivery_performance", "delivery_delay_hours",
     "planned_p2p_hours", "actual_p2p_hours", "sla_breach_flag", "sla_breach_stages",
     "computed_at", "origin_performance", "origin_delay_hours",
-    "destination_release_performance", "destination_release_delay_hours",
+    "destination_release_performance", "destination_release_delay_hours", *TEMPORAL_COLUMNS,
 )
 SIGNAL_COLUMNS = (
     "signal_fingerprint", "shipment_id", "dt", "signal_type", "signal_grain",
     "signal_dimension", "metric_name", "metric_value", "threshold_value", "severity",
-    "candidate_status", "simulation_provenance", "computed_at",
+    "candidate_status", "simulation_provenance", "computed_at", *TEMPORAL_COLUMNS,
 )
 
 
@@ -115,13 +120,30 @@ WHERE effective_date = (
     }
 
 
-def build_active_snapshot_query(logical_date: date) -> str:
+def build_active_snapshot_query(logical_date: date, scope_id: str = "OPERATIONAL") -> str:
     previous = (logical_date.fromordinal(logical_date.toordinal() - 1)).isoformat()
     columns = ", ".join(SNAPSHOT_COLUMNS)
     return f"""SELECT {columns}
 FROM {_identifier(DATABASE, 'database')}.{_identifier(SNAPSHOT_TABLE, 'snapshot table')}
 WHERE try_cast(dt AS date) = DATE '{previous}'
+  AND temporal_scope_id = {_sql_literal(scope_id)}
   AND lifecycle_status = 'OPEN' AND terminal_state = false"""
+
+
+def apply_temporal_provenance(
+    rows: Iterable[dict[str, Any]], context: dict[str, str | None]
+) -> None:
+    """Permanently stamp every written row with its temporal identity."""
+
+    scope_id = temporal_scope_id(context)
+    for row in rows:
+        row.update({
+            "temporal_scope_id": scope_id,
+            "execution_mode": context["execution_mode"],
+            "time_basis": context["time_basis"],
+            "as_of_date": date.fromisoformat(str(context["as_of_date"])),
+            "execution_scenario_id": context["scenario_id"],
+        })
 
 
 def _sql_literal(value: Any) -> str:
@@ -281,6 +303,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         raise RuntimeError("boto3 is required for Athena persistence") from exc
     logical_date = date.fromisoformat(event["logical_run_date"])
     temporal_context = resolve_temporal_context(event["logical_run_date"], event)
+    scope_id = temporal_scope_id(temporal_context)
     client = boto3.client("athena", region_name=os.getenv("AWS_REGION", "us-east-1"))
     config_queries = build_configuration_queries(logical_date)
     target_rows = _run_query(client, config_queries["targets"])
@@ -306,7 +329,10 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         (str(row["base_currency"]), str(row["quote_currency"])): float(str(row["fx_rate"]))
         for row in fx_rows
     }
-    active = [_coerce_snapshot(row) for row in _run_query(client, build_active_snapshot_query(logical_date))]
+    active = [
+        _coerce_snapshot(row)
+        for row in _run_query(client, build_active_snapshot_query(logical_date, scope_id))
+    ]
     if not active and event.get("seed_population", False):
         active = engine.seed_population(
             logical_date, routes, targets, int(event.get("population_size", 450)),
@@ -332,26 +358,33 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 "rate_card_version": line["rate_card_version"], "cost_status": "EXPECTED",
                 "created_at": snapshot["created_at"],
             })
+    for rows in (snapshots, events, cost_rows, metrics, signals):
+        apply_temporal_provenance(rows, temporal_context)
     update_matched = event.get("retry_failed_run") is True
     statements = (
         build_merge_sql(
-            SNAPSHOT_TABLE, SNAPSHOT_COLUMNS, ("shipment_id", "dt"), snapshots, update_matched
+            SNAPSHOT_TABLE, SNAPSHOT_COLUMNS,
+            ("temporal_scope_id", "shipment_id", "dt"), snapshots, update_matched
         )
-        + build_merge_sql(EVENT_TABLE, EVENT_COLUMNS, ("event_id",), events, update_matched)
+        + build_merge_sql(
+            EVENT_TABLE, EVENT_COLUMNS, ("temporal_scope_id", "event_id"),
+            events, update_matched
+        )
         + build_merge_sql(
             COST_TABLE,
             COST_COLUMNS,
-            ("shipment_id", "dt", "charge_code"),
+            ("temporal_scope_id", "shipment_id", "dt", "charge_code"),
             cost_rows,
             update_matched,
         )
         + build_merge_sql(
-            METRICS_TABLE, METRICS_COLUMNS, ("shipment_id", "dt"), metrics, update_matched
+            METRICS_TABLE, METRICS_COLUMNS,
+            ("temporal_scope_id", "shipment_id", "dt"), metrics, update_matched
         )
         + build_merge_sql(
             SIGNAL_TABLE,
             SIGNAL_COLUMNS,
-            ("signal_fingerprint", "dt"),
+            ("temporal_scope_id", "signal_fingerprint", "dt"),
             signals,
             update_matched,
         )

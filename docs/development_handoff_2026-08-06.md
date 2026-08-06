@@ -101,3 +101,8 @@ distinct cost-variance value. Pending labels remain excluded from training.
 The repository now enforces the separate `OPERATIONAL` and
 `FUTURE_SIMULATION` paths described in the
 [`temporal truthfulness contract`](temporal_truthfulness.md).
+It also defines row-level temporal scopes across all five lifecycle fact
+tables, scenario-aware MERGE keys and validation views, operational-only
+default analytics, and an explicit one-time legacy-row backfill. Apply that
+backfill only as part of the approved schema/view deployment; it changes the
+shared staging Iceberg tables but does not publish or schedule the pipeline.

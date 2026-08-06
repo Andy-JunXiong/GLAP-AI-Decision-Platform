@@ -97,10 +97,11 @@ jobs:
           mkdir -p dist/quality
           cp lambda/glap_data_quality_gate.py dist/quality/lambda_function.py
           cp lambda/glap_quality_contracts.py dist/quality/glap_quality_contracts.py
+          cp lambda/glap_temporal_boundary.py dist/quality/glap_temporal_boundary.py
           cp sql/06_stateful_lifecycle_validation.sql dist/quality/lifecycle_validation.sql
           cp sql/10_multimodal_ops_validation.sql dist/quality/multimodal_ops_validation.sql
-          (cd dist/quality && zip -q ../glap-data-quality-gate.zip lambda_function.py glap_quality_contracts.py lifecycle_validation.sql multimodal_ops_validation.sql)
-          test "$(unzip -Z1 dist/glap-data-quality-gate.zip | sort | tr '\n' ' ')" = "glap_quality_contracts.py lambda_function.py lifecycle_validation.sql multimodal_ops_validation.sql "
+          (cd dist/quality && zip -q ../glap-data-quality-gate.zip lambda_function.py glap_quality_contracts.py glap_temporal_boundary.py lifecycle_validation.sql multimodal_ops_validation.sql)
+          test "$(unzip -Z1 dist/glap-data-quality-gate.zip | sort | tr '\n' ' ')" = "glap_quality_contracts.py glap_temporal_boundary.py lambda_function.py lifecycle_validation.sql multimodal_ops_validation.sql "
 
       - name: Verify staging stage stub package entry point
         shell: bash

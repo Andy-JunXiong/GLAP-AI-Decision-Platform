@@ -38,6 +38,7 @@ LIFECYCLE_CHECK_NAMES = frozenset(
         "invalid_transport_contract",
         "missing_provider_coverage",
         "air_booking_share_out_of_range",
+        "invalid_temporal_provenance",
     }
 )
 
@@ -75,15 +76,20 @@ def render_lifecycle_validation_queries(
     logical_run_date: str,
     source_database: str,
     template: str | None = None,
+    temporal_scope_id: str = "OPERATIONAL",
 ) -> tuple[str, ...]:
     parsed = date.fromisoformat(logical_run_date)
     if parsed.isoformat() != logical_run_date:
         raise ValueError("logical_run_date must use YYYY-MM-DD")
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", source_database):
         raise ValueError("source_database must be a safe Athena identifier")
+    if not re.fullmatch(r"(?:OPERATIONAL|SIMULATION:[A-Za-z0-9][A-Za-z0-9._-]{2,63})", temporal_scope_id):
+        raise ValueError("temporal_scope_id must be a safe operational or simulation scope")
     rendered = (template if template is not None else _validation_template()).replace(
         "{{SOURCE_DATABASE}}", source_database
-    ).replace("{{LOGICAL_RUN_DATE}}", logical_run_date)
+    ).replace("{{LOGICAL_RUN_DATE}}", logical_run_date).replace(
+        "{{TEMPORAL_SCOPE_ID}}", temporal_scope_id
+    )
     if re.search(r"\{\{[^}]+\}\}", rendered):
         raise ValueError("Lifecycle validation SQL has unresolved template tokens")
     rendered = re.sub(r"^\s*--.*$", "", rendered, flags=re.MULTILINE)
@@ -106,15 +112,20 @@ def render_multimodal_analytics_validation_query(
     logical_run_date: str,
     source_database: str,
     template: str | None = None,
+    temporal_scope_id: str = "OPERATIONAL",
 ) -> str:
     parsed = date.fromisoformat(logical_run_date)
     if parsed.isoformat() != logical_run_date:
         raise ValueError("logical_run_date must use YYYY-MM-DD")
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", source_database):
         raise ValueError("source_database must be a safe Athena identifier")
+    if not re.fullmatch(r"(?:OPERATIONAL|SIMULATION:[A-Za-z0-9][A-Za-z0-9._-]{2,63})", temporal_scope_id):
+        raise ValueError("temporal_scope_id must be a safe operational or simulation scope")
     rendered = (template if template is not None else _analytics_validation_template()).replace(
         "{{SOURCE_DATABASE}}", source_database
-    ).replace("{{LOGICAL_RUN_DATE}}", logical_run_date)
+    ).replace("{{LOGICAL_RUN_DATE}}", logical_run_date).replace(
+        "{{TEMPORAL_SCOPE_ID}}", temporal_scope_id
+    )
     if re.search(r"\{\{[^}]+\}\}", rendered):
         raise ValueError("Multimodal analytics validation SQL has unresolved template tokens")
     rendered = re.sub(r"^\s*--.*$", "", rendered, flags=re.MULTILINE)

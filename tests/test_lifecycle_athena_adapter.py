@@ -49,10 +49,13 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertEqual(snapshot["piece_count"], 200)
 
     def test_active_snapshot_reads_only_previous_non_terminal_population(self):
-        query = adapter.build_active_snapshot_query(date(2026, 8, 4))
+        query = adapter.build_active_snapshot_query(
+            date(2026, 8, 4), "SIMULATION:capacity-shock"
+        )
         self.assertIn("DATE '2026-08-03'", query)
         self.assertIn("terminal_state = false", query)
         self.assertIn("lifecycle_status = 'OPEN'", query)
+        self.assertIn("temporal_scope_id = 'SIMULATION:capacity-shock'", query)
         self.assertNotIn("SELECT *", query.upper())
 
     def test_merge_is_retry_safe_and_escapes_values(self):
@@ -104,6 +107,21 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
                 adapter.validate_configuration()
         finally:
             adapter.SNAPSHOT_TABLE = original
+
+    def test_temporal_provenance_is_permanent_and_uses_non_null_scope(self):
+        rows = [{"shipment_id": "SHP-1"}]
+        adapter.apply_temporal_provenance(
+            rows,
+            {
+                "execution_mode": "FUTURE_SIMULATION",
+                "time_basis": "FUTURE_SIMULATION",
+                "as_of_date": "2026-08-06",
+                "scenario_id": "capacity-shock",
+            },
+        )
+        self.assertEqual(rows[0]["temporal_scope_id"], "SIMULATION:capacity-shock")
+        self.assertEqual(rows[0]["as_of_date"], date(2026, 8, 6))
+        self.assertEqual(rows[0]["execution_scenario_id"], "capacity-shock")
 
     def test_query_results_are_read_across_athena_pages(self):
         class PagedClient:

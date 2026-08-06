@@ -17,6 +17,7 @@ from glap_quality_contracts import (
     render_lifecycle_validation_queries,
     render_multimodal_analytics_validation_query,
 )
+from glap_temporal_boundary import OPERATIONAL, temporal_scope_id
 
 
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -85,6 +86,39 @@ INPUT_CONTRACTS = {
                 "ROW(shipment_id, product_id, dt)",
             ),
         ),
+        "context_shipment_table": "vw_lifecycle_shipment_v2_compat_context",
+        "context_tables": (
+            (
+                "vw_lifecycle_shipment_v2_compat_context",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "vw_lifecycle_shipment_event_v2_compat_context",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, leg_seq, event_type, event_ts, dt)",
+            ),
+            (
+                "vw_lifecycle_leg_metrics_v2_compat_context",
+                "run_date",
+                "ROW(shipment_id, leg_seq, dt)",
+            ),
+            (
+                "vw_lifecycle_cost_v2_compat_context",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "vw_lifecycle_risk_v2_compat_context",
+                "coalesce(risk_dt, try_cast(dt AS date))",
+                "ROW(shipment_id, dt)",
+            ),
+            (
+                "vw_lifecycle_product_allocation_v2_compat_context",
+                "try_cast(dt AS date)",
+                "ROW(shipment_id, product_id, dt)",
+            ),
+        ),
     },
 }
 
@@ -118,7 +152,9 @@ def _stat_sql(
     date_expression: str,
     key_expression: str,
     logical_run_date: str,
+    scope_id: str | None = None,
 ) -> str:
+    scope_filter = f"\nWHERE temporal_scope_id = '{scope_id}'" if scope_id else ""
     return f"""
 SELECT
     '{table}' AS stage_name,
@@ -129,7 +165,7 @@ SELECT
             {key_expression}
         )) AS duplicate_count,
     max({date_expression}) AS latest_date
-FROM {database}.{table}
+FROM {database}.{table}{scope_filter}
 """.strip()
 
 
@@ -154,6 +190,7 @@ def build_input_quality_query(
     logical_run_date: str,
     source_database: str = ATHENA_SOURCE_DATABASE,
     quality_contract: str = "pipeline_v1",
+    scope_id: str | None = None,
 ) -> str:
     logical_run_date = validate_run_date(logical_run_date)
     source_database = validate_identifier(source_database, "Athena source database")
@@ -161,11 +198,25 @@ def build_input_quality_query(
         contract = INPUT_CONTRACTS[quality_contract]
     except KeyError as exc:
         raise ValueError("Unsupported input quality contract") from exc
+    context_aware = quality_contract == "lifecycle_compat_v2" and scope_id is not None
+    if context_aware and not re.fullmatch(
+        r"(?:OPERATIONAL|SIMULATION:[A-Za-z0-9][A-Za-z0-9._-]{2,63})",
+        str(scope_id),
+    ):
+        raise ValueError("scope_id must be a safe operational or simulation scope")
+    tables = contract.get("context_tables", contract["tables"]) if context_aware else contract["tables"]
     stats = [
-        _stat_sql(source_database, table, date_expression, key_expression, logical_run_date)
-        for table, date_expression, key_expression in contract["tables"]
+        _stat_sql(
+            source_database, table, date_expression, key_expression,
+            logical_run_date, scope_id if context_aware else None,
+        )
+        for table, date_expression, key_expression in tables
     ]
-    shipment_table = contract["shipment_table"]
+    shipment_table = (
+        contract.get("context_shipment_table", contract["shipment_table"])
+        if context_aware else contract["shipment_table"]
+    )
+    scope_filter = f"\nWHERE temporal_scope_id = '{scope_id}'" if context_aware else ""
     volume_sql = f"""
 SELECT
     count(DISTINCT IF(try_cast(dt AS date) = DATE '{logical_run_date}', shipment_id))
@@ -173,7 +224,7 @@ SELECT
     count(DISTINCT IF(
         try_cast(dt AS date) = date_add('day', -1, DATE '{logical_run_date}'), shipment_id
     )) AS previous_volume
-FROM {source_database}.{shipment_table}
+FROM {source_database}.{shipment_table}{scope_filter}
 """.strip()
     return (
         "WITH table_stats AS (\n"
@@ -362,9 +413,13 @@ def parse_validation_result(response: dict[str, Any]) -> dict[str, int]:
     return parsed
 
 
-def run_lifecycle_validation(logical_run_date: str, source_database: str) -> dict[str, int]:
+def run_lifecycle_validation(
+    logical_run_date: str, source_database: str, scope_id: str = OPERATIONAL
+) -> dict[str, int]:
     failures: dict[str, int] = {}
-    for query in render_lifecycle_validation_queries(logical_run_date, source_database):
+    for query in render_lifecycle_validation_queries(
+        logical_run_date, source_database, temporal_scope_id=scope_id
+    ):
         for name, count in parse_validation_result(
             execute_query(query, source_database, 100)
         ).items():
@@ -377,12 +432,12 @@ def run_lifecycle_validation(logical_run_date: str, source_database: str) -> dic
 
 
 def run_multimodal_analytics_validation(
-    logical_run_date: str, source_database: str
+    logical_run_date: str, source_database: str, scope_id: str = OPERATIONAL
 ) -> dict[str, int]:
     failures = parse_validation_result(
         execute_query(
             render_multimodal_analytics_validation_query(
-                logical_run_date, source_database
+                logical_run_date, source_database, temporal_scope_id=scope_id
             ),
             source_database,
             100,
@@ -404,10 +459,15 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     source_database = validate_identifier(
         ATHENA_SOURCE_DATABASE, "Athena source database"
     )
+    scope_context = {
+        "execution_mode": event.get("execution_mode") or OPERATIONAL,
+        "scenario_id": event.get("scenario_id"),
+    }
+    scope_id = temporal_scope_id(scope_context)
     if pipeline_stage == "lifecycle_validation":
         if quality_contract != "lifecycle_v1":
             raise ValueError("lifecycle_validation requires lifecycle_v1")
-        failure_counts = run_lifecycle_validation(logical_run_date, source_database)
+        failure_counts = run_lifecycle_validation(logical_run_date, source_database, scope_id)
         checks = {
             name: "passed" if failure_counts[name] == 0 else "failed"
             for name in sorted(LIFECYCLE_CHECK_NAMES)
@@ -430,7 +490,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 "analytics_validation requires multimodal_analytics_v1"
             )
         failure_counts = run_multimodal_analytics_validation(
-            logical_run_date, source_database
+            logical_run_date, source_database, scope_id
         )
         checks = {
             name: "passed" if failure_counts[name] == 0 else "failed"
@@ -450,7 +510,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         }
     if pipeline_stage == "input_validation":
         query = build_input_quality_query(
-            logical_run_date, source_database, quality_contract
+            logical_run_date, source_database, quality_contract, scope_id
         )
         query_database = source_database
     elif pipeline_stage == "output_validation":
