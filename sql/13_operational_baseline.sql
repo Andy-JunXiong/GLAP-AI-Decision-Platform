@@ -101,7 +101,11 @@ SELECT
     round(sum(current_total_cost), 2) AS current_cost_total,
     round(
         100.0 * (
-            sum(current_total_cost) / nullif(sum(expected_total_cost), 0.0) - 1.0
+            sum(IF(delivery_observed, current_total_cost, CAST(NULL AS double)))
+            / nullif(
+                sum(IF(delivery_observed, expected_total_cost, CAST(NULL AS double))),
+                0.0
+            ) - 1.0
         ),
         2
     ) AS cost_variance_pct,

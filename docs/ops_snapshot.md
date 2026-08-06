@@ -7,7 +7,7 @@ it at build time with a public-safe Athena aggregate.
 
 ## Published contract
 
-The `1.4` snapshot contains only:
+The `1.5` snapshot contains only:
 
 - generation and source timestamps;
 - per-stage freshness and logical-run lag;
@@ -19,6 +19,11 @@ The `1.4` snapshot contains only:
 - aggregate alert, action, and root-cause distributions from governed AWS v3/v2
   result tables;
 - aggregate pipeline query status and data-completeness checks.
+- the aggregate `ALL` row from the stateful operational-calendar baseline,
+  including shipment, booking, delivery, SLA-breach and governed signal counts;
+- an outcome-maturity gate that keeps on-time and realized-cost measures
+  unavailable until deliveries exist and requires 200 delivered outcomes before
+  reporting `ENGINEERING_READY`.
 - optional success-gated pipeline stage timing, completion state, safe failure
   category, quality-check results, and a public runbook link.
 
@@ -26,6 +31,12 @@ It excludes shipment IDs, entity keys, routes, carriers, account IDs, ARNs, S3 p
 query execution IDs and individual decisions. Forecast points contain only
 daily total volume, a residual interval, and projected at-risk totals. They are
 labelled as a statistical baseline, not an operational commitment.
+
+The Control Tower presents two populations side by side instead of reconciling
+unlike denominators: the existing v2/v3 decision-flywheel snapshot and the
+stateful lifecycle baseline. The latter always retains
+`SIMULATED_MULTIMODAL_V1`, `real_world_evidence=false`, and
+`ENGINEERING_EVALUATION_ONLY`; its real-world status remains blocked.
 
 ## GitHub configuration
 
@@ -64,7 +75,7 @@ Configure these repository variables before enabling the AWS export step:
 | --- | --- |
 | `AWS_OPS_READ_ROLE_ARN` | OIDC role assumed only by the Pages workflow |
 | `AWS_OPS_DATABASE` | Athena database; defaults to `curated_iceberg` |
-| `AWS_OPS_SOURCE_DATABASE` | Canonical shipment database; defaults to `simulated_iceberg_m` |
+| `AWS_OPS_SOURCE_DATABASE` | Canonical shipment and stateful baseline database; defaults to `simulated_iceberg_m` |
 | `AWS_OPS_ATHENA_OUTPUT` | Private S3 query-result location |
 | `AWS_OPS_WORKGROUP` | Athena workgroup; defaults to `primary` |
 | `AWS_OPS_PIPELINE_STATUS_URI` | Optional S3 URI of the controller's sanitized latest-run contract |

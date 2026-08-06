@@ -92,6 +92,8 @@ checks AS (
        OR on_time_delivery_count + late_delivery_count > delivered_count
        OR on_time_delivery_rate_pct NOT BETWEEN 0.0 AND 100.0
        OR sla_breach_shipment_rate_pct NOT BETWEEN 0.0 AND 100.0
+       OR (delivered_count = 0 AND cost_variance_pct IS NOT NULL)
+       OR (delivered_count > 0 AND cost_variance_pct IS NULL)
        OR signal_candidate_count < 0
        OR high_severity_signal_count < 0
        OR high_severity_signal_count > signal_candidate_count

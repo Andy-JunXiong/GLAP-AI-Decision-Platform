@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "generated_at": "2026-07-23T00:00:00Z",
   "source_updated_at": "2026-07-23T00:00:00Z",
   "as_of_date": "2026-07-23",
@@ -61,6 +61,27 @@
       }
     }
   },
+  "operational_baseline": {
+    "status": "unavailable",
+    "as_of_date": null,
+    "metrics": {},
+    "maturity": {
+      "status": "NOT_READY",
+      "minimum_delivered_shipments": 200,
+      "delivered_shipments": 0,
+      "delivery_coverage_pct": 0.0,
+      "outcome_metrics_observable": false,
+      "realized_cost_observable": false,
+      "real_world_status": "BLOCKED",
+      "reasons": ["OPERATIONAL_BASELINE_UNAVAILABLE"]
+    },
+    "evidence": {
+      "real_world_evidence": false,
+      "data_provenance": "SIMULATED_MULTIMODAL_V1",
+      "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+      "decision_use": "ENGINEERING_EVALUATION_ONLY"
+    }
+  },
   "forecast": {
     "status": "not_live",
     "method": "ordinary_least_squares_28d",
@@ -83,7 +104,7 @@
   "pipeline": {
     "status": "snapshot",
     "max_stage_lag_days": 0,
-    "query_checks_succeeded": 2,
-    "query_checks_total": 2
+    "query_checks_succeeded": 0,
+    "query_checks_total": 4
   }
 }

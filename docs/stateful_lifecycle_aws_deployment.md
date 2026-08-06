@@ -541,6 +541,14 @@ class `SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, and decision use
 bounded operational source and reject cutoff drift, scenario leakage, invalid
 evidence claims, duplicate dimensions, or invalid metric ranges.
 
+The public-safe OPS snapshot publishes only the aggregate `ALL` row beside the
+existing v2/v3 decision-flywheel population. It does not reconcile unlike
+shipment denominators or expose entity rows. Realized cost variance is null
+until at least one delivery exists, and the Control Tower remains `NOT_READY`
+until 200 delivered outcomes plus observable delivery and cost measures are
+available. Even then, synthetic evidence can become engineering-ready only;
+real-world decision use remains blocked.
+
 ## Future-scenario extension AWS evidence -- 5 August 2026
 
 PR `#13` merged as commit `e56b41b` after both Python 3.13 and 3.14 CI jobs

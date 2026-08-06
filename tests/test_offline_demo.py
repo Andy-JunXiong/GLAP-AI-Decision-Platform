@@ -34,7 +34,7 @@ class OfflineDemoTests(unittest.TestCase):
                 self.assertIn(label, self.html)
 
     def test_control_tower_summarises_daily_operational_flow(self):
-        self.assertIn("Operational data snapshot", self.html)
+        self.assertIn("Decision flywheel snapshot", self.html)
         for marker in (
             'id="opsGenerated"',
             'id="opsAtRisk"',
@@ -42,6 +42,22 @@ class OfflineDemoTests(unittest.TestCase):
             'id="opsDecisions"',
             'id="opsActions"',
             'id="opsOutcomes"',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
+    def test_control_tower_separates_stateful_baseline_and_maturity(self):
+        self.assertIn("Stateful operational baseline", self.html)
+        for marker in (
+            'id="baselineShipments"',
+            'id="baselineBookings"',
+            'id="baselineDelivered"',
+            'id="baselineSlaRate"',
+            'id="baselineSignals"',
+            'id="baselineHighSignals"',
+            'id="baselineMaturity"',
+            "Synthetic engineering evidence only",
+            "renderOperationalBaseline(snapshot)",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
@@ -118,6 +134,7 @@ class RepositoryShowcaseTests(unittest.TestCase):
         self.assertIn("offline/glap-demo.html", workflow)
         self.assertIn("offline/data/ops-snapshot.json", workflow)
         self.assertIn("ops/export_ops_snapshot.py", workflow)
+        self.assertIn("sql/13_operational_baseline.sql", workflow)
         self.assertIn("AWS_OPS_READ_ROLE_ARN", workflow)
         self.assertIn("actions/configure-pages@v5", workflow)
         self.assertIn("actions/upload-pages-artifact@v4", workflow)

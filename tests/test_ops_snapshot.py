@@ -49,6 +49,33 @@ def athena_forecast_rows():
     return history + forecast
 
 
+def operational_baseline_row(delivered_count: str = "0"):
+    delivered = int(delivered_count)
+    return {
+        "baseline_as_of_date": "2026-08-03",
+        "source_start_date": "2026-08-01",
+        "source_max_metric_date": "2026-08-03",
+        "shipment_count": "498",
+        "new_booking_count": "48",
+        "delivered_count": delivered_count,
+        "on_time_delivery_count": "180" if delivered else "0",
+        "late_delivery_count": "20" if delivered else "0",
+        "on_time_delivery_rate_pct": "90.0" if delivered else None,
+        "avg_delivery_delay_hours": "2.4" if delivered else None,
+        "sla_breach_shipment_count": "7",
+        "sla_breach_shipment_rate_pct": "1.41",
+        "expected_cost_total": "100000.0",
+        "current_cost_total": "103000.0",
+        "cost_variance_pct": "3.0" if delivered else None,
+        "signal_candidate_count": "41",
+        "high_severity_signal_count": "28",
+        "real_world_evidence": "false",
+        "data_provenance": "SIMULATED_MULTIMODAL_V1",
+        "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+        "decision_use": "ENGINEERING_EVALUATION_ONLY",
+    }
+
+
 class OpsSnapshotTests(unittest.TestCase):
     def test_query_uses_current_flywheel_contract_tables(self):
         query = exporter.build_query("curated_iceberg", "2026-08-04")
@@ -109,6 +136,17 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertNotIn("v_ai_action_distribution", query)
         self.assertNotIn("v_ai_alert_distribution", query)
         self.assertIn("DATE '2026-08-04'", query)
+
+    def test_operational_baseline_query_is_aggregate_only_and_date_bounded(self):
+        query = exporter.build_operational_baseline_query(
+            "simulated_iceberg_m", "2026-08-06"
+        )
+        self.assertIn("vw_multimodal_operational_baseline_v1", query)
+        self.assertIn("dimension_type = 'ALL'", query)
+        self.assertIn("dimension_value = 'ALL'", query)
+        self.assertIn("baseline_as_of_date <= DATE '2026-08-06'", query)
+        self.assertIn("LIMIT 1", query)
+        self.assertNotIn("shipment_id", query)
 
     def test_rejects_unsafe_database_identifier(self):
         with self.assertRaises(ValueError):
@@ -175,6 +213,7 @@ class OpsSnapshotTests(unittest.TestCase):
             row,
             athena_forecast_rows(),
             existing_assets,
+            operational_baseline_row(),
             now=datetime(2026, 8, 3, 12, tzinfo=timezone.utc),
         )
         self.assertEqual(snapshot["freshness"]["status"], "fresh")
@@ -191,11 +230,38 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["forecast"]["status"], "ready")
         self.assertEqual(snapshot["forecast"]["calculation_engine"], "aws_athena_engine_v3")
         self.assertEqual(len(snapshot["forecast"]["points"]), 7)
-        self.assertEqual(snapshot["schema_version"], "1.4")
+        self.assertEqual(snapshot["schema_version"], "1.5")
         self.assertEqual(snapshot["provenance"]["outcome_evidence"], "simulated")
+        self.assertEqual(snapshot["operational_baseline"]["status"], "available")
+        self.assertEqual(
+            snapshot["operational_baseline"]["maturity"]["status"], "NOT_READY"
+        )
+        self.assertIsNone(
+            snapshot["operational_baseline"]["metrics"]["cost_variance_pct"]
+        )
+        self.assertEqual(snapshot["pipeline"]["query_checks_succeeded"], 4)
         serialized = json.dumps(snapshot)
         for forbidden in ("shipment_id", "entity_key", "account_id", "arn:", "s3://"):
             self.assertNotIn(forbidden, serialized.lower())
+
+    def test_operational_baseline_readiness_is_fail_closed_and_truthful(self):
+        ready = exporter.parse_operational_baseline(
+            operational_baseline_row("200"), "2026-08-06"
+        )
+        self.assertEqual(ready["maturity"]["status"], "ENGINEERING_READY")
+        self.assertEqual(ready["maturity"]["real_world_status"], "BLOCKED")
+        self.assertFalse(ready["evidence"]["real_world_evidence"])
+        self.assertEqual(ready["metrics"]["cost_variance_pct"], 3.0)
+
+        unsafe = operational_baseline_row()
+        unsafe["real_world_evidence"] = "true"
+        with self.assertRaises(ValueError):
+            exporter.parse_operational_baseline(unsafe, "2026-08-06")
+
+        future = operational_baseline_row()
+        future["baseline_as_of_date"] = "2026-08-07"
+        with self.assertRaises(ValueError):
+            exporter.parse_operational_baseline(future, "2026-08-06")
 
     def test_partial_pipeline_is_not_reported_fresh(self):
         row = {
@@ -276,6 +342,7 @@ class OpsSnapshotTests(unittest.TestCase):
         }
         verified = exporter.build_snapshot(
             row,
+            operational_baseline_row=operational_baseline_row(),
             now=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
             pipeline_run=pipeline_run,
             pipeline_status_required=True,
@@ -381,11 +448,11 @@ class OpsSnapshotTests(unittest.TestCase):
         for table in exporter.CURRENT_SOURCE_TABLES:
             with self.subTest(table=table):
                 self.assertIn(table, setup)
-                self.assertIn(table, analyst_sql)
+        self.assertIn("fact_shipment_v2", analyst_sql)
         for view in exporter.CURRENT_ANALYTICS_VIEWS:
             with self.subTest(view=view):
                 self.assertIn(view, setup)
-                self.assertIn(view, analyst_sql)
+        self.assertIn("vw_multimodal_operational_baseline_v1", analyst_sql)
         self.assertIn("Database = @{ Name = $SourceDatabase }", setup)
         self.assertIn("DatabaseName = $SourceDatabase; Name = $tableName", setup)
         self.assertIn("UNNEST(sequence(1, 7))", analyst_sql)
