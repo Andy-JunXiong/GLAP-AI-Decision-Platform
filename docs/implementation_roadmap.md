@@ -187,6 +187,7 @@ Current reusable assets:
 | `vw_multimodal_mode_decision_v1` | Advisory lane speed, cost, and risk comparison on standardized simulated weight |
 | `vw_multimodal_forecast_feature_daily_v1` | Past-only mode/provider forecasting features with explicit cutoff |
 | `vw_multimodal_outcome_label_v1` | Latest observed or pending shipment outcome labels |
+| `vw_multimodal_operational_baseline_v1` | Aggregate stateful baseline, evidence boundary, and Control Tower maturity input |
 
 `fact_shipment_events_extended_iceberg`, legacy v1 root-cause and feedback
 tables, and the latest-decision trace views may exist in AWS, but they are not

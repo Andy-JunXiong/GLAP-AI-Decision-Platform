@@ -162,3 +162,27 @@ FROM (
     FROM curated_iceberg.fact_ai_alerts_v3
     WHERE run_date = current_date
 );
+
+-- 6. Aggregate-only stateful operational-calendar baseline. The public
+-- exporter reads only the ALL row and preserves its synthetic evidence label.
+-- Outcome and realized-cost rates remain null until deliveries are observed.
+SELECT
+    baseline_as_of_date,
+    source_start_date,
+    source_max_metric_date,
+    shipment_count,
+    new_booking_count,
+    delivered_count,
+    on_time_delivery_rate_pct,
+    sla_breach_shipment_count,
+    sla_breach_shipment_rate_pct,
+    cost_variance_pct,
+    signal_candidate_count,
+    high_severity_signal_count,
+    real_world_evidence,
+    evidence_class,
+    decision_use
+FROM simulated_iceberg_m.vw_multimodal_operational_baseline_v1
+WHERE dimension_type = 'ALL'
+  AND dimension_value = 'ALL'
+  AND baseline_as_of_date <= current_date;

@@ -8,6 +8,9 @@ on:
       - "offline/glap-demo.html"
       - "offline/data/ops-snapshot.json"
       - "ops/export_ops_snapshot.py"
+      - "ops/configure_ops_snapshot_access.ps1"
+      - "sql/13_operational_baseline.sql"
+      - "sql/14_operational_baseline_validation.sql"
       - ".github/workflows/pages.yml"
   schedule:
     - cron: "30 0 * * *"

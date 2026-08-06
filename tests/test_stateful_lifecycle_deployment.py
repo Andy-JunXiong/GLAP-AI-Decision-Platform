@@ -158,6 +158,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("'SIMULATED_MULTIMODAL_V1'", baseline)
         self.assertIn("'SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE'", baseline)
         self.assertIn("'ENGINEERING_EVALUATION_ONLY'", baseline)
+        self.assertIn("sum(IF(delivery_observed, current_total_cost", baseline)
+        self.assertIn("delivered_count = 0 AND cost_variance_pct IS NOT NULL", validation)
         self.assertNotRegex(
             baseline,
             r"(?i)(insert\s+into|merge\s+into|update\s+|delete\s+from|drop\s+)",

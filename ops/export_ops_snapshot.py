@@ -25,6 +25,7 @@ DEFAULT_WORKGROUP = "primary"
 HISTORY_DAYS = 28
 FORECAST_HORIZON_DAYS = 7
 MAX_STAGE_LAG_DAYS = 1
+MIN_ENGINEERING_DELIVERED_SHIPMENTS = 200
 TERMINAL_FAILURE_STATES = {"FAILED", "CANCELLED"}
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 SAFE_PUBLIC_STAGE = re.compile(r"^[a-z][a-z0-9_]{1,47}$")
@@ -59,8 +60,16 @@ CURRENT_CONTRACT_TABLES = (
     "fact_ai_learning_v1",
 )
 
-CURRENT_SOURCE_TABLES = ("fact_shipment_v2",)
-CURRENT_ANALYTICS_VIEWS: tuple[str, ...] = ()
+CURRENT_SOURCE_TABLES = (
+    "fact_shipment_v2",
+    "fact_shipment_lifecycle_staging_v1",
+    "fact_shipment_lifecycle_metrics_staging_v1",
+    "fact_shipment_signal_candidate_staging_v1",
+)
+CURRENT_ANALYTICS_VIEWS = (
+    "vw_multimodal_shipment_daily_context_v1",
+    "vw_multimodal_operational_baseline_v1",
+)
 
 STAGE_DATE_COLUMNS = {
     "shipments": "latest_shipment_date",
@@ -502,6 +511,46 @@ ORDER BY dimension, metric_count DESC, label
 """.strip()
 
 
+def build_operational_baseline_query(
+    source_database: str,
+    logical_run_date: str | date,
+) -> str:
+    """Read one aggregate-only stateful baseline without exposing entity rows."""
+
+    source_database = validate_identifier(source_database, "Athena source database")
+    logical_date = validate_logical_date(logical_run_date).isoformat()
+    return f"""
+SELECT
+    CAST(baseline_as_of_date AS varchar) AS baseline_as_of_date,
+    CAST(source_start_date AS varchar) AS source_start_date,
+    CAST(source_max_metric_date AS varchar) AS source_max_metric_date,
+    shipment_count,
+    new_booking_count,
+    delivered_count,
+    on_time_delivery_count,
+    late_delivery_count,
+    on_time_delivery_rate_pct,
+    avg_delivery_delay_hours,
+    sla_breach_shipment_count,
+    sla_breach_shipment_rate_pct,
+    expected_cost_total,
+    current_cost_total,
+    cost_variance_pct,
+    signal_candidate_count,
+    high_severity_signal_count,
+    real_world_evidence,
+    data_provenance,
+    evidence_class,
+    decision_use
+FROM {source_database}.vw_multimodal_operational_baseline_v1
+WHERE dimension_type = 'ALL'
+  AND dimension_value = 'ALL'
+  AND baseline_as_of_date <= DATE '{logical_date}'
+ORDER BY baseline_as_of_date DESC
+LIMIT 1
+""".strip()
+
+
 def _cell_value(cell: dict[str, str]) -> str | None:
     return cell.get("VarCharValue")
 
@@ -777,10 +826,116 @@ def parse_existing_analytics(rows: list[dict[str, str | None]]) -> dict[str, Any
     return result
 
 
+def parse_operational_baseline(
+    row: dict[str, str | None],
+    logical_run_date: str | date,
+) -> dict[str, Any]:
+    """Validate and publish the aggregate-only stateful operational baseline."""
+
+    cutoff = validate_logical_date(logical_run_date)
+    baseline_date = _date(row.get("baseline_as_of_date"))
+    source_start_date = _date(row.get("source_start_date"))
+    source_max_date = _date(row.get("source_max_metric_date"))
+    if not baseline_date or not source_start_date or not source_max_date:
+        raise ValueError("Operational baseline did not return its governed date window")
+    if (
+        baseline_date > cutoff
+        or source_max_date > baseline_date
+        or source_start_date > source_max_date
+    ):
+        raise ValueError("Operational baseline exceeds the governed analysis date")
+
+    if (
+        str(row.get("real_world_evidence") or "").lower() != "false"
+        or row.get("data_provenance") != "SIMULATED_MULTIMODAL_V1"
+        or row.get("evidence_class") != "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE"
+        or row.get("decision_use") != "ENGINEERING_EVALUATION_ONLY"
+    ):
+        raise ValueError("Operational baseline evidence classification is unsafe")
+
+    shipment_count = _optional_int(row.get("shipment_count"))
+    delivered_count = _optional_int(row.get("delivered_count"))
+    if (
+        shipment_count is None
+        or shipment_count <= 0
+        or delivered_count is None
+        or delivered_count < 0
+        or delivered_count > shipment_count
+    ):
+        raise ValueError("Operational baseline shipment counts are invalid")
+
+    on_time_rate = _optional_float(row.get("on_time_delivery_rate_pct"), 2)
+    raw_cost_variance = _optional_float(row.get("cost_variance_pct"), 2)
+    outcome_rate_observable = delivered_count > 0 and on_time_rate is not None
+    realized_cost_observable = delivered_count > 0 and raw_cost_variance is not None
+    engineering_ready = (
+        delivered_count >= MIN_ENGINEERING_DELIVERED_SHIPMENTS
+        and outcome_rate_observable
+        and realized_cost_observable
+    )
+    reasons: list[str] = []
+    if delivered_count < MIN_ENGINEERING_DELIVERED_SHIPMENTS:
+        reasons.append("INSUFFICIENT_DELIVERED_SHIPMENTS")
+    if not outcome_rate_observable:
+        reasons.append("OUTCOME_RATE_UNAVAILABLE")
+    if not realized_cost_observable:
+        reasons.append("REALIZED_COST_UNAVAILABLE")
+
+    return {
+        "status": "available",
+        "as_of_date": baseline_date.isoformat(),
+        "source_start_date": source_start_date.isoformat(),
+        "source_max_metric_date": source_max_date.isoformat(),
+        "metrics": {
+            "shipment_count": shipment_count,
+            "new_booking_count": _optional_int(row.get("new_booking_count")),
+            "delivered_count": delivered_count,
+            "on_time_delivery_count": _optional_int(row.get("on_time_delivery_count")),
+            "late_delivery_count": _optional_int(row.get("late_delivery_count")),
+            "on_time_delivery_rate_pct": on_time_rate if outcome_rate_observable else None,
+            "avg_delivery_delay_hours": (
+                _optional_float(row.get("avg_delivery_delay_hours"), 2)
+                if outcome_rate_observable
+                else None
+            ),
+            "sla_breach_shipment_count": _optional_int(
+                row.get("sla_breach_shipment_count")
+            ),
+            "sla_breach_shipment_rate_pct": _optional_float(
+                row.get("sla_breach_shipment_rate_pct"), 2
+            ),
+            "expected_cost_total": _optional_float(row.get("expected_cost_total"), 2),
+            "current_cost_total": _optional_float(row.get("current_cost_total"), 2),
+            "cost_variance_pct": raw_cost_variance if realized_cost_observable else None,
+            "signal_candidate_count": _optional_int(row.get("signal_candidate_count")),
+            "high_severity_signal_count": _optional_int(
+                row.get("high_severity_signal_count")
+            ),
+        },
+        "maturity": {
+            "status": "ENGINEERING_READY" if engineering_ready else "NOT_READY",
+            "minimum_delivered_shipments": MIN_ENGINEERING_DELIVERED_SHIPMENTS,
+            "delivered_shipments": delivered_count,
+            "delivery_coverage_pct": round(100.0 * delivered_count / shipment_count, 2),
+            "outcome_metrics_observable": outcome_rate_observable,
+            "realized_cost_observable": realized_cost_observable,
+            "real_world_status": "BLOCKED",
+            "reasons": reasons,
+        },
+        "evidence": {
+            "real_world_evidence": False,
+            "data_provenance": "SIMULATED_MULTIMODAL_V1",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+            "decision_use": "ENGINEERING_EVALUATION_ONLY",
+        },
+    }
+
+
 def build_snapshot(
     row: dict[str, str | None],
     forecast_rows: list[dict[str, str | None]] | None = None,
     existing_analytics_rows: list[dict[str, str | None]] | None = None,
+    operational_baseline_row: dict[str, str | None] | None = None,
     now: datetime | None = None,
     pipeline_run: dict[str, Any] | None = None,
     pipeline_status_required: bool = False,
@@ -839,9 +994,37 @@ def build_snapshot(
             "existing_assets": parse_existing_analytics(existing_analytics_rows or []),
         }
     )
+    operational_baseline = (
+        parse_operational_baseline(operational_baseline_row, newest_date)
+        if operational_baseline_row
+        else {
+            "status": "unavailable",
+            "as_of_date": None,
+            "metrics": {},
+            "maturity": {
+                "status": "NOT_READY",
+                "minimum_delivered_shipments": MIN_ENGINEERING_DELIVERED_SHIPMENTS,
+                "delivered_shipments": 0,
+                "delivery_coverage_pct": 0.0,
+                "outcome_metrics_observable": False,
+                "realized_cost_observable": False,
+                "real_world_status": "BLOCKED",
+                "reasons": ["OPERATIONAL_BASELINE_UNAVAILABLE"],
+            },
+            "evidence": {
+                "real_world_evidence": False,
+                "data_provenance": "SIMULATED_MULTIMODAL_V1",
+                "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+                "decision_use": "ENGINEERING_EVALUATION_ONLY",
+            },
+        }
+    )
+    baseline_available = operational_baseline["status"] == "available"
+    pipeline_current = pipeline_current and baseline_available
+    fresh = age_hours <= 36 and pipeline_current
 
     return {
-        "schema_version": "1.4",
+        "schema_version": "1.5",
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "source_updated_at": source_updated_at.isoformat().replace("+00:00", "Z"),
         "as_of_date": newest_date.isoformat(),
@@ -861,6 +1044,7 @@ def build_snapshot(
         "stage_freshness": stage_freshness,
         "metrics": metrics,
         "analytics": analytics,
+        "operational_baseline": operational_baseline,
         "forecast": forecast,
         "pipeline": {
             **pipeline_health,
@@ -874,8 +1058,8 @@ def build_snapshot(
                 )
             ),
             "max_stage_lag_days": max_stage_lag,
-            "query_checks_succeeded": 3,
-            "query_checks_total": 3,
+            "query_checks_succeeded": 4 if operational_baseline_row else 3,
+            "query_checks_total": 4,
         },
     }
 
@@ -966,10 +1150,18 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
         output,
         workgroup,
     )
+    operational_baseline_response = run_query(
+        client,
+        build_operational_baseline_query(source_database, analysis_date),
+        source_database,
+        output,
+        workgroup,
+    )
     snapshot = build_snapshot(
         parse_athena_result(metric_response),
         parse_athena_rows(forecast_response),
         parse_athena_rows(existing_analytics_response),
+        parse_athena_result(operational_baseline_response),
         pipeline_run=pipeline_run,
         pipeline_status_required=pipeline_status_required,
     )

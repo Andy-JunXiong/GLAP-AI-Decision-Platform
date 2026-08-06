@@ -18,8 +18,13 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   as operationally observed labels or establish label readiness.
 - [x] Add permanent row-level temporal identities, scenario-aware write keys,
   quality checks, and operational-only default analytics in the repository.
-- [ ] After merge approval, deploy the five-column schema evolution and apply
+- [x] Deploy the five-column schema evolution and apply
   the reviewed `2026-08-06` legacy-row backfill before replacing the views.
+- [x] Deploy the read-only `2026-08-06` operational-calendar baseline with 10
+  fail-closed checks and explicit synthetic engineering-only evidence labels.
+- [x] Add the repository contract that publishes the stateful baseline beside,
+  rather than in place of, the existing v2/v3 Control Tower population; block
+  outcome and realized-cost claims until the maturity gate is satisfied.
 - [ ] Accumulate real closed outcomes only as their Sydney calendar dates
   arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and

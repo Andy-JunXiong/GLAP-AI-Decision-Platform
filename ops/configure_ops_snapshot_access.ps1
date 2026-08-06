@@ -123,8 +123,18 @@ $tables = @(
     "fact_ai_learning_v1"
 )
 $views = @()
-$sourceTables = @("fact_shipment_v2")
+$sourceTables = @(
+    "fact_shipment_v2",
+    "fact_shipment_lifecycle_staging_v1",
+    "fact_shipment_lifecycle_metrics_staging_v1",
+    "fact_shipment_signal_candidate_staging_v1"
+)
+$sourceViews = @(
+    "vw_multimodal_shipment_daily_context_v1",
+    "vw_multimodal_operational_baseline_v1"
+)
 $catalogObjects = $tables + $views
+$sourceCatalogObjects = $sourceTables + $sourceViews
 $dataLocations = foreach ($tableName in $tables) {
     $table = Invoke-AwsJson -Arguments @(
         "glue", "get-table",
@@ -245,7 +255,7 @@ $permissions = @{
                 "arn:aws:glue:${Region}:${accountId}:database/${database}",
                 "arn:aws:glue:${Region}:${accountId}:database/${SourceDatabase}"
             ) + ($catalogObjects | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${database}/$_" }) +
-                ($sourceTables | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/$_" })
+                ($sourceCatalogObjects | ForEach-Object { "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/$_" })
         },
         @{
             Sid = "RequestGovernedTableData"
@@ -360,7 +370,7 @@ foreach ($tableName in $catalogObjects) {
     }
     if (-not $tableGrant) { $lakeFormationGranted = $false }
 }
-foreach ($tableName in $sourceTables) {
+foreach ($tableName in $sourceCatalogObjects) {
     $tableResource = ConvertTo-CompressedJson -Value @{
         Table = @{ DatabaseName = $SourceDatabase; Name = $tableName }
     }
