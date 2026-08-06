@@ -103,13 +103,20 @@ weakening fail-closed behavior.
 | Production alias or autonomous policy promotion | Not approved |
 | Public entity-level data or write operations | Prohibited by current boundary |
 
+## Completed next step
+
+1. Connected the governed closed-loop domain to private append-only AWS staging
+   tables for Alerts, Actions, Outcomes, policy proposals, and Action audit.
+2. Preserved the Sydney-date boundary and scenario-aware write keys.
+3. Exercised named approval, idempotent replay, completion, and pending Outcome
+   creation without enabling a recurring schedule or public write path.
+
 ## First next step
 
-1. Connect the governed closed-loop domain to private append-only AWS staging
-   tables for Alerts, Actions, Outcomes, and policy proposals.
-2. Preserve the existing Sydney-date boundary and scenario-aware write keys.
-3. Exercise the chain with a controlled multi-day replay before proposing any
-   recurring schedule or authenticated write API.
+1. Define authenticated roles for viewer, operator, approver, and administrator.
+2. Put a private Operations API in front of the Action mutation Lambda.
+3. Connect the Decision Queue and Action Board to that API while retaining the
+   append-only audit trail and fail-closed transitions.
 
 ## Near-term plan
 
@@ -144,6 +151,33 @@ evidence was counted to clear that gate.
 
 No schedule, production alias, public entity output, automatic Action approval,
 or automatic policy activation was added.
+
+## Action approval and completion continuation
+
+The private staging stack now includes a manual-only Action mutation Lambda, an
+append-only Iceberg audit table, and a derived current-state view. The proposed
+Action row remains immutable. `APPROVE`, `REJECT`, and `COMPLETE` requests require
+a named human actor and reason, enforce valid state transitions, and use a stable
+request ID so retries cannot add a second audit event.
+
+A controlled engineering verification used one `2026-08-06`
+`OPERATIONAL` / `ACTUAL_CALENDAR` Action. `Andy-JunXiong` recorded approval and
+completion for staging verification. Replaying the approval returned
+`idempotent_replay: true`; Athena retained exactly two events in order,
+`APPROVE,COMPLETE`, and the derived view reports `COMPLETED`.
+
+The same-date lifecycle continuation then created one `PENDING` Outcome with an
+observation due date of `2026-08-09`, no observed date, and no policy proposal.
+Because 9 August is later than this handoff's Sydney business date, this is only
+a scheduled observation boundary, not actual outcome evidence. The expanded
+28-check lifecycle gate passed both Action-audit checks and retained the known
+`missing_provider_coverage` failure. No future-simulation provider rows were
+used to clear it.
+
+The next product capability is an authenticated internal Operations API and
+role model that can connect the Decision Queue and Action Board to this private
+mutation path. The Lambda remains without a public endpoint, event source,
+schedule, or production alias.
 
 ## Longer-term plan
 

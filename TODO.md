@@ -68,6 +68,20 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 - [x] Verify the `2026-08-06` operational write and retry: 15 unique Alerts,
   15 unique proposed Actions, zero duplicate Actions on retry, zero premature
   Outcomes/proposals, and zero future-simulation rows in the four new tables.
+- [x] Deploy a private, manual-only Action mutation Lambda with immutable
+  proposed Actions, append-only `APPROVE` / `REJECT` / `COMPLETE` audit events,
+  a derived current-state view, named-human enforcement, and request-id
+  idempotency.
+- [x] Exercise one controlled `2026-08-06` staging Action as
+  `PROPOSED -> APPROVED -> COMPLETED`: the approval retry reused the original
+  event, Athena retained exactly two audit events, and the current-state view
+  resolved to `COMPLETED`.
+- [x] Re-run the closed loop after completion and create one `PENDING` Outcome
+  with observation due `2026-08-09`; do not call it observed evidence or advance
+  the operational date before that Sydney calendar date arrives.
+- [ ] Add an authenticated internal Operations API and role model, then connect
+  the Decision Queue and Action Board to this private mutation path. Keep the
+  Lambda without a public endpoint until that access boundary is approved.
 - [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
   exists on or before the Sydney cutoff; do not use future simulations to pass
   the remaining `missing_provider_coverage` lifecycle check.

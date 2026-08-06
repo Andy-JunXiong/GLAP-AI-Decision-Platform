@@ -33,6 +33,12 @@ Every proposed action requires a named human reviewer. System, automation and
 model actors cannot approve it. Only an approved and completed action may
 produce an outcome.
 
+The proposed Action row is immutable. A private, manual-only mutation function
+appends every `APPROVE`, `REJECT`, or `COMPLETE` event to an Iceberg audit table.
+Valid transitions are fail closed, and stable request IDs make retries
+idempotent. A view overlays the latest audit event to expose current Action
+state without erasing its history.
+
 Outcomes remain `PENDING` until their observation lag expires. Once due, the
 result is reproducible from stable entity/version identifiers and depends on
 action type, alert type and severity, shipment stage, carrier, execution delay,
@@ -67,10 +73,18 @@ The `2026-08-06` actual-calendar staging run produced 15 Alert rows and 15
 proposed Action rows. A repeat run produced zero new Actions. Athena
 reconciliation found 15/15 distinct Alert keys, 15/15 distinct Action keys,
 zero future-simulation rows, and no Outcomes or policy proposals before their
-human-completion and observation gates. All six new closed-loop quality checks
-passed.
+human-completion and observation gates. All six original closed-loop quality
+checks passed.
 
-The full 26-check lifecycle gate retained one pre-existing failure:
+The controlled Action-mutation verification appended exactly two events,
+`APPROVE` then `COMPLETE`, for one operational-calendar engineering Action.
+Replaying the approval returned the original event. The current-state view
+reports `COMPLETED`, and the same-date generator continuation created one
+`PENDING` Outcome whose observation is due on `2026-08-09`. It has no observed
+date and is not actual outcome evidence as of `2026-08-06`.
+
+The expanded 28-check lifecycle gate passed the duplicate-request and invalid
+audit-transition checks, while retaining one pre-existing failure:
 `missing_provider_coverage`. The actual-calendar baseline for this date contains
 only Maersk Ocean; future DHL/KN simulation rows were not used to manufacture
 operational coverage.
