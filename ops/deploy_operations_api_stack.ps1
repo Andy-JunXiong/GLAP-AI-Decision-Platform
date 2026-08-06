@@ -47,7 +47,7 @@ Compress-Archive -LiteralPath (Join-Path $packageDir "lambda_function.py") `
 if ($LASTEXITCODE -ne 0) { throw "Unable to upload Operations API artifact" }
 
 & aws cloudformation deploy --template-file $template --stack-name $StackName `
-    --capabilities CAPABILITY_IAM @awsScope --no-fail-on-empty-changeset `
+    --capabilities CAPABILITY_NAMED_IAM @awsScope --no-fail-on-empty-changeset `
     --parameter-overrides `
       "ArtifactBucket=$ArtifactBucket" "ApiArtifactKey=$ApiArtifactKey" `
       "JwtIssuer=$JwtIssuer" "JwtAudience=$JwtAudience" `
