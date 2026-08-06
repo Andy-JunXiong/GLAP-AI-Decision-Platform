@@ -137,6 +137,22 @@ class OfflineDemoTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
 
+    def test_readability_scale_covers_core_and_dense_views(self):
+        for marker in (
+            "Readability scale: keep every explanatory label legible",
+            "body{font-size:16px;line-height:1.5}",
+            ".metric span{font-size:13px",
+            ".row{font-size:14px",
+            ".system-nav button{font-size:13px",
+            ".resource-row{grid-template-columns:210px 115px 1fr 105px",
+            ".contract-row.header,.contract-row code,.contract-row p,.contract-row span{font-size:12px}",
+            ".mapping-grid{grid-template-columns:repeat(3,1fr)",
+            "@media(max-width:720px){body{font-size:15px}",
+            ".nav button{height:60px;font-size:11px}",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
     def test_system_evidence_views_are_present(self):
         for view in (
             "AWS Overview",
