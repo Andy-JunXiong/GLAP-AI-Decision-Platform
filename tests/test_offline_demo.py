@@ -140,15 +140,17 @@ class OfflineDemoTests(unittest.TestCase):
     def test_readability_scale_covers_core_and_dense_views(self):
         for marker in (
             "Readability scale: keep every explanatory label legible",
-            "body{font-size:16px;line-height:1.5}",
-            ".metric span{font-size:13px",
-            ".row{font-size:14px",
-            ".system-nav button{font-size:13px",
-            ".resource-row{grid-template-columns:210px 115px 1fr 105px",
-            ".contract-row.header,.contract-row code,.contract-row p,.contract-row span{font-size:12px}",
+            "body{font-size:18px;line-height:1.55}",
+            ".page{max-width:1450px",
+            ".metric span{font-size:15px",
+            ".row{font-size:16px",
+            ".system-nav button{font-size:15px",
+            ".flow-step p,.flow-step small{font-size:14px",
+            ".resource-row{grid-template-columns:220px 125px 1fr 110px",
+            ".contract-row.header,.contract-row code,.contract-row p,.contract-row span{font-size:14px}",
             ".mapping-grid{grid-template-columns:repeat(3,1fr)",
-            "@media(max-width:720px){body{font-size:15px}",
-            ".nav button{height:60px;font-size:11px}",
+            "@media(max-width:720px){body{font-size:16px}",
+            ".nav button{height:62px;font-size:12px}",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
