@@ -1,8 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ActionOperation,
+  OperationsAction,
+  internalOperationsEnabled,
+  loadActionQueue,
+  mutateAction,
+  readOperationsToken,
+} from "./operations-api";
+import "./operations.css";
 
-type View = "overview" | "signals" | "decisions" | "shipments" | "outcomes" | "brief";
+type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "brief";
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: "overview", label: "Control Tower", icon: "⌂" },
@@ -10,6 +19,7 @@ const navItems: { id: View; label: string; icon: string }[] = [
   { id: "decisions", label: "Decisions", icon: "◇" },
   { id: "shipments", label: "Shipments", icon: "▣" },
   { id: "outcomes", label: "Outcomes", icon: "↗" },
+  { id: "actions", label: "Action Board", icon: "A" },
 ];
 
 const signals = [
@@ -41,6 +51,48 @@ export default function Home() {
   const [diverted, setDiverted] = useState(8);
   const [decision, setDecision] = useState<"pending" | "approved" | "rejected">("pending");
   const [signalFilter, setSignalFilter] = useState("All");
+  const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
+  const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+    internalOperationsEnabled() ? "loading" : "demo",
+  );
+  const [operationsMessage, setOperationsMessage] = useState("");
+
+  const refreshOperations = useCallback(async () => {
+    if (!internalOperationsEnabled()) return;
+    const token = readOperationsToken();
+    if (!token) {
+      setOperationsState("auth_required");
+      setOperationsMessage("Sign in through the approved internal identity provider.");
+      return;
+    }
+    setOperationsState("loading");
+    try {
+      const queue = await loadActionQueue(token);
+      setOperationsActions(queue.items);
+      setOperationsState("connected");
+      setOperationsMessage("");
+    } catch (error) {
+      setOperationsState("error");
+      setOperationsMessage(error instanceof Error ? error.message : "Unable to load Operations API");
+    }
+  }, []);
+
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => { void refreshOperations(); }, 0);
+    return () => window.clearTimeout(initialLoad);
+  }, [refreshOperations]);
+
+  const submitOperation = useCallback(async (
+    actionId: string, operation: ActionOperation, reason: string,
+  ) => {
+    try {
+      await mutateAction(readOperationsToken(), actionId, operation, reason);
+      await refreshOperations();
+    } catch (error) {
+      setOperationsState("error");
+      setOperationsMessage(error instanceof Error ? error.message : "Action update failed");
+    }
+  }, [refreshOperations]);
 
   const economics = useMemo(() => {
     const noAction = 12 * 6 * 220;
@@ -93,7 +145,8 @@ export default function Home() {
 
         {view === "overview" && <Overview go={go} />}
         {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} />}
-        {view === "decisions" && <Decisions go={go} />}
+        {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
+        {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments go={go} />}
         {view === "outcomes" && <Outcomes />}
         {view === "brief" && (
@@ -185,7 +238,31 @@ function Signals({ filter, setFilter, go }: { filter: string; setFilter: (v: str
   </div>;
 }
 
-function Decisions({ go }: { go: (view: View) => void }) {
+function Decisions({ go, actions, operationsState, operationsMessage, refresh }: {
+  go: (view: View) => void;
+  actions: OperationsAction[];
+  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsMessage: string;
+  refresh: () => Promise<void>;
+}) {
+  if (operationsState === "demo") return <DemoDecisions go={go} />;
+  return <div className="page">
+    <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Authenticated operational Actions ready for human review." action={<button className="outline-button" onClick={() => void refresh()}>Refresh queue</button>} />
+    <OperationsState state={operationsState} message={operationsMessage} />
+    {operationsState === "connected" && <div className="decision-list">
+      {actions.filter((item) => item.status === "PROPOSED").map((item) => <button className="decision-card" key={item.action_id} onClick={() => go("actions")}>
+        <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
+        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id}</span></div>
+        <div className="decision-value"><small>Alert</small><strong>{item.alert_type.replaceAll("_", " ")}</strong></div>
+        <div className="decision-due"><small>Created</small><strong>{item.created_date}</strong></div>
+        <span className="status-button">Review now</span>
+      </button>)}
+      {actions.every((item) => item.status !== "PROPOSED") && <p className="data-disclaimer">No Actions are waiting for review.</p>}
+    </div>}
+  </div>;
+}
+
+function DemoDecisions({ go }: { go: (view: View) => void }) {
   return <div className="page">
     <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Prioritised recommendations ready for human review." action={<button className="outline-button">Export queue</button>} />
     <div className="queue-summary"><span><strong>3</strong>Waiting for review</span><span><strong>1</strong>Due within 3 hours</span><span><strong>$27.4k</strong>Potential value</span></div>
@@ -197,6 +274,50 @@ function Decisions({ go }: { go: (view: View) => void }) {
       <span className="status-button">{item.status} →</span>
     </button>)}</div>
   </div>;
+}
+
+function ActionBoard({ actions, operationsState, operationsMessage, submitOperation, refresh }: {
+  actions: OperationsAction[];
+  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsMessage: string;
+  submitOperation: (actionId: string, operation: ActionOperation, reason: string) => Promise<void>;
+  refresh: () => Promise<void>;
+}) {
+  const [reason, setReason] = useState("Reviewed current operational evidence");
+  const [busyAction, setBusyAction] = useState("");
+  const run = async (action: OperationsAction, operation: ActionOperation) => {
+    setBusyAction(action.action_id);
+    try { await submitOperation(action.action_id, operation, reason); }
+    finally { setBusyAction(""); }
+  };
+  return <div className="page">
+    <PageTitle eyebrow="OPERATE" title="Action Board" copy="Move approved operational Actions through their governed lifecycle." action={<button className="outline-button" onClick={() => void refresh()}>Refresh board</button>} />
+    {operationsState === "demo"
+      ? <p className="data-disclaimer">Public demonstration mode is read-only. Configure the internal Operations API and sign in to use the Action Board.</p>
+      : <OperationsState state={operationsState} message={operationsMessage} />}
+    {operationsState === "connected" && <>
+      <label className="select-label"><span>Audit reason for the next update</span><input className="operations-reason" value={reason} minLength={3} maxLength={500} onChange={(event) => setReason(event.target.value)} /></label>
+      <div className="decision-list">{actions.map((item) => <article className="decision-card" key={item.action_id}>
+        <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
+        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span></div>
+        <div className="decision-value"><small>Status</small><strong>{item.status}</strong></div>
+        <div className="decision-buttons">
+          {item.status === "PROPOSED" && <><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "REJECT")}>Reject</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "APPROVE")}>Approve</button></>}
+          {item.status === "APPROVED" && <button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "COMPLETE")}>Mark complete</button>}
+          {(item.status === "REJECTED" || item.status === "COMPLETED") && <span className="status-button">Closed</span>}
+        </div>
+      </article>)}</div>
+    </>}
+  </div>;
+}
+
+function OperationsState({ state, message }: {
+  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  message: string;
+}) {
+  if (state === "connected" || state === "demo") return null;
+  const copy = state === "loading" ? "Loading the authenticated operational queue…" : message;
+  return <p className="data-disclaimer" role={state === "error" ? "alert" : "status"}>{copy}</p>;
 }
 
 function Shipments({ go }: { go: (view: View) => void }) {

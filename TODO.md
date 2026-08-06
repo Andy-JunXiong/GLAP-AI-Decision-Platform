@@ -3,6 +3,37 @@
 Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
+Current implementation and release boundaries are recorded in the
+[`7 August development handoff`](docs/development_handoff_2026-08-07.md).
+
+## 7 August 2026 implementation checkpoint
+
+- [x] Define the viewer, operator, approver, and administrator permission
+  matrix plus the versioned `operations-api.v1` request/response contract.
+- [x] Add a JWT-authorized, staging-only Operations API adapter for the
+  operational Action queue and `APPROVE` / `REJECT` / `COMPLETE` events.
+- [x] Derive the named actor from signed identity claims rather than trusting a
+  client-supplied actor, while retaining mutation transition and idempotency
+  enforcement in the existing private Lambda.
+- [x] Add a separate plan-first CloudFormation stack with least-privilege reads,
+  mutation invocation, bounded concurrency, throttling, alarms, and an encrypted
+  DLQ. It has no schedule or production alias.
+- [x] Add unit and infrastructure contract coverage for role separation,
+  fail-closed identity handling, operational-only queue reads, authenticated
+  routing, and deployment boundaries.
+- [ ] Review the approved JWT issuer, audience, and exact internal HTTPS origin,
+  then deploy the stack manually and collect runtime authorization, alarm,
+  retry, concurrency, and recovery evidence.
+- [x] Add a manual GitHub OIDC workflow that reads those values only from the
+  protected staging environment, defaults to plan, and requires an explicit
+  `deploy` selection before changing AWS.
+- [x] Connect Decision Queue and Action Board through an opt-in authenticated
+  browser client. It reads the operational queue and submits approve, reject,
+  and complete events only when an internal HTTPS API and session token exist.
+  Public GitHub Pages remains read-only and sends no Action request.
+- [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
+  for the pending Outcome; it remains pending and is not observed evidence today.
+
 ## End-of-day handoff -- 6 August 2026
 
 - [x] Merge PRs `#14` through `#21`, including bounded scenario extension,

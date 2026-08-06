@@ -1,0 +1,111 @@
+name: Deploy authenticated Operations API staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Render the plan or deploy the authenticated staging API
+        required: true
+        type: choice
+        default: plan
+        options: [plan, deploy]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: operations-api-staging
+  cancel-in-progress: false
+
+jobs:
+  operations-api-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    env:
+      AWS_REGION: us-east-1
+      ARTIFACT_BUCKET: ${{ vars.AWS_LIFECYCLE_ARTIFACT_BUCKET }}
+      DATA_BUCKET: ${{ vars.AWS_LIFECYCLE_DATA_BUCKET }}
+      ATHENA_OUTPUT: ${{ vars.AWS_LIFECYCLE_ATHENA_OUTPUT || vars.AWS_OPS_ATHENA_OUTPUT }}
+      JWT_ISSUER: ${{ vars.GLAP_OPERATIONS_JWT_ISSUER }}
+      JWT_AUDIENCE: ${{ vars.GLAP_OPERATIONS_JWT_AUDIENCE }}
+      INTERNAL_ORIGIN: ${{ vars.GLAP_OPERATIONS_INTERNAL_ORIGIN }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Test Operations API contracts
+        run: |
+          python -m unittest discover -s tests -p "test_operations_api*.py" -v
+
+      - name: Validate protected staging configuration
+        shell: bash
+        run: |
+          [[ "$JWT_ISSUER" =~ ^https://[^[:space:]]+$ ]]
+          [[ "$JWT_AUDIENCE" =~ ^[A-Za-z0-9._:/-]{3,255}$ ]]
+          [[ "$INTERNAL_ORIGIN" =~ ^https://[^/[:space:]]+$ ]]
+          [[ "$ATHENA_OUTPUT" =~ ^s3://[^/]+/.+ ]]
+          test -n "$ARTIFACT_BUCKET"
+          test -n "$DATA_BUCKET"
+
+      - name: Configure AWS staging credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: glap-operations-api-${{ github.run_id }}
+
+      - name: Verify private dependencies
+        shell: bash
+        run: |
+          aws sts get-caller-identity >/dev/null
+          aws lambda get-function --function-name glap-lifecycle-action-mutation-staging >/dev/null
+          aws glue get-table --database-name simulated_iceberg_m --name vw_lifecycle_action_current_staging_v1 >/dev/null
+
+      - name: Render deployment plan
+        shell: pwsh
+        run: |
+          ./ops/deploy_operations_api_stack.ps1 `
+            -Region $env:AWS_REGION `
+            -ArtifactBucket $env:ARTIFACT_BUCKET `
+            -JwtIssuer $env:JWT_ISSUER `
+            -JwtAudience $env:JWT_AUDIENCE `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -AthenaResultsBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
+            -LifecycleDataBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
+            -AllowedOrigin $env:INTERNAL_ORIGIN
+
+      - name: Deploy authenticated staging API
+        if: inputs.action == 'deploy'
+        shell: pwsh
+        run: |
+          ./ops/deploy_operations_api_stack.ps1 `
+            -Region $env:AWS_REGION `
+            -ArtifactBucket $env:ARTIFACT_BUCKET `
+            -ApiArtifactKey "stateful-lifecycle-staging/artifacts/operations-api-${{ github.sha }}.zip" `
+            -JwtIssuer $env:JWT_ISSUER `
+            -JwtAudience $env:JWT_AUDIENCE `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -AthenaResultsBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
+            -LifecycleDataBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
+            -AllowedOrigin $env:INTERNAL_ORIGIN `
+            -Apply
+
+      - name: Record governed boundary
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "## Authenticated Operations API staging"
+            echo "- Requested action: \`${{ inputs.action }}\`"
+            echo "- JWT configuration source: protected staging variables"
+            echo "- Public Pages write access: \`false\`"
+            echo "- Schedule created: \`false\`"
+            echo "- Production alias changed: \`false\`"
+            echo "- Runtime role tests completed: \`false\` (separate named identities required)"
+          } >> "$GITHUB_STEP_SUMMARY"
