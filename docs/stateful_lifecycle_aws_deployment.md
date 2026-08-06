@@ -499,6 +499,31 @@ legacy future rows exist, no future row remains operational, and the default
 operational analytics view exposes zero rows after the cutoff. It does not
 create a schedule, production alias, or public output.
 
+### Row-level temporal isolation AWS evidence -- 6 August 2026
+
+PR `#24` merged as commit `793dc45`. Workflow run `31065406261` was dispatched
+from protected `main` with action `deploy-recovery-controller`. Its first
+attempt stopped before backfill because the exact-resource GitHub deployer
+policy did not yet include the 12 context-view Glue ARNs introduced by PR
+`#23`. The policy was updated with those 12 explicit resources only; it was not
+widened to a database or account wildcard.
+
+The second attempt, job `92503565020`, completed the 45-statement idempotent
+schema and view deployment, all five bounded Iceberg backfill updates, the
+unscheduled lifecycle stack update, and the deployed future-operational-date
+guard. The post-backfill assertions returned:
+
+- invalid temporal rows: `0`
+- legacy future simulation rows: `78,621`
+- future rows remaining in operational scope: `0`
+- operational rows through `2026-08-06`: `5,092`
+- future rows exposed by the default operational view: `0`
+
+CloudFormation independently reported `UPDATE_COMPLETE` for
+`glap-stateful-lifecycle-staging`, last updated at
+`2026-08-06T02:37:31.609000+00:00`. The workflow evidence also confirms that
+no schedule was created and no production alias was changed.
+
 ## Future-scenario extension AWS evidence -- 5 August 2026
 
 PR `#13` merged as commit `e56b41b` after both Python 3.13 and 3.14 CI jobs
