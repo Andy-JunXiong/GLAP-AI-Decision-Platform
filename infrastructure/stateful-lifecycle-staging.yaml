@@ -106,12 +106,13 @@ Resources:
                   - athena:StopQueryExecution
                   - athena:GetWorkGroup
                 Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AthenaWorkgroup}
-              - Sid: ReadActionCatalog
+              - Sid: ReadWriteActionCatalog
                 Effect: Allow
                 Action:
                   - glue:GetDatabase
                   - glue:GetTable
                   - glue:GetPartitions
+                  - glue:UpdateTable
                 Resource:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${SourceDatabase}

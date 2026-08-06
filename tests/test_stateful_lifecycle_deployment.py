@@ -316,7 +316,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("fact_lifecycle_action_audit_staging_v1", template)
         self.assertIn("vw_lifecycle_action_current_staging_v1", template)
         self.assertIn("glap-lifecycle-action-mutation-staging", template)
-        self.assertIn("glue:UpdateTable", template)
+        mutation_role = template.split("  ActionMutationRole:", 1)[1].split(
+            "  ActionMutationFunction:", 1
+        )[0]
+        self.assertIn("glue:UpdateTable", mutation_role)
         self.assertIn("dim_rate_tier_v1", template)
         self.assertIn("dim_provider_v1", template)
         self.assertIn("glap-stateful-lifecycle-controller-staging", template)
