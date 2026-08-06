@@ -477,7 +477,7 @@ accumulation gate.
 Use the manual lifecycle workflow action `extend-integration-validate` to add
 consecutive staging scenario dates after the latest successful scenario date.
 Operational use is restricted to the current Sydney date or earlier. The action
-invokes the isolated controller once per date and requires generation, 19
+invokes the isolated controller once per date and requires generation, 20
 lifecycle checks, 5 compatibility checks, and 8 analytics checks to pass before
 advancing. It stops on the first failure.
 
@@ -488,6 +488,16 @@ is technically limited to 45, but the GitHub OIDC role currently issues a
 one-hour credential. Until the workflow enforces a lower bound, use no more
 than 20 dates per invocation and leave additional margin when observed stage
 duration approaches three minutes per date.
+
+### Deploy row-level temporal isolation
+
+After PR `#23`, the manual `deploy-recovery-controller` action also performs
+the idempotent five-table schema evolution and the explicitly approved one-time
+`2026-08-06` temporal-scope backfill before deploying the unscheduled stack.
+The backfill fails closed unless every row has a consistent temporal identity,
+legacy future rows exist, no future row remains operational, and the default
+operational analytics view exposes zero rows after the cutoff. It does not
+create a schedule, production alias, or public output.
 
 ## Future-scenario extension AWS evidence -- 5 August 2026
 
