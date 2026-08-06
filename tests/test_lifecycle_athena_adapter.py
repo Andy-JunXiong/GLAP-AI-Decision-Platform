@@ -58,6 +58,72 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertIn("temporal_scope_id = 'SIMULATION:capacity-shock'", query)
         self.assertNotIn("SELECT *", query.upper())
 
+    def test_closed_loop_state_queries_are_scope_and_date_bounded(self):
+        queries = adapter.build_closed_loop_state_queries(
+            date(2026, 8, 6), "SIMULATION:capacity-shock"
+        )
+        self.assertEqual(
+            set(queries), {"previous_alerts", "actions", "outcomes", "proposals"}
+        )
+        self.assertIn("DATE '2026-08-05'", queries["previous_alerts"])
+        for query in queries.values():
+            self.assertIn("SIMULATION:capacity-shock", query)
+            self.assertNotIn("SELECT *", query.upper())
+
+    def test_closed_loop_rows_are_idempotent_and_outcomes_are_delayed(self):
+        logical_date = date(2026, 8, 6)
+        signals = [{
+            "signal_fingerprint": "alert-1", "shipment_id": "SHP-1",
+            "signal_type": "SLA_BREACH", "signal_grain": "SHIPMENT_MILESTONE",
+            "signal_dimension": "P2P_ARRIVAL", "severity": "HIGH",
+            "metric_name": "arrival_delay_hours", "metric_value": 48.0,
+            "threshold_value": 0.0,
+        }]
+        snapshots = [{
+            "shipment_id": "SHP-1", "lifecycle_stage": "IN_TRANSIT",
+            "carrier": "MAERSK", "journey_exception_type": "P2P_DELAY",
+        }]
+        completed_action = {
+            "action_id": "action-completed", "alert_fingerprint": "alert-1",
+            "shipment_id": "SHP-1", "action_type": "EXPEDITE_MILESTONE",
+            "alert_type": "SLA_BREACH", "alert_severity": "HIGH",
+            "status": "COMPLETED", "approved_by": "Alex Chen",
+            "completed_at": datetime(2026, 8, 5, tzinfo=timezone.utc),
+        }
+        rows = adapter.build_closed_loop_rows(
+            logical_date, signals, snapshots, [], [completed_action], [], set()
+        )
+        self.assertEqual(len(rows["alerts"]), 1)
+        self.assertEqual(len(rows["actions"]), 1)
+        self.assertEqual(rows["outcomes"][0]["status"], "PENDING")
+        self.assertEqual(rows["outcomes"][0]["observation_due_date"], date(2026, 8, 8))
+        replay = adapter.build_closed_loop_rows(
+            logical_date,
+            signals,
+            snapshots,
+            [],
+            [completed_action, rows["actions"][0]],
+            rows["outcomes"],
+            set(),
+        )
+        self.assertEqual(replay["actions"], [])
+        self.assertEqual(replay["outcomes"], [])
+
+    def test_closed_loop_tables_use_temporal_scope_in_merge_keys(self):
+        cases = (
+            (adapter.ALERT_TABLE, adapter.ALERT_COLUMNS, ("temporal_scope_id", "alert_fingerprint", "dt")),
+            (adapter.ACTION_TABLE, adapter.ACTION_COLUMNS, ("temporal_scope_id", "action_id")),
+            (adapter.OUTCOME_TABLE, adapter.OUTCOME_COLUMNS, ("temporal_scope_id", "outcome_id", "dt")),
+            (adapter.POLICY_PROPOSAL_TABLE, adapter.POLICY_PROPOSAL_COLUMNS, ("temporal_scope_id", "proposal_id")),
+        )
+        for table, columns, keys in cases:
+            with self.subTest(table=table):
+                row = {column: None for column in columns}
+                row.update({key: f"value-{index}" for index, key in enumerate(keys)})
+                sql = adapter.build_merge_sql(table, columns, keys, [row])[0]
+                for key in keys:
+                    self.assertIn(f"target.{key} = source.{key}", sql)
+
     def test_merge_is_retry_safe_and_escapes_values(self):
         rows = [{"event_id": "EV-1", "shipment_id": "SHP'1"}]
         statements = adapter.build_merge_sql(

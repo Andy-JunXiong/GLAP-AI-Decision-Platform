@@ -10,6 +10,7 @@ import time
 from typing import Any, Iterable
 
 import glap_stateful_lifecycle_generator as engine
+import glap_governed_closed_loop as closed_loop
 from glap_temporal_boundary import resolve_temporal_context, temporal_scope_id
 
 
@@ -22,6 +23,12 @@ EVENT_TABLE = os.getenv("SHIPMENT_EVENT_TABLE", "fact_shipment_lifecycle_event_s
 COST_TABLE = os.getenv("SHIPMENT_COST_TABLE", "fact_shipment_cost_staging_v1")
 METRICS_TABLE = os.getenv("SHIPMENT_METRICS_TABLE", "fact_shipment_lifecycle_metrics_staging_v1")
 SIGNAL_TABLE = os.getenv("SHIPMENT_SIGNAL_TABLE", "fact_shipment_signal_candidate_staging_v1")
+ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
+ACTION_TABLE = os.getenv("LIFECYCLE_ACTION_TABLE", "fact_lifecycle_action_staging_v1")
+OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
+POLICY_PROPOSAL_TABLE = os.getenv(
+    "POLICY_PROPOSAL_TABLE", "fact_policy_proposal_staging_v1"
+)
 ROUTE_TABLE = os.getenv("ROUTE_SERVICE_TABLE", "dim_route_service_v1")
 TARGET_TABLE = os.getenv("LIFECYCLE_TARGET_TABLE", "dim_lifecycle_target_v1")
 RATE_TABLE = os.getenv("RATE_CARD_TABLE", "dim_rate_card_v1")
@@ -70,6 +77,28 @@ SIGNAL_COLUMNS = (
     "signal_dimension", "metric_name", "metric_value", "threshold_value", "severity",
     "candidate_status", "simulation_provenance", "computed_at", *TEMPORAL_COLUMNS,
 )
+ALERT_COLUMNS = (
+    "alert_fingerprint", "shipment_id", "dt", "alert_type", "alert_grain",
+    "alert_dimension", "severity", "status", "first_detected_date",
+    "last_detected_date", "resolved_date", "metric_name", "metric_value",
+    "threshold_value", "provenance", "updated_at", *TEMPORAL_COLUMNS,
+)
+ACTION_COLUMNS = (
+    "action_id", "alert_fingerprint", "shipment_id", "action_type", "alert_type",
+    "alert_severity", "policy_version", "status", "approval_required", "approved_by",
+    "approved_at", "completed_at", "provenance", "created_date", *TEMPORAL_COLUMNS,
+)
+OUTCOME_COLUMNS = (
+    "outcome_id", "action_id", "alert_fingerprint", "shipment_id", "dt",
+    "observation_due_date", "status", "observed_date", "effect_pct",
+    "outcome_version", "provenance", *TEMPORAL_COLUMNS,
+)
+POLICY_PROPOSAL_COLUMNS = (
+    "proposal_id", "source_policy_version", "status", "observed_outcome_count",
+    "success_rate_pct", "proposed_change", "simulation_config_change",
+    "effective_date", "approved_by", "approved_policy_version",
+    "rollback_policy_version", "provenance", "created_date", *TEMPORAL_COLUMNS,
+)
 
 
 def _identifier(value: str, label: str) -> str:
@@ -83,6 +112,9 @@ def validate_configuration() -> None:
         (DATABASE, "database"), (SNAPSHOT_TABLE, "snapshot table"), (EVENT_TABLE, "event table"),
         (COST_TABLE, "cost table"), (METRICS_TABLE, "metrics table"),
         (SIGNAL_TABLE, "signal table"),
+        (ALERT_TABLE, "alert table"), (ACTION_TABLE, "action table"),
+        (OUTCOME_TABLE, "outcome table"),
+        (POLICY_PROPOSAL_TABLE, "policy proposal table"),
         (ROUTE_TABLE, "route table"), (TARGET_TABLE, "target table"),
         (RATE_TABLE, "rate table"), (FX_TABLE, "FX table"),
     ):
@@ -128,6 +160,131 @@ FROM {_identifier(DATABASE, 'database')}.{_identifier(SNAPSHOT_TABLE, 'snapshot 
 WHERE try_cast(dt AS date) = DATE '{previous}'
   AND temporal_scope_id = {_sql_literal(scope_id)}
   AND lifecycle_status = 'OPEN' AND terminal_state = false"""
+
+
+def build_closed_loop_state_queries(logical_date: date, scope_id: str) -> dict[str, str]:
+    """Read only the private state required to advance the governed loop."""
+
+    previous = logical_date.fromordinal(logical_date.toordinal() - 1).isoformat()
+    database = _identifier(DATABASE, "database")
+    scope = _sql_literal(scope_id)
+    return {
+        "previous_alerts": f"""SELECT {', '.join(ALERT_COLUMNS)}
+FROM {database}.{_identifier(ALERT_TABLE, 'alert table')}
+WHERE try_cast(dt AS date) = DATE '{previous}' AND temporal_scope_id = {scope}""",
+        "actions": f"""SELECT {', '.join(ACTION_COLUMNS)}
+FROM {database}.{_identifier(ACTION_TABLE, 'action table')}
+WHERE temporal_scope_id = {scope}""",
+        "outcomes": f"""SELECT {', '.join(OUTCOME_COLUMNS)}
+FROM {database}.{_identifier(OUTCOME_TABLE, 'outcome table')}
+WHERE temporal_scope_id = {scope}""",
+        "proposals": f"""SELECT proposal_id
+FROM {database}.{_identifier(POLICY_PROPOSAL_TABLE, 'policy proposal table')}
+WHERE temporal_scope_id = {scope}""",
+    }
+
+
+def _coerce_closed_loop_row(row: dict[str, str | None]) -> dict[str, Any]:
+    result: dict[str, Any] = dict(row)
+    for field in ("approved_at", "completed_at", "updated_at"):
+        if row.get(field):
+            result[field] = datetime.fromisoformat(str(row[field])).replace(tzinfo=timezone.utc)
+    for field in (
+        "first_detected_date", "last_detected_date", "resolved_date", "created_date",
+        "observation_due_date", "observed_date", "effective_date", "as_of_date",
+    ):
+        if row.get(field):
+            result[field] = date.fromisoformat(str(row[field]))
+    for field in ("metric_value", "threshold_value", "effect_pct", "success_rate_pct"):
+        if row.get(field) is not None:
+            result[field] = float(str(row[field]))
+    if row.get("observed_outcome_count") is not None:
+        result["observed_outcome_count"] = int(str(row["observed_outcome_count"]))
+    for field in ("approval_required", "simulation_config_change"):
+        if row.get(field) is not None:
+            result[field] = str(row[field]).lower() == "true"
+    return result
+
+
+def build_closed_loop_rows(
+    logical_date: date,
+    signals: list[dict[str, Any]],
+    snapshots: list[dict[str, Any]],
+    previous_alerts: list[dict[str, Any]],
+    existing_actions: list[dict[str, Any]],
+    existing_outcomes: list[dict[str, Any]],
+    existing_proposal_ids: set[str],
+    policy_version: str = "decision-policy-v1",
+    minimum_observed: int = 20,
+) -> dict[str, list[dict[str, Any]]]:
+    """Advance alerts, actions, outcomes and review-only policy proposals."""
+
+    alerts = closed_loop.reconcile_alerts(signals, previous_alerts, logical_date)
+    for row in alerts:
+        row["dt"] = logical_date.isoformat()
+        for field in ("first_detected_date", "last_detected_date", "resolved_date"):
+            if row.get(field):
+                row[field] = date.fromisoformat(str(row[field]))
+
+    alert_by_fingerprint = {row["alert_fingerprint"]: row for row in alerts}
+    known_action_ids = {str(row["action_id"]) for row in existing_actions}
+    actions = []
+    for row in closed_loop.propose_actions(alerts, policy_version):
+        if row["action_id"] in known_action_ids:
+            continue
+        alert = alert_by_fingerprint[row["alert_fingerprint"]]
+        row.update({
+            "alert_type": alert["alert_type"],
+            "alert_severity": alert["severity"],
+            "created_date": logical_date,
+        })
+        actions.append(row)
+
+    snapshot_by_shipment = {row["shipment_id"]: row for row in snapshots}
+    prior_outcome_keys = {
+        (str(row.get("outcome_id")), str(row.get("dt"))) for row in existing_outcomes
+    }
+    outcomes = []
+    for action in existing_actions:
+        if action.get("status") != "COMPLETED" or not action.get("completed_at"):
+            continue
+        alert = alert_by_fingerprint.get(str(action.get("alert_fingerprint"))) or {
+            "alert_fingerprint": action["alert_fingerprint"],
+            "alert_type": action.get("alert_type") or "SLA_BREACH",
+            "severity": action.get("alert_severity") or "MEDIUM",
+        }
+        shipment = snapshot_by_shipment.get(str(action.get("shipment_id")), {})
+        outcome = closed_loop.observe_outcome(
+            action,
+            alert,
+            logical_date,
+            context={
+                "shipment_stage": shipment.get("lifecycle_stage"),
+                "carrier": shipment.get("carrier"),
+                "execution_delay_hours": 0,
+                "active_disruption": bool(shipment.get("journey_exception_type")),
+            },
+        )
+        outcome["dt"] = logical_date.isoformat()
+        for field in ("observation_due_date", "observed_date"):
+            if outcome.get(field):
+                outcome[field] = date.fromisoformat(str(outcome[field]))
+        key = (outcome["outcome_id"], outcome["dt"])
+        if key not in prior_outcome_keys:
+            outcomes.append(outcome)
+
+    closed_history = [
+        row for row in existing_outcomes
+        if row.get("status") in closed_loop.OUTCOME_STATES
+    ] + [row for row in outcomes if row.get("status") in closed_loop.OUTCOME_STATES]
+    proposal = closed_loop.build_policy_proposal(
+        closed_history, policy_version, logical_date, minimum_observed
+    )
+    proposals = []
+    if proposal and proposal["proposal_id"] not in existing_proposal_ids:
+        proposal["created_date"] = logical_date
+        proposals.append(proposal)
+    return {"alerts": alerts, "actions": actions, "outcomes": outcomes, "proposals": proposals}
 
 
 def apply_temporal_provenance(
@@ -333,6 +490,23 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         _coerce_snapshot(row)
         for row in _run_query(client, build_active_snapshot_query(logical_date, scope_id))
     ]
+    closed_loop_queries = build_closed_loop_state_queries(logical_date, scope_id)
+    previous_alerts = [
+        _coerce_closed_loop_row(row)
+        for row in _run_query(client, closed_loop_queries["previous_alerts"])
+    ]
+    existing_actions = [
+        _coerce_closed_loop_row(row)
+        for row in _run_query(client, closed_loop_queries["actions"])
+    ]
+    existing_outcomes = [
+        _coerce_closed_loop_row(row)
+        for row in _run_query(client, closed_loop_queries["outcomes"])
+    ]
+    existing_proposal_ids = {
+        str(row["proposal_id"])
+        for row in _run_query(client, closed_loop_queries["proposals"])
+    }
     if not active and event.get("seed_population", False):
         active = engine.seed_population(
             logical_date, routes, targets, int(event.get("population_size", 450)),
@@ -346,6 +520,21 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     events = result.pop("events")
     metrics = result.pop("metrics")
     signals = result.pop("signals")
+    closed_loop_rows = build_closed_loop_rows(
+        logical_date,
+        signals,
+        snapshots,
+        previous_alerts,
+        existing_actions,
+        existing_outcomes,
+        existing_proposal_ids,
+        event.get("policy_version", "decision-policy-v1"),
+        int(event.get("minimum_policy_outcomes", 20)),
+    )
+    alerts = closed_loop_rows["alerts"]
+    actions = closed_loop_rows["actions"]
+    outcomes = closed_loop_rows["outcomes"]
+    proposals = closed_loop_rows["proposals"]
     cost_rows = []
     for snapshot in snapshots:
         for line in snapshot.pop("expected_cost_lines", []):
@@ -358,7 +547,10 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 "rate_card_version": line["rate_card_version"], "cost_status": "EXPECTED",
                 "created_at": snapshot["created_at"],
             })
-    for rows in (snapshots, events, cost_rows, metrics, signals):
+    for rows in (
+        snapshots, events, cost_rows, metrics, signals,
+        alerts, actions, outcomes, proposals,
+    ):
         apply_temporal_provenance(rows, temporal_context)
     update_matched = event.get("retry_failed_run") is True
     statements = (
@@ -388,6 +580,34 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             signals,
             update_matched,
         )
+        + build_merge_sql(
+            ALERT_TABLE,
+            ALERT_COLUMNS,
+            ("temporal_scope_id", "alert_fingerprint", "dt"),
+            alerts,
+            update_matched,
+        )
+        + build_merge_sql(
+            ACTION_TABLE,
+            ACTION_COLUMNS,
+            ("temporal_scope_id", "action_id"),
+            actions,
+            False,
+        )
+        + build_merge_sql(
+            OUTCOME_TABLE,
+            OUTCOME_COLUMNS,
+            ("temporal_scope_id", "outcome_id", "dt"),
+            outcomes,
+            update_matched,
+        )
+        + build_merge_sql(
+            POLICY_PROPOSAL_TABLE,
+            POLICY_PROPOSAL_COLUMNS,
+            ("temporal_scope_id", "proposal_id"),
+            proposals,
+            False,
+        )
     )
     if not event.get("dry_run", False):
         for statement in statements:
@@ -398,6 +618,10 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         "cost_rows_created": len(cost_rows),
         "metric_rows_created": len(metrics),
         "signal_rows_created": len(signals),
+        "alert_rows_created": len(alerts),
+        "action_rows_created": len(actions),
+        "outcome_rows_created": len(outcomes),
+        "policy_proposal_rows_created": len(proposals),
         "write_statements": len(statements),
         "dry_run": bool(event.get("dry_run", False)),
     }

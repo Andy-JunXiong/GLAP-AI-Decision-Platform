@@ -155,7 +155,7 @@ class DataQualityGateTests(unittest.TestCase):
             )
         self.assertEqual(set(result["quality_checks"]), set(module.LIFECYCLE_CHECK_NAMES))
         self.assertTrue(all(value == "passed" for value in result["quality_checks"].values()))
-        self.assertEqual(result["metrics"]["check_count"], 20)
+        self.assertEqual(result["metrics"]["check_count"], 26)
         validate.assert_called_once_with(
             "2026-09-01", "simulated_iceberg_m", "OPERATIONAL"
         )

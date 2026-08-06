@@ -25,6 +25,16 @@ current_signals AS (
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
       AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
+current_alerts AS (
+    SELECT * FROM {{SOURCE_DATABASE}}.fact_lifecycle_alert_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+),
+current_outcomes AS (
+    SELECT * FROM {{SOURCE_DATABASE}}.fact_lifecycle_outcome_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+),
 booking_cohort AS (
     SELECT DISTINCT shipment_id, carrier, coalesce(transport_mode, 'OCEAN') AS transport_mode
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
@@ -62,6 +72,30 @@ temporal_rows AS (
            execution_scenario_id
     FROM {{SOURCE_DATABASE}}.fact_shipment_signal_candidate_staging_v1
     WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_lifecycle_alert_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_staging_v1
+    WHERE created_date = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_lifecycle_outcome_staging_v1
+    WHERE try_cast(dt AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    UNION ALL
+    SELECT temporal_scope_id, execution_mode, time_basis, as_of_date,
+           execution_scenario_id
+    FROM {{SOURCE_DATABASE}}.fact_policy_proposal_staging_v1
+    WHERE created_date = DATE '{{LOGICAL_RUN_DATE}}'
       AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 checks AS (
@@ -172,6 +206,52 @@ checks AS (
        OR severity NOT IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')
        OR candidate_status NOT IN ('ACTIVE', 'RESOLVED')
        OR simulation_provenance <> 'SIMULATED'
+    UNION ALL
+    SELECT 'duplicate_alert_key', count(*)
+    FROM (
+        SELECT alert_fingerprint, dt FROM current_alerts
+        GROUP BY alert_fingerprint, dt HAVING count(*) > 1
+    )
+    UNION ALL
+    SELECT 'invalid_alert_contract', count(*)
+    FROM current_alerts
+    WHERE alert_type NOT IN ('SLA_BREACH', 'COST_ANOMALY')
+       OR status NOT IN ('OPEN', 'RESOLVED')
+       OR provenance <> 'SIMULATED'
+       OR first_detected_date > last_detected_date
+       OR (status = 'RESOLVED' AND resolved_date IS NULL)
+    UNION ALL
+    SELECT 'invalid_action_contract', count(*)
+    FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_staging_v1
+    WHERE temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+      AND (status NOT IN ('PROPOSED', 'APPROVED', 'COMPLETED', 'OVERDUE')
+       OR approval_required <> true
+       OR provenance <> 'SIMULATED'
+       OR (status IN ('APPROVED', 'COMPLETED') AND approved_by IS NULL)
+       OR (status = 'COMPLETED' AND completed_at IS NULL))
+    UNION ALL
+    SELECT 'duplicate_outcome_key', count(*)
+    FROM (
+        SELECT outcome_id, dt FROM current_outcomes
+        GROUP BY outcome_id, dt HAVING count(*) > 1
+    )
+    UNION ALL
+    SELECT 'invalid_outcome_contract', count(*)
+    FROM current_outcomes
+    WHERE status NOT IN ('PENDING', 'SUCCESSFUL', 'PARTIALLY_SUCCESSFUL', 'FAILED', 'INCONCLUSIVE')
+       OR provenance <> 'SIMULATED'
+       OR (status = 'PENDING' AND (observed_date IS NOT NULL OR effect_pct IS NOT NULL))
+       OR (status <> 'PENDING' AND observed_date IS NULL)
+    UNION ALL
+    SELECT 'invalid_policy_proposal_contract', count(*)
+    FROM {{SOURCE_DATABASE}}.fact_policy_proposal_staging_v1
+    WHERE temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+      AND (status NOT IN ('PENDING_HUMAN_REVIEW', 'APPROVED', 'REJECTED')
+       OR simulation_config_change <> false
+       OR rollback_policy_version IS NULL
+       OR provenance <> 'SIMULATED_LEARNING_EVIDENCE'
+       OR (status = 'PENDING_HUMAN_REVIEW'
+           AND (approved_by IS NOT NULL OR effective_date IS NOT NULL)))
     UNION ALL
     SELECT 'invalid_transport_contract', count(*)
     FROM current_snapshot AS shipment

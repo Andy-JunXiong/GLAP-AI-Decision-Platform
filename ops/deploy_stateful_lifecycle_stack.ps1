@@ -118,10 +118,13 @@ Copy-Item -LiteralPath (Join-Path $root "lambda/glap_stateful_lifecycle_generato
     -Destination (Join-Path $packageDir "glap_stateful_lifecycle_generator.py") -Force
 Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
     -Destination (Join-Path $packageDir "glap_temporal_boundary.py") -Force
+Copy-Item -LiteralPath (Join-Path $root "lambda/glap_governed_closed_loop.py") `
+    -Destination (Join-Path $packageDir "glap_governed_closed_loop.py") -Force
 Compress-Archive -LiteralPath `
     (Join-Path $packageDir "lambda_function.py"), `
     (Join-Path $packageDir "glap_stateful_lifecycle_generator.py"), `
-    (Join-Path $packageDir "glap_temporal_boundary.py") `
+    (Join-Path $packageDir "glap_temporal_boundary.py"), `
+    (Join-Path $packageDir "glap_governed_closed_loop.py") `
     -DestinationPath $archivePath -Force
 
 New-Item -ItemType Directory -Path $controllerPackageDir -Force | Out-Null

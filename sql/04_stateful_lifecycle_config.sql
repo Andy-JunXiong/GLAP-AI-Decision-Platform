@@ -283,3 +283,101 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_shipment_signal_candidate_st
 PARTITIONED BY (dt)
 LOCATION '{{SOURCE_BUCKET_URI}}/fact_shipment_signal_candidate_staging_v1/'
 TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_lifecycle_alert_staging_v1 (
+    alert_fingerprint string,
+    shipment_id string,
+    dt string,
+    alert_type string,
+    alert_grain string,
+    alert_dimension string,
+    severity string,
+    status string,
+    first_detected_date date,
+    last_detected_date date,
+    resolved_date date,
+    metric_name string,
+    metric_value double,
+    threshold_value double,
+    provenance string,
+    updated_at timestamp,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
+)
+PARTITIONED BY (dt)
+LOCATION '{{SOURCE_BUCKET_URI}}/fact_lifecycle_alert_staging_v1/'
+TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_lifecycle_action_staging_v1 (
+    action_id string,
+    alert_fingerprint string,
+    shipment_id string,
+    action_type string,
+    alert_type string,
+    alert_severity string,
+    policy_version string,
+    status string,
+    approval_required boolean,
+    approved_by string,
+    approved_at timestamp,
+    completed_at timestamp,
+    provenance string,
+    created_date date,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
+)
+PARTITIONED BY (created_date)
+LOCATION '{{SOURCE_BUCKET_URI}}/fact_lifecycle_action_staging_v1/'
+TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_lifecycle_outcome_staging_v1 (
+    outcome_id string,
+    action_id string,
+    alert_fingerprint string,
+    shipment_id string,
+    dt string,
+    observation_due_date date,
+    status string,
+    observed_date date,
+    effect_pct double,
+    outcome_version string,
+    provenance string,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
+)
+PARTITIONED BY (dt)
+LOCATION '{{SOURCE_BUCKET_URI}}/fact_lifecycle_outcome_staging_v1/'
+TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');
+
+CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_policy_proposal_staging_v1 (
+    proposal_id string,
+    source_policy_version string,
+    status string,
+    observed_outcome_count int,
+    success_rate_pct double,
+    proposed_change string,
+    simulation_config_change boolean,
+    effective_date date,
+    approved_by string,
+    approved_policy_version string,
+    rollback_policy_version string,
+    provenance string,
+    created_date date,
+    temporal_scope_id string,
+    execution_mode string,
+    time_basis string,
+    as_of_date date,
+    execution_scenario_id string
+)
+PARTITIONED BY (created_date)
+LOCATION '{{SOURCE_BUCKET_URI}}/fact_policy_proposal_staging_v1/'
+TBLPROPERTIES ('table_type'='ICEBERG', 'format'='parquet', 'write_compression'='zstd');

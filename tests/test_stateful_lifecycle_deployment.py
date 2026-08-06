@@ -21,6 +21,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             "fact_shipment_cost_staging_v1",
             "fact_shipment_lifecycle_metrics_staging_v1",
             "fact_shipment_signal_candidate_staging_v1",
+            "fact_lifecycle_alert_staging_v1",
+            "fact_lifecycle_action_staging_v1",
+            "fact_lifecycle_outcome_staging_v1",
+            "fact_policy_proposal_staging_v1",
         ):
             with self.subTest(table=table):
                 self.assertIn(table, ddl)
@@ -80,7 +84,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             sql = re.sub(r"^\s*--.*$", "", sql, flags=re.MULTILINE)
             return [statement for statement in sql.split(";") if statement.strip()]
 
-        self.assertEqual(len(statements(ROOT / "sql" / "04_stateful_lifecycle_config.sql")), 11)
+        self.assertEqual(len(statements(ROOT / "sql" / "04_stateful_lifecycle_config.sql")), 15)
         self.assertEqual(len(statements(ROOT / "sql" / "05_stateful_lifecycle_seed.sql")), 5)
         self.assertEqual(len(statements(ROOT / "sql" / "06_stateful_lifecycle_validation.sql")), 2)
         self.assertEqual(
@@ -266,6 +270,12 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             "invalid_transport_contract",
             "missing_provider_coverage",
             "air_booking_share_out_of_range",
+            "duplicate_alert_key",
+            "invalid_alert_contract",
+            "invalid_action_contract",
+            "duplicate_outcome_key",
+            "invalid_outcome_contract",
+            "invalid_policy_proposal_contract",
         ):
             with self.subTest(check=check):
                 self.assertIn(check, validation)
@@ -295,6 +305,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("fact_shipment_lifecycle_staging_v1", template)
         self.assertIn("fact_shipment_lifecycle_metrics_staging_v1", template)
         self.assertIn("fact_shipment_signal_candidate_staging_v1", template)
+        self.assertIn("fact_lifecycle_alert_staging_v1", template)
+        self.assertIn("fact_lifecycle_action_staging_v1", template)
+        self.assertIn("fact_lifecycle_outcome_staging_v1", template)
+        self.assertIn("fact_policy_proposal_staging_v1", template)
         self.assertIn("glue:UpdateTable", template)
         self.assertIn("dim_rate_tier_v1", template)
         self.assertIn("dim_provider_v1", template)
@@ -312,6 +326,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("PIPELINE_ENVIRONMENT: staging", template)
         self.assertNotIn("AWS::Scheduler::Schedule", template)
         self.assertNotIn("pipeline-reliability", template)
+
+        package_script = (
+            ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("glap_governed_closed_loop.py", package_script)
 
     def test_replay_is_plan_only_and_seeds_only_first_day(self):
         script = (ROOT / "ops" / "replay_stateful_lifecycle_staging.ps1").read_text(
@@ -346,7 +365,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("logical_run_date = $day", script)
         self.assertIn("scenario_id = $temporalContext.scenario_id", script)
         self.assertNotIn("seed_population =", script)
-        self.assertIn("19, 5, 8", script)
+        self.assertIn("26, 5, 8", script)
         self.assertIn("Controller quality check failed", script)
         self.assertIn("--cli-read-timeout 900", script)
         self.assertIn("Remove-Item -LiteralPath $payloadPath", script)

@@ -140,7 +140,7 @@ class PipelineControllerTests(unittest.TestCase):
                 validated, "2026-09-01", "s3://safe/status.json"
             )
         self.assertEqual(result["status"], "succeeded")
-        self.assertEqual(len(result["stages"][1]["quality_checks"]), 20)
+        self.assertEqual(len(result["stages"][1]["quality_checks"]), 26)
         self.assertEqual(len(result["stages"][2]["quality_checks"]), 5)
         self.assertEqual(len(result["stages"][3]["quality_checks"]), 8)
         lifecycle_payload = json.loads(client.invoke.call_args_list[1].kwargs["Payload"])
