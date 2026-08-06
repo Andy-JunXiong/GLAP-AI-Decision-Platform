@@ -58,6 +58,28 @@ Operators should stop retries on validation or authorization errors and use
 Pipeline Health for service failures. Deployment remains manual and staging
 only, with no recurring schedule or production alias.
 
+## One-time deployer permission bootstrap
+
+The shared staging OIDC role needs a separate Operations API inline policy
+before the plan can privately discover the approved Cognito and internal-origin
+candidates. An IAM administrator first previews, then applies, the narrowly
+scoped policy:
+
+```powershell
+.\\ops\\configure_operations_api_deployer.ps1 \`
+  -ArtifactBucket <staging-artifact-bucket>
+
+.\\ops\\configure_operations_api_deployer.ps1 \`
+  -ArtifactBucket <staging-artifact-bucket> \`
+  -Apply
+```
+
+This does not replace the lifecycle deployer policy. It cannot modify the OIDC
+role itself, create schedules, or update production aliases. Cognito and origin
+access is read-only; resolved values remain masked and process-local inside the
+workflow. After this one-time bootstrap, rerun the Operations API workflow in
+`plan` mode before approving a manual `deploy` run.
+
 ## Current implementation boundary
 
 The contract, adapter, infrastructure template, plan-first deployment tool, and
@@ -68,6 +90,8 @@ its short-lived access token in session storage. Without both conditions the
 product remains in read-only demonstration mode and sends no request.
 
 The stack has not yet been deployed or connected to an approved identity
-provider/origin, so runtime AWS authorization and recovery evidence remain the
-next release gate. Public GitHub Pages must be built without the internal API
-URL and cannot submit these mutations.
+provider/origin. The deployment role policy is now reproducible, but an AWS IAM
+administrator must apply it once before the private plan can complete. Runtime
+AWS authorization and recovery evidence remain the next release gate. Public
+GitHub Pages must be built without the internal API URL and cannot submit these
+mutations.
