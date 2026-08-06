@@ -111,7 +111,8 @@ $tableNames = @(
     "vw_multimodal_provider_daily_context_v1",
     "vw_multimodal_mode_decision_context_v1",
     "vw_multimodal_forecast_feature_daily_context_v1",
-    "vw_multimodal_outcome_label_context_v1"
+    "vw_multimodal_outcome_label_context_v1",
+    "vw_multimodal_operational_baseline_v1"
 )
 $bucketArns = @($ArtifactBucket, $LifecycleDataBucket, $athenaBucket) |
     Sort-Object -Unique |

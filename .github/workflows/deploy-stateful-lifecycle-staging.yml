@@ -13,6 +13,7 @@ on:
           - deploy-replay-validate
           - deploy-integration-validate
           - deploy-analytics-contract
+          - deploy-operational-baseline
           - deploy-q4-configuration
           - extend-integration-validate
           - deploy-recovery-controller
@@ -126,6 +127,10 @@ jobs:
           if [[ "${{ inputs.action }}" == "recover-failed-integration-date" ]]; then
             test "${{ inputs.replay_days }}" -eq 1
           fi
+          if [[ "${{ inputs.action }}" == "deploy-operational-baseline" ]]; then
+            test "${{ inputs.execution_mode }}" = "OPERATIONAL"
+            test -z "${{ inputs.scenario_id }}"
+          fi
           test "${{ inputs.population_size }}" -ge 1
           test "${{ inputs.population_size }}" -le 5000
 
@@ -183,6 +188,14 @@ jobs:
             -ExecutionMode "${{ inputs.execution_mode }}" `
             -ScenarioId "${{ inputs.scenario_id }}"
           $action = "${{ inputs.action }}"
+          if ($action -in @("plan", "deploy-operational-baseline")) {
+            ./ops/deploy_operational_baseline.ps1 `
+              -Region $env:AWS_REGION `
+              -SourceDatabase $env:SOURCE_DATABASE `
+              -AthenaOutputUri $env:ATHENA_OUTPUT `
+              -Workgroup $env:ATHENA_WORKGROUP `
+              -AsOfDate "${{ inputs.integration_logical_date }}"
+          }
           if ($action -in @("plan", "extend-integration-validate", "recover-failed-integration-date")) {
             $extensionPlan = @{
               Region = $env:AWS_REGION
@@ -248,6 +261,18 @@ jobs:
             -AthenaOutputUri $env:ATHENA_OUTPUT `
             -Workgroup $env:ATHENA_WORKGROUP `
             -Q4ConfigurationOnly `
+            -Apply
+
+      - name: Deploy and validate operational as-of baseline
+        if: inputs.action == 'deploy-operational-baseline'
+        shell: pwsh
+        run: |
+          ./ops/deploy_operational_baseline.ps1 `
+            -Region $env:AWS_REGION `
+            -SourceDatabase $env:SOURCE_DATABASE `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -Workgroup $env:ATHENA_WORKGROUP `
+            -AsOfDate "${{ inputs.integration_logical_date }}" `
             -Apply
 
       - name: Deploy unscheduled lifecycle and integration stack
@@ -403,6 +428,8 @@ jobs:
             echo "- Q4 synthetic configuration only: \`${{ inputs.action == 'deploy-q4-configuration' }}\`"
             echo "- Explicit failed-date recovery: \`${{ inputs.action == 'recover-failed-integration-date' }}\`"
             echo "- Row-level temporal isolation deployed: \`${{ inputs.action == 'deploy-recovery-controller' }}\`"
+            echo "- Operational-calendar baseline deployed: \`${{ inputs.action == 'deploy-operational-baseline' }}\`"
+            echo "- Real-world evidence claimed: \`false\`"
             echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"
             echo "- Schedule created: \`false\`"
