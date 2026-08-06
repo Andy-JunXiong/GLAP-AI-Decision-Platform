@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -26,9 +26,20 @@ test("server-renders the GLAP customer control tower", async () => {
   assert.match(html, /Needs your attention/);
   assert.match(html, /Divert 8 FCL via Melbourne/);
   assert.match(html, /Value delivered/);
+  assert.match(html, /Action Board/);
   assert.match(html, /property="og:image" content="\/og\.png"/);
 });
 
 test("includes the generated social card", async () => {
   await access(new URL("../public/og.png", import.meta.url));
+});
+
+test("keeps authenticated Action writes behind the internal API client", async () => {
+  const client = await readFile(new URL("../app/operations-api.ts", import.meta.url), "utf8");
+  assert.match(client, /NEXT_PUBLIC_GLAP_OPERATIONS_API_URL/);
+  assert.match(client, /sessionStorage\.getItem/);
+  assert.match(client, /authorization: `Bearer \$\{token\}`/);
+  assert.match(client, /\/v1\/actions\/\$\{encodeURIComponent\(actionId\)\}\/events/);
+  assert.match(client, /timeZone: "Australia\/Sydney"/);
+  assert.doesNotMatch(client, /localStorage/);
 });

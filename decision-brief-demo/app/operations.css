@@ -1,0 +1,19 @@
+.operations-reason {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.decision-card:has(.decision-buttons) {
+  cursor: default;
+}
+
+@media (max-width: 780px) {
+  .sidebar nav {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

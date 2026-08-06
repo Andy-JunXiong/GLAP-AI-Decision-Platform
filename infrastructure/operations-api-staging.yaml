@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Authenticated, internal-only GLAP Operations API for staging Actions.
+
+Parameters:
+  ArtifactBucket: {Type: String}
+  ApiArtifactKey: {Type: String}
+  JwtIssuer: {Type: String}
+  JwtAudience: {Type: String}
+  ActionMutationFunctionName: {Type: String, Default: glap-lifecycle-action-mutation-staging}
+  AthenaOutputUri: {Type: String, AllowedPattern: '^s3://[^/]+/.+$'}
+  AthenaResultsBucketArn: {Type: String}
+  AthenaWorkgroup: {Type: String, Default: primary}
+  SourceDatabase: {Type: String, Default: simulated_iceberg_m}
+  LifecycleDataBucketArn: {Type: String}
+  AllowedOrigin: {Type: String, Default: 'https://example.invalid'}
+
+Resources:
+  OperationsApiDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
+      MessageRetentionPeriod: 1209600
+
+  OperationsApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: OperationsApiLeastPrivilege
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/glap-operations-api-staging:*
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${ActionMutationFunctionName}
+              - Effect: Allow
+                Action: [athena:StartQueryExecution, athena:GetQueryExecution, athena:GetQueryResults, athena:StopQueryExecution]
+                Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AthenaWorkgroup}
+              - Effect: Allow
+                Action: [glue:GetDatabase, glue:GetTable, glue:GetPartitions]
+                Resource:
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/${SourceDatabase}
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1
+              - Effect: Allow
+                Action: [s3:GetBucketLocation, s3:ListBucket]
+                Resource: !Ref LifecycleDataBucketArn
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:AbortMultipartUpload]
+                Resource: !Sub ${AthenaResultsBucketArn}/*
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt OperationsApiDLQ.Arn
+
+  OperationsApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: glap-operations-api-staging
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt OperationsApiRole.Arn
+      Timeout: 35
+      MemorySize: 256
+      ReservedConcurrentExecutions: 10
+      DeadLetterConfig: {TargetArn: !GetAtt OperationsApiDLQ.Arn}
+      Code: {S3Bucket: !Ref ArtifactBucket, S3Key: !Ref ApiArtifactKey}
+      Environment:
+        Variables:
+          ACTION_MUTATION_FUNCTION: !Ref ActionMutationFunctionName
+          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
+          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          LIFECYCLE_ACTION_CURRENT_VIEW: vw_lifecycle_action_current_staging_v1
+
+  OperationsApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: glap-operations-api-staging
+      ProtocolType: HTTP
+      DisableExecuteApiEndpoint: false
+      CorsConfiguration:
+        AllowOrigins: [!Ref AllowedOrigin]
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [authorization, content-type]
+        MaxAge: 300
+
+  JwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref OperationsApi
+      AuthorizerType: JWT
+      IdentitySource: ['$request.header.Authorization']
+      Name: internal-jwt
+      JwtConfiguration:
+        Audience: [!Ref JwtAudience]
+        Issuer: !Ref JwtIssuer
+
+  OperationsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref OperationsApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt OperationsApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  ReadActionsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OperationsApi
+      RouteKey: GET /v1/actions
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Join ['/', [integrations, !Ref OperationsIntegration]]
+
+  MutateActionRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OperationsApi
+      RouteKey: POST /v1/actions/{action_id}/events
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Join ['/', [integrations, !Ref OperationsIntegration]]
+
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref OperationsApi
+      StageName: '$default'
+      AutoDeploy: true
+      DefaultRouteSettings: {ThrottlingBurstLimit: 20, ThrottlingRateLimit: 10}
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OperationsApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${OperationsApi}/*
+
+  OperationsApiFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Authenticated Operations API Lambda failures.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref OperationsApiFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  OperationsApiThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Authenticated Operations API throttling.
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Dimensions: [{Name: FunctionName, Value: !Ref OperationsApiFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  ApiEndpoint: {Value: !GetAtt OperationsApi.ApiEndpoint}
+  ApiFunctionName: {Value: !Ref OperationsApiFunction}
+  DeadLetterQueueArn: {Value: !GetAtt OperationsApiDLQ.Arn}

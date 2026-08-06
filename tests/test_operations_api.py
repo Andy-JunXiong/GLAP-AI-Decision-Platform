@@ -1,0 +1,77 @@
+import importlib.util
+import io
+import json
+from pathlib import Path
+import sys
+import types
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location("operations_api", ROOT / "lambda" / "glap_operations_api.py")
+api = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader
+SPEC.loader.exec_module(api)
+
+
+def request(method="GET", path="/v1/actions", groups="viewer", body=None):
+    return {
+        "rawPath": path,
+        "requestContext": {
+            "requestId": "api-request-1",
+            "http": {"method": method},
+            "authorizer": {"jwt": {"claims": {
+                "sub": "person-123", "name": "Alex Chen", "cognito:groups": groups,
+            }}},
+        },
+        "body": json.dumps(body) if body else None,
+    }
+
+
+class OperationsApiTests(unittest.TestCase):
+    def test_permission_matrix_is_separated(self):
+        self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
+        self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
+        self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
+
+    def test_queue_query_is_operational_and_bounded(self):
+        query = api.build_action_queue_query(50, "PROPOSED")
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertIn("status = 'PROPOSED'", query)
+        self.assertIn("LIMIT 50", query)
+        self.assertIn("alert_fingerprint", query)
+        self.assertNotIn("owner", query)
+
+    def test_missing_identity_fails_closed(self):
+        event = request()
+        event["requestContext"]["authorizer"] = {}
+        response = api.lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 403)
+
+    def test_operator_cannot_approve(self):
+        response = api.lambda_handler(request("POST", "/v1/actions/action-123/events", "operator", {
+            "operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence"
+        }), None)
+        self.assertEqual(response["statusCode"], 403)
+
+    def test_approver_identity_overrides_any_client_actor(self):
+        class LambdaClient:
+            sent = None
+            def invoke(self, **kwargs):
+                self.sent = json.loads(kwargs["Payload"])
+                return {"Payload": io.BytesIO(b'{"status":"success"}')}
+        client = LambdaClient()
+        fake_boto3 = types.SimpleNamespace(client=lambda service: client)
+        event = request("POST", "/v1/actions/action-123/events", "approver", {
+            "operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence",
+            "logical_run_date": "2026-08-07", "actor": "system",
+        })
+        with patch.dict(sys.modules, {"boto3": fake_boto3}):
+            response = api.lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(client.sent["actor"], "Alex Chen")
+        self.assertEqual(client.sent["execution_mode"], "OPERATIONAL")
+
+
+if __name__ == "__main__":
+    unittest.main()
