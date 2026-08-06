@@ -1,6 +1,6 @@
 # Governed exception-to-outcome contract
 
-**Business-date boundary:** Australia/Sydney  
+**Business-date boundary:** Australia/Sydney
 **Implementation status:** repository logic and tests complete; new AWS persistence tables are not deployed
 
 The governed closed loop connects lifecycle evidence without allowing synthetic
