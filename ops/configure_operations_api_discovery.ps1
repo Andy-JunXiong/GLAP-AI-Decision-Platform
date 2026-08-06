@@ -1,0 +1,99 @@
+[CmdletBinding()]
+param(
+    [string]$AdminProfile = "default",
+    [string]$Region = "us-east-1",
+    [string]$RoleName = "glap-github-staging-deployer",
+    [string]$PolicyName = "GLAPOperationsIdentityDiscovery",
+    [switch]$Apply
+)
+
+$ErrorActionPreference = "Stop"
+
+foreach ($name in @($RoleName, $PolicyName)) {
+    if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
+        throw "Role and policy names must use safe AWS characters"
+    }
+}
+
+$identityArgs = @("sts", "get-caller-identity", "--region", $Region, "--output", "json")
+if ($AdminProfile) {
+    $identityArgs += @("--profile", $AdminProfile)
+}
+$identityJson = & aws @identityArgs
+if ($LASTEXITCODE -ne 0 -or -not $identityJson) {
+    throw "Unable to resolve the AWS account from AdminProfile"
+}
+$accountId = ($identityJson | ConvertFrom-Json).Account
+if ($accountId -notmatch '^\d{12}$') {
+    throw "AWS returned an invalid account ID"
+}
+
+$policy = @{
+    Version = "2012-10-17"
+    Statement = @(
+        @{
+            Sid = "ListOperationsIdentityCandidates"
+            Effect = "Allow"
+            Action = @(
+                "cognito-idp:ListUserPools",
+                "amplify:ListApps"
+            )
+            Resource = "*"
+        },
+        @{
+            Sid = "ListOperationsAudienceCandidates"
+            Effect = "Allow"
+            Action = "cognito-idp:ListUserPoolClients"
+            Resource = "arn:aws:cognito-idp:${Region}:${accountId}:userpool/*"
+        },
+        @{
+            Sid = "ListOperationsCustomDomainCandidates"
+            Effect = "Allow"
+            Action = "apigateway:GET"
+            Resource = "arn:aws:apigateway:${Region}::/domainnames*"
+        }
+    )
+}
+
+$policyJson = $policy | ConvertTo-Json -Depth 10 -Compress
+Write-Host "Operations API protected-configuration discovery policy plan"
+Write-Host "  Role: $RoleName"
+Write-Host "  Separate inline policy: $PolicyName"
+Write-Host "  Cognito and origin discovery: Read only"
+Write-Host "  Deployment permissions: False"
+Write-Host "  Self-modifying deployer permission: False"
+
+if (-not $Apply) {
+    Write-Host "Plan only. Re-run with -Apply using an IAM administrator profile."
+    return
+}
+
+$policyPath = Join-Path ([System.IO.Path]::GetTempPath()) (
+    "glap-operations-discovery-" + [guid]::NewGuid().ToString("N") + ".json"
+)
+try {
+    [System.IO.File]::WriteAllText(
+        $policyPath,
+        $policyJson,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    $putArgs = @(
+        "iam", "put-role-policy",
+        "--role-name", $RoleName,
+        "--policy-name", $PolicyName,
+        "--policy-document", "file://$policyPath",
+        "--region", $Region
+    )
+    if ($AdminProfile) {
+        $putArgs += @("--profile", $AdminProfile)
+    }
+    & aws @putArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to configure Operations API discovery access"
+    }
+} finally {
+    Remove-Item -LiteralPath $policyPath -Force -ErrorAction SilentlyContinue
+}
+
+Write-Host "Read-only Operations API discovery access configured. Re-run the plan workflow."
+
