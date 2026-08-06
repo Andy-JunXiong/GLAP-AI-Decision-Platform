@@ -52,12 +52,9 @@ jobs:
         run: |
           python -m unittest discover -s tests -p "test_operations_api*.py" -v
 
-      - name: Validate protected staging configuration
+      - name: Validate base staging configuration
         shell: bash
         run: |
-          [[ "$JWT_ISSUER" =~ ^https://[^[:space:]]+$ ]]
-          [[ "$JWT_AUDIENCE" =~ ^[A-Za-z0-9._:/-]{3,255}$ ]]
-          [[ "$INTERNAL_ORIGIN" =~ ^https://[^/[:space:]]+$ ]]
           [[ "$ATHENA_OUTPUT" =~ ^s3://[^/]+/.+ ]]
           test -n "$ARTIFACT_BUCKET"
           test -n "$DATA_BUCKET"
@@ -68,6 +65,76 @@ jobs:
           role-to-assume: ${{ vars.AWS_STAGING_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: glap-operations-api-${{ github.run_id }}
+
+      - name: Resolve protected staging configuration privately
+        if: env.JWT_ISSUER == '' || env.JWT_AUDIENCE == '' || env.INTERNAL_ORIGIN == ''
+        shell: bash
+        run: |
+          issuer="$JWT_ISSUER"
+          audience="$JWT_AUDIENCE"
+          origin="$INTERNAL_ORIGIN"
+
+          if [[ -z "$issuer" || -z "$audience" ]]; then
+            if ! pool_text=$(aws cognito-idp list-user-pools --max-results 60 \
+              --query 'UserPools[].Id' --output text 2>/dev/null); then
+              echo "::error::Unable to read Cognito pool candidates with the staging role"
+              exit 1
+            fi
+            mapfile -t pool_ids < <(tr '\t' '\n' <<< "$pool_text" | sed '/^None$/d;/^$/d')
+            echo "Cognito pool candidate count: ${#pool_ids[@]}"
+            if [[ ${#pool_ids[@]} -ne 1 ]]; then
+              echo "::error::Expected exactly one Cognito pool candidate"
+              exit 1
+            fi
+            pool_id="${pool_ids[0]}"
+            if ! client_text=$(aws cognito-idp list-user-pool-clients \
+              --user-pool-id "$pool_id" --query 'UserPoolClients[].ClientId' \
+              --output text 2>/dev/null); then
+              echo "::error::Unable to read Cognito app-client candidates with the staging role"
+              exit 1
+            fi
+            mapfile -t client_ids < <(tr '\t' '\n' <<< "$client_text" | sed '/^None$/d;/^$/d')
+            echo "Cognito app-client candidate count: ${#client_ids[@]}"
+            if [[ ${#client_ids[@]} -ne 1 ]]; then
+              echo "::error::Expected exactly one Cognito app-client candidate"
+              exit 1
+            fi
+            [[ -n "$issuer" ]] || issuer="https://cognito-idp.$AWS_REGION.amazonaws.com/$pool_id"
+            [[ -n "$audience" ]] || audience="${client_ids[0]}"
+          fi
+
+          if [[ -z "$origin" ]]; then
+            amplify_text=$(aws amplify list-apps --query 'apps[].defaultDomain' \
+              --output text 2>/dev/null || true)
+            api_text=$(aws apigatewayv2 get-domain-names --query 'Items[].DomainName' \
+              --output text 2>/dev/null || true)
+            mapfile -t origins < <(
+              printf '%s\n%s\n' "$amplify_text" "$api_text" |
+              tr '\t' '\n' | sed '/^None$/d;/^$/d' | sort -u
+            )
+            echo "Internal HTTPS origin candidate count: ${#origins[@]}"
+            if [[ ${#origins[@]} -ne 1 ]]; then
+              echo "::error::Expected exactly one internal HTTPS origin candidate"
+              exit 1
+            fi
+            origin="https://${origins[0]}"
+          fi
+
+          echo "::add-mask::$issuer"
+          echo "::add-mask::$audience"
+          echo "::add-mask::$origin"
+          {
+            echo "JWT_ISSUER=$issuer"
+            echo "JWT_AUDIENCE=$audience"
+            echo "INTERNAL_ORIGIN=$origin"
+          } >> "$GITHUB_ENV"
+
+      - name: Validate protected staging configuration
+        shell: bash
+        run: |
+          [[ "$JWT_ISSUER" =~ ^https://[^[:space:]]+$ ]]
+          [[ "$JWT_AUDIENCE" =~ ^[A-Za-z0-9._:/-]{3,255}$ ]]
+          [[ "$INTERNAL_ORIGIN" =~ ^https://[^/[:space:]]+$ ]]
 
       - name: Verify private dependencies
         shell: bash
