@@ -18,14 +18,12 @@ Resources:
   OperationsApiDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: glap-operations-api-staging-dlq
       KmsMasterKeyId: alias/aws/sqs
       MessageRetentionPeriod: 1209600
 
   OperationsApiRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: glap-operations-api-staging-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
