@@ -108,6 +108,20 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             5,
         )
 
+    def test_temporal_backfill_is_manual_bounded_and_verified(self):
+        script = (ROOT / "ops" / "backfill_temporal_scope.ps1").read_text(
+            encoding="utf-8"
+        )
+        workflow = (
+            ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("invalid_temporal_rows", script)
+        self.assertIn("legacy_future_rows", script)
+        self.assertIn("future_operational_view_rows", script)
+        self.assertIn("Backfill and verify row-level temporal isolation", workflow)
+        self.assertIn("./ops/backfill_temporal_scope.ps1", workflow)
+
     def test_compatibility_views_cover_six_v2_domains_without_writing_current_tables(self):
         compatibility = (
             ROOT / "sql" / "07_stateful_lifecycle_compatibility_views.sql"

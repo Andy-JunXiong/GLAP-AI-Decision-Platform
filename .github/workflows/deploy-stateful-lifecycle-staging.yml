@@ -207,7 +207,7 @@ jobs:
             -Days ${{ inputs.replay_days }}
 
       - name: Create lifecycle schema and optional first seed
-        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate'
+        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
         shell: pwsh
         run: |
           $parameters = @{
@@ -223,6 +223,19 @@ jobs:
             $parameters.IncludeSeed = $true
           }
           ./ops/deploy_stateful_lifecycle.ps1 @parameters
+
+      - name: Backfill and verify row-level temporal isolation
+        if: inputs.action == 'deploy-recovery-controller'
+        shell: pwsh
+        run: |
+          ./ops/backfill_temporal_scope.ps1 `
+            -Region $env:AWS_REGION `
+            -SourceDatabase $env:SOURCE_DATABASE `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -Workgroup $env:ATHENA_WORKGROUP `
+            -AsOfDate "2026-08-06" `
+            -LegacyScenarioId "legacy-pre-boundary-2026" `
+            -Apply
 
       - name: Deploy Q4 simulated rate configuration
         if: inputs.action == 'deploy-q4-configuration'
@@ -389,6 +402,7 @@ jobs:
             echo "- Extension safety cap: \`12 dates / 50 elapsed minutes\`"
             echo "- Q4 synthetic configuration only: \`${{ inputs.action == 'deploy-q4-configuration' }}\`"
             echo "- Explicit failed-date recovery: \`${{ inputs.action == 'recover-failed-integration-date' }}\`"
+            echo "- Row-level temporal isolation deployed: \`${{ inputs.action == 'deploy-recovery-controller' }}\`"
             echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"
             echo "- Schedule created: \`false\`"
