@@ -38,6 +38,18 @@ PIPELINE_QUALITY_CHECKS = {
     "abnormal_volume_change",
     "stale_stage_outputs",
 }
+PIPELINE_STAGE_ORDER = (
+    "generation",
+    "raw_to_iceberg",
+    "input_validation",
+    "decision_pipeline",
+    "decision_flywheel",
+    "output_validation",
+)
+PIPELINE_QUALITY_STAGES = ("input_validation", "output_validation")
+PIPELINE_QUALITY_CHECK_TOTAL = len(PIPELINE_QUALITY_CHECKS) * len(
+    PIPELINE_QUALITY_STAGES
+)
 SAFE_FAILURE_CATEGORIES = {
     "dependency_failure",
     "invalid_response",
@@ -625,6 +637,25 @@ def _safe_timestamp(value: Any) -> str | None:
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _safe_pipeline_load_error(exc: Exception) -> str:
+    """Return a public-safe diagnostic code without paths or exception text."""
+
+    response = getattr(exc, "response", None)
+    error = response.get("Error", {}) if isinstance(response, dict) else {}
+    code = str(error.get("Code") or "")
+    return {
+        "AccessDenied": "access_denied",
+        "NoSuchBucket": "bucket_unavailable",
+        "NoSuchKey": "object_unavailable",
+        "InvalidObjectState": "object_unavailable",
+    }.get(
+        code,
+        "invalid_json"
+        if isinstance(exc, json.JSONDecodeError)
+        else "unexpected_error",
+    )
+
+
 def _safe_pipeline_health(
     pipeline_run: dict[str, Any] | None,
     newest_date: date,
@@ -645,6 +676,11 @@ def _safe_pipeline_health(
                 "failed_stage": None,
                 "failure_category": "status_unavailable" if required else None,
                 "stages": [],
+                "expected_stage_count": len(PIPELINE_STAGE_ORDER),
+                "stage_count": 0,
+                "stages_succeeded": 0,
+                "quality_checks_succeeded": 0,
+                "quality_checks_total": PIPELINE_QUALITY_CHECK_TOTAL,
                 "runbook_url": PIPELINE_RUNBOOK_URL,
             },
             not required,
@@ -658,7 +694,6 @@ def _safe_pipeline_health(
     if not isinstance(raw_stages, list):
         raw_stages = []
     stages = []
-    quality_gate_verified = False
     for raw_stage in raw_stages:
         if not isinstance(raw_stage, dict):
             continue
@@ -672,11 +707,6 @@ def _safe_pipeline_health(
                 check_status = str(check.get("status") or "").lower()
                 if name in PIPELINE_QUALITY_CHECKS and check_status in {"passed", "failed"}:
                     safe_checks.append({"name": name, "status": check_status})
-            if (
-                {check["name"] for check in safe_checks} == PIPELINE_QUALITY_CHECKS
-                and all(check["status"] == "passed" for check in safe_checks)
-            ):
-                quality_gate_verified = True
         failure_category = str(raw_stage.get("failure_category") or "") or None
         if failure_category not in SAFE_FAILURE_CATEGORIES:
             failure_category = "unexpected_failure" if failure_category else None
@@ -710,13 +740,38 @@ def _safe_pipeline_health(
     if failure_category not in SAFE_FAILURE_CATEGORIES:
         failure_category = "unexpected_failure" if failure_category else None
     logical_date_current = logical_date == newest_date
-    all_stages_succeeded = bool(stages) and all(stage["status"] == "succeeded" for stage in stages)
+    stage_contract_complete = (
+        tuple(stage["name"] for stage in stages) == PIPELINE_STAGE_ORDER
+    )
+    all_stages_succeeded = stage_contract_complete and all(
+        stage["status"] == "succeeded" for stage in stages
+    )
+    quality_stages = {
+        stage["name"]: stage["quality_checks"]
+        for stage in stages
+        if stage["name"] in PIPELINE_QUALITY_STAGES
+    }
+    quality_contract_complete = all(
+        {check["name"] for check in quality_stages.get(stage_name, [])}
+        == PIPELINE_QUALITY_CHECKS
+        and all(
+            check["status"] == "passed"
+            for check in quality_stages.get(stage_name, [])
+        )
+        for stage_name in PIPELINE_QUALITY_STAGES
+    )
+    quality_checks_succeeded = sum(
+        1
+        for stage in stages
+        for check in stage["quality_checks"]
+        if check["status"] == "passed"
+    )
     verified = (
         run_status in PIPELINE_RUN_SUCCESS
         and operational_time
         and logical_date_current
         and all_stages_succeeded
-        and quality_gate_verified
+        and quality_contract_complete
     )
     if not operational_time:
         public_status = "unverified"
@@ -760,6 +815,13 @@ def _safe_pipeline_health(
             ),
             "failure_category": failure_category,
             "stages": stages,
+            "expected_stage_count": len(PIPELINE_STAGE_ORDER),
+            "stage_count": len(stages),
+            "stages_succeeded": sum(
+                1 for stage in stages if stage["status"] == "succeeded"
+            ),
+            "quality_checks_succeeded": quality_checks_succeeded,
+            "quality_checks_total": PIPELINE_QUALITY_CHECK_TOTAL,
             "runbook_url": PIPELINE_RUNBOOK_URL,
         },
         verified,
@@ -1150,7 +1212,7 @@ def build_snapshot(
     fresh = age_hours <= 36 and pipeline_current
 
     return {
-        "schema_version": "1.6",
+        "schema_version": "1.7",
         "generated_at": now.isoformat().replace("+00:00", "Z"),
         "source_updated_at": source_updated_at.isoformat().replace("+00:00", "Z"),
         "as_of_date": newest_date.isoformat(),
@@ -1251,11 +1313,15 @@ def export_snapshot(output_path: Path) -> dict[str, Any]:
             pipeline_run = load_pipeline_run(
                 boto3.client("s3", region_name=region), pipeline_status_uri
             )
-        except Exception:
+        except Exception as exc:
             if not pipeline_status_required:
                 raise
             # Required verification fails closed while still allowing Pages to
             # publish an explicit stale/unverified state.
+            print(
+                "Pipeline status object unavailable "
+                f"({_safe_pipeline_load_error(exc)}); publishing unverified."
+            )
             pipeline_run = None
     analysis_date = resolve_analysis_date(pipeline_run)
     client = boto3.client("athena", region_name=region)

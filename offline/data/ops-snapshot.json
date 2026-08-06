@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.6",
+  "schema_version": "1.7",
   "generated_at": "2026-07-23T00:00:00Z",
   "source_updated_at": "2026-07-23T00:00:00Z",
   "as_of_date": "2026-07-23",
@@ -118,7 +118,23 @@
     "disclosure": "Synthetic statistical baseline; not a committed operational target or autonomous decision."
   },
   "pipeline": {
-    "status": "snapshot",
+    "status": "unverified",
+    "verification_mode": "repository_fallback",
+    "execution_mode": "OPERATIONAL",
+    "time_basis": "ACTUAL_CALENDAR",
+    "logical_run_date": null,
+    "started_at": null,
+    "completed_at": null,
+    "duration_ms": null,
+    "failed_stage": null,
+    "failure_category": "status_unavailable",
+    "stages": [],
+    "expected_stage_count": 6,
+    "stage_count": 0,
+    "stages_succeeded": 0,
+    "quality_checks_succeeded": 0,
+    "quality_checks_total": 10,
+    "runbook_url": "https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/blob/main/docs/runbooks/pipeline_reliability.md",
     "max_stage_lag_days": 0,
     "query_checks_succeeded": 0,
     "query_checks_total": 4

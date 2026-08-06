@@ -292,6 +292,23 @@ $permissions = @{
 if ($pipelineStatusLocation) {
     $permissions.Statement += @(
         @{
+            Sid = "InspectPipelineStatusBucket"
+            Effect = "Allow"
+            Action = "s3:GetBucketLocation"
+            Resource = "arn:aws:s3:::$($pipelineStatusLocation.Bucket)"
+        },
+        @{
+            Sid = "ListPipelineStatusObject"
+            Effect = "Allow"
+            Action = "s3:ListBucket"
+            Resource = "arn:aws:s3:::$($pipelineStatusLocation.Bucket)"
+            Condition = @{
+                StringEquals = @{
+                    "s3:prefix" = $pipelineStatusLocation.Prefix
+                }
+            }
+        },
+        @{
             Sid = "ReadPipelineStatusObject"
             Effect = "Allow"
             Action = "s3:GetObject"
