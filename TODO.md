@@ -51,6 +51,17 @@ Implementation details, dependencies, and acceptance criteria are maintained in
   arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and
   public entity-level publication out of scope pending separate approval.
+- [x] Add the repository domain contract for stable cross-day `SLA_BREACH` and
+  `COST_ANOMALY` alerts, with explicit open/resolved history and aggregate-safe
+  simulated provenance. Private AWS persistence is not deployed yet.
+- [x] Add delayed, deterministic, context-dependent simulated Outcomes from
+  named-human-approved actions, including pending and four closed states.
+- [x] Route sufficient closed Outcomes only into a `PENDING_HUMAN_REVIEW`
+  policy proposal with an explicit rollback version; no automatic activation
+  or simulation-configuration update is permitted.
+- [x] Add a fail-closed eligibility filter that counts only closed
+  `OPERATIONAL` / `ACTUAL_CALENDAR` Outcomes observed on or before the Sydney
+  as-of date. Future simulations and pending rows remain excluded.
 
 Detailed evidence and next actions are in the
 [`6 August development handoff`](docs/development_handoff_2026-08-06.md).

@@ -331,3 +331,21 @@ not the immediate implementation priority.
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic
 policy changes require separate review and explicit approval.
+
+## Repository checkpoint -- governed closed-loop domain
+
+The repository now contains the deterministic domain contract for the next
+closed-loop slice. Stable `SLA_BREACH` and `COST_ANOMALY` candidates reconcile
+into cross-day open/resolved alerts; alerts produce human-review-required
+actions; completed actions produce delayed, context-dependent simulated
+Outcomes; and sufficient closed Outcomes may create only a
+`PENDING_HUMAN_REVIEW` policy proposal with an explicit rollback version.
+
+Actual-calendar eligibility is fail closed: only closed `OPERATIONAL` Outcomes
+with `time_basis=ACTUAL_CALENDAR` and an observed date on or before the Sydney
+as-of date may enter readiness evidence. Future simulations remain excluded.
+
+This checkpoint implements and tests the storage-agnostic logic. Private AWS
+persistence, authenticated write APIs, recurring execution, and policy
+activation remain outside the deployed boundary and require separate approval.
+See [`governed_closed_loop.md`](governed_closed_loop.md).
