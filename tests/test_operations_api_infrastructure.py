@@ -37,7 +37,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "deploy-operations-api-staging.yml").read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("push:", workflow)
-        self.assertIn("branches:\\n      - main", workflow)
+        self.assertIn("branches:\n      - main", workflow)
         self.assertIn("default: plan", workflow)
         self.assertIn("GLAP_OPERATIONS_JWT_ISSUER", workflow)
         self.assertIn("GLAP_OPERATIONS_JWT_AUDIENCE", workflow)
