@@ -20,6 +20,7 @@ import boto3
 from botocore.config import Config
 
 from glap_quality_contracts import QUALITY_CONTRACTS
+from glap_temporal_boundary import OPERATIONAL, resolve_temporal_context
 
 
 SUCCESS_STATES = {"ok", "success", "succeeded"}
@@ -99,11 +100,23 @@ def parse_s3_uri(uri: str) -> tuple[str, str]:
     return parsed.netloc, parsed.path.lstrip("/")
 
 
-def new_run(logical_run_date: str, stages: list[dict[str, Any]], now: datetime) -> dict[str, Any]:
+def new_run(
+    logical_run_date: str,
+    stages: list[dict[str, Any]],
+    now: datetime,
+    temporal_context: dict[str, str | None] | None = None,
+) -> dict[str, Any]:
     date.fromisoformat(logical_run_date)
+    temporal_context = temporal_context or {
+        "execution_mode": OPERATIONAL,
+        "time_basis": "ACTUAL_CALENDAR",
+        "as_of_date": logical_run_date,
+        "scenario_id": None,
+    }
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "logical_run_date": logical_run_date,
+        **temporal_context,
         "started_at": iso_timestamp(now),
         "completed_at": None,
         "status": "running",
@@ -152,6 +165,48 @@ def load_existing_run(status_uri: str) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         raise ValueError("Existing pipeline status must be a JSON object")
     return value
+
+
+def temporal_status_uri(
+    status_uri: str, temporal_context: dict[str, str | None]
+) -> str:
+    if temporal_context["execution_mode"] == OPERATIONAL:
+        return status_uri
+    bucket, key = parse_s3_uri(status_uri)
+    prefix = key.rsplit("/", 1)[0] if "/" in key else ""
+    scenario_id = str(temporal_context["scenario_id"])
+    simulation_key = "/".join(
+        part for part in (prefix, "simulations", scenario_id, "latest.json") if part
+    )
+    return f"s3://{bucket}/{simulation_key}"
+
+
+def archive_legacy_future_status(
+    status_uri: str,
+    existing_run: dict[str, Any],
+    temporal_context: dict[str, str | None],
+) -> bool:
+    if temporal_context["execution_mode"] != OPERATIONAL:
+        return False
+    if "execution_mode" in existing_run:
+        return False
+    try:
+        existing_date = date.fromisoformat(str(existing_run["logical_run_date"]))
+        as_of_date = date.fromisoformat(str(temporal_context["as_of_date"]))
+    except (KeyError, TypeError, ValueError):
+        return False
+    if existing_date <= as_of_date:
+        return False
+
+    archive_context = {
+        "execution_mode": "FUTURE_SIMULATION",
+        "time_basis": "FUTURE_SIMULATION",
+        "as_of_date": temporal_context["as_of_date"],
+        "scenario_id": "legacy-pre-boundary-2026",
+    }
+    archived_run = {**existing_run, **archive_context}
+    persist_run(archived_run, temporal_status_uri(status_uri, archive_context))
+    return True
 
 
 def parse_stage_payload(response: dict[str, Any]) -> dict[str, Any]:
@@ -219,8 +274,15 @@ def execute_pipeline(
     status_uri: str,
     dry_run: bool = False,
     retry_failed_run: bool = False,
+    temporal_context: dict[str, str | None] | None = None,
 ) -> dict[str, Any]:
-    run = new_run(logical_run_date, stages, utc_now())
+    temporal_context = temporal_context or {
+        "execution_mode": OPERATIONAL,
+        "time_basis": "ACTUAL_CALENDAR",
+        "as_of_date": logical_run_date,
+        "scenario_id": None,
+    }
+    run = new_run(logical_run_date, stages, utc_now(), temporal_context)
     if dry_run:
         completed_at = utc_now()
         run.update(
@@ -235,6 +297,10 @@ def execute_pipeline(
         return run
 
     existing_run = load_existing_run(status_uri)
+    if existing_run and archive_legacy_future_status(
+        status_uri, existing_run, temporal_context
+    ):
+        existing_run = None
     if retry_failed_run and not existing_run:
         raise ValueError("Recovery requires an existing failed run for the same date")
     if existing_run:
@@ -245,6 +311,13 @@ def execute_pipeline(
         if retry_failed_run and existing_date != requested_date:
             raise ValueError("Recovery requires an existing failed run for the same date")
         if existing_date == requested_date:
+            existing_mode = str(existing_run.get("execution_mode") or OPERATIONAL)
+            existing_scenario = existing_run.get("scenario_id")
+            if (
+                existing_mode != temporal_context["execution_mode"]
+                or existing_scenario != temporal_context["scenario_id"]
+            ):
+                raise ValueError("Refusing to reuse a run from a different temporal context")
             if retry_failed_run:
                 failed_stage = existing_run.get("failed_stage")
                 failure_category = existing_run.get("failure_category")
@@ -291,6 +364,7 @@ def execute_pipeline(
                     "pipeline_stage": stage["name"],
                     "dry_run": dry_run,
                     "retry_failed_run": retry_failed_run,
+                    **temporal_context,
                 },
             )
         except StageFailure as exc:
@@ -367,12 +441,19 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         logical_run_date = utc_now().astimezone(pipeline_timezone).date().isoformat()
     dry_run = event.get("dry_run") is True
     retry_failed_run = event.get("retry_failed_run") is True
+    temporal_context = resolve_temporal_context(
+        logical_run_date,
+        event,
+        now=utc_now(),
+    )
+    effective_status_uri = temporal_status_uri(status_uri, temporal_context)
     run = execute_pipeline(
         stages,
         logical_run_date,
-        status_uri,
+        effective_status_uri,
         dry_run=dry_run,
         retry_failed_run=retry_failed_run,
+        temporal_context=temporal_context,
     )
     if run["status"] == "running":
         raise RuntimeError("Pipeline run is already running or has indeterminate state")

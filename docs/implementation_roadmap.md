@@ -42,8 +42,9 @@ implemented and validated in isolated AWS staging.
   and provider operations, standardized lane decisions, past-only forecast
   features, and latest outcome labels.
 - The isolated controller now runs generation, 19 lifecycle checks, 5 v2
-  compatibility checks, and 8 analytics checks. The `2026-09-07` run passed all
-  stages in about 163 seconds.
+  compatibility checks, and 8 analytics checks. The future-dated synthetic
+  `2026-09-07` scenario passed all stages in about 163 seconds; it is technical
+  validation, not real September history.
 - No recurring schedule, production alias, current-v2 write, or materialized
   daily analytics copy was added.
 
@@ -63,26 +64,28 @@ for KN, and 20 for Maersk, all below the governed 200-label threshold and class
 balance rules. Pending outcomes were excluded. Both Athena reads stayed below
 one MiB and the workflow published no entity identifiers or public snapshot.
 
-## Execution and forecast checkpoint -- 6 August 2026
+## Future-scenario execution checkpoint -- 6 August 2026
 
-The isolated lifecycle history is now complete through `2026-10-05`. Governed
-recovery repaired `2026-10-01` and the failed `2026-10-02` snapshot; the
-controller then extended `2026-10-03` through `2026-10-05` serially. Every
-successful date passed generation, 19 lifecycle checks, 5 compatibility checks,
-and 8 analytics checks. Recovery remains same-date, explicit, and fail-closed;
-matched-row updates are enabled only on that recovery path.
+The isolated lifecycle was technically exercised through `2026-10-05` using
+future-dated synthetic scenario data relative to `2026-08-06`. Governed
+recovery repaired the `2026-10-01` and failed `2026-10-02` scenario snapshots;
+the controller then processed `2026-10-03` through `2026-10-05` serially. Every
+accepted scenario date passed generation, 19 lifecycle checks, 5 compatibility
+checks, and 8 analytics checks. This validates pipeline mechanics, not real
+September--October history.
 
-The final private backtest is `ready` with 100% calendar completeness for DHL
-Air (34 days), KN Ocean (34 days), and Maersk Ocean (63 days). The selection
-policy retained `recent_level` for all three providers. Supervised training is
-still correctly blocked: DHL has 85 observed labels, KN 2, and Maersk 423, but
-provider minimums, positive-class minimums, and cost-label diversity are not all
-met. Pending labels remain excluded from every training path.
+The final private scenario backtest reported complete generated calendars for
+DHL Air, KN Ocean, and Maersk Ocean and retained `recent_level` for all three.
+Those results validate the evaluation code only. Future-scenario outcomes do not
+count as actual observations, real performance, or model-readiness evidence, so
+supervised training remains blocked.
 
 No production alias, recurring lifecycle or forecast schedule, current-v2
 write, public entity-level artifact, or automatic policy promotion was added.
 The full evidence trail and next actions are recorded in
 [`development_handoff_2026-08-06.md`](development_handoff_2026-08-06.md).
+The operational/simulation boundary is defined in
+[`temporal_truthfulness.md`](temporal_truthfulness.md).
 
 ## Delivery sequence
 

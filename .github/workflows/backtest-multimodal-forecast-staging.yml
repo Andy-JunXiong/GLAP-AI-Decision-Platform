@@ -11,6 +11,19 @@ on:
         options:
           - plan
           - backtest
+      execution_mode:
+        description: Real calendar boundary or explicitly isolated future simulation
+        required: true
+        type: choice
+        default: OPERATIONAL
+        options:
+          - OPERATIONAL
+          - FUTURE_SIMULATION
+      scenario_id:
+        description: Required safe identifier only for FUTURE_SIMULATION
+        required: false
+        type: string
+        default: ""
       start_date:
         description: First closed feature date (YYYY-MM-DD)
         required: true
@@ -20,7 +33,7 @@ on:
         description: Last closed feature date (YYYY-MM-DD)
         required: true
         type: string
-        default: "2026-09-07"
+        default: "2026-08-06"
       minimum_history:
         description: Minimum earlier rows required per mode/provider
         required: true
@@ -67,6 +80,13 @@ jobs:
         run: |
           [[ "${{ inputs.start_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
           [[ "${{ inputs.end_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+          sydney_today=$(TZ=Australia/Sydney date +%F)
+          if [[ "${{ inputs.execution_mode }}" == "OPERATIONAL" ]]; then
+            test -z "${{ inputs.scenario_id }}"
+            [[ "${{ inputs.end_date }}" < "$sydney_today" || "${{ inputs.end_date }}" == "$sydney_today" ]]
+          else
+            [[ "${{ inputs.scenario_id }}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$ ]]
+          fi
           test "${{ inputs.minimum_history }}" -ge 2
           test "${{ inputs.minimum_history }}" -le 90
           [[ "$ATHENA_OUTPUT" =~ ^s3://[^/]+/.+ ]]
@@ -81,14 +101,18 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -StartDate "${{ inputs.start_date }}" `
             -EndDate "${{ inputs.end_date }}" `
-            -MinimumHistory ${{ inputs.minimum_history }}
+            -MinimumHistory ${{ inputs.minimum_history }} `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}"
           ./ops/run_multimodal_label_readiness.ps1 `
             -Region $env:AWS_REGION `
             -SourceDatabase $env:SOURCE_DATABASE `
             -AthenaOutputUri $env:ATHENA_OUTPUT `
             -Workgroup $env:ATHENA_WORKGROUP `
             -CohortStartDate "${{ inputs.start_date }}" `
-            -CutoffDate "${{ inputs.end_date }}"
+            -CutoffDate "${{ inputs.end_date }}" `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}"
 
       - name: Configure AWS staging credentials
         if: inputs.action == 'backtest'
@@ -110,6 +134,8 @@ jobs:
             -StartDate "${{ inputs.start_date }}" `
             -EndDate "${{ inputs.end_date }}" `
             -MinimumHistory ${{ inputs.minimum_history }} `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Assess supervised-label readiness
@@ -123,6 +149,8 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -CohortStartDate "${{ inputs.start_date }}" `
             -CutoffDate "${{ inputs.end_date }}" `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Upload private backtest evidence
@@ -141,6 +169,8 @@ jobs:
           {
             echo "## Multimodal forecast staging"
             echo "- Requested action: \`${{ inputs.action }}\`"
+            echo "- Execution mode: \`${{ inputs.execution_mode }}\`"
+            echo "- Scenario ID: \`${{ inputs.scenario_id }}\`"
             echo "- Feature window: \`${{ inputs.start_date }}\` through \`${{ inputs.end_date }}\`"
             echo "- Evaluation: rolling one-step-ahead, mode/provider separated"
             echo "- Pending outcome labels used for training: \`false\`"

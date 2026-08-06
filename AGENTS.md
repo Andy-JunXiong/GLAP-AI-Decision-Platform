@@ -40,3 +40,24 @@ When several deliverables are completed together, give each meaningful
 deliverable its own four-part explanation or use a table with the same four
 relationships. Clearly distinguish what is already implemented and verified
 from what is only enabled, recommended, or planned next.
+
+## Temporal truthfulness
+
+Treat the current Australia/Sydney business date as the boundary between
+operational evidence and scenarios. Before creating, querying, validating, or
+describing date-based data:
+
+1. Compare every logical or cutoff date with the current Sydney date.
+2. A date on or before today may be handled as `OPERATIONAL` with
+   `time_basis=ACTUAL_CALENDAR`. A later date must never be called current,
+   historical, observed, actual, or real-world evidence.
+3. Future-dated work is permitted only as an explicitly requested,
+   staging-only `FUTURE_SIMULATION` with a scenario ID, system-derived
+   `as_of_date`, isolated status/artifacts, and no production effect.
+4. Operational OPS exports, default backtests, readiness decisions, and model
+   promotion evidence must exclude future simulations. Scenario backtests may
+   validate code and workflow behavior, but they do not establish real model
+   performance, label maturity, or production readiness.
+5. When reporting historical future-dated runs, preserve the execution record
+   but clearly relabel it as synthetic scenario evidence relative to the date
+   on which it ran.

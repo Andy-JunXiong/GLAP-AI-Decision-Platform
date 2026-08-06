@@ -1,5 +1,11 @@
 # GLAP Development Handoff -- 5 August 2026
 
+> Temporal correction recorded on 6 August 2026: every logical date after the
+> Sydney execution date in this handoff is future-dated synthetic scenario
+> evidence. It validates staging mechanics only and is not real history,
+> observed operational evidence, or real forecast performance. See the
+> [temporal truthfulness contract](temporal_truthfulness.md).
+
 ## End-of-day state
 
 The governed multimodal forecast-validation path is implemented and remains

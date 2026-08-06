@@ -635,6 +635,13 @@ def _safe_pipeline_health(
         )
 
     run_status = str(pipeline_run.get("status") or "unknown").lower()
+    execution_mode = str(pipeline_run.get("execution_mode") or "OPERATIONAL").upper()
+    time_basis = str(pipeline_run.get("time_basis") or "ACTUAL_CALENDAR").upper()
+    operational_time = (
+        execution_mode == "OPERATIONAL"
+        and time_basis == "ACTUAL_CALENDAR"
+        and not pipeline_run.get("scenario_id")
+    )
     failure_category = str(pipeline_run.get("failure_category") or "") or None
     if failure_category not in SAFE_FAILURE_CATEGORIES:
         failure_category = "unexpected_failure" if failure_category else None
@@ -642,11 +649,14 @@ def _safe_pipeline_health(
     all_stages_succeeded = bool(stages) and all(stage["status"] == "succeeded" for stage in stages)
     verified = (
         run_status in PIPELINE_RUN_SUCCESS
+        and operational_time
         and logical_date_current
         and all_stages_succeeded
         and quality_gate_verified
     )
-    if verified:
+    if not operational_time:
+        public_status = "unverified"
+    elif verified:
         public_status = "current"
     elif run_status == "failed":
         public_status = "failed"
@@ -670,7 +680,11 @@ def _safe_pipeline_health(
     return (
         {
             "status": public_status,
-            "verification_mode": "pipeline_run",
+            "verification_mode": (
+                "pipeline_run" if operational_time else "future_simulation_excluded"
+            ),
+            "execution_mode": execution_mode,
+            "time_basis": time_basis,
             "logical_run_date": logical_date.isoformat() if logical_date else None,
             "started_at": _safe_timestamp(pipeline_run.get("started_at")),
             "completed_at": _safe_timestamp(pipeline_run.get("completed_at")),

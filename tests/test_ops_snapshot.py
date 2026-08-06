@@ -315,6 +315,34 @@ class OpsSnapshotTests(unittest.TestCase):
         self.assertEqual(failed["pipeline"]["status"], "failed")
         self.assertEqual(failed["pipeline"]["failed_stage"], "input_validation")
 
+    def test_future_simulation_pipeline_cannot_report_current(self):
+        pipeline_run = {
+            "logical_run_date": "2026-08-04",
+            "execution_mode": "FUTURE_SIMULATION",
+            "time_basis": "FUTURE_SIMULATION",
+            "scenario_id": "q4-lifecycle-2026",
+            "status": "succeeded",
+            "started_at": "2026-08-04T00:00:00Z",
+            "completed_at": "2026-08-04T00:01:00Z",
+            "stages": [
+                {
+                    "name": "input_validation",
+                    "status": "succeeded",
+                    "quality_checks": [
+                        {"name": name, "status": "passed"}
+                        for name in exporter.PIPELINE_QUALITY_CHECKS
+                    ],
+                }
+            ],
+        }
+        safe, verified = exporter._safe_pipeline_health(
+            pipeline_run, datetime(2026, 8, 4).date(), required=True
+        )
+        self.assertFalse(verified)
+        self.assertEqual(safe["status"], "unverified")
+        self.assertEqual(safe["verification_mode"], "future_simulation_excluded")
+        self.assertEqual(safe["execution_mode"], "FUTURE_SIMULATION")
+
     def test_pipeline_health_sanitizes_untrusted_public_fields(self):
         row = {key: "2026-08-04" for key in exporter.STAGE_DATE_COLUMNS.values()}
         snapshot = exporter.build_snapshot(

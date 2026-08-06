@@ -5,24 +5,26 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 
 ## End-of-day handoff -- 6 August 2026
 
-- [x] Merge PRs `#14` through `#19`, including bounded history extension,
+- [x] Merge PRs `#14` through `#21`, including bounded scenario extension,
   governed failed-date recovery, Q4 synthetic configuration, ordered Air
   milestones, and recovery-only matched-row repair.
-- [x] Recover `2026-10-01` and `2026-10-02`, then extend the isolated lifecycle
-  through `2026-10-05`; every successful date passed generation and all 32
-  lifecycle, compatibility, and analytics checks.
-- [x] Run the private rolling backtest through `2026-10-05`. DHL, KN, and
-  Maersk all have 100% calendar completeness and remain on the transparent
-  recent-level benchmark.
-- [x] Keep supervised training blocked: observed labels and positive-class or
-  cost-variance diversity remain below the governed thresholds.
-- [ ] Accumulate more closed KN outcomes, rare positive SLA/delay labels, and
-  varied observed cost outcomes before reassessing supervised readiness.
+- [x] Relabel the previously generated `2026-09-01` through `2026-10-05` data
+  as future-dated synthetic scenario evidence relative to `2026-08-06`; its 32
+  passing checks validate staging mechanics, not real calendar history.
+- [x] Relabel the private rolling backtest through `2026-10-05` as a scenario
+  backtest. Its completeness and selected benchmark validate the evaluation
+  path only and are not real forecast-performance evidence.
+- [x] Keep supervised training blocked: future-scenario outcomes do not count
+  as operationally observed labels or establish label readiness.
+- [ ] Accumulate real closed outcomes only as their Sydney calendar dates
+  arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and
   public entity-level publication out of scope pending separate approval.
 
 Detailed evidence and next actions are in the
 [`6 August development handoff`](docs/development_handoff_2026-08-06.md).
+The governing date boundary is in the
+[`temporal truthfulness contract`](docs/temporal_truthfulness.md).
 
 ## Delivery checkpoint — 5 August 2026
 
@@ -38,8 +40,9 @@ Detailed evidence and next actions are in the
   provider, lane decision, forecast features, and outcome labels.
 - [x] Add the eight-check `multimodal_analytics_v1` fail-closed contract as the
   fourth isolated controller stage.
-- [x] Validate `2026-09-07` in AWS: 19 lifecycle, 5 compatibility, and 8
-  analytics checks passed. The four-stage run completed in about 163 seconds.
+- [x] Validate the future-dated `2026-09-07` synthetic scenario in AWS: 19
+  lifecycle, 5 compatibility, and 8 analytics checks passed. This is technical
+  scenario evidence, not real September history.
 - [x] Keep the analytics views virtual and staging-only; no production table,
   production alias, recurring schedule, or materialized daily copy was added.
 - [x] Pass all 99 local tests and GitHub Actions CI runs `30980919130` and
@@ -51,9 +54,9 @@ Detailed evidence and next actions are in the
   and document feature availability, null handling, and training cutoff rules.
 - [ ] Backtest recent-level, moving-average, weekday-seasonal, and existing OLS
   booking-volume baselines by mode and provider using rolling time windows.
-  - [x] Run the first private AWS backtest over `2026-08-04` through
-    `2026-09-07`. Maersk had 35 complete days and 21 held-out forecasts; DHL
-    Air and KN Ocean each had only 6 days and remain explicitly ineligible.
+  - [x] Run the first private AWS scenario backtest over `2026-08-04` through
+    `2026-09-07`. Its future-dated rows validate backtest mechanics only;
+    operational performance must be reassessed using actual-calendar data.
 - [x] Report MAE, RMSE, bias, MAPE where defined, and interval coverage; retain
   the simple benchmark unless a candidate consistently beats it.
   - AWS run `30997015294` retained recent-level for Maersk: MAE `2.0476`, RMSE
@@ -61,7 +64,8 @@ Detailed evidence and next actions are in the
 - [ ] Accumulate enough observed shipment labels before training SLA-breach,
   delay-risk, or cost-variance models; pending labels must never enter training.
   - [x] Add an aggregate mode/provider readiness gate with minimum observed and
-    class-balance thresholds; actual staging cohorts must still accumulate.
+    class-balance thresholds; operational cohorts must still accumulate on the
+    actual calendar, excluding future simulations.
 - [x] Add feature completeness, drift, prediction-error, and Athena scan-cost
   monitoring before any recurring forecast execution is proposed.
   - [x] Emit local completeness, missing-date, seven-day drift, normalized-error,
@@ -132,7 +136,8 @@ Repository implementation checkpoint — 4 August 2026:
     terminal rows, and zero duplicate snapshot keys. No schedule or production
     alias was created or changed.
 - [x] Add six read-only v2 compatibility views and prove the isolated manual
-  controller chain for `2026-09-01`: lifecycle generation, all 16 lifecycle
+  controller chain for the future-dated `2026-09-01` synthetic scenario:
+  lifecycle generation, all 16 lifecycle
   checks, then all 5 existing-input contract checks. Workflow run `30972254011`
   passed without a schedule, Lambda alias, event-source mapping, EventBridge
   rule, or write to the current v2 tables.
@@ -141,8 +146,8 @@ Repository implementation checkpoint — 4 August 2026:
   milestones, pieces/chargeable weight, per-kg cost, provider metadata, and
   mode-aware compatibility views. The deterministic 28-day local replay
   produced 449 new bookings with 17.37% Air.
-- [x] Prove the multimodal schema evolution and `2026-09-02` through
-  `2026-09-06` controller runs in AWS staging before enabling any recurring
+- [x] Prove the multimodal schema evolution with future-scenario `2026-09-02`
+  through `2026-09-06` controller runs in AWS staging before enabling recurring
   execution. The five-day booking cohort contained 35 Maersk Ocean, 33 KN
   Ocean, and 15 DHL Air shipments; Air was 18.07%. The first three DHL Air
   shipments completed Origin receipt, P2P flight departure/arrival,

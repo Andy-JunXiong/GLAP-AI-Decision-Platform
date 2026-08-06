@@ -69,10 +69,12 @@ The exported Lambda source directly demonstrates:
 - The public DDL is faithful to Athena output except for redacted S3 locations.
 - The repository does not include CloudWatch log excerpts because an authenticated read-only log session was unavailable during the final evidence pass.
 
-## Isolated lifecycle and forecast verification -- 6 August 2026
+## Isolated future-scenario verification -- 6 August 2026
 
-The staging-only lifecycle was extended through `2026-10-05` after two
-fail-closed recovery exercises. Q4 synthetic rate configuration was deployed by
+The staging-only lifecycle was exercised through `2026-10-05` after two
+fail-closed recovery exercises. As of `2026-08-06`, all September--October
+logical dates are future-dated synthetic scenario evidence, not real history or
+observed operational outcomes. Q4 synthetic rate configuration was deployed by
 run `31055604564`; `2026-10-01` recovered in run `31055665942`. A later Air
 origin-delay cohort exposed one invalid actual-milestone ordering. The formula
 and governed recovery writer were corrected through PRs `#18` and `#19`, then
@@ -81,20 +83,18 @@ deployed by runs `31057017116` and `31057566716`. Run `31057648407` repaired
 `2026-10-05`. Each accepted date passed 19 lifecycle, 5 compatibility, and 8
 analytics checks.
 
-Private read-only backtest run `31058326815` evaluated the closed feature window
-from `2026-08-04` through `2026-10-05` with no future-data leakage. Calendar
-completeness was 100% for DHL Air (34 rows), KN Ocean (34 rows), and Maersk
-Ocean (63 rows). The governed selection policy retained `recent_level` for all
-three providers. The backtest query scanned 316,183 bytes, and the supervised
-label-readiness query scanned 887,623 bytes; both were within the 104,857,600
-byte per-query budget.
+Private read-only scenario backtest run `31058326815` evaluated the generated
+feature window from `2026-08-04` through `2026-10-05` without look-ahead inside
+the scenario. Generated-calendar completeness was 100% for DHL Air (34 rows),
+KN Ocean (34 rows), and Maersk Ocean (63 rows), and the selection policy retained
+`recent_level`. These figures validate the backtest path only; they are not
+real forecast-performance evidence. The two queries remained inside their scan
+budgets.
 
-Supervised readiness remains `blocked_insufficient_observed_labels`. DHL has 85
-observed and 12 pending labels, KN has 2 observed and 220 pending labels, and
-Maersk has 423 observed and 259 pending labels. Rare positive outcomes and
-cost-variance diversity remain insufficient. Pending labels were excluded, and
-no production write, schedule, alias promotion, or public evidence artifact was
-created.
+Supervised readiness remains blocked. The report's future-dated synthetic
+outcomes cannot be counted as operational observations or establish label
+maturity. Pending labels were excluded, and no production write, schedule,
+alias promotion, or public evidence artifact was created.
 
 ## Re-verification
 

@@ -15,8 +15,10 @@ commitments, milestone progression, final closure, and journey-level exception
 incidence. The staging contract was then extended to Maersk/KN Ocean and DHL
 Air, followed by six read-only operational analytics, feature, and label views.
 
-The `2026-09-07` manual controller run passed generation, 19 lifecycle checks,
-5 v2 compatibility checks, and 8 multimodal analytics checks. The environment
+The future-dated synthetic `2026-09-07` manual controller scenario passed
+generation, 19 lifecycle checks, 5 v2 compatibility checks, and 8 multimodal
+analytics checks. This validates staging mechanics, not real September history.
+The environment
 still has no lifecycle schedule, production alias change, or write into the
 current v2 production boundary. Exception-to-action state, delayed outcomes,
 human-approved policy feedback, and trained forecasts remain later phases.

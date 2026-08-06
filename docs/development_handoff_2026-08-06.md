@@ -2,11 +2,12 @@
 
 ## Outcome
 
-The isolated AWS staging lifecycle is complete and quality-gated through
-`2026-10-05`. The expanded private rolling backtest is ready for all three
-mode/provider groups. Transparent recent-level forecasts remain the selected
-benchmark, while supervised outcome models remain correctly blocked by label
-readiness policy.
+The isolated AWS staging lifecycle was technically exercised through
+`2026-10-05`, but those September--October rows are future-dated synthetic
+scenario evidence relative to `2026-08-06`. The expanded private rolling
+scenario backtest exercised all three mode/provider code paths. Its selected
+recent-level benchmarks are not evidence of real forecast performance, and
+supervised outcome models remain blocked.
 
 No production alias, recurring lifecycle or forecast schedule, current-v2
 write, public entity-level publication, or automatic policy change was added.
@@ -27,7 +28,11 @@ PRs `#14` through `#19` were merged:
 The final repository suite contains 121 passing tests. CI passed on Python 3.13
 and 3.14 for the two recovery fixes.
 
-## AWS execution evidence
+## AWS future-scenario execution evidence
+
+Every run below used generated staging data beyond the actual Sydney business
+date. The records are retained as proof of pipeline, recovery, and quality-gate
+behavior only; they are not real history or observed operational outcomes.
 
 | Purpose | Workflow run | Result |
 | --- | --- | --- |
@@ -46,12 +51,12 @@ and 3.14 for the two recovery fixes.
 The failed runs are retained as useful fail-closed evidence. No later date was
 started until its predecessor had passed.
 
-## Forecast evidence
+## Scenario backtest evidence
 
-The final report uses feature contract
+The final synthetic-scenario report uses feature contract
 `multimodal_forecast_feature_daily_v1`, model bundle
 `booking_volume_baselines_v1`, and rolling one-step-ahead evaluation with no
-future data.
+look-ahead within the generated scenario sequence.
 
 | Mode/provider | Complete feature days | Held-out forecasts | Selected model | MAE | RMSE | Bias | MAPE | Interval coverage |
 | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |
@@ -59,12 +64,15 @@ future data.
 | Ocean / KN | 34 | 20 | `recent_level` | 0.8000 | 1.0954 | -0.1000 | 12.7619% | 100.0000% |
 | Ocean / Maersk | 63 | 49 | `recent_level` | 1.3469 | 1.8844 | 0.1633 | 15.1084% | 95.9184% |
 
-Every group has 100% calendar completeness and zero missing dates. The Athena
+Every scenario group has 100% generated-calendar completeness and zero missing
+scenario dates. These metrics do not establish real-world accuracy. The Athena
 feature query scanned 316,183 bytes against a 104,857,600-byte budget.
 
 ## Supervised-label boundary
 
-Readiness status is `blocked_insufficient_observed_labels`:
+The scenario report returned `blocked_insufficient_observed_labels`, but its
+future-dated synthetic outcomes are not operational observations and cannot
+advance real supervised-label readiness:
 
 | Mode/provider | Cohort | Observed | Pending | Observed rate |
 | --- | ---: | ---: | ---: | ---: |
@@ -80,12 +88,16 @@ distinct cost-variance value. Pending labels remain excluded from training.
 
 ## Next work
 
-1. Continue accumulating closed KN shipments and rare positive SLA/delay
-   outcomes without changing the governed thresholds.
-2. Add reproducible observed-cost variation before reconsidering a supervised
-   cost-variance target.
-3. Re-run label readiness first; train or compare a supervised candidate only
-   after every provider/target gate passes.
+1. Accumulate operational outcomes only as Sydney calendar dates arrive,
+   without changing the governed thresholds.
+2. Add real-calendar cost-variation evidence before reconsidering a supervised
+   cost-variance target; scenario variation may test mechanics only.
+3. Re-run operational label readiness first; train or compare a supervised
+   candidate only after every provider/target gate passes on eligible data.
 4. Keep the current simple forecast private and advisory. Any recurring
    schedule, production alias, public entity-level output, or policy consumer
    requires a separate explicit approval.
+
+The repository now enforces the separate `OPERATIONAL` and
+`FUTURE_SIMULATION` paths described in the
+[`temporal truthfulness contract`](temporal_truthfulness.md).
