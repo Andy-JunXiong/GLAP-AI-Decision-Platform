@@ -58,6 +58,27 @@ Operators should stop retries on validation or authorization errors and use
 Pipeline Health for service failures. Deployment remains manual and staging
 only, with no recurring schedule or production alias.
 
+## One-time protected-configuration discovery bootstrap
+
+The shared staging OIDC role needs a separate read-only inline policy
+before the plan can privately discover the approved Cognito and internal-origin
+candidates. An IAM administrator first previews, then applies, the narrowly
+scoped policy:
+
+```powershell
+.\\ops\\configure_operations_api_discovery.ps1
+
+.\\ops\\configure_operations_api_discovery.ps1 \`
+  -Apply
+```
+
+This does not replace the lifecycle deployer policy and grants no deployment
+permission. It cannot modify the OIDC role itself, create schedules, invoke or
+change Lambda functions, access S3, or update production aliases. Cognito and
+origin access is read-only; resolved values remain masked and process-local
+inside the workflow. After this one-time bootstrap, rerun the Operations API
+workflow in `plan` mode. Deployment permissions remain a separate review gate.
+
 ## Current implementation boundary
 
 The contract, adapter, infrastructure template, plan-first deployment tool, and
@@ -68,6 +89,8 @@ its short-lived access token in session storage. Without both conditions the
 product remains in read-only demonstration mode and sends no request.
 
 The stack has not yet been deployed or connected to an approved identity
-provider/origin, so runtime AWS authorization and recovery evidence remain the
-next release gate. Public GitHub Pages must be built without the internal API
-URL and cannot submit these mutations.
+provider/origin. The read-only discovery policy is now reproducible, but an AWS
+IAM administrator must apply it once before the private plan can complete. Runtime
+AWS authorization and recovery evidence remain the next release gate. Public
+GitHub Pages must be built without the internal API URL and cannot submit these
+mutations.

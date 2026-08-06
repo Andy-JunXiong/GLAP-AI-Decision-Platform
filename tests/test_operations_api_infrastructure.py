@@ -61,6 +61,31 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("Public Pages write access: \\`false\\`", workflow)
         self.assertNotIn("schedule:", workflow)
 
+    def test_discovery_bootstrap_is_read_only_and_plan_first(self):
+        script = (
+            ROOT / "ops" / "configure_operations_api_discovery.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("Plan only", script)
+        self.assertIn("GLAPOperationsIdentityDiscovery", script)
+        self.assertIn('"cognito-idp:ListUserPools"', script)
+        self.assertIn('"cognito-idp:ListUserPoolClients"', script)
+        self.assertIn('"amplify:ListApps"', script)
+        self.assertIn('"apigateway:GET"', script)
+        self.assertIn("Deployment permissions: False", script)
+        self.assertIn("Self-modifying deployer permission: False", script)
+        self.assertNotIn('"iam:PassRole"', script)
+        self.assertNotIn('"lambda:', script)
+        self.assertNotIn('"cloudformation:', script)
+        self.assertNotIn('"s3:', script)
+        self.assertNotIn('"sqs:', script)
+        self.assertNotIn('"apigateway:POST"', script)
+        self.assertNotIn('"apigateway:PUT"', script)
+        self.assertNotIn('"apigateway:PATCH"', script)
+        self.assertNotIn('"apigateway:DELETE"', script)
+        self.assertIn("Remove-Item -LiteralPath $policyPath", script)
+
 
 if __name__ == "__main__":
     unittest.main()
