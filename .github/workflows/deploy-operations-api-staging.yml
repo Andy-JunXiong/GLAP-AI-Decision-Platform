@@ -1,6 +1,15 @@
 name: Deploy authenticated Operations API staging
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-operations-api-staging.yml"
+      - "infrastructure/operations-api-staging.yaml"
+      - "lambda/glap_operations_api.py"
+      - "ops/deploy_operations_api_stack.ps1"
+      - "tests/test_operations_api*.py"
   workflow_dispatch:
     inputs:
       action:
@@ -81,7 +90,7 @@ jobs:
             -AllowedOrigin $env:INTERNAL_ORIGIN
 
       - name: Deploy authenticated staging API
-        if: inputs.action == 'deploy'
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'deploy'
         shell: pwsh
         run: |
           ./ops/deploy_operations_api_stack.ps1 `
@@ -102,7 +111,7 @@ jobs:
         run: |
           {
             echo "## Authenticated Operations API staging"
-            echo "- Requested action: \`${{ inputs.action }}\`"
+            echo "- Requested action: \`${{ github.event_name == 'workflow_dispatch' && inputs.action || 'plan' }}\`"
             echo "- JWT configuration source: protected staging variables"
             echo "- Public Pages write access: \`false\`"
             echo "- Schedule created: \`false\`"
