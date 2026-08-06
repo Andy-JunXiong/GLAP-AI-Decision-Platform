@@ -23,6 +23,8 @@ post-upgrade production audit reports zero known vulnerabilities.
 
 ## Verification
 
+- Pull request `#31` publishes the repository implementation for review; AWS
+  deployment remains a separate manual staging action.
 - 168 Python repository tests passed.
 - The frontend production build passed and all 3 rendered-output/connection
   tests passed.
