@@ -425,7 +425,11 @@ Repository checkpoint — 4 August 2026:
 - [ ] Add route/carrier/entity drill-down only for authorised internal users.
 - [ ] Distinguish synthetic scenario cards, live aggregate analytics, and measured
   operational outcomes everywhere in the UI.
-- [ ] Add accessible loading, empty, stale, partial, and failed states.
+- [x] Add accessible loading, empty, stale, partial, and failed states.
+  - `2026-08-07`: the authenticated cockpit now uses one semantic status pattern
+    with polite/assertive announcements, busy state, retry controls, reduced-motion
+    support, explicit Pipeline Health freshness, limited forecast evidence, and
+    recoverable partial shipment pagination.
 - [ ] Add a governed External Intelligence pipeline for weather, equipment
   shortage, geopolitical disruption, port congestion and labour-action evidence.
 - [ ] Use an LLM only to extract, normalize, classify and summarize sourced
