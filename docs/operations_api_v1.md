@@ -95,9 +95,15 @@ browser obtains its short-lived access token through Cognito and keeps it only
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
 
-The dedicated identity and hosting stack is implemented but not yet deployed.
-After it is deployed, the Operations API plan reads its protected outputs by
-known stack name, masks them, and retains candidate discovery only as a fallback.
-Runtime AWS authorization and recovery evidence remain the next release gate.
-Public GitHub Pages must be built without the internal API or Cognito variables
-and cannot submit these mutations.
+As of the Australia/Sydney business date `2026-08-07`, the dedicated identity,
+internal hosting, Operations API, alarms, and DLQ staging resources are deployed.
+The internal frontend is manually deployed to Amplify and the API plan reads
+protected identity outputs by known stack name and masks them. Runtime checks
+confirm the site is reachable, unauthenticated API requests are rejected with
+401, and CORS accepts only the exact internal origin. Run the same redacted
+checks with `ops/verify_operations_staging.ps1`.
+
+No Cognito user is created automatically. Named viewer, operator, approver, and
+administrator identities plus authenticated allow/deny and recovery exercises
+remain the next release gate. Public GitHub Pages is still built without the
+internal API or Cognito variables and cannot submit these mutations.

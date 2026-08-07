@@ -65,6 +65,20 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn('output: process.env.', config)
         self.assertIn("tsconfig.internal.json", config)
 
+    def test_runtime_verification_is_read_only_and_redacted(self):
+        script = (
+            ROOT / "ops" / "verify_operations_staging.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Unauthenticated API rejected with 401", script)
+        self.assertIn("CORS origin exact match", script)
+        self.assertIn("API alarms present", script)
+        self.assertIn("Protected identifiers were not printed", script)
+        self.assertNotIn("put-", script.lower())
+        self.assertNotIn("create-", script.lower())
+        self.assertNotIn("update-", script.lower())
+        self.assertNotIn("delete-", script.lower())
+        self.assertNotIn("start-", script.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
