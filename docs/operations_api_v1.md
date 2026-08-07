@@ -61,6 +61,10 @@ Operators should stop retries on validation or authorization errors and use
 Pipeline Health for service failures. Deployment remains manual and staging
 only, with no recurring schedule or production alias.
 
+Queue reads use the existing governed Glue/Athena view. The API execution role
+has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena
+workgroup, and S3 result/data permissions; it has no Glue writes or S3 deletes.
+
 ## One-time protected-configuration discovery bootstrap
 
 The shared staging OIDC role needs a separate read-only inline policy
