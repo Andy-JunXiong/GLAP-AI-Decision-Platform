@@ -32,6 +32,9 @@ import {
 import "./operations.css";
 
 type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "forecasts" | "health" | "brief";
+type OperationsLoadState = "demo" | "loading" | "connected" | "auth_required" | "error";
+type ShipmentLoadState = "idle" | "loading" | "connected" | "partial" | "error";
+type DataStateKind = "loading" | "empty" | "stale" | "partial" | "failed" | "auth_required" | "idle";
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: "overview", label: "Control Tower", icon: "⌂" },
@@ -82,23 +85,23 @@ export default function Home() {
   const [shipmentEntities, setShipmentEntities] = useState<ShipmentEntity[]>([]);
   const [shipmentNextToken, setShipmentNextToken] = useState<string | null>(null);
   const [shipmentSelection, setShipmentSelection] = useState<NetworkSummary | null>(null);
-  const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+  const [operationsState, setOperationsState] = useState<OperationsLoadState>(
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [operationsMessage, setOperationsMessage] = useState("");
-  const [healthState, setHealthState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+  const [healthState, setHealthState] = useState<OperationsLoadState>(
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [healthMessage, setHealthMessage] = useState("");
-  const [forecastState, setForecastState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+  const [forecastState, setForecastState] = useState<OperationsLoadState>(
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [forecastMessage, setForecastMessage] = useState("");
-  const [networkState, setNetworkState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+  const [networkState, setNetworkState] = useState<OperationsLoadState>(
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [networkMessage, setNetworkMessage] = useState("");
-  const [shipmentState, setShipmentState] = useState<"idle" | "loading" | "connected" | "error">("idle");
+  const [shipmentState, setShipmentState] = useState<ShipmentLoadState>("idle");
   const [signedIn, setSignedIn] = useState(false);
 
   const refreshOperations = useCallback(async () => {
@@ -190,6 +193,8 @@ export default function Home() {
 
   const openShipmentGroup = useCallback(async (selection: NetworkSummary) => {
     setShipmentSelection(selection);
+    setShipmentEntities([]);
+    setShipmentNextToken(null);
     setShipmentState("loading");
     try {
       const response = await loadShipmentDrilldown(readOperationsToken(), {
@@ -220,10 +225,10 @@ export default function Home() {
       setShipmentNextToken(response.next_token);
       setShipmentState("connected");
     } catch (error) {
-      setShipmentState("error");
+      setShipmentState(shipmentEntities.length ? "partial" : "error");
       setNetworkMessage(error instanceof Error ? error.message : "Unable to load the next shipment page");
     }
-  }, [shipmentNextToken, shipmentSelection]);
+  }, [shipmentEntities.length, shipmentNextToken, shipmentSelection]);
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
@@ -233,8 +238,15 @@ export default function Home() {
           return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts(), refreshNetwork()]);
         })
         .catch((error) => {
+          const signInMessage = error instanceof Error ? error.message : "Internal sign-in failed";
           setOperationsState("error");
-          setOperationsMessage(error instanceof Error ? error.message : "Internal sign-in failed");
+          setOperationsMessage(signInMessage);
+          setHealthState("error");
+          setHealthMessage(signInMessage);
+          setForecastState("error");
+          setForecastMessage(signInMessage);
+          setNetworkState("error");
+          setNetworkMessage(signInMessage);
         });
     }, 0);
     return () => window.clearTimeout(initialLoad);
@@ -397,7 +409,7 @@ function Signals({ filter, setFilter, go, risks, operationsState, operationsMess
   setFilter: (v: string) => void;
   go: (view: View) => void;
   risks: OperationsRisk[];
-  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsState: OperationsLoadState;
   operationsMessage: string;
   refresh: () => Promise<void>;
 }) {
@@ -406,7 +418,7 @@ function Signals({ filter, setFilter, go, risks, operationsState, operationsMess
   if (operationsState !== "demo") return <div className="page">
     <PageTitle eyebrow="DETECT" title="Risk hotspots" copy="Authenticated operational Alerts ranked for human review." action={<button className="outline-button" onClick={() => void refresh()}>Refresh risks</button>} />
     <div className="toolbar"><div className="filters">{["All","Critical","High","Medium"].map((item) => <button className={filter === item ? "active" : ""} onClick={() => setFilter(item)} key={item}>{item}{item === "All" && ` ${risks.length}`}</button>)}</div></div>
-    <OperationsState state={operationsState} message={operationsMessage} />
+    <OperationsState state={operationsState} message={operationsMessage} label="risk hotspots" onRetry={refresh} />
     {operationsState === "connected" && <div className="table-card">
       <div className="data-row table-head"><span>Risk</span><span>Alert</span><span>Current reading</span><span>Exposure</span><span>Detected</span><span /></div>
       {visibleRisks.map((risk) => <button className="data-row" key={risk.alert_fingerprint} onClick={() => go("decisions")}>
@@ -415,7 +427,7 @@ function Signals({ filter, setFilter, go, risks, operationsState, operationsMess
         <span><strong>{risk.metric_value}</strong><small>Threshold {risk.threshold_value}</small></span>
         <span>Shipment {risk.shipment_id}</span><span>{risk.last_detected_date}</span><span className="row-link">→</span>
       </button>)}
-      {visibleRisks.length === 0 && <p className="data-disclaimer">No open operational Risks match this filter.</p>}
+      {visibleRisks.length === 0 && <DataState kind="empty" title="No matching risk hotspots" message="No open operational Risks match this filter. Change the severity filter or refresh the latest evidence." />}
     </div>}
   </div>;
   return <div className="page">
@@ -435,14 +447,14 @@ function Signals({ filter, setFilter, go, risks, operationsState, operationsMess
 function Decisions({ go, actions, operationsState, operationsMessage, refresh }: {
   go: (view: View) => void;
   actions: OperationsAction[];
-  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsState: OperationsLoadState;
   operationsMessage: string;
   refresh: () => Promise<void>;
 }) {
   if (operationsState === "demo") return <DemoDecisions go={go} />;
   return <div className="page">
     <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Authenticated operational Actions ready for human review." action={<button className="outline-button" onClick={() => void refresh()}>Refresh queue</button>} />
-    <OperationsState state={operationsState} message={operationsMessage} />
+    <OperationsState state={operationsState} message={operationsMessage} label="decision queue" onRetry={refresh} />
     {operationsState === "connected" && <div className="decision-list">
       {actions.filter((item) => item.status === "PROPOSED").map((item) => <button className="decision-card" key={item.action_id} onClick={() => go("actions")}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
@@ -451,7 +463,7 @@ function Decisions({ go, actions, operationsState, operationsMessage, refresh }:
         <div className="decision-due"><small>Created</small><strong>{item.created_date}</strong></div>
         <span className="status-button">Review now</span>
       </button>)}
-      {actions.every((item) => item.status !== "PROPOSED") && <p className="data-disclaimer">No Actions are waiting for review.</p>}
+      {actions.every((item) => item.status !== "PROPOSED") && <DataState kind="empty" title="Decision queue is clear" message="No Actions are waiting for human review at this Sydney cutoff." />}
     </div>}
   </div>;
 }
@@ -472,7 +484,7 @@ function DemoDecisions({ go }: { go: (view: View) => void }) {
 
 function ActionBoard({ actions, operationsState, operationsMessage, submitOperation, refresh }: {
   actions: OperationsAction[];
-  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsState: OperationsLoadState;
   operationsMessage: string;
   submitOperation: (actionId: string, operation: ActionOperation, reason: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -488,10 +500,12 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
     <PageTitle eyebrow="OPERATE" title="Action Board" copy="Move approved operational Actions through their governed lifecycle." action={<button className="outline-button" onClick={() => void refresh()}>Refresh board</button>} />
     {operationsState === "demo"
       ? <p className="data-disclaimer">Public demonstration mode is read-only. Configure the internal Operations API and sign in to use the Action Board.</p>
-      : <OperationsState state={operationsState} message={operationsMessage} />}
+      : <OperationsState state={operationsState} message={operationsMessage} label="Action Board" onRetry={refresh} />}
     {operationsState === "connected" && <>
-      <label className="select-label"><span>Audit reason for the next update</span><input className="operations-reason" value={reason} minLength={3} maxLength={500} onChange={(event) => setReason(event.target.value)} /></label>
-      <div className="decision-list">{actions.map((item) => <article className="decision-card" key={item.action_id}>
+      {actions.length === 0
+        ? <DataState kind="empty" title="No governed Actions" message="There are no Actions available for this authenticated role and cutoff." />
+        : <><label className="select-label"><span>Audit reason for the next update</span><input className="operations-reason" value={reason} minLength={3} maxLength={500} onChange={(event) => setReason(event.target.value)} /></label>
+        <div className="decision-list">{actions.map((item) => <article className="decision-card" key={item.action_id}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
         <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span></div>
         <div className="decision-value"><small>Status</small><strong>{item.status}</strong></div>
@@ -500,23 +514,49 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
           {item.status === "APPROVED" && <button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "COMPLETE")}>Mark complete</button>}
           {(item.status === "REJECTED" || item.status === "COMPLETED") && <span className="status-button">Closed</span>}
         </div>
-      </article>)}</div>
+      </article>)}</div></>}
     </>}
   </div>;
 }
 
-function OperationsState({ state, message }: {
-  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+function DataState({ kind, title, message, onRetry, action }: {
+  kind: DataStateKind;
+  title: string;
   message: string;
+  onRetry?: () => void | Promise<void>;
+  action?: React.ReactNode;
+}) {
+  const failed = kind === "failed";
+  return <section
+    className={`data-state ${kind}`}
+    role={failed ? "alert" : "status"}
+    aria-live={failed ? "assertive" : "polite"}
+    aria-busy={kind === "loading"}
+  >
+    <span className="data-state-icon" aria-hidden="true" />
+    <div><strong>{title}</strong><p>{message}</p></div>
+    {(onRetry || action) && <div className="data-state-action">
+      {onRetry && <button className="outline-button" onClick={() => void onRetry()}>Try again</button>}
+      {action}
+    </div>}
+  </section>;
+}
+
+function OperationsState({ state, message, label, onRetry }: {
+  state: OperationsLoadState;
+  message: string;
+  label: string;
+  onRetry: () => void | Promise<void>;
 }) {
   if (state === "connected" || state === "demo") return null;
-  const copy = state === "loading" ? "Loading the authenticated operational queue…" : message;
-  return <p className="data-disclaimer" role={state === "error" ? "alert" : "status"}>{copy}</p>;
+  if (state === "loading") return <DataState kind="loading" title={`Loading ${label}`} message="Retrieving authenticated operational evidence." />;
+  if (state === "auth_required") return <DataState kind="auth_required" title="Internal sign-in required" message={message} />;
+  return <DataState kind="failed" title={`${label} unavailable`} message={message} onRetry={onRetry} />;
 }
 
 function PipelineHealth({ health, state, message, refresh }: {
   health: PipelineHealthData | null;
-  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  state: OperationsLoadState;
   message: string;
   refresh: () => Promise<void>;
 }) {
@@ -527,18 +567,21 @@ function PipelineHealth({ health, state, message, refresh }: {
   const label = (value: string) => value.replaceAll("_", " ");
   return <div className="page">
     <PageTitle eyebrow="RELIABILITY" title="Pipeline Health" copy="See where the latest operational run is healthy, delayed, or blocked before its data reaches decisions." action={<button className="outline-button" onClick={() => void refresh()}>Refresh health</button>} />
-    <OperationsState state={state} message={message} />
+    <OperationsState state={state} message={message} label="Pipeline Health" onRetry={refresh} />
     {state === "connected" && health && <>
+      {health.status === "failed" || health.failed_stage || health.freshness_status === "future_invalid"
+        ? <DataState kind="failed" title="Pipeline evidence cannot be used" message={health.freshness_status === "future_invalid" ? "The run is dated after the current Sydney cutoff and is excluded from operational evidence." : health.failure_category ? label(health.failure_category) : "A required stage did not complete."} onRetry={refresh} action={<a href={health.runbook_url} target="_blank" rel="noreferrer">Open recovery runbook</a>} />
+        : (health.status === "stale" || health.freshness_status === "stale")
+          ? <DataState kind="stale" title="Pipeline evidence is stale" message={`The latest verified run is older than the ${health.as_of_date} Sydney cutoff.`} onRetry={refresh} />
+          : (health.status === "running" || health.status === "unverified" || health.stages_succeeded < health.stage_count || health.quality_checks_succeeded < health.quality_checks_total)
+            ? <DataState kind="partial" title="Pipeline evidence is only partially available" message="Some stages or quality checks have not produced verified evidence yet." onRetry={refresh} />
+            : null}
       <section className="metric-grid compact">
         <Metric label="Run status" value={label(health.status)} note={`Freshness: ${label(health.freshness_status)}`} tone={health.status === "current" ? "green" : health.status === "failed" ? "red" : "amber"} />
         <Metric label="Stages succeeded" value={`${health.stages_succeeded}/${health.stage_count}`} note="Required execution order" />
         <Metric label="Quality checks" value={`${health.quality_checks_succeeded}/${health.quality_checks_total}`} note="Input and output gates" />
         <Metric label="Logical run date" value={health.logical_run_date ?? "Unverified"} note={`Sydney cutoff ${health.as_of_date}`} />
       </section>
-      {(health.failed_stage || health.failure_category || health.status === "unverified") && <article className="pipeline-alert" role="alert">
-        <div><strong>{health.failed_stage ? `Attention at ${label(health.failed_stage)}` : "Pipeline evidence needs attention"}</strong><span>{health.failure_category ? label(health.failure_category) : `Status is ${label(health.status)}`}</span></div>
-        <a href={health.runbook_url} target="_blank" rel="noreferrer">Open recovery runbook</a>
-      </article>}
       <section className="pipeline-stage-grid">
         {health.stages.map((stage, index) => <article className={`pipeline-stage ${stage.status}`} key={stage.name}>
           <div className="pipeline-stage-head"><span>{index + 1}</span><div><small>Stage {index + 1}</small><strong>{label(stage.name)}</strong></div><b>{label(stage.status)}</b></div>
@@ -554,7 +597,7 @@ function PipelineHealth({ health, state, message, refresh }: {
 
 function ForecastAccuracy({ contract, state, message, refresh }: {
   contract: ForecastContract | null;
-  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  state: OperationsLoadState;
   message: string;
   refresh: () => Promise<void>;
 }) {
@@ -566,8 +609,9 @@ function ForecastAccuracy({ contract, state, message, refresh }: {
   const maxForecast = Math.max(...(contract?.forecast.points.map((point) => point.upper_bound) ?? [1]), 1);
   return <div className="page">
     <PageTitle eyebrow="PLAN" title="Forecast Accuracy" copy="Review the advisory shipment-volume baseline and the evidence that limits how it may be used." action={<button className="outline-button" onClick={() => void refresh()}>Refresh forecast</button>} />
-    <OperationsState state={state} message={message} />
+    <OperationsState state={state} message={message} label="Forecast Accuracy" onRetry={refresh} />
     {state === "connected" && contract && <>
+      {(contract.forecast.status === "insufficient_operational_history" || contract.accuracy.status === "insufficient_operational_history") && <DataState kind="partial" title="Forecast evidence is incomplete" message={`Only ${contract.coverage.eligible_dates} of ${contract.coverage.window_days} eligible actual-calendar dates are available. Advisory projections and promotion evidence remain limited.`} />}
       <section className="forecast-boundary">
         <div><small>Evidence boundary</small><strong>Synthetic operational-calendar baseline</strong><span>Cut off at {contract.as_of_date}; future points remain unobserved projections.</span></div>
         <b>{contract.forecast.decision_use.replaceAll("_", " ")}</b>
@@ -583,7 +627,7 @@ function ForecastAccuracy({ contract, state, message, refresh }: {
           {contract.forecast.points.length ? <div className="forecast-bars">{contract.forecast.points.map((point) => <div key={point.date}>
             <span><i style={{height: `${Math.max(8, point.predicted_shipments / maxForecast * 100)}%`}} /></span>
             <strong>{point.predicted_shipments}</strong><small>{point.date.slice(5)}</small>
-          </div>)}</div> : <p className="data-disclaimer">The current actual-calendar window has not reached the 28 eligible dates required for an advisory projection.</p>}
+          </div>)}</div> : <DataState kind="empty" title="No advisory projection yet" message="The actual-calendar window has not reached the 28 eligible dates required for an advisory projection." />}
         </article>
         <article className="card forecast-card"><CardHead title="Accuracy and readiness" copy="Rolling one-step-ahead evaluation using dates at or before the Sydney cutoff" />
           <dl className="forecast-metrics">
@@ -605,9 +649,9 @@ function Shipments({ go, contract, entities, state, message, shipmentState, sele
   go: (view: View) => void;
   contract: NetworkResponse | null;
   entities: ShipmentEntity[];
-  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  state: OperationsLoadState;
   message: string;
-  shipmentState: "idle" | "loading" | "connected" | "error";
+  shipmentState: ShipmentLoadState;
   selection: NetworkSummary | null;
   nextToken: string | null;
   refresh: () => Promise<void>;
@@ -622,7 +666,7 @@ function Shipments({ go, contract, entities, state, message, shipmentState, sele
   const providers = new Set(rows.map((item) => item.provider_code)).size;
   return <div className="page">
     <PageTitle eyebrow="OPERATE" title="Network Drill-down" copy="Move from provider and lane performance to the authorised shipment evidence behind it." action={<button className="outline-button" onClick={() => void refresh()}>Refresh network</button>} />
-    <OperationsState state={state} message={message} />
+    <OperationsState state={state} message={message} label="Network Drill-down" onRetry={refresh} />
     {state === "connected" && contract && <>
       <section className="metric-grid compact">
         <Metric label="Latest shipments" value={String(total)} note={`Sydney cutoff ${contract.as_of_date}`} />
@@ -640,18 +684,19 @@ function Shipments({ go, contract, entities, state, message, shipmentState, sele
               <i>→</i>
             </button>)}
           </div>
-          {!rows.length && <p className="data-disclaimer">No operational provider-lane rows are available at this cutoff.</p>}
+          {!rows.length && <DataState kind="empty" title="No provider-lane evidence" message="No operational provider-lane rows are available at this Sydney cutoff." />}
           {!contract.entity_access && <p className="data-disclaimer">Your viewer role can inspect aggregate performance, but shipment identifiers require an operator, approver, or administrator role.</p>}
         </article>
         <article className="card network-card"><CardHead title="Shipment evidence" copy={selection ? `${selection.provider_code} · ${selection.market_lane}` : "Choose an authorised provider-lane row"} />
-          {shipmentState === "loading" && <p className="data-disclaimer" role="status">Loading authorised shipment evidence…</p>}
-          {shipmentState === "error" && <p className="data-disclaimer" role="alert">{message}</p>}
-          {shipmentState === "idle" && <p className="data-disclaimer">Entity records are not fetched until an authorised user selects a provider and lane.</p>}
+          {shipmentState === "loading" && <DataState kind="loading" title="Loading shipment evidence" message="Retrieving authorised entity records for the selected provider and lane." />}
+          {shipmentState === "error" && <DataState kind="failed" title="Shipment evidence unavailable" message={message} onRetry={selection ? () => openGroup(selection) : undefined} />}
+          {shipmentState === "partial" && <DataState kind="partial" title="Some shipment evidence is still available" message={`${message} Previously loaded rows remain visible.`} onRetry={loadMore} />}
+          {shipmentState === "idle" && <DataState kind="idle" title="Choose a provider and lane" message="Entity records are not fetched until an authorised user selects a provider and lane." />}
           {entities.length > 0 && <div className="entity-list">{entities.map((item) => <article key={item.shipment_id}>
             <div><small>{item.transport_mode} · {item.market_lane}</small><strong>{item.shipment_id}</strong><span>{item.provider_code} · {item.service_level}</span></div>
             <dl><div><dt>Stage</dt><dd>{item.lifecycle_stage.replaceAll("_", " ")}</dd></div><div><dt>Status</dt><dd>{item.lifecycle_status}</dd></div><div><dt>SLA</dt><dd className={item.sla_breach_flag === "true" ? "red-text" : "green-text"}>{item.sla_breach_flag === "true" ? "Breached" : "Within"}</dd></div><div><dt>Evidence date</dt><dd>{item.metric_date}</dd></div></dl>
           </article>)}</div>}
-          {shipmentState === "connected" && !entities.length && <p className="data-disclaimer">No shipment entities match this provider and lane.</p>}
+          {shipmentState === "connected" && !entities.length && <DataState kind="empty" title="No matching shipments" message="No shipment entities match this provider and lane at the current cutoff." />}
           {nextToken && <button className="outline-button network-more" disabled={shipmentState === "loading"} onClick={() => void loadMore()}>Load next 25</button>}
         </article>
       </section>
@@ -676,7 +721,7 @@ function DemoShipments({ go }: { go: (view: View) => void }) {
 
 function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
   outcomes: OperationsOutcome[];
-  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsState: OperationsLoadState;
   operationsMessage: string;
   refresh: () => Promise<void>;
 }) {
@@ -689,7 +734,7 @@ function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
     : "—";
   return <div className="page">
     <PageTitle eyebrow="LEARN" title="Outcome review" copy="Compare completed Actions with evidence that is mature by the Sydney business-date cutoff." action={<button className="outline-button" onClick={() => void refresh()}>Refresh outcomes</button>} />
-    <OperationsState state={operationsState} message={operationsMessage} />
+    <OperationsState state={operationsState} message={operationsMessage} label="Outcome Review" onRetry={refresh} />
     {operationsState === "connected" && <>
       <section className="metric-grid compact">
         <Metric label="Pending observation" value={String(pending.length)} note="Not counted as actual evidence" tone="amber" />
@@ -704,7 +749,7 @@ function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
         <div className="decision-due"><small>{item.evidence_status === "NOT_OBSERVED" ? "Observation due" : "Observed"}</small><strong>{item.evidence_status === "NOT_OBSERVED" ? item.observation_due_date : item.observed_date}</strong></div>
         <span className="status-button">{item.evidence_status === "NOT_OBSERVED" ? "Pending" : "Actual calendar"}</span>
       </article>)}</div>
-      {outcomes.length === 0 && <p className="data-disclaimer">No operational Outcomes are available at the current Sydney cutoff.</p>}
+      {outcomes.length === 0 && <DataState kind="empty" title="No operational Outcomes" message="No operational Outcomes are available at the current Sydney cutoff." />}
     </>}
   </div>;
 }

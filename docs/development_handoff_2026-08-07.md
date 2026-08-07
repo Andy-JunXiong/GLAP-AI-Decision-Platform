@@ -36,15 +36,26 @@ and distinguishes pending rows from mature actual-calendar evidence. The one
 current operational Outcome remains pending until `2026-08-09`, has no observed
 date or effect value, and is excluded from observed totals and average effect.
 
+The authenticated cockpit now gives operators a consistent explanation when
+data is loading, absent, stale, incomplete, or unavailable. Failures offer a
+direct retry, assistive technology receives the right polite or urgent
+announcement, and loading animation respects reduced-motion preferences.
+Pipeline freshness, limited forecast history, and partially loaded shipment
+pages remain visible as distinct conditions instead of being confused with an
+empty or healthy result.
+
 ## Verification
 
 - Pull requests `#31`, `#36`-`#41` were merged; they cover the authenticated
   API, protected configuration, dedicated identity/hosting, deployment fixes,
   and staging quota compatibility.
-- 188 Python repository tests passed after adding Outcome Review, Risk Hotspots, and reliability
-  verification.
+- 200 Python repository tests passed across the domain, API, deployment,
+  lifecycle, forecast, temporal-boundary, and offline-product contracts.
 - The standard frontend build, the internal static export, and all 3
   rendered-output/connection tests passed.
+- The cockpit state contract is covered by rendered-source assertions for all
+  five required conditions, retry semantics, live-region attributes, and
+  reduced-motion support.
 - ESLint passed with no errors.
 - `npm audit --omit=dev --audit-level=high` reported zero vulnerabilities after
   the Next.js upgrade.

@@ -283,6 +283,13 @@ Acceptance criteria:
 - loading, empty, stale, partial, and failed states are accessible and tested;
 - System remains technical evidence while OPS owns the business flow.
 
+Status as of `2026-08-07`: the accessible loading, empty, stale, partial, and
+failed-state contract is implemented across the authenticated cockpit. Runtime
+API errors can be retried, Pipeline Health freshness and failure states remain
+explicit, forecast history limitations are not presented as measured accuracy,
+and shipment pagination can preserve previously loaded evidence after a later
+page fails.
+
 ## P5 — Governance and production readiness
 
 **Objective:** make the platform supportable, cost-controlled, and auditable.

@@ -78,4 +78,17 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /title="Network Drill-down"/);
   assert.match(page, /shipment identifiers require an operator, approver, or administrator role/);
   assert.match(page, /Costs, raw port identifiers, infrastructure identifiers, and future simulations are excluded/);
+  assert.match(page, /type DataStateKind = "loading" \| "empty" \| "stale" \| "partial" \| "failed"/);
+  assert.match(page, /aria-live=\{failed \? "assertive" : "polite"\}/);
+  assert.match(page, /aria-busy=\{kind === "loading"\}/);
+  assert.match(page, /Pipeline evidence is stale/);
+  assert.match(page, /Forecast evidence is incomplete/);
+  assert.match(page, /Some shipment evidence is still available/);
+  assert.match(page, /Try again/);
+
+  const operationsCss = await readFile(new URL("../app/operations.css", import.meta.url), "utf8");
+  assert.match(operationsCss, /\.data-state\.loading/);
+  assert.match(operationsCss, /\.data-state\.stale, \.data-state\.partial/);
+  assert.match(operationsCss, /\.data-state\.failed/);
+  assert.match(operationsCss, /prefers-reduced-motion: reduce/);
 });
