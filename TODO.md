@@ -21,9 +21,11 @@ Current implementation and release boundaries are recorded in the
 - [x] Add unit and infrastructure contract coverage for role separation,
   fail-closed identity handling, operational-only queue reads, authenticated
   routing, and deployment boundaries.
-- [ ] Review the approved JWT issuer, audience, and exact internal HTTPS origin,
-  then deploy the stack manually and collect runtime authorization, alarm,
-  retry, concurrency, and recovery evidence.
+- [x] Review the approved JWT issuer, audience, and exact internal HTTPS origin,
+  deploy the stack manually, and verify authenticated runtime authorization,
+  exact-origin CORS, alarms, and the complete four-role allow/deny matrix.
+- [ ] Exercise same-request retry, concurrency, throttling, alarm, and recovery
+  behavior through the authenticated staging boundary.
 - [x] Add a manual GitHub OIDC workflow that reads those values only from the
   protected staging environment, defaults to plan, and requires an explicit
   `deploy` selection before changing AWS.
@@ -110,7 +112,7 @@ Current implementation and release boundaries are recorded in the
 - [x] Re-run the closed loop after completion and create one `PENDING` Outcome
   with observation due `2026-08-09`; do not call it observed evidence or advance
   the operational date before that Sydney calendar date arrives.
-- [ ] Add an authenticated internal Operations API and role model, then connect
+- [x] Add an authenticated internal Operations API and role model, then connect
   the Decision Queue and Action Board to this private mutation path. Keep the
   Lambda without a public endpoint until that access boundary is approved.
 - [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
@@ -124,9 +126,9 @@ The governing date boundary is in the
 
 ### Next working session
 
-- [ ] Define authenticated viewer, operator, approver, and administrator roles
+- [x] Define authenticated viewer, operator, approver, and administrator roles
   plus versioned Operations API request/response contracts.
-- [ ] Connect the private Action mutation Lambda to that authenticated API and
+- [x] Connect the private Action mutation Lambda to that authenticated API and
   implement the Decision Queue and Action Board journey.
 - [ ] Add write-path alarms, DLQ/retry evidence, concurrency tests, and recovery
   guidance without enabling a recurring lifecycle schedule.

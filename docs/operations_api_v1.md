@@ -64,6 +64,27 @@ only, with no recurring schedule or production alias.
 Queue reads use the existing governed Glue/Athena view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena
 workgroup, and S3 result/data permissions; it has no Glue writes or S3 deletes.
+Because IAM permission to request Lake Formation data is not itself a table
+grant, a Lake Formation administrator must also apply the exact database and
+view permissions once per created execution role:
+
+```powershell
+.\\ops\\configure_operations_api_data_access.ps1
+
+.\\ops\\configure_operations_api_data_access.ps1 `
+  -Profile codex-readonly `
+  -Apply
+```
+
+The script is plan-first and idempotent. It grants database `DESCRIBE` plus
+`SELECT` and `DESCRIBE` on
+`vw_lifecycle_action_current_staging_v1` and its required backing audit table,
+`fact_lifecycle_action_audit_staging_v1`, and current-state table,
+`fact_lifecycle_action_staging_v1`. Athena resolves stored views with the
+caller's permissions, so all three objects are required. The API role's Glue
+policy is restricted to those same objects. The script grants no write access,
+no grant option, and no permission on other tables or views. Its output omits
+protected resource identifiers.
 
 ## One-time protected-configuration discovery bootstrap
 
@@ -108,13 +129,19 @@ confirm the site is reachable, unauthenticated API requests are rejected with
 401, and CORS accepts only the exact internal origin. Run the same redacted
 checks with `ops/verify_operations_staging.ps1`.
 
-No Cognito user is created automatically. Named viewer, operator, approver, and
-administrator identities plus authenticated allow/deny and recovery exercises
-remain the next release gate. Public GitHub Pages is still built without the
-internal API or Cognito variables and cannot submit these mutations.
+No persistent Cognito user is created automatically. An isolated runtime check
+created one temporary viewer, operator, approver, and administrator, verified
+queue reads and every role-specific allow/deny boundary, then removed all four.
+All four queue reads returned HTTP 200. The governed view and its two direct
+backing tables have exact read-only Glue and Lake Formation permissions; no
+write or grant option was added. Retry, concurrency, throttling, alarm, and
+recovery exercises remain the next release gate. Public GitHub Pages is still
+built without the internal API or Cognito variables and cannot submit these
+mutations.
 
 An IAM administrator can exercise the deployed allow/deny matrix without using
 real email addresses by running `ops/verify_operations_roles_staging.ps1` first
 in plan mode and then with `-Apply`. The script suppresses email delivery,
 targets an unguessable missing Action ID, keeps passwords and tokens in process,
-and deletes all four temporary users in a `finally` block.
+prints only HTTP statuses and boolean boundaries, and deletes all four temporary
+users in a `finally` block.

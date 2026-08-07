@@ -39,17 +39,19 @@ post-upgrade production audit reports zero known vulnerabilities.
   present. The internal frontend returns HTTP 200 and renders its sign-in entry.
 - Unauthenticated API requests return 401. CORS preflight succeeds only for the
   exact internal Amplify origin. Protected URLs and identifiers were not logged.
-- Named authenticated role and recovery evidence does not exist yet because no
-  Cognito user is created automatically.
+- The complete authenticated role matrix passed in staging: all four roles read
+  the queue with HTTP 200; viewer, operator, approver, and administrator allow
+  and deny boundaries matched the contract.
+- The governed Action view and both direct backing tables have exact Glue and
+  Lake Formation read permissions. No data write or grant option was added.
+- The four isolated Cognito test users were deleted, and the temporary Lake
+  Formation administrator list was restored to zero entries.
 
 ## Next connection
 
-1. Create named staging test identities and assign viewer, operator, approver,
-   and administrator groups.
-2. Verify the role-specific allow and deny cases through the deployed API.
-3. Exercise same-request retries, concurrent updates, throttling, alarms, and
+1. Exercise same-request retries, concurrent updates, throttling, alarms, and
    failure recovery, then record sanitized evidence.
-4. Keep public Pages built without the internal API URL.
-5. On or after the Sydney business date `2026-08-09`, run the actual-calendar
+2. Keep public Pages built without the internal API URL.
+3. On or after the Sydney business date `2026-08-09`, run the actual-calendar
    observation for the pending Outcome. As of `2026-08-07`, it is still pending
    and is not observed evidence.

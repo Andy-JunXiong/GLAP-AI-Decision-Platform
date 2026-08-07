@@ -24,6 +24,8 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("OperationsApiFailureAlarm", template)
         self.assertIn("OperationsApiThrottleAlarm", template)
         self.assertIn("vw_lifecycle_action_current_staging_v1", template)
+        self.assertIn("fact_lifecycle_action_audit_staging_v1", template)
+        self.assertIn("fact_lifecycle_action_staging_v1", template)
         self.assertIn("Action: lakeformation:GetDataAccess", template)
         self.assertNotIn("glue:UpdateTable", template)
         self.assertNotIn("s3:DeleteObject", template)
@@ -40,6 +42,12 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertNotIn('Write-Host "  JWT issuer: $JwtIssuer"', script)
         self.assertNotIn('Write-Host "  Allowed origin: $AllowedOrigin"', script)
         self.assertNotIn("update-alias", script.lower())
+
+        role_verifier = (
+            ROOT / "ops" / "verify_operations_roles_staging.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Queue read HTTP statuses:", role_verifier)
+        self.assertNotIn("Tokens or user identifiers printed: True", role_verifier)
 
         workflow = (ROOT / ".github" / "workflows" / "deploy-operations-api-staging.yml").read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", workflow)
@@ -69,6 +77,29 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.action == 'deploy'", workflow)
         self.assertIn("Public Pages write access: \\`false\\`", workflow)
         self.assertNotIn("schedule:", workflow)
+
+    def test_governed_view_access_is_exact_and_plan_first(self):
+        script = (
+            ROOT / "ops" / "configure_operations_api_data_access.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("Plan only", script)
+        self.assertIn('"OperationsApiRole"', script)
+        self.assertIn('"lakeformation", "list-permissions"', script)
+        self.assertIn("lakeformation grant-permissions", script)
+        self.assertIn('@("DESCRIBE")', script)
+        self.assertIn('@("SELECT", "DESCRIBE")', script)
+        self.assertIn("vw_lifecycle_action_current_staging_v1", script)
+        self.assertIn("fact_lifecycle_action_audit_staging_v1", script)
+        self.assertIn("fact_lifecycle_action_staging_v1", script)
+        self.assertIn("Two backing Action tables: SELECT, DESCRIBE", script)
+        self.assertIn("Other tables or views: False", script)
+        self.assertIn("Write or grantable permissions: False", script)
+        self.assertIn("[System.Text.UTF8Encoding]::new($false)", script)
+        self.assertNotIn("ALL", script)
+        self.assertNotIn("WITH_GRANT_OPTION", script)
+        self.assertNotIn("revoke-permissions", script)
 
     def test_discovery_bootstrap_is_read_only_and_plan_first(self):
         script = (

@@ -120,20 +120,26 @@ try {
             $tokens[$Role] "POST" $body
     }
 
+    $readStatuses = [ordered]@{}
+    foreach ($role in $roles) {
+        $readStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens[$role]
+    }
+
     $checks = [ordered]@{
-        "viewer read allowed" = (Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens.viewer) -eq 200
+        "viewer read allowed" = $readStatuses.viewer -eq 200
         "viewer approve denied" = (Action-Status "viewer" "APPROVE") -eq 403
         "viewer complete denied" = (Action-Status "viewer" "COMPLETE") -eq 403
-        "operator read allowed" = (Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens.operator) -eq 200
+        "operator read allowed" = $readStatuses.operator -eq 200
         "operator approve denied" = (Action-Status "operator" "APPROVE") -eq 403
         "operator complete allowed by role" = (Action-Status "operator" "COMPLETE") -notin @(401, 403)
-        "approver read allowed" = (Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens.approver) -eq 200
+        "approver read allowed" = $readStatuses.approver -eq 200
         "approver approve allowed by role" = (Action-Status "approver" "APPROVE") -notin @(401, 403)
         "approver complete denied" = (Action-Status "approver" "COMPLETE") -eq 403
-        "administrator read allowed" = (Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens.administrator) -eq 200
+        "administrator read allowed" = $readStatuses.administrator -eq 200
         "administrator approve allowed by role" = (Action-Status "administrator" "APPROVE") -notin @(401, 403)
         "administrator complete allowed by role" = (Action-Status "administrator" "COMPLETE") -notin @(401, 403)
     }
+    Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
     foreach ($entry in $checks.GetEnumerator()) {
         Write-Host "$($entry.Key): $($entry.Value)"
     }

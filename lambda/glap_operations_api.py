@@ -8,6 +8,7 @@ forwards mutations with an actor derived from the authenticated identity.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import time
@@ -31,6 +32,7 @@ OPERATION_PERMISSION = {
     "COMPLETE": "actions:complete",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
+LOGGER = logging.getLogger(__name__)
 
 
 def _identifier(value: str) -> str:
@@ -45,6 +47,15 @@ def _response(status: int, body: dict[str, Any]) -> dict[str, Any]:
         "headers": {"content-type": "application/json", "cache-control": "no-store"},
         "body": json.dumps(body, separators=(",", ":"), default=str),
     }
+
+
+def _safe_aws_error_code(exc: Exception) -> str:
+    response = getattr(exc, "response", {})
+    if not isinstance(response, dict):
+        return "none"
+    error = response.get("Error") or {}
+    code = str(error.get("Code") or "none")
+    return code if re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", code) else "invalid"
 
 
 def _claim_groups(raw_groups: Any) -> list[str]:
@@ -180,5 +191,11 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         return _response(403, {"error": "forbidden", "message": str(exc), "request_id": request_id})
     except (ValueError, json.JSONDecodeError) as exc:
         return _response(400, {"error": "invalid_request", "message": str(exc), "request_id": request_id})
-    except Exception:
+    except Exception as exc:
+        LOGGER.error(
+            "operations_api_failure exception=%s aws_error=%s request_id_present=%s",
+            type(exc).__name__,
+            _safe_aws_error_code(exc),
+            bool(request_id),
+        )
         return _response(503, {"error": "service_unavailable", "request_id": request_id})
