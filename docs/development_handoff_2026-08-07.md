@@ -30,12 +30,18 @@ Selecting a Risk leads to the existing Decision Queue, using the same Alert
 fingerprint that links lifecycle Alerts to Actions. The private frontend and
 API were deployed to staging; public Pages continues to use synthetic examples.
 
+Outcome Review now completes the authenticated cockpit chain. It reads the
+latest operational Outcome for each completed Action through `GET /v1/outcomes`
+and distinguishes pending rows from mature actual-calendar evidence. The one
+current operational Outcome remains pending until `2026-08-09`, has no observed
+date or effect value, and is excluded from observed totals and average effect.
+
 ## Verification
 
 - Pull requests `#31`, `#36`-`#41` were merged; they cover the authenticated
   API, protected configuration, dedicated identity/hosting, deployment fixes,
   and staging quota compatibility.
-- 185 Python repository tests passed after adding Risk Hotspots and reliability
+- 188 Python repository tests passed after adding Outcome Review, Risk Hotspots, and reliability
   verification.
 - The standard frontend build, the internal static export, and all 3
   rendered-output/connection tests passed.
@@ -48,10 +54,13 @@ API were deployed to staging; public Pages continues to use synthetic examples.
 - Unauthenticated API requests return 401. CORS preflight succeeds only for the
   exact internal Amplify origin. Protected URLs and identifiers were not logged.
 - The complete authenticated role matrix passed in staging: all four roles read
-  both Risk Hotspots and the queue with HTTP 200; viewer, operator, approver,
-  and administrator allow and deny boundaries matched the contract.
+  Risk Hotspots, the queue, and Outcome Review with HTTP 200; viewer, operator,
+  approver, and administrator allow and deny boundaries matched the contract.
 - Risk Hotspots returned 15 open operational Alerts. Their response contract,
   `OPEN` filter, and Sydney cutoff dates passed runtime checks.
+- Outcome Review returned one pending operational Outcome and zero observed
+  Outcomes. The pending row had no observation date or effect value, and every
+  evidence/cutoff check passed.
 - The governed Alert table, Action view, and both direct backing tables have
   exact Glue and Lake Formation read permissions. No data write or grant option
   was added.
@@ -70,9 +79,9 @@ API were deployed to staging; public Pages continues to use synthetic examples.
 
 ## Next connection
 
-1. Connect Outcome Review to completed Actions and mature Outcomes through this
-   proven API boundary, while keeping pending `2026-08-09` data out of observed
-   evidence until that Sydney business date arrives.
+1. On or after `2026-08-09` Sydney time, run the actual-calendar observation for
+   the pending Outcome and verify Outcome Review transitions it to mature
+   evidence without changing the historical execution record.
 2. Keep public Pages built without the internal API URL.
 3. On or after the Sydney business date `2026-08-09`, run the actual-calendar
    observation for the pending Outcome. As of `2026-08-07`, it is still pending

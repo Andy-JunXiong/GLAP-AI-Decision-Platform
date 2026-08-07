@@ -35,6 +35,26 @@ export type OperationsRisk = {
   as_of_date: string;
 };
 
+export type OutcomeStatus = "PENDING" | "SUCCESSFUL" | "PARTIALLY_SUCCESSFUL" | "FAILED" | "INCONCLUSIVE";
+
+export type OperationsOutcome = {
+  outcome_id: string;
+  action_id: string;
+  alert_fingerprint: string;
+  shipment_id: string;
+  observation_due_date: string;
+  outcome_status: OutcomeStatus;
+  observed_date: string | null;
+  effect_pct: string | null;
+  outcome_version: string;
+  as_of_date: string;
+  evidence_status: "NOT_OBSERVED" | "OBSERVED_ACTUAL_CALENDAR";
+  action_type: string | null;
+  alert_type: string | null;
+  alert_severity: string | null;
+  action_status: ActionStatus | null;
+};
+
 type QueueResponse = {
   schema_version: "operations-api.v1";
   items: OperationsAction[];
@@ -44,6 +64,12 @@ type QueueResponse = {
 type RiskResponse = {
   schema_version: "operations-api.v1";
   items: OperationsRisk[];
+  next_token: string | null;
+};
+
+type OutcomeResponse = {
+  schema_version: "operations-api.v1";
+  items: OperationsOutcome[];
   next_token: string | null;
 };
 
@@ -89,6 +115,11 @@ export async function loadActionQueue(token: string, status?: ActionStatus) {
 export async function loadRiskHotspots(token: string, status?: RiskStatus) {
   const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
   return request<RiskResponse>(`/v1/risks${query}`, token);
+}
+
+export async function loadOutcomeReview(token: string, status?: OutcomeStatus) {
+  const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
+  return request<OutcomeResponse>(`/v1/outcomes${query}`, token);
 }
 
 export async function mutateAction(

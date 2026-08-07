@@ -42,6 +42,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /\/v1\/actions\/\$\{encodeURIComponent\(actionId\)\}\/events/);
   assert.match(client, /\/v1\/risks\$\{query\}/);
   assert.match(client, /export async function loadRiskHotspots/);
+  assert.match(client, /\/v1\/outcomes\$\{query\}/);
+  assert.match(client, /export async function loadOutcomeReview/);
   assert.match(client, /timeZone: "Australia\/Sydney"/);
   assert.doesNotMatch(client, /localStorage/);
 
@@ -55,4 +57,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /loadRiskHotspots\(token, "OPEN"\)/);
   assert.match(page, /title="Risk hotspots"/);
   assert.match(page, /onClick=\{\(\) => go\("decisions"\)\}/);
+  assert.match(page, /loadOutcomeReview\(token\)/);
+  assert.match(page, /title="Outcome review"/);
+  assert.match(page, /Not counted as actual evidence/);
+  assert.match(page, /OBSERVED_ACTUAL_CALENDAR/);
 });

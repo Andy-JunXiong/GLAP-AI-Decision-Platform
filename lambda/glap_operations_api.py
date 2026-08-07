@@ -22,13 +22,17 @@ WORKGROUP = os.getenv("ATHENA_WORKGROUP", "primary")
 OUTPUT = os.getenv("ATHENA_OUTPUT", "")
 ACTION_VIEW = os.getenv("LIFECYCLE_ACTION_CURRENT_VIEW", "vw_lifecycle_action_current_staging_v1")
 ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
+OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
 MUTATION_FUNCTION = os.getenv("ACTION_MUTATION_FUNCTION", "")
 ROLE_PERMISSIONS = {
-    "viewer": {"risks:read", "actions:read"},
-    "operator": {"risks:read", "actions:read", "actions:complete"},
-    "approver": {"risks:read", "actions:read", "actions:approve", "actions:reject"},
+    "viewer": {"risks:read", "actions:read", "outcomes:read"},
+    "operator": {"risks:read", "actions:read", "actions:complete", "outcomes:read"},
+    "approver": {
+        "risks:read", "actions:read", "actions:approve", "actions:reject", "outcomes:read",
+    },
     "administrator": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "actions:complete",
+        "outcomes:read",
     },
 }
 OPERATION_PERMISSION = {
@@ -182,6 +186,52 @@ ORDER BY CASE severity WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2
 LIMIT {limit}"""
 
 
+def build_outcome_review_query(limit: int, status: str | None, as_of_date: str) -> str:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    valid_statuses = {"PENDING", "SUCCESSFUL", "PARTIALLY_SUCCESSFUL", "FAILED", "INCONCLUSIVE"}
+    status_filter = ""
+    if status:
+        if status not in valid_statuses:
+            raise ValueError("Unsupported Outcome status filter")
+        status_filter = f" AND outcome_status = '{status}'"
+    return f"""WITH ranked_outcomes AS (
+    SELECT outcome_id, action_id, alert_fingerprint, shipment_id,
+           observation_due_date, status AS outcome_status, observed_date,
+           effect_pct, outcome_version, as_of_date,
+           row_number() OVER (
+               PARTITION BY outcome_id
+               ORDER BY try_cast(dt AS date) DESC, as_of_date DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(OUTCOME_TABLE)}
+    WHERE temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND try_cast(dt AS date) <= DATE '{as_of_date}'
+      AND (
+          (status = 'PENDING' AND observed_date IS NULL)
+          OR (status IN ('SUCCESSFUL', 'PARTIALLY_SUCCESSFUL', 'FAILED', 'INCONCLUSIVE')
+              AND observed_date <= DATE '{as_of_date}')
+      )
+), current_outcomes AS (
+    SELECT * FROM ranked_outcomes WHERE row_rank = 1
+)
+SELECT o.outcome_id, o.action_id, o.alert_fingerprint, o.shipment_id,
+       o.observation_due_date, o.outcome_status, o.observed_date,
+       o.effect_pct, o.outcome_version, o.as_of_date,
+       CASE WHEN o.outcome_status = 'PENDING' THEN 'NOT_OBSERVED'
+            ELSE 'OBSERVED_ACTUAL_CALENDAR' END AS evidence_status,
+       a.action_type, a.alert_type, a.alert_severity, a.status AS action_status
+FROM current_outcomes o
+LEFT JOIN {_identifier(DATABASE)}.{_identifier(ACTION_VIEW)} a
+  ON o.action_id = a.action_id AND a.temporal_scope_id = 'OPERATIONAL'
+WHERE 1 = 1{status_filter}
+ORDER BY CASE o.outcome_status WHEN 'PENDING' THEN 1 ELSE 2 END,
+         o.observation_due_date, o.outcome_id
+LIMIT {limit}"""
+
+
 def _parse_rows(response: dict[str, Any]) -> list[dict[str, str | None]]:
     result = response.get("ResultSet", {})
     rows = result.get("Rows", [])
@@ -234,6 +284,18 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             rows = _query_rows(
                 boto3.client("athena"),
                 build_risk_hotspots_query(limit, params.get("status"), _sydney_date()),
+            )
+            return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
+
+        if method == "GET" and path == "/v1/outcomes":
+            if "outcomes:read" not in permissions:
+                raise PermissionError("Role cannot read Outcomes")
+            import boto3
+            params = event.get("queryStringParameters") or {}
+            limit = min(max(int(params.get("limit", 50)), 1), 100)
+            rows = _query_rows(
+                boto3.client("athena"),
+                build_outcome_review_query(limit, params.get("status"), _sydney_date()),
             )
             return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
 

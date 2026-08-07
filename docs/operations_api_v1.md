@@ -1,18 +1,18 @@
 # Internal Operations API v1
 
 This is the authenticated, staging-only boundary between the internal Risk
-Hotspots / Decision Queue / Action Board journey and the governed lifecycle
-tables plus private append-only Action mutation function.
+Hotspots / Decision Queue / Action Board / Outcome Review journey and the
+governed lifecycle tables plus private append-only Action mutation function.
 Public GitHub Pages is not an API client and receives no write permission.
 
 ## Roles and permissions
 
-| Role | Read risks | Read queue | Approve | Reject | Complete |
-| --- | --- | --- | --- | --- | --- |
-| `viewer` | yes | yes | no | no | no |
-| `operator` | yes | yes | no | no | yes |
-| `approver` | yes | yes | yes | yes | no |
-| `administrator` | yes | yes | yes | yes | yes |
+| Role | Read risks | Read queue | Read outcomes | Approve | Reject | Complete |
+| --- | --- | --- | --- | --- | --- | --- |
+| `viewer` | yes | yes | yes | no | no | no |
+| `operator` | yes | yes | yes | no | no | yes |
+| `approver` | yes | yes | yes | yes | yes | no |
+| `administrator` | yes | yes | yes | yes | yes | yes |
 
 API Gateway validates the JWT issuer and audience. The adapter obtains the
 actor from signed `name`, `email`, or Cognito access-token `username` claims,
@@ -37,6 +37,14 @@ downstream Action.
 `GET /v1/actions?status=PROPOSED&limit=50` returns at most 100 operational,
 actual-calendar Action records. The v1 response is
 `{"schema_version":"operations-api.v1","items":[],"next_token":null}`.
+
+`GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
+Outcome version for each completed Action, bounded by the current Sydney date.
+Pending rows must have no `observed_date` or `effect_pct` and are labelled
+`NOT_OBSERVED`. Closed outcomes are returned only when `observed_date` is on or
+before the cutoff and are labelled `OBSERVED_ACTUAL_CALENDAR`. Supported status
+filters are `PENDING`, `SUCCESSFUL`, `PARTIALLY_SUCCESSFUL`, `FAILED`, and
+`INCONCLUSIVE`.
 
 `POST /v1/actions/{action_id}/events` accepts:
 
@@ -76,7 +84,8 @@ state. If another request consumes that state first, the losing request returns
 Gateway access-log filter counts 429 responses. See the
 [Operations API reliability runbook](runbooks/operations_api_reliability.md).
 
-Risk and queue reads use the existing governed Glue/Athena tables and view. The API execution role
+Risk, queue, and Outcome reads use the existing governed Glue/Athena tables and
+view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena
 workgroup, and S3 result/data permissions; it has no Glue writes or S3 deletes.
 Because IAM permission to request Lake Formation data is not itself a table
@@ -96,9 +105,11 @@ The script is plan-first and idempotent. It grants database `DESCRIBE` plus
 `vw_lifecycle_action_current_staging_v1` and its required backing audit table,
 `fact_lifecycle_action_audit_staging_v1`, and current-state table,
 `fact_lifecycle_action_staging_v1`, plus the operational Alert table
-`fact_lifecycle_alert_staging_v1`. Athena resolves stored views with the
+`fact_lifecycle_alert_staging_v1`, plus the operational Outcome table
+`fact_lifecycle_outcome_staging_v1`. Athena resolves stored views with the
 caller's permissions, so the Action view and both backing tables are required.
-The API role's Glue policy is restricted to those objects and the Alert table.
+The API role's Glue policy is restricted to those objects and the Alert and
+Outcome tables.
 The script grants no write access, no grant option, and no permission on other
 tables or views. Its output omits protected resource identifiers.
 
@@ -133,7 +144,9 @@ Amplify staging branch. It has no repository connection and does not reuse
 public GitHub Pages. Risk Hotspots reads current operational Alerts, a selected
 Alert leads into Decision Queue through the shared `alert_fingerprint`, and
 Action Board can approve, reject, or complete an Action after an administrator
-creates a user and assigns the appropriate group. The
+creates a user and assigns the appropriate group. Outcome Review then links the
+completed Action to its latest governed Outcome and separates pending rows from
+mature actual-calendar evidence. The
 browser obtains its short-lived access token through Cognito and keeps it only
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
@@ -148,18 +161,23 @@ checks with `ops/verify_operations_staging.ps1`.
 
 No persistent Cognito user is created automatically. An isolated runtime check
 created one temporary viewer, operator, approver, and administrator, verified
-Risk and queue reads plus every role-specific allow/deny boundary, then removed
-all four. All four Risk reads and queue reads returned HTTP 200. The Risk
+Risk, queue, and Outcome reads plus every role-specific allow/deny boundary,
+then removed all four. All reads returned HTTP 200 for all four roles. The Risk
 response contained 15 open operational Alerts, and every returned `as_of_date`
 was on or before the Sydney cutoff. The governed Alert table, Action view, and
-its two direct backing tables have exact read-only Glue and Lake Formation
+its two direct backing tables and the Outcome table have exact read-only Glue and Lake Formation
 permissions; no write or grant option was added. Reliability verification replayed one existing
 request sequentially and concurrently without adding an audit row, produced and
 recovered from a controlled 503, observed bounded 429 responses, verified both
 alarms moved through `ALARM` and back to `OK`, and confirmed the synchronous DLQ
 remained empty. Public GitHub Pages is still built without the internal API or
-Cognito variables, uses synthetic Risk examples, and cannot read private Alerts
-or submit these mutations.
+Cognito variables, uses synthetic Risk and Outcome examples, and cannot read
+private Alerts or Outcomes or submit these mutations.
+
+The Outcome runtime response contained one `PENDING` row and zero observed rows.
+The pending row had no observation date or effect value and remained explicitly
+`NOT_OBSERVED`; it is not performance, value, label-maturity, or promotion
+evidence before its `2026-08-09` Sydney due date.
 
 An IAM administrator can exercise the deployed allow/deny matrix without using
 real email addresses by running `ops/verify_operations_roles_staging.ps1` first

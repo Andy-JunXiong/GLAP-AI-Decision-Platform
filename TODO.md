@@ -118,6 +118,8 @@ Current implementation and release boundaries are recorded in the
 - [x] Connect authenticated Risk Hotspots to the latest operational Alert state,
   enforce the Sydney actual-calendar cutoff, and carry each Alert fingerprint
   into the existing Decision Queue / Action Board journey.
+- [x] Connect authenticated Outcome Review to completed Actions, show the latest
+  operational Outcome, and exclude pending rows from observed-effect evidence.
 - [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
   exists on or before the Sydney cutoff; do not use future simulations to pass
   the remaining `missing_provider_coverage` lifecycle check.
@@ -140,9 +142,8 @@ The governing date boundary is in the
 
 ### Future plan
 
-- [ ] Complete the remaining authenticated internal cockpit boundary by adding
-  Outcome Review after the connected Risk Hotspots, Decision Queue, and Action
-  Board journey.
+- [x] Complete the authenticated internal cockpit chain from Risk Hotspots
+  through Decision Queue, Action Board, and Outcome Review.
 - [ ] Accumulate actual-calendar closed Outcomes and route sufficient evidence
   only into separately reviewed policy proposals with rollback versions.
 - [ ] Reassess provider coverage and forecast/model readiness only when eligible

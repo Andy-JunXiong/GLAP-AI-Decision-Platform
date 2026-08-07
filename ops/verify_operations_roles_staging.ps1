@@ -130,9 +130,11 @@ try {
 
     $readStatuses = [ordered]@{}
     $riskReadStatuses = [ordered]@{}
+    $outcomeReadStatuses = [ordered]@{}
     foreach ($role in $roles) {
         $readStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens[$role]
         $riskReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/risks?status=OPEN&limit=1" $tokens[$role]
+        $outcomeReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/outcomes?limit=1" $tokens[$role]
     }
     $riskPayload = Invoke-ApiJson "$endpoint/v1/risks?status=OPEN&limit=100" $tokens.viewer
     $riskItems = @($riskPayload.items)
@@ -142,31 +144,61 @@ try {
         }
     ).Count -eq 0
     $riskStatusesValid = @($riskItems | Where-Object { $_.status -ne "OPEN" }).Count -eq 0
+    $outcomePayload = Invoke-ApiJson "$endpoint/v1/outcomes?limit=100" $tokens.viewer
+    $outcomeItems = @($outcomePayload.items)
+    $pendingOutcomes = @($outcomeItems | Where-Object { $_.outcome_status -eq "PENDING" })
+    $observedOutcomes = @($outcomeItems | Where-Object { $_.outcome_status -ne "PENDING" })
+    $outcomeCutoffValid = @(
+        $outcomeItems | Where-Object {
+            -not $_.as_of_date -or [datetime]$_.as_of_date -gt [datetime]$logicalDate -or
+            ($_.observed_date -and [datetime]$_.observed_date -gt [datetime]$logicalDate)
+        }
+    ).Count -eq 0
+    $pendingEvidenceValid = @(
+        $pendingOutcomes | Where-Object {
+            $_.observed_date -or $_.effect_pct -or $_.evidence_status -ne "NOT_OBSERVED"
+        }
+    ).Count -eq 0
+    $observedEvidenceValid = @(
+        $observedOutcomes | Where-Object {
+            -not $_.observed_date -or $_.evidence_status -ne "OBSERVED_ACTUAL_CALENDAR"
+        }
+    ).Count -eq 0
 
     $checks = [ordered]@{
         "viewer read allowed" = $readStatuses.viewer -eq 200
         "viewer risk read allowed" = $riskReadStatuses.viewer -eq 200
+        "viewer outcome read allowed" = $outcomeReadStatuses.viewer -eq 200
         "risk response contract valid" = $riskPayload.schema_version -eq "operations-api.v1"
         "risk cutoff dates valid" = $riskDatesValid
         "risk status filter valid" = $riskStatusesValid
+        "outcome response contract valid" = $outcomePayload.schema_version -eq "operations-api.v1"
+        "outcome cutoff dates valid" = $outcomeCutoffValid
+        "pending outcomes remain not observed" = $pendingEvidenceValid
+        "observed outcome evidence valid" = $observedEvidenceValid
         "viewer approve denied" = (Action-Status "viewer" "APPROVE") -eq 403
         "viewer complete denied" = (Action-Status "viewer" "COMPLETE") -eq 403
         "operator read allowed" = $readStatuses.operator -eq 200
         "operator risk read allowed" = $riskReadStatuses.operator -eq 200
+        "operator outcome read allowed" = $outcomeReadStatuses.operator -eq 200
         "operator approve denied" = (Action-Status "operator" "APPROVE") -eq 403
         "operator complete allowed by role" = (Action-Status "operator" "COMPLETE") -notin @(401, 403)
         "approver read allowed" = $readStatuses.approver -eq 200
         "approver risk read allowed" = $riskReadStatuses.approver -eq 200
+        "approver outcome read allowed" = $outcomeReadStatuses.approver -eq 200
         "approver approve allowed by role" = (Action-Status "approver" "APPROVE") -notin @(401, 403)
         "approver complete denied" = (Action-Status "approver" "COMPLETE") -eq 403
         "administrator read allowed" = $readStatuses.administrator -eq 200
         "administrator risk read allowed" = $riskReadStatuses.administrator -eq 200
+        "administrator outcome read allowed" = $outcomeReadStatuses.administrator -eq 200
         "administrator approve allowed by role" = (Action-Status "administrator" "APPROVE") -notin @(401, 403)
         "administrator complete allowed by role" = (Action-Status "administrator" "COMPLETE") -notin @(401, 403)
     }
     Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
     Write-Host "Risk read HTTP statuses: viewer=$($riskReadStatuses.viewer), operator=$($riskReadStatuses.operator), approver=$($riskReadStatuses.approver), administrator=$($riskReadStatuses.administrator)"
+    Write-Host "Outcome read HTTP statuses: viewer=$($outcomeReadStatuses.viewer), operator=$($outcomeReadStatuses.operator), approver=$($outcomeReadStatuses.approver), administrator=$($outcomeReadStatuses.administrator)"
     Write-Host "Open operational Risk rows returned: $($riskItems.Count)"
+    Write-Host "Operational Outcome rows returned: pending=$($pendingOutcomes.Count), observed=$($observedOutcomes.Count)"
     foreach ($entry in $checks.GetEnumerator()) {
         Write-Host "$($entry.Key): $($entry.Value)"
     }
