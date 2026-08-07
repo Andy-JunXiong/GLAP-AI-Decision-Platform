@@ -1,17 +1,18 @@
 # Internal Operations API v1
 
-This is the authenticated, staging-only boundary between the internal Decision
-Queue / Action Board and the private append-only Action mutation function.
+This is the authenticated, staging-only boundary between the internal Risk
+Hotspots / Decision Queue / Action Board journey and the governed lifecycle
+tables plus private append-only Action mutation function.
 Public GitHub Pages is not an API client and receives no write permission.
 
 ## Roles and permissions
 
-| Role | Read queue | Approve | Reject | Complete |
-| --- | --- | --- | --- | --- |
-| `viewer` | yes | no | no | no |
-| `operator` | yes | no | no | yes |
-| `approver` | yes | yes | yes | no |
-| `administrator` | yes | yes | yes | yes |
+| Role | Read risks | Read queue | Approve | Reject | Complete |
+| --- | --- | --- | --- | --- | --- |
+| `viewer` | yes | yes | no | no | no |
+| `operator` | yes | yes | no | no | yes |
+| `approver` | yes | yes | yes | yes | no |
+| `administrator` | yes | yes | yes | yes | yes |
 
 API Gateway validates the JWT issuer and audience. The adapter obtains the
 actor from signed `name`, `email`, or Cognito access-token `username` claims,
@@ -25,6 +26,13 @@ client does not persist it in local storage. Token acquisition and refresh stay
 owned by that shell and are not simulated by the public demonstration.
 
 ## Endpoints
+
+`GET /v1/risks?status=OPEN&limit=50` returns at most 100 latest operational
+Alert records. The server uses the current Australia/Sydney date as its cutoff,
+requires `OPERATIONAL` scope and execution mode plus `ACTUAL_CALENDAR` time
+basis, and excludes later-dated rows. `status` may be `OPEN` or `RESOLVED`.
+The `alert_fingerprint` in each item is the same governed key carried into a
+downstream Action.
 
 `GET /v1/actions?status=PROPOSED&limit=50` returns at most 100 operational,
 actual-calendar Action records. The v1 response is
@@ -68,7 +76,7 @@ state. If another request consumes that state first, the losing request returns
 Gateway access-log filter counts 429 responses. See the
 [Operations API reliability runbook](runbooks/operations_api_reliability.md).
 
-Queue reads use the existing governed Glue/Athena view. The API execution role
+Risk and queue reads use the existing governed Glue/Athena tables and view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena
 workgroup, and S3 result/data permissions; it has no Glue writes or S3 deletes.
 Because IAM permission to request Lake Formation data is not itself a table
@@ -87,11 +95,12 @@ The script is plan-first and idempotent. It grants database `DESCRIBE` plus
 `SELECT` and `DESCRIBE` on
 `vw_lifecycle_action_current_staging_v1` and its required backing audit table,
 `fact_lifecycle_action_audit_staging_v1`, and current-state table,
-`fact_lifecycle_action_staging_v1`. Athena resolves stored views with the
-caller's permissions, so all three objects are required. The API role's Glue
-policy is restricted to those same objects. The script grants no write access,
-no grant option, and no permission on other tables or views. Its output omits
-protected resource identifiers.
+`fact_lifecycle_action_staging_v1`, plus the operational Alert table
+`fact_lifecycle_alert_staging_v1`. Athena resolves stored views with the
+caller's permissions, so the Action view and both backing tables are required.
+The API role's Glue policy is restricted to those objects and the Alert table.
+The script grants no write access, no grant option, and no permission on other
+tables or views. Its output omits protected resource identifiers.
 
 ## One-time protected-configuration discovery bootstrap
 
@@ -121,9 +130,10 @@ deployment tools, and browser client are implemented in the repository. The
 dedicated identity stack creates an administrator-managed Cognito pool, four
 role groups, an authorization-code-with-PKCE web client, and a manually deployed
 Amplify staging branch. It has no repository connection and does not reuse
-public GitHub Pages. Decision Queue reads the
-operational queue and Action Board can approve, reject, or complete an Action
-after an administrator creates a user and assigns the appropriate group. The
+public GitHub Pages. Risk Hotspots reads current operational Alerts, a selected
+Alert leads into Decision Queue through the shared `alert_fingerprint`, and
+Action Board can approve, reject, or complete an Action after an administrator
+creates a user and assigns the appropriate group. The
 browser obtains its short-lived access token through Cognito and keeps it only
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
@@ -138,15 +148,18 @@ checks with `ops/verify_operations_staging.ps1`.
 
 No persistent Cognito user is created automatically. An isolated runtime check
 created one temporary viewer, operator, approver, and administrator, verified
-queue reads and every role-specific allow/deny boundary, then removed all four.
-All four queue reads returned HTTP 200. The governed view and its two direct
-backing tables have exact read-only Glue and Lake Formation permissions; no
-write or grant option was added. Reliability verification replayed one existing
+Risk and queue reads plus every role-specific allow/deny boundary, then removed
+all four. All four Risk reads and queue reads returned HTTP 200. The Risk
+response contained 15 open operational Alerts, and every returned `as_of_date`
+was on or before the Sydney cutoff. The governed Alert table, Action view, and
+its two direct backing tables have exact read-only Glue and Lake Formation
+permissions; no write or grant option was added. Reliability verification replayed one existing
 request sequentially and concurrently without adding an audit row, produced and
 recovered from a controlled 503, observed bounded 429 responses, verified both
 alarms moved through `ALARM` and back to `OK`, and confirmed the synchronous DLQ
 remained empty. Public GitHub Pages is still built without the internal API or
-Cognito variables and cannot submit these mutations.
+Cognito variables, uses synthetic Risk examples, and cannot read private Alerts
+or submit these mutations.
 
 An IAM administrator can exercise the deployed allow/deny matrix without using
 real email addresses by running `ops/verify_operations_roles_staging.ps1` first

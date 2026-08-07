@@ -70,7 +70,8 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         script = (
             ROOT / "ops" / "verify_operations_staging.ps1"
         ).read_text(encoding="utf-8")
-        self.assertIn("Unauthenticated API rejected with 401", script)
+        self.assertIn("Unauthenticated API routes rejected with 401", script)
+        self.assertIn("/v1/risks?limit=1", script)
         self.assertIn("CORS origin exact match", script)
         self.assertIn("API alarms present", script)
         self.assertIn("API alarms currently OK", script)

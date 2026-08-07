@@ -8,7 +8,8 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
     def test_api_is_jwt_protected_and_staging_scoped(self):
         template = (ROOT / "infrastructure" / "operations-api-staging.yaml").read_text(encoding="utf-8")
         self.assertIn("AuthorizerType: JWT", template)
-        self.assertEqual(template.count("AuthorizationType: JWT"), 2)
+        self.assertEqual(template.count("AuthorizationType: JWT"), 3)
+        self.assertIn("GET /v1/risks", template)
         self.assertIn("GET /v1/actions", template)
         self.assertIn("POST /v1/actions/{action_id}/events", template)
         self.assertIn("glap-operations-api-staging", template)
@@ -37,6 +38,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("vw_lifecycle_action_current_staging_v1", template)
         self.assertIn("fact_lifecycle_action_audit_staging_v1", template)
         self.assertIn("fact_lifecycle_action_staging_v1", template)
+        self.assertIn("fact_lifecycle_alert_staging_v1", template)
         self.assertIn("Action: lakeformation:GetDataAccess", template)
         self.assertNotIn("glue:UpdateTable", template)
         self.assertNotIn("s3:DeleteObject", template)
@@ -58,6 +60,9 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
             ROOT / "ops" / "verify_operations_roles_staging.ps1"
         ).read_text(encoding="utf-8")
         self.assertIn("Queue read HTTP statuses:", role_verifier)
+        self.assertIn("Risk read HTTP statuses:", role_verifier)
+        self.assertIn("risk cutoff dates valid", role_verifier)
+        self.assertIn("risk status filter valid", role_verifier)
         self.assertNotIn("Tokens or user identifiers printed: True", role_verifier)
 
         workflow = (ROOT / ".github" / "workflows" / "deploy-operations-api-staging.yml").read_text(encoding="utf-8")
@@ -105,6 +110,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("fact_lifecycle_action_audit_staging_v1", script)
         self.assertIn("fact_lifecycle_action_staging_v1", script)
         self.assertIn("Two backing Action tables: SELECT, DESCRIBE", script)
+        self.assertIn("Operational Alert table: SELECT, DESCRIBE", script)
         self.assertIn("Other tables or views: False", script)
         self.assertIn("Write or grantable permissions: False", script)
         self.assertIn("[System.Text.UTF8Encoding]::new($false)", script)
