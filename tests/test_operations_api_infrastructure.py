@@ -32,6 +32,10 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("Plan only", script)
         self.assertIn("glap_operations_api.py", script)
         self.assertIn("Public Pages write access: False", script)
+        self.assertIn("JWT issuer configured:", script)
+        self.assertIn("Allowed origin configured:", script)
+        self.assertNotIn('Write-Host "  JWT issuer: $JwtIssuer"', script)
+        self.assertNotIn('Write-Host "  Allowed origin: $AllowedOrigin"', script)
         self.assertNotIn("update-alias", script.lower())
 
         workflow = (ROOT / ".github" / "workflows" / "deploy-operations-api-staging.yml").read_text(encoding="utf-8")
