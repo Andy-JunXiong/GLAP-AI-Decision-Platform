@@ -131,10 +131,12 @@ try {
     $readStatuses = [ordered]@{}
     $riskReadStatuses = [ordered]@{}
     $outcomeReadStatuses = [ordered]@{}
+    $healthReadStatuses = [ordered]@{}
     foreach ($role in $roles) {
         $readStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens[$role]
         $riskReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/risks?status=OPEN&limit=1" $tokens[$role]
         $outcomeReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/outcomes?limit=1" $tokens[$role]
+        $healthReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/pipeline-health" $tokens[$role]
     }
     $riskPayload = Invoke-ApiJson "$endpoint/v1/risks?status=OPEN&limit=100" $tokens.viewer
     $riskItems = @($riskPayload.items)
@@ -164,11 +166,31 @@ try {
             -not $_.observed_date -or $_.evidence_status -ne "OBSERVED_ACTUAL_CALENDAR"
         }
     ).Count -eq 0
+    $healthPayload = Invoke-ApiJson "$endpoint/v1/pipeline-health" $tokens.viewer
+    $healthStages = @($healthPayload.stages)
+    $expectedStages = @(
+        "generation", "raw_to_iceberg", "input_validation",
+        "decision_pipeline", "decision_flywheel", "output_validation"
+    )
+    $healthStageContractValid = $healthStages.Count -eq 6 -and `
+        (($healthStages | ForEach-Object name) -join ",") -eq ($expectedStages -join ",")
+    $healthTemporalBoundaryValid = -not $healthPayload.logical_run_date -or `
+        [datetime]$healthPayload.logical_run_date -le [datetime]$logicalDate
+    $healthQualityContractValid = [int]$healthPayload.quality_checks_total -eq 10 -and `
+        [int]$healthPayload.quality_checks_succeeded -le 10
+    $healthSafeJson = $healthPayload | ConvertTo-Json -Depth 10 -Compress
+    $healthRedacted = $healthSafeJson -notmatch 'function_name|s3://|arn:'
 
     $checks = [ordered]@{
         "viewer read allowed" = $readStatuses.viewer -eq 200
         "viewer risk read allowed" = $riskReadStatuses.viewer -eq 200
         "viewer outcome read allowed" = $outcomeReadStatuses.viewer -eq 200
+        "viewer pipeline health read allowed" = $healthReadStatuses.viewer -eq 200
+        "pipeline health response contract valid" = $healthPayload.schema_version -eq "operations-api.v1"
+        "pipeline health six-stage contract valid" = $healthStageContractValid
+        "pipeline health temporal boundary valid" = $healthTemporalBoundaryValid
+        "pipeline health quality contract valid" = $healthQualityContractValid
+        "pipeline health infrastructure identifiers redacted" = $healthRedacted
         "risk response contract valid" = $riskPayload.schema_version -eq "operations-api.v1"
         "risk cutoff dates valid" = $riskDatesValid
         "risk status filter valid" = $riskStatusesValid
@@ -181,24 +203,29 @@ try {
         "operator read allowed" = $readStatuses.operator -eq 200
         "operator risk read allowed" = $riskReadStatuses.operator -eq 200
         "operator outcome read allowed" = $outcomeReadStatuses.operator -eq 200
+        "operator pipeline health read allowed" = $healthReadStatuses.operator -eq 200
         "operator approve denied" = (Action-Status "operator" "APPROVE") -eq 403
         "operator complete allowed by role" = (Action-Status "operator" "COMPLETE") -notin @(401, 403)
         "approver read allowed" = $readStatuses.approver -eq 200
         "approver risk read allowed" = $riskReadStatuses.approver -eq 200
         "approver outcome read allowed" = $outcomeReadStatuses.approver -eq 200
+        "approver pipeline health read allowed" = $healthReadStatuses.approver -eq 200
         "approver approve allowed by role" = (Action-Status "approver" "APPROVE") -notin @(401, 403)
         "approver complete denied" = (Action-Status "approver" "COMPLETE") -eq 403
         "administrator read allowed" = $readStatuses.administrator -eq 200
         "administrator risk read allowed" = $riskReadStatuses.administrator -eq 200
         "administrator outcome read allowed" = $outcomeReadStatuses.administrator -eq 200
+        "administrator pipeline health read allowed" = $healthReadStatuses.administrator -eq 200
         "administrator approve allowed by role" = (Action-Status "administrator" "APPROVE") -notin @(401, 403)
         "administrator complete allowed by role" = (Action-Status "administrator" "COMPLETE") -notin @(401, 403)
     }
     Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
     Write-Host "Risk read HTTP statuses: viewer=$($riskReadStatuses.viewer), operator=$($riskReadStatuses.operator), approver=$($riskReadStatuses.approver), administrator=$($riskReadStatuses.administrator)"
     Write-Host "Outcome read HTTP statuses: viewer=$($outcomeReadStatuses.viewer), operator=$($outcomeReadStatuses.operator), approver=$($outcomeReadStatuses.approver), administrator=$($outcomeReadStatuses.administrator)"
+    Write-Host "Pipeline Health read HTTP statuses: viewer=$($healthReadStatuses.viewer), operator=$($healthReadStatuses.operator), approver=$($healthReadStatuses.approver), administrator=$($healthReadStatuses.administrator)"
     Write-Host "Open operational Risk rows returned: $($riskItems.Count)"
     Write-Host "Operational Outcome rows returned: pending=$($pendingOutcomes.Count), observed=$($observedOutcomes.Count)"
+    Write-Host "Pipeline Health summary: status=$($healthPayload.status), logical_run_date=$($healthPayload.logical_run_date), stages=$($healthPayload.stages_succeeded)/$($healthPayload.stage_count), quality_checks=$($healthPayload.quality_checks_succeeded)/$($healthPayload.quality_checks_total)"
     foreach ($entry in $checks.GetEnumerator()) {
         Write-Host "$($entry.Key): $($entry.Value)"
     }

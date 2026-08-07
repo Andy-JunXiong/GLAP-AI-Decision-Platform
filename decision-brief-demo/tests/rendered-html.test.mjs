@@ -44,6 +44,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /export async function loadRiskHotspots/);
   assert.match(client, /\/v1\/outcomes\$\{query\}/);
   assert.match(client, /export async function loadOutcomeReview/);
+  assert.match(client, /\/v1\/pipeline-health/);
+  assert.match(client, /export async function loadPipelineHealth/);
   assert.match(client, /timeZone: "Australia\/Sydney"/);
   assert.doesNotMatch(client, /localStorage/);
 
@@ -61,4 +63,7 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /title="Outcome review"/);
   assert.match(page, /Not counted as actual evidence/);
   assert.match(page, /OBSERVED_ACTUAL_CALENDAR/);
+  assert.match(page, /title="Pipeline Health"/);
+  assert.match(page, /Open recovery runbook/);
+  assert.match(page, /Future simulations cannot be presented as current pipeline health/);
 });

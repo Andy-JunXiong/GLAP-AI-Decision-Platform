@@ -48,6 +48,12 @@ try {
 } catch {
     $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
 }
+try {
+    Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/pipeline-health") `
+        -UseBasicParsing -TimeoutSec 20 | Out-Null
+} catch {
+    $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
+}
 $preflight = Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/actions") `
     -Method Options -Headers @{
         Origin = $origin
@@ -72,7 +78,7 @@ $checks = [ordered]@{
     "API Lambda active" = $function.State -eq "Active" -and $function.LastUpdateStatus -eq "Successful"
     "Internal frontend HTTP 200" = $site.StatusCode -eq 200
     "Internal sign-in rendered" = $site.Content -match "Internal sign in"
-    "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq 3 -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
+    "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq 4 -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
     "CORS preflight successful" = $preflight.StatusCode -ge 200 -and $preflight.StatusCode -lt 300
     "CORS origin exact match" = $preflight.Headers["access-control-allow-origin"] -eq $origin
     "API alarms present" = [int]$alarmCount -ge 2

@@ -40,6 +40,7 @@ jobs:
       JWT_ISSUER: ${{ vars.GLAP_OPERATIONS_JWT_ISSUER }}
       JWT_AUDIENCE: ${{ vars.GLAP_OPERATIONS_JWT_AUDIENCE }}
       INTERNAL_ORIGIN: ${{ vars.GLAP_OPERATIONS_INTERNAL_ORIGIN }}
+      PIPELINE_STATUS_S3_URI: ${{ vars.GLAP_PIPELINE_STATUS_S3_URI }}
 
     steps:
       - uses: actions/checkout@v7
@@ -67,12 +68,12 @@ jobs:
           role-session-name: glap-operations-api-${{ github.run_id }}
 
       - name: Resolve protected staging configuration privately
-        if: env.JWT_ISSUER == '' || env.JWT_AUDIENCE == '' || env.INTERNAL_ORIGIN == ''
         shell: bash
         run: |
           issuer="$JWT_ISSUER"
           audience="$JWT_AUDIENCE"
           origin="$INTERNAL_ORIGIN"
+          pipeline_status_uri="$PIPELINE_STATUS_S3_URI"
 
           if [[ -z "$issuer" || -z "$audience" || -z "$origin" ]]; then
             if identity_outputs=$(aws cloudformation describe-stacks \
@@ -135,13 +136,26 @@ jobs:
             origin="https://${origins[0]}"
           fi
 
+          if [[ -z "$pipeline_status_uri" ]]; then
+            reliability_outputs=$(aws cloudformation describe-stacks \
+              --stack-name glap-pipeline-reliability-staging --output json)
+            pipeline_status_uri=$(jq -r '[.Stacks[0].Outputs[] | select(.OutputKey == "PipelineStatusS3Uri") | .OutputValue][0] // empty' <<< "$reliability_outputs")
+          fi
+
+          partition=$(aws sts get-caller-identity --query Arn --output text | cut -d: -f2)
+          pipeline_status_object_arn="arn:${partition}:s3:::${pipeline_status_uri#s3://}"
+
           echo "::add-mask::$issuer"
           echo "::add-mask::$audience"
           echo "::add-mask::$origin"
+          echo "::add-mask::$pipeline_status_uri"
+          echo "::add-mask::$pipeline_status_object_arn"
           {
             echo "JWT_ISSUER=$issuer"
             echo "JWT_AUDIENCE=$audience"
             echo "INTERNAL_ORIGIN=$origin"
+            echo "PIPELINE_STATUS_S3_URI=$pipeline_status_uri"
+            echo "PIPELINE_STATUS_OBJECT_ARN=$pipeline_status_object_arn"
           } >> "$GITHUB_ENV"
 
       - name: Validate protected staging configuration
@@ -150,6 +164,8 @@ jobs:
           [[ "$JWT_ISSUER" =~ ^https://[^[:space:]]+$ ]]
           [[ "$JWT_AUDIENCE" =~ ^[A-Za-z0-9._:/-]{3,255}$ ]]
           [[ "$INTERNAL_ORIGIN" =~ ^https://[^/[:space:]]+$ ]]
+          [[ "$PIPELINE_STATUS_S3_URI" =~ ^s3://[^/]+/.+ ]]
+          [[ "$PIPELINE_STATUS_OBJECT_ARN" =~ ^arn:[^:]+:s3:::[^/]+/.+ ]]
 
       - name: Verify private dependencies
         shell: bash
@@ -169,6 +185,8 @@ jobs:
             -AthenaOutputUri $env:ATHENA_OUTPUT `
             -AthenaResultsBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
             -LifecycleDataBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
+            -PipelineStatusS3Uri $env:PIPELINE_STATUS_S3_URI `
+            -PipelineStatusObjectArn $env:PIPELINE_STATUS_OBJECT_ARN `
             -AllowedOrigin $env:INTERNAL_ORIGIN
 
       - name: Deploy authenticated staging API
@@ -184,6 +202,8 @@ jobs:
             -AthenaOutputUri $env:ATHENA_OUTPUT `
             -AthenaResultsBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
             -LifecycleDataBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
+            -PipelineStatusS3Uri $env:PIPELINE_STATUS_S3_URI `
+            -PipelineStatusObjectArn $env:PIPELINE_STATUS_OBJECT_ARN `
             -AllowedOrigin $env:INTERNAL_ORIGIN `
             -Apply
 
@@ -196,6 +216,7 @@ jobs:
             echo "- Requested action: \`${{ github.event_name == 'workflow_dispatch' && inputs.action || 'plan' }}\`"
             echo "- JWT configuration source: protected staging variables"
             echo "- Public Pages write access: \`false\`"
+            echo "- Private Pipeline Health source configured: \`true\`"
             echo "- Schedule created: \`false\`"
             echo "- Production alias changed: \`false\`"
             echo "- Runtime role tests completed: \`false\` (separate named identities required)"

@@ -5,6 +5,7 @@ param(
     [string]$RoleName = "glap-github-staging-deployer",
     [string]$PolicyName = "GLAPOperationsIdentityDiscovery",
     [string]$IdentityStackName = "glap-operations-identity-staging",
+    [string]$PipelineReliabilityStackName = "glap-pipeline-reliability-staging",
     [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [switch]$Apply
@@ -13,7 +14,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 foreach ($name in @(
-    $RoleName, $PolicyName, $IdentityStackName, $ActionMutationFunctionName
+    $RoleName, $PolicyName, $IdentityStackName, $PipelineReliabilityStackName,
+    $ActionMutationFunctionName
 )) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
         throw "Role and policy names must use safe AWS characters"
@@ -64,7 +66,10 @@ $policy = @{
             Sid = "ReadDedicatedOperationsIdentityOutputs"
             Effect = "Allow"
             Action = "cloudformation:DescribeStacks"
-            Resource = "arn:aws:cloudformation:${Region}:${accountId}:stack/${IdentityStackName}/*"
+            Resource = @(
+                "arn:aws:cloudformation:${Region}:${accountId}:stack/${IdentityStackName}/*",
+                "arn:aws:cloudformation:${Region}:${accountId}:stack/${PipelineReliabilityStackName}/*"
+            )
         },
         @{
             Sid = "VerifyOperationsMutationDependency"
@@ -91,6 +96,7 @@ Write-Host "  Role: $RoleName"
 Write-Host "  Separate inline policy: $PolicyName"
 Write-Host "  Cognito and origin discovery: Read only"
 Write-Host "  Dedicated identity stack outputs: Read only"
+Write-Host "  Pipeline reliability stack output: Read only"
 Write-Host "  Named Lambda and Glue dependencies: Read only"
 Write-Host "  Deployment permissions: False"
 Write-Host "  Self-modifying deployer permission: False"

@@ -5,10 +5,12 @@ import {
   ActionOperation,
   OperationsAction,
   OperationsOutcome,
+  PipelineHealth as PipelineHealthData,
   OperationsRisk,
   internalOperationsEnabled,
   loadActionQueue,
   loadOutcomeReview,
+  loadPipelineHealth,
   loadRiskHotspots,
   mutateAction,
   readOperationsToken,
@@ -22,7 +24,7 @@ import {
 } from "./operations-auth";
 import "./operations.css";
 
-type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "brief";
+type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "health" | "brief";
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: "overview", label: "Control Tower", icon: "⌂" },
@@ -31,6 +33,7 @@ const navItems: { id: View; label: string; icon: string }[] = [
   { id: "shipments", label: "Shipments", icon: "▣" },
   { id: "outcomes", label: "Outcomes", icon: "↗" },
   { id: "actions", label: "Action Board", icon: "A" },
+  { id: "health", label: "Pipeline Health", icon: "H" },
 ];
 
 const signals = [
@@ -65,10 +68,15 @@ export default function Home() {
   const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
   const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
+  const [pipelineHealth, setPipelineHealth] = useState<PipelineHealthData | null>(null);
   const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [operationsMessage, setOperationsMessage] = useState("");
+  const [healthState, setHealthState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+    internalOperationsEnabled() ? "loading" : "demo",
+  );
+  const [healthMessage, setHealthMessage] = useState("");
   const [signedIn, setSignedIn] = useState(false);
 
   const refreshOperations = useCallback(async () => {
@@ -97,12 +105,31 @@ export default function Home() {
     }
   }, []);
 
+  const refreshPipelineHealth = useCallback(async () => {
+    if (!internalOperationsEnabled()) return;
+    const token = readOperationsToken();
+    if (!token) {
+      setHealthState("auth_required");
+      setHealthMessage("Sign in through the approved internal identity provider.");
+      return;
+    }
+    setHealthState("loading");
+    try {
+      setPipelineHealth(await loadPipelineHealth(token));
+      setHealthState("connected");
+      setHealthMessage("");
+    } catch (error) {
+      setHealthState("error");
+      setHealthMessage(error instanceof Error ? error.message : "Unable to load Pipeline Health");
+    }
+  }, []);
+
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
       void finishOperationsSignIn()
         .then(() => {
           setSignedIn(operationsSignedIn());
-          return refreshOperations();
+          return Promise.all([refreshOperations(), refreshPipelineHealth()]);
         })
         .catch((error) => {
           setOperationsState("error");
@@ -110,7 +137,7 @@ export default function Home() {
         });
     }, 0);
     return () => window.clearTimeout(initialLoad);
-  }, [refreshOperations]);
+  }, [refreshOperations, refreshPipelineHealth]);
 
   const submitOperation = useCallback(async (
     actionId: string, operation: ActionOperation, reason: string,
@@ -184,6 +211,7 @@ export default function Home() {
         {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments go={go} />}
         {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
+        {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
         {view === "brief" && (
           <DecisionBrief
             diverted={diverted}
@@ -377,6 +405,44 @@ function OperationsState({ state, message }: {
   if (state === "connected" || state === "demo") return null;
   const copy = state === "loading" ? "Loading the authenticated operational queue…" : message;
   return <p className="data-disclaimer" role={state === "error" ? "alert" : "status"}>{copy}</p>;
+}
+
+function PipelineHealth({ health, state, message, refresh }: {
+  health: PipelineHealthData | null;
+  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  message: string;
+  refresh: () => Promise<void>;
+}) {
+  if (state === "demo") return <div className="page">
+    <PageTitle eyebrow="RELIABILITY" title="Pipeline Health" copy="Stage-level operational diagnostics are available only inside the authenticated staging cockpit." />
+    <p className="data-disclaimer">The public demonstration does not expose private pipeline stages, infrastructure details, or operational runbooks.</p>
+  </div>;
+  const label = (value: string) => value.replaceAll("_", " ");
+  return <div className="page">
+    <PageTitle eyebrow="RELIABILITY" title="Pipeline Health" copy="See where the latest operational run is healthy, delayed, or blocked before its data reaches decisions." action={<button className="outline-button" onClick={() => void refresh()}>Refresh health</button>} />
+    <OperationsState state={state} message={message} />
+    {state === "connected" && health && <>
+      <section className="metric-grid compact">
+        <Metric label="Run status" value={label(health.status)} note={`Freshness: ${label(health.freshness_status)}`} tone={health.status === "current" ? "green" : health.status === "failed" ? "red" : "amber"} />
+        <Metric label="Stages succeeded" value={`${health.stages_succeeded}/${health.stage_count}`} note="Required execution order" />
+        <Metric label="Quality checks" value={`${health.quality_checks_succeeded}/${health.quality_checks_total}`} note="Input and output gates" />
+        <Metric label="Logical run date" value={health.logical_run_date ?? "Unverified"} note={`Sydney cutoff ${health.as_of_date}`} />
+      </section>
+      {(health.failed_stage || health.failure_category || health.status === "unverified") && <article className="pipeline-alert" role="alert">
+        <div><strong>{health.failed_stage ? `Attention at ${label(health.failed_stage)}` : "Pipeline evidence needs attention"}</strong><span>{health.failure_category ? label(health.failure_category) : `Status is ${label(health.status)}`}</span></div>
+        <a href={health.runbook_url} target="_blank" rel="noreferrer">Open recovery runbook</a>
+      </article>}
+      <section className="pipeline-stage-grid">
+        {health.stages.map((stage, index) => <article className={`pipeline-stage ${stage.status}`} key={stage.name}>
+          <div className="pipeline-stage-head"><span>{index + 1}</span><div><small>Stage {index + 1}</small><strong>{label(stage.name)}</strong></div><b>{label(stage.status)}</b></div>
+          <dl><div><dt>Duration</dt><dd>{stage.duration_ms === null ? "—" : `${(stage.duration_ms / 1000).toFixed(1)}s`}</dd></div><div><dt>Completed</dt><dd>{stage.completed_at ? new Date(stage.completed_at).toLocaleString("en-AU", { timeZone: "Australia/Sydney" }) : "—"}</dd></div></dl>
+          {stage.failure_category && <p className="pipeline-failure">{label(stage.failure_category)}</p>}
+          {stage.quality_checks.length > 0 && <ul className="pipeline-checks">{stage.quality_checks.map((check) => <li key={check.name}><i className={check.status} />{label(check.name)}<b>{check.status}</b></li>)}</ul>}
+        </article>)}
+      </section>
+      <p className="data-disclaimer">This view contains operational actual-calendar evidence only. Future simulations cannot be presented as current pipeline health.</p>
+    </>}
+  </div>;
 }
 
 function Shipments({ go }: { go: (view: View) => void }) {

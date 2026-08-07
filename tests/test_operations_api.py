@@ -28,6 +28,33 @@ def request(method="GET", path="/v1/actions", groups="viewer", body=None):
     }
 
 
+def pipeline_run(logical_run_date="2026-08-07"):
+    stages = []
+    for name in api.PIPELINE_STAGE_ORDER:
+        checks = []
+        if name in api.PIPELINE_QUALITY_STAGES:
+            checks = [{"name": check, "status": "passed"} for check in api.PIPELINE_QUALITY_CHECKS]
+        stages.append({
+            "name": name,
+            "status": "succeeded",
+            "started_at": "2026-08-07T00:00:00Z",
+            "completed_at": "2026-08-07T00:00:01Z",
+            "duration_ms": 1000,
+            "quality_checks": checks,
+            "function_name": "must-not-be-exposed",
+        })
+    return {
+        "logical_run_date": logical_run_date,
+        "execution_mode": "OPERATIONAL",
+        "time_basis": "ACTUAL_CALENDAR",
+        "status": "succeeded",
+        "started_at": "2026-08-07T00:00:00Z",
+        "completed_at": "2026-08-07T00:00:06Z",
+        "stages": stages,
+        "private_resource_arn": "arn:aws:lambda:private",
+    }
+
+
 class OperationsApiTests(unittest.TestCase):
     def test_failure_metric_is_exact_and_best_effort(self):
         class CloudWatchClient:
@@ -58,6 +85,7 @@ class OperationsApiTests(unittest.TestCase):
         for role in api.ROLE_PERMISSIONS.values():
             self.assertIn("risks:read", role)
             self.assertIn("outcomes:read", role)
+            self.assertIn("health:read", role)
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
         self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
@@ -164,6 +192,45 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(json.loads(response["body"])["items"][0]["outcome_id"], "outcome-123")
         self.assertIn("observed_date <= DATE '2026-08-07'", client.query)
+
+    def test_pipeline_health_is_six_stage_current_and_redacted(self):
+        health = api.sanitize_pipeline_health(pipeline_run(), "2026-08-07")
+        self.assertEqual(health["status"], "current")
+        self.assertEqual(health["freshness_status"], "current")
+        self.assertEqual([stage["name"] for stage in health["stages"]], list(api.PIPELINE_STAGE_ORDER))
+        self.assertEqual(health["stages_succeeded"], 6)
+        self.assertEqual(health["quality_checks_succeeded"], 10)
+        self.assertEqual(health["quality_checks_total"], 10)
+        serialized = json.dumps(health)
+        self.assertNotIn("function_name", serialized)
+        self.assertNotIn("private_resource_arn", serialized)
+        self.assertNotIn("s3://", serialized)
+
+    def test_future_pipeline_run_is_never_current_evidence(self):
+        health = api.sanitize_pipeline_health(pipeline_run("2026-08-08"), "2026-08-07")
+        self.assertEqual(health["status"], "unverified")
+        self.assertEqual(health["freshness_status"], "future_invalid")
+        self.assertIsNone(health["logical_run_date"])
+
+    def test_viewer_can_read_pipeline_health_from_exact_private_object(self):
+        class S3Client:
+            request = None
+
+            def get_object(self, **kwargs):
+                self.request = kwargs
+                return {"Body": io.BytesIO(json.dumps(pipeline_run()).encode("utf-8"))}
+
+        client = S3Client()
+        fake_boto3 = types.SimpleNamespace(client=lambda service: client)
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "PIPELINE_STATUS_S3_URI", "s3://private-status/pipeline/latest.json"), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(request(path="/v1/pipeline-health"), None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(client.request, {"Bucket": "private-status", "Key": "pipeline/latest.json"})
+        self.assertEqual(body["status"], "current")
+        self.assertNotIn("private-status", response["body"])
 
     def test_missing_identity_fails_closed(self):
         event = request()
