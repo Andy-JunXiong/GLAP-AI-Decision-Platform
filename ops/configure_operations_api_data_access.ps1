@@ -9,6 +9,7 @@ param(
     [string]$CurrentActionTable = "fact_lifecycle_action_staging_v1",
     [string]$AlertTable = "fact_lifecycle_alert_staging_v1",
     [string]$OutcomeTable = "fact_lifecycle_outcome_staging_v1",
+    [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
     [switch]$Apply
 )
 
@@ -34,6 +35,17 @@ if ($AlertTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 if ($OutcomeTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "Invalid Glue Outcome table name"
 }
+if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "Invalid Glue Forecast source table name"
+}
+$forecastDependencies = @(
+    $ForecastSourceTable,
+    "vw_multimodal_forecast_feature_daily_context_v1",
+    "vw_multimodal_provider_daily_context_v1",
+    "vw_multimodal_shipment_daily_context_v1",
+    "fact_shipment_lifecycle_staging_v1",
+    "fact_shipment_lifecycle_metrics_staging_v1"
+)
 
 Write-Host "Operations API governed-read access plan"
 Write-Host "  Database permission: DESCRIBE"
@@ -41,6 +53,7 @@ Write-Host "  Action view permissions: SELECT, DESCRIBE"
 Write-Host "  Two backing Action tables: SELECT, DESCRIBE"
 Write-Host "  Operational Alert table: SELECT, DESCRIBE"
 Write-Host "  Operational Outcome table: SELECT, DESCRIBE"
+Write-Host "  Operational Forecast source table: SELECT, DESCRIBE"
 Write-Host "  Other tables or views: False"
 Write-Host "  Write or grantable permissions: False"
 Write-Host "  Production resources: False"
@@ -114,6 +127,14 @@ $role = Invoke-AwsJson @("iam", "get-role", "--role-name", $roleName)
 $roleArn = [string]$role.Role.Arn
 $identity = Invoke-AwsJson @("sts", "get-caller-identity")
 $catalogId = [string]$identity.Account
+$database = Invoke-AwsJson @("glue", "get-database", "--name", $SourceDatabase)
+$iamAllowedPrincipals = @(
+    $database.Database.CreateTableDefaultPermissions |
+        Where-Object {
+            $_.Principal.DataLakePrincipalIdentifier -eq "IAM_ALLOWED_PRINCIPALS" -and
+            "ALL" -in $_.Permissions
+        }
+).Count -gt 0
 $null = Invoke-AwsJson @(
     "glue", "get-table", "--database-name", $SourceDatabase, "--name", $ActionView
 )
@@ -129,6 +150,11 @@ $null = Invoke-AwsJson @(
 $null = Invoke-AwsJson @(
     "glue", "get-table", "--database-name", $SourceDatabase, "--name", $OutcomeTable
 )
+foreach ($forecastDependency in $forecastDependencies) {
+    $null = Invoke-AwsJson @(
+        "glue", "get-table", "--database-name", $SourceDatabase, "--name", $forecastDependency
+    )
+}
 
 $principalPath = Write-TemporaryJson @{DataLakePrincipalIdentifier = $roleArn}
 $databasePath = Write-TemporaryJson @{
@@ -149,17 +175,36 @@ $alertTablePath = Write-TemporaryJson @{
 $outcomeTablePath = Write-TemporaryJson @{
     Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $OutcomeTable}
 }
+$forecastTablePaths = @($forecastDependencies | ForEach-Object {
+    Write-TemporaryJson @{
+        Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $_}
+    }
+})
 try {
-    $databaseChanged = Grant-MissingPermissions $principalPath $databasePath @("DESCRIBE")
-    $tableChanged = Grant-MissingPermissions $principalPath $tablePath @("SELECT", "DESCRIBE")
-    $baseTableChanged = Grant-MissingPermissions $principalPath $baseTablePath @("SELECT", "DESCRIBE")
-    $currentTableChanged = Grant-MissingPermissions $principalPath $currentTablePath @("SELECT", "DESCRIBE")
-    $alertTableChanged = Grant-MissingPermissions $principalPath $alertTablePath @("SELECT", "DESCRIBE")
-    $outcomeTableChanged = Grant-MissingPermissions $principalPath $outcomeTablePath @("SELECT", "DESCRIBE")
+    if ($iamAllowedPrincipals) {
+        $databaseChanged = $tableChanged = $baseTableChanged = $currentTableChanged = $false
+        $alertTableChanged = $outcomeTableChanged = $forecastTablesChanged = $false
+    } else {
+        $databaseChanged = Grant-MissingPermissions $principalPath $databasePath @("DESCRIBE")
+        $tableChanged = Grant-MissingPermissions $principalPath $tablePath @("SELECT", "DESCRIBE")
+        $baseTableChanged = Grant-MissingPermissions $principalPath $baseTablePath @("SELECT", "DESCRIBE")
+        $currentTableChanged = Grant-MissingPermissions $principalPath $currentTablePath @("SELECT", "DESCRIBE")
+        $alertTableChanged = Grant-MissingPermissions $principalPath $alertTablePath @("SELECT", "DESCRIBE")
+        $outcomeTableChanged = Grant-MissingPermissions $principalPath $outcomeTablePath @("SELECT", "DESCRIBE")
+        $forecastTablesChanged = $false
+        foreach ($forecastTablePath in $forecastTablePaths) {
+            $forecastTablesChanged = (
+                (Grant-MissingPermissions $principalPath $forecastTablePath @("SELECT", "DESCRIBE")) -or
+                $forecastTablesChanged
+            )
+        }
+    }
 } finally {
-    Remove-Item -LiteralPath $principalPath, $databasePath, $tablePath, `
-        $baseTablePath, $currentTablePath, $alertTablePath, $outcomeTablePath `
-        -Force -ErrorAction SilentlyContinue
+    $cleanupPaths = @(
+        $principalPath, $databasePath, $tablePath, $baseTablePath,
+        $currentTablePath, $alertTablePath, $outcomeTablePath
+    ) + $forecastTablePaths
+    Remove-Item -LiteralPath $cleanupPaths -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "Governed database permission configured: True"
@@ -167,5 +212,8 @@ Write-Host "Governed Action view permissions configured: True"
 Write-Host "Governed backing Action table permissions configured: True"
 Write-Host "Governed operational Alert table permissions configured: True"
 Write-Host "Governed operational Outcome table permissions configured: True"
-Write-Host "Permissions changed in this run: $([bool]($databaseChanged -or $tableChanged -or $baseTableChanged -or $currentTableChanged -or $alertTableChanged -or $outcomeTableChanged))"
+Write-Host "Governed operational Forecast source table permissions configured: True"
+Write-Host "Lake Formation IAM allowed-principals mode: $iamAllowedPrincipals"
+Write-Host "Exact table access enforced by Lambda IAM policy: True"
+Write-Host "Permissions changed in this run: $([bool]($databaseChanged -or $tableChanged -or $baseTableChanged -or $currentTableChanged -or $alertTableChanged -or $outcomeTableChanged -or $forecastTablesChanged))"
 Write-Host "No account IDs, ARNs, database names, view names, or paths were printed"

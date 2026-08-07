@@ -6,6 +6,7 @@ import sys
 import types
 import unittest
 from unittest.mock import patch
+from datetime import date, timedelta
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("operations_api", ROOT / "lambda" / "glap_operations_api.py")
@@ -55,6 +56,18 @@ def pipeline_run(logical_run_date="2026-08-07"):
     }
 
 
+def forecast_rows(days=90, end=date(2026, 8, 7)):
+    start = end - timedelta(days=days - 1)
+    return [
+        {
+            "feature_date": (start + timedelta(days=index)).isoformat(),
+            "shipment_count": str(400 + index),
+            "eligible_date": "1",
+        }
+        for index in range(days)
+    ]
+
+
 class OperationsApiTests(unittest.TestCase):
     def test_failure_metric_is_exact_and_best_effort(self):
         class CloudWatchClient:
@@ -86,6 +99,7 @@ class OperationsApiTests(unittest.TestCase):
             self.assertIn("risks:read", role)
             self.assertIn("outcomes:read", role)
             self.assertIn("health:read", role)
+            self.assertIn("forecasts:read", role)
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
         self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
@@ -136,6 +150,75 @@ class OperationsApiTests(unittest.TestCase):
             api.build_outcome_review_query(50, "OBSERVED", "2026-08-07")
         with self.assertRaises(ValueError):
             api.build_outcome_review_query(50, "PENDING", "tomorrow")
+
+    def test_forecast_query_is_operational_actual_calendar_and_sydney_bounded(self):
+        query = api.build_forecast_series_query("2026-08-07")
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertIn("execution_mode = 'OPERATIONAL'", query)
+        self.assertIn("time_basis = 'ACTUAL_CALENDAR'", query)
+        self.assertIn("as_of_date <= params.as_of_date", query)
+        self.assertIn("source.feature_date <= params.as_of_date", query)
+        self.assertIn("vw_multimodal_forecast_feature_daily_v1", query)
+        self.assertNotIn("FUTURE_SIMULATION", query)
+
+    def test_forecast_contract_separates_projection_from_historical_evaluation(self):
+        contract = api.build_forecast_contract(forecast_rows(), "2026-08-07")
+        self.assertEqual(contract["source"]["execution_mode"], "OPERATIONAL")
+        self.assertEqual(contract["source"]["time_basis"], "ACTUAL_CALENDAR")
+        self.assertEqual(contract["forecast"]["execution_mode"], "FUTURE_SIMULATION")
+        self.assertEqual(contract["forecast"]["time_basis"], "MODEL_PROJECTION")
+        self.assertEqual(contract["forecast"]["scenario_id"], "internal-advisory-forecast-2026-08-07")
+        self.assertEqual(contract["forecast"]["status"], "ready")
+        self.assertEqual(len(contract["forecast"]["points"]), 7)
+        self.assertTrue(all(point["date"] > "2026-08-07" for point in contract["forecast"]["points"]))
+        self.assertTrue(all(
+            point["evidence_status"] == "ADVISORY_FORECAST_NOT_OBSERVED"
+            for point in contract["forecast"]["points"]
+        ))
+        self.assertEqual(contract["accuracy"]["status"], "engineering_evidence")
+        self.assertEqual(contract["accuracy"]["model_promotion_status"], "BLOCKED")
+        self.assertFalse(contract["forecast"]["production_effect"])
+        self.assertTrue(all(item["date"] <= "2026-08-07" for item in contract["history"]))
+
+    def test_forecast_contract_fails_closed_when_operational_history_is_incomplete(self):
+        rows = forecast_rows(35)
+        rows[-1]["eligible_date"] = "0"
+        contract = api.build_forecast_contract(rows, "2026-08-07")
+        self.assertEqual(contract["forecast"]["status"], "insufficient_operational_history")
+        self.assertEqual(contract["forecast"]["points"], [])
+        self.assertEqual(contract["accuracy"]["status"], "insufficient_operational_history")
+        self.assertIsNone(contract["accuracy"]["metrics"])
+
+    def test_viewer_can_read_forecast_contract(self):
+        class AthenaClient:
+            def start_query_execution(self, **kwargs):
+                self.query = kwargs["QueryString"]
+                return {"QueryExecutionId": "query-forecast"}
+
+            def get_query_execution(self, **_kwargs):
+                return {"QueryExecution": {"Status": {"State": "SUCCEEDED"}}}
+
+            def get_query_results(self, **_kwargs):
+                columns = ["feature_date", "shipment_count", "eligible_date"]
+                data = forecast_rows()
+                return {"ResultSet": {
+                    "ResultSetMetadata": {"ColumnInfo": [{"Name": name} for name in columns]},
+                    "Rows": [
+                        {"Data": [{"VarCharValue": name} for name in columns]},
+                        *[{"Data": [{"VarCharValue": row[name]} for name in columns]} for row in data],
+                    ],
+                }}
+
+        client = AthenaClient()
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: client)
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(
+            api, "_sydney_date", return_value="2026-08-07"
+        ):
+            response = api.lambda_handler(request(path="/v1/forecasts"), None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(body["forecast"]["status"], "ready")
+        self.assertEqual(body["accuracy"]["model_promotion_status"], "BLOCKED")
 
     def test_viewer_can_read_risks(self):
         class AthenaClient:

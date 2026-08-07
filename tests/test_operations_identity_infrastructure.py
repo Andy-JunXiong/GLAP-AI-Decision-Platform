@@ -74,6 +74,7 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn("/v1/risks?limit=1", script)
         self.assertIn("/v1/outcomes?limit=1", script)
         self.assertIn("/v1/pipeline-health", script)
+        self.assertIn("/v1/forecasts", script)
         self.assertIn("CORS origin exact match", script)
         self.assertIn("API alarms present", script)
         self.assertIn("API alarms currently OK", script)

@@ -88,6 +88,62 @@ export type PipelineHealth = {
   runbook_url: string;
 };
 
+export type ForecastPoint = {
+  date: string;
+  predicted_shipments: number;
+  lower_bound: number;
+  upper_bound: number;
+  evidence_status: "ADVISORY_FORECAST_NOT_OBSERVED";
+};
+
+export type ForecastContract = {
+  schema_version: "operations-api.v1";
+  as_of_date: string;
+  source: {
+    execution_mode: "OPERATIONAL";
+    time_basis: "ACTUAL_CALENDAR";
+    evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE";
+    feature_contract_version: string;
+  };
+  forecast: {
+    status: "ready" | "insufficient_operational_history";
+    execution_mode: "FUTURE_SIMULATION";
+    time_basis: "MODEL_PROJECTION";
+    scenario_id: string;
+    method: string;
+    model_version: string;
+    horizon_days: number;
+    training_start: string | null;
+    training_end: string | null;
+    points: ForecastPoint[];
+    decision_use: "ADVISORY_ONLY";
+    production_effect: false;
+  };
+  accuracy: {
+    status: "engineering_evidence" | "insufficient_operational_history";
+    evaluation_policy: string;
+    evidence_class: "SYNTHETIC_ENGINEERING_BACKTEST";
+    metrics: {
+      forecast_count: number;
+      mae: number;
+      rmse: number;
+      bias: number;
+      mape_pct: number | null;
+      interval_coverage_pct: number;
+    } | null;
+    model_promotion_status: "BLOCKED";
+  };
+  coverage: {
+    window_days: number;
+    eligible_dates: number;
+    latest_eligible_date: string | null;
+    minimum_training_dates: number;
+    minimum_accuracy_forecasts: number;
+  };
+  history: { date: string; shipments: number; evidence_status: string }[];
+  disclosure: string;
+};
+
 type QueueResponse = {
   schema_version: "operations-api.v1";
   items: OperationsAction[];
@@ -157,6 +213,10 @@ export async function loadOutcomeReview(token: string, status?: OutcomeStatus) {
 
 export async function loadPipelineHealth(token: string) {
   return request<PipelineHealth>("/v1/pipeline-health", token);
+}
+
+export async function loadForecastAccuracy(token: string) {
+  return request<ForecastContract>("/v1/forecasts", token);
 }
 
 export async function mutateAction(

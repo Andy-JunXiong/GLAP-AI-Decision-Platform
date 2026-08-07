@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from statistics import fmean
 from typing import Any
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
@@ -24,6 +26,9 @@ OUTPUT = os.getenv("ATHENA_OUTPUT", "")
 ACTION_VIEW = os.getenv("LIFECYCLE_ACTION_CURRENT_VIEW", "vw_lifecycle_action_current_staging_v1")
 ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
 OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
+FORECAST_SOURCE_TABLE = os.getenv(
+    "FORECAST_SOURCE_TABLE", "vw_multimodal_forecast_feature_daily_v1"
+)
 MUTATION_FUNCTION = os.getenv("ACTION_MUTATION_FUNCTION", "")
 PIPELINE_STATUS_S3_URI = os.getenv("PIPELINE_STATUS_S3_URI", "")
 PIPELINE_STAGE_ORDER = (
@@ -55,17 +60,18 @@ PIPELINE_RUNBOOK_URL = (
     "blob/main/docs/runbooks/pipeline_reliability.md"
 )
 ROLE_PERMISSIONS = {
-    "viewer": {"risks:read", "actions:read", "outcomes:read", "health:read"},
+    "viewer": {"risks:read", "actions:read", "outcomes:read", "health:read", "forecasts:read"},
     "operator": {
         "risks:read", "actions:read", "actions:complete", "outcomes:read", "health:read",
+        "forecasts:read",
     },
     "approver": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "outcomes:read",
-        "health:read",
+        "health:read", "forecasts:read",
     },
     "administrator": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "actions:complete",
-        "outcomes:read", "health:read",
+        "outcomes:read", "health:read", "forecasts:read",
     },
 }
 OPERATION_PERMISSION = {
@@ -265,6 +271,40 @@ ORDER BY CASE o.outcome_status WHEN 'PENDING' THEN 1 ELSE 2 END,
 LIMIT {limit}"""
 
 
+def build_forecast_series_query(as_of_date: str, history_days: int = 90) -> str:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    if not 35 <= history_days <= 90:
+        raise ValueError("Forecast history must be between 35 and 90 days")
+    return f"""WITH params AS (
+    SELECT DATE '{as_of_date}' AS as_of_date
+), calendar AS (
+    SELECT CAST(day AS date) AS feature_date
+    FROM params
+    CROSS JOIN UNNEST(
+        sequence(date_add('day', -{history_days - 1}, as_of_date), as_of_date, INTERVAL '1' DAY)
+    ) AS dates(day)
+), operational AS (
+    SELECT source.feature_date,
+           sum(source.new_booking_count) AS shipment_count
+    FROM {_identifier(DATABASE)}.{_identifier(FORECAST_SOURCE_TABLE)} AS source
+    CROSS JOIN params
+    WHERE source.temporal_scope_id = 'OPERATIONAL'
+      AND source.execution_mode = 'OPERATIONAL'
+      AND source.time_basis = 'ACTUAL_CALENDAR'
+      AND source.as_of_date <= params.as_of_date
+      AND source.feature_date <= params.as_of_date
+      AND source.feature_date >= date_add('day', -{history_days - 1}, params.as_of_date)
+    GROUP BY source.feature_date
+)
+SELECT CAST(calendar.feature_date AS varchar) AS feature_date,
+       CAST(coalesce(operational.shipment_count, 0) AS varchar) AS shipment_count,
+       IF(operational.feature_date IS NULL, '0', '1') AS eligible_date
+FROM calendar
+LEFT JOIN operational ON calendar.feature_date = operational.feature_date
+ORDER BY calendar.feature_date"""
+
+
 def _parse_rows(response: dict[str, Any]) -> list[dict[str, str | None]]:
     result = response.get("ResultSet", {})
     rows = result.get("Rows", [])
@@ -300,6 +340,163 @@ def _query_rows(client: Any, query: str) -> list[dict[str, str | None]]:
 
 def _sydney_date() -> str:
     return datetime.now(ZoneInfo("Australia/Sydney")).date().isoformat()
+
+
+def _ols(values: list[float]) -> tuple[float, float]:
+    count = len(values)
+    x_values = list(range(count))
+    sum_x = sum(x_values)
+    sum_y = sum(values)
+    sum_xx = sum(value * value for value in x_values)
+    sum_xy = sum(x * y for x, y in zip(x_values, values))
+    denominator = count * sum_xx - sum_x * sum_x
+    if not denominator:
+        return 0.0, fmean(values)
+    slope = (count * sum_xy - sum_x * sum_y) / denominator
+    intercept = (sum_y - slope * sum_x) / count
+    return slope, intercept
+
+
+def _forecast_point(values: list[float]) -> tuple[float, float]:
+    slope, intercept = _ols(values)
+    point = max(0.0, intercept + slope * len(values))
+    fitted_errors = [
+        value - (intercept + slope * index) for index, value in enumerate(values)
+    ]
+    sigma = math.sqrt(fmean(error * error for error in fitted_errors))
+    return point, sigma
+
+
+def build_forecast_contract(rows: list[dict[str, str | None]], as_of_date: str) -> dict[str, Any]:
+    cutoff = date.fromisoformat(as_of_date)
+    series = []
+    seen_dates = set()
+    for row in rows:
+        try:
+            feature_date = date.fromisoformat(str(row.get("feature_date") or ""))
+            shipment_count = int(str(row.get("shipment_count") or ""))
+        except ValueError:
+            continue
+        if feature_date > cutoff or feature_date in seen_dates or shipment_count < 0:
+            continue
+        seen_dates.add(feature_date)
+        series.append({
+            "date": feature_date,
+            "shipments": shipment_count,
+            "eligible": str(row.get("eligible_date") or "0") == "1",
+        })
+    series.sort(key=lambda item: item["date"])
+
+    training = series[-28:]
+    training_ready = len(training) == 28 and all(item["eligible"] for item in training)
+    scenario_id = f"internal-advisory-forecast-{as_of_date}"
+    points = []
+    if training_ready:
+        values = [float(item["shipments"]) for item in training]
+        slope, intercept = _ols(values)
+        residuals = [value - (intercept + slope * index) for index, value in enumerate(values)]
+        sigma = math.sqrt(fmean(error * error for error in residuals))
+        interval = max(1, round(1.96 * sigma))
+        for horizon in range(1, 8):
+            point = max(0, round(intercept + slope * (len(values) - 1 + horizon)))
+            points.append({
+                "date": (cutoff + timedelta(days=horizon)).isoformat(),
+                "predicted_shipments": point,
+                "lower_bound": max(0, point - interval),
+                "upper_bound": point + interval,
+                "evidence_status": "ADVISORY_FORECAST_NOT_OBSERVED",
+            })
+
+    predictions = []
+    for index in range(28, len(series)):
+        prior = series[index - 28:index]
+        target = series[index]
+        if not target["eligible"] or not all(item["eligible"] for item in prior):
+            continue
+        point, sigma = _forecast_point([float(item["shipments"]) for item in prior])
+        interval = 1.96 * sigma
+        predictions.append({
+            "date": target["date"],
+            "actual": float(target["shipments"]),
+            "predicted": point,
+            "lower": max(0.0, point - interval),
+            "upper": point + interval,
+        })
+    predictions = predictions[-14:]
+    metrics = None
+    if len(predictions) >= 7:
+        errors = [item["predicted"] - item["actual"] for item in predictions]
+        nonzero = [item for item in predictions if item["actual"]]
+        metrics = {
+            "forecast_count": len(predictions),
+            "mae": round(fmean(abs(error) for error in errors), 2),
+            "rmse": round(math.sqrt(fmean(error * error for error in errors)), 2),
+            "bias": round(fmean(errors), 2),
+            "mape_pct": round(
+                100 * fmean(abs(item["predicted"] - item["actual"]) / item["actual"] for item in nonzero),
+                2,
+            ) if nonzero else None,
+            "interval_coverage_pct": round(
+                100 * fmean(item["lower"] <= item["actual"] <= item["upper"] for item in predictions),
+                2,
+            ),
+        }
+
+    forecast_status = "ready" if len(points) == 7 else "insufficient_operational_history"
+    accuracy_status = "engineering_evidence" if metrics else "insufficient_operational_history"
+    return {
+        "schema_version": "operations-api.v1",
+        "as_of_date": as_of_date,
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+            "feature_contract_version": "shipment_volume_daily_v1",
+        },
+        "forecast": {
+            "status": forecast_status,
+            "execution_mode": "FUTURE_SIMULATION",
+            "time_basis": "MODEL_PROJECTION",
+            "scenario_id": scenario_id,
+            "method": "ordinary_least_squares_28d",
+            "model_version": "booking_volume_ols_v1",
+            "horizon_days": 7,
+            "training_start": training[0]["date"].isoformat() if training_ready else None,
+            "training_end": training[-1]["date"].isoformat() if training_ready else None,
+            "points": points,
+            "decision_use": "ADVISORY_ONLY",
+            "production_effect": False,
+        },
+        "accuracy": {
+            "status": accuracy_status,
+            "evaluation_policy": "ROLLING_28_DAY_ONE_STEP_AHEAD_NO_FUTURE_DATA",
+            "evidence_class": "SYNTHETIC_ENGINEERING_BACKTEST",
+            "metrics": metrics,
+            "model_promotion_status": "BLOCKED",
+        },
+        "coverage": {
+            "window_days": len(series),
+            "eligible_dates": sum(item["eligible"] for item in series),
+            "latest_eligible_date": (
+                max((item["date"] for item in series if item["eligible"]), default=None).isoformat()
+                if any(item["eligible"] for item in series) else None
+            ),
+            "minimum_training_dates": 28,
+            "minimum_accuracy_forecasts": 7,
+        },
+        "history": [
+            {
+                "date": item["date"].isoformat(),
+                "shipments": item["shipments"],
+                "evidence_status": "SYNTHETIC_OPERATIONAL_CALENDAR",
+            }
+            for item in series[-14:] if item["eligible"]
+        ],
+        "disclosure": (
+            "Staging-only advisory forecast over synthetic operational-calendar data; "
+            "not real-world performance, an operational target, or model-promotion evidence."
+        ),
+    }
 
 
 def _safe_timestamp(value: Any) -> str | None:
@@ -431,6 +628,14 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         subject, actor, permissions = _identity(event)
         method = str(event.get("requestContext", {}).get("http", {}).get("method") or "")
         path = str(event.get("rawPath") or "")
+        if method == "GET" and path == "/v1/forecasts":
+            if "forecasts:read" not in permissions:
+                raise PermissionError("Role cannot read Forecasts")
+            import boto3
+            cutoff = _sydney_date()
+            rows = _query_rows(boto3.client("athena"), build_forecast_series_query(cutoff))
+            return _response(200, build_forecast_contract(rows, cutoff))
+
         if method == "GET" and path == "/v1/pipeline-health":
             if "health:read" not in permissions:
                 raise PermissionError("Role cannot read Pipeline Health")

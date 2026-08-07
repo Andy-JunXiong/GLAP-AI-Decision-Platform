@@ -84,10 +84,41 @@
 .pipeline-checks i.failed { background: #dc2626; }
 .pipeline-checks b { font-size: 9px; text-transform: uppercase; }
 
+.forecast-boundary {
+  align-items: center;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+}
+.forecast-boundary div { display: grid; gap: 3px; }
+.forecast-boundary small { color: #1d4ed8; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.forecast-boundary strong { color: #1e3a8a; }
+.forecast-boundary span { color: #475569; font-size: 11px; }
+.forecast-boundary > b { background: #dbeafe; border-radius: 999px; color: #1e40af; font-size: 9px; padding: 6px 9px; text-transform: uppercase; }
+.forecast-grid { display: grid; gap: 18px; grid-template-columns: 1.5fr 1fr; margin-top: 20px; }
+.forecast-card { min-width: 0; }
+.forecast-bars { align-items: end; display: grid; gap: 10px; grid-template-columns: repeat(7, 1fr); height: 230px; padding-top: 20px; }
+.forecast-bars > div { align-items: center; display: grid; gap: 5px; grid-template-rows: 1fr auto auto; height: 100%; text-align: center; }
+.forecast-bars > div > span { align-items: end; background: #eff6ff; border-radius: 6px 6px 2px 2px; display: flex; height: 100%; overflow: hidden; }
+.forecast-bars i { background: linear-gradient(180deg, #2563eb, #60a5fa); border-radius: 5px 5px 0 0; display: block; width: 100%; }
+.forecast-bars strong { font-size: 11px; }
+.forecast-bars small { color: var(--muted); font-size: 9px; }
+.forecast-metrics { display: grid; gap: 0; margin: 8px 0 0; }
+.forecast-metrics div { align-items: center; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; padding: 11px 0; }
+.forecast-metrics dt { color: var(--muted); font-size: 10px; }
+.forecast-metrics dd { font-size: 12px; font-weight: 800; margin: 0; }
+.forecast-metrics dd.blocked { color: #b45309; }
+
 @media (max-width: 780px) {
   .sidebar nav {
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(8, 1fr);
   }
   .pipeline-stage-grid { grid-template-columns: 1fr; }
   .pipeline-alert { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .forecast-grid { grid-template-columns: 1fr; }
+  .forecast-boundary { align-items: flex-start; flex-direction: column; gap: 10px; }
 }

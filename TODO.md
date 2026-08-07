@@ -120,6 +120,13 @@ Current implementation and release boundaries are recorded in the
   into the existing Decision Queue / Action Board journey.
 - [x] Connect authenticated Outcome Review to completed Actions, show the latest
   operational Outcome, and exclude pending rows from observed-effect evidence.
+- [x] Connect authenticated Pipeline Health to the private six-stage status
+  object with ten quality checks, safe failure categories, and runbook access.
+- [x] Add authenticated Forecast Accuracy over the operational actual-calendar
+  feature view. The current three eligible dates correctly keep both advisory
+  forecast and rolling accuracy in `insufficient_operational_history`; future
+  points, when eligible, remain isolated staging simulations with no production
+  effect or promotion authority.
 - [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
   exists on or before the Sydney cutoff; do not use future simulations to pass
   the remaining `missing_provider_coverage` lifecycle check.
