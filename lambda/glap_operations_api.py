@@ -58,6 +58,40 @@ def _safe_aws_error_code(exc: Exception) -> str:
     return code if re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", code) else "invalid"
 
 
+def _mutation_failure_response(payload: dict[str, Any], request_id: Any) -> dict[str, Any] | None:
+    error_type = str(payload.get("errorType") or "")
+    message = str(payload.get("errorMessage") or "")
+    if error_type == "ActionConflictError" or message.startswith(
+        ("Invalid Action transition:", "request_id is already bound")
+    ):
+        return _response(409, {"error": "conflict", "request_id": request_id})
+    if error_type == "ValueError" and message.startswith("Action was not found"):
+        return _response(404, {"error": "not_found", "request_id": request_id})
+    if error_type == "ValueError":
+        return _response(400, {"error": "invalid_request", "request_id": request_id})
+    return None
+
+
+def _record_failure_metric(client: Any | None = None) -> bool:
+    try:
+        if client is None:
+            import boto3
+
+            client = boto3.client("cloudwatch")
+        client.put_metric_data(
+            Namespace="GLAP/OperationsApi",
+            MetricData=[{"MetricName": "ServiceUnavailable", "Value": 1, "Unit": "Count"}],
+        )
+        return True
+    except Exception as exc:
+        LOGGER.warning(
+            "operations_failure_metric_failed exception=%s aws_error=%s",
+            type(exc).__name__,
+            _safe_aws_error_code(exc),
+        )
+        return False
+
+
 def _claim_groups(raw_groups: Any) -> list[str]:
     if isinstance(raw_groups, list):
         return [str(group) for group in raw_groups]
@@ -184,6 +218,9 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             )
             payload = json.loads(result["Payload"].read())
             if result.get("FunctionError"):
+                mapped = _mutation_failure_response(payload, request_id)
+                if mapped:
+                    return mapped
                 raise RuntimeError("Action mutation was rejected")
             return _response(200, {"schema_version": "operations-api.v1", "action": payload})
         return _response(404, {"error": "not_found", "request_id": request_id})
@@ -192,6 +229,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     except (ValueError, json.JSONDecodeError) as exc:
         return _response(400, {"error": "invalid_request", "message": str(exc), "request_id": request_id})
     except Exception as exc:
+        _record_failure_metric()
         LOGGER.error(
             "operations_api_failure exception=%s aws_error=%s request_id_present=%s",
             type(exc).__name__,

@@ -46,6 +46,13 @@ $function = & aws lambda get-function-configuration --function-name $functionNam
     @awsScope --output json | ConvertFrom-Json
 $alarmCount = & aws cloudwatch describe-alarms --alarm-name-prefix $ApiStackName `
     @awsScope --query "length(MetricAlarms)" --output text
+$alarmStates = & aws cloudwatch describe-alarms --alarm-name-prefix $ApiStackName `
+    @awsScope --query "MetricAlarms[].StateValue" --output text
+$accessLogGroup = "/aws/apigateway/glap-operations-api-staging/access"
+$logGroupCount = & aws logs describe-log-groups --log-group-name-prefix $accessLogGroup `
+    @awsScope --query "length(logGroups[?logGroupName=='$accessLogGroup'])" --output text
+$metricFilterCount = & aws logs describe-metric-filters --log-group-name $accessLogGroup `
+    @awsScope --query "length(metricFilters)" --output text
 
 $checks = [ordered]@{
     "Identity stack stable" = $identity.StackStatus -in @("CREATE_COMPLETE", "UPDATE_COMPLETE")
@@ -57,6 +64,9 @@ $checks = [ordered]@{
     "CORS preflight successful" = $preflight.StatusCode -ge 200 -and $preflight.StatusCode -lt 300
     "CORS origin exact match" = $preflight.Headers["access-control-allow-origin"] -eq $origin
     "API alarms present" = [int]$alarmCount -ge 2
+    "API alarms currently OK" = @($alarmStates -split '\s+' | Where-Object { $_ -and $_ -ne "OK" }).Count -eq 0
+    "Redacted API access log present" = [int]$logGroupCount -eq 1
+    "API throttle metric filter present" = [int]$metricFilterCount -ge 1
 }
 
 foreach ($entry in $checks.GetEnumerator()) {

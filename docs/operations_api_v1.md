@@ -43,7 +43,7 @@ actual-calendar Action records. The v1 response is
 
 Operations are `APPROVE`, `REJECT`, or `COMPLETE`. Existing transition and
 request-id idempotency rules remain authoritative in the mutation Lambda.
-Errors use `invalid_request`, `forbidden`, `not_found`, or
+Errors use `invalid_request`, `forbidden`, `not_found`, `conflict`, or
 `service_unavailable`; responses are `no-store` and never expose AWS IDs.
 
 ## Reliability and recovery
@@ -60,6 +60,13 @@ audit table returns the original event rather than appending a duplicate.
 Operators should stop retries on validation or authorization errors and use
 Pipeline Health for service failures. Deployment remains manual and staging
 only, with no recurring schedule or production alias.
+
+Concurrent mutations are serialized by both request ID and the Action's prior
+state. If another request consumes that state first, the losing request returns
+409 instead of appending a second transition. The API emits a restricted
+`ServiceUnavailable` metric for handled 503 responses, while a redacted API
+Gateway access-log filter counts 429 responses. See the
+[Operations API reliability runbook](runbooks/operations_api_reliability.md).
 
 Queue reads use the existing governed Glue/Athena view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena
@@ -134,10 +141,12 @@ created one temporary viewer, operator, approver, and administrator, verified
 queue reads and every role-specific allow/deny boundary, then removed all four.
 All four queue reads returned HTTP 200. The governed view and its two direct
 backing tables have exact read-only Glue and Lake Formation permissions; no
-write or grant option was added. Retry, concurrency, throttling, alarm, and
-recovery exercises remain the next release gate. Public GitHub Pages is still
-built without the internal API or Cognito variables and cannot submit these
-mutations.
+write or grant option was added. Reliability verification replayed one existing
+request sequentially and concurrently without adding an audit row, produced and
+recovered from a controlled 503, observed bounded 429 responses, verified both
+alarms moved through `ALARM` and back to `OK`, and confirmed the synchronous DLQ
+remained empty. Public GitHub Pages is still built without the internal API or
+Cognito variables and cannot submit these mutations.
 
 An IAM administrator can exercise the deployed allow/deny matrix without using
 real email addresses by running `ops/verify_operations_roles_staging.ps1` first

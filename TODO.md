@@ -24,7 +24,7 @@ Current implementation and release boundaries are recorded in the
 - [x] Review the approved JWT issuer, audience, and exact internal HTTPS origin,
   deploy the stack manually, and verify authenticated runtime authorization,
   exact-origin CORS, alarms, and the complete four-role allow/deny matrix.
-- [ ] Exercise same-request retry, concurrency, throttling, alarm, and recovery
+- [x] Exercise same-request retry, concurrency, throttling, alarm, and recovery
   behavior through the authenticated staging boundary.
 - [x] Add a manual GitHub OIDC workflow that reads those values only from the
   protected staging environment, defaults to plan, and requires an explicit
@@ -130,7 +130,7 @@ The governing date boundary is in the
   plus versioned Operations API request/response contracts.
 - [x] Connect the private Action mutation Lambda to that authenticated API and
   implement the Decision Queue and Action Board journey.
-- [ ] Add write-path alarms, DLQ/retry evidence, concurrency tests, and recovery
+- [x] Add write-path alarms, DLQ/retry evidence, concurrency tests, and recovery
   guidance without enabling a recurring lifecycle schedule.
 - [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
   step for the pending Outcome; do not simulate an early operational result.

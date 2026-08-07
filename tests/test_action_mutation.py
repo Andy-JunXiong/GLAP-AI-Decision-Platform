@@ -3,7 +3,9 @@ import importlib.util
 import os
 from pathlib import Path
 import sys
+import types
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +77,26 @@ class ActionMutationTests(unittest.TestCase):
         self.assertIn("WHEN NOT MATCHED THEN INSERT", sql)
         self.assertNotIn("WHEN MATCHED", sql)
         self.assertIn("target.request_id = source.request_id", sql)
+        self.assertIn("target.action_id = source.action_id", sql)
+        self.assertIn("target.previous_status = source.previous_status", sql)
+
+    def test_competing_transition_fails_when_request_was_not_persisted(self):
+        handler_event = event()
+        handler_event.update({
+            "logical_run_date": "2026-08-06",
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+        })
+        current = [{
+            "action_id": "abc123def456", "status": "PROPOSED",
+            "approved_by": None, "approved_at": None, "completed_at": None,
+        }]
+        fake_boto3 = types.SimpleNamespace(client=lambda *_args, **_kwargs: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(
+            mutation, "_run_query", side_effect=[[], current, [], []]
+        ):
+            with self.assertRaises(mutation.ActionConflictError):
+                mutation.lambda_handler(handler_event, None)
 
 
 if __name__ == "__main__":

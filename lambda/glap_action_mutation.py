@@ -36,6 +36,10 @@ TRANSITIONS = {
 }
 
 
+class ActionConflictError(ValueError):
+    """A competing request already consumed the Action's prior state."""
+
+
 def _identifier(value: str) -> str:
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
         raise ValueError("Unsafe Athena identifier")
@@ -86,7 +90,13 @@ def build_audit_merge(row: dict[str, Any]) -> str:
     return f"""MERGE INTO {_identifier(DATABASE)}.{_identifier(AUDIT_TABLE)} AS target
 USING (VALUES ({values})) AS source ({names})
 ON target.temporal_scope_id = source.temporal_scope_id
-AND target.request_id = source.request_id
+AND (
+  target.request_id = source.request_id
+  OR (
+    target.action_id = source.action_id
+    AND target.previous_status = source.previous_status
+  )
+)
 WHEN NOT MATCHED THEN INSERT ({names}) VALUES ({source_values})"""
 
 
@@ -215,6 +225,11 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     })
     if not event.get("dry_run", False):
         _run_query(client, build_audit_merge(mutation))
+        confirmed = _run_query(client, build_idempotency_query(request_id, scope_id))
+        if not confirmed:
+            raise ActionConflictError(
+                "A competing request already changed the Action from its prior state"
+            )
     return {
         "status": "success", "idempotent_replay": False,
         "action_id": action_id, "event_id": mutation["event_id"],

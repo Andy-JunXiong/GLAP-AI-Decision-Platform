@@ -28,7 +28,7 @@ post-upgrade production audit reports zero known vulnerabilities.
 - Pull requests `#31`, `#36`-`#41` were merged; they cover the authenticated
   API, protected configuration, dedicated identity/hosting, deployment fixes,
   and staging quota compatibility.
-- 173 Python repository tests passed after adding deployment verification.
+- 182 Python repository tests passed after adding reliability verification.
 - The standard frontend build, the internal static export, and all 3
   rendered-output/connection tests passed.
 - ESLint passed with no errors.
@@ -46,11 +46,21 @@ post-upgrade production audit reports zero known vulnerabilities.
   Lake Formation read permissions. No data write or grant option was added.
 - The four isolated Cognito test users were deleted, and the temporary Lake
   Formation administrator list was restored to zero entries.
+- Existing audit evidence was replayed sequentially and concurrently through
+  the authenticated API; every response reused the same event and the audit
+  count remained one.
+- A controlled staging dependency failure returned 503, recovered to the
+  expected domain 404 after restoration, and moved the failure alarm from
+  `OK` through `ALARM` and back to `OK`.
+- A bounded throttle exercise observed 429 responses, restored the original API
+  rate/burst settings, and moved the throttle alarm through `ALARM` and back to
+  `OK`. The synchronous API DLQ remained empty and the temporary user was
+  removed and confirmed absent.
 
 ## Next connection
 
-1. Exercise same-request retries, concurrent updates, throttling, alarms, and
-   failure recovery, then record sanitized evidence.
+1. Connect the next authenticated cockpit surface to this proven API boundary
+   while keeping the same retry and conflict contract.
 2. Keep public Pages built without the internal API URL.
 3. On or after the Sydney business date `2026-08-09`, run the actual-calendar
    observation for the pending Outcome. As of `2026-08-07`, it is still pending
