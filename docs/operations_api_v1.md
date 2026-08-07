@@ -163,7 +163,9 @@ This does not replace the lifecycle deployer policy and grants no deployment
 permission. It cannot modify the OIDC role itself, create schedules, invoke or
 change Lambda functions, access S3, or update production aliases. Cognito and
 origin access is read-only; resolved values remain masked and process-local
-inside the workflow. After this one-time bootstrap, rerun the Operations API
+inside the workflow. The same policy permits `DescribeStacks` on the exact
+Operations API target stack because `aws cloudformation deploy` reads its
+current state before preparing a change set. After this one-time bootstrap, rerun the Operations API
 workflow in `plan` mode. Deployment permissions remain a separate review gate.
 
 ## Current implementation boundary
