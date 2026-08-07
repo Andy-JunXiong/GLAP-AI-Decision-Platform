@@ -24,6 +24,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("OperationsApiFailureAlarm", template)
         self.assertIn("OperationsApiThrottleAlarm", template)
         self.assertIn("vw_lifecycle_action_current_staging_v1", template)
+        self.assertIn("Action: lakeformation:GetDataAccess", template)
         self.assertNotIn("glue:UpdateTable", template)
         self.assertNotIn("s3:DeleteObject", template)
 
