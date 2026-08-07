@@ -10,6 +10,7 @@ param(
     [string]$AlertTable = "fact_lifecycle_alert_staging_v1",
     [string]$OutcomeTable = "fact_lifecycle_outcome_staging_v1",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
+    [string]$NetworkSourceView = "vw_multimodal_shipment_daily_v1",
     [switch]$Apply
 )
 
@@ -38,8 +39,12 @@ if ($OutcomeTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "Invalid Glue Forecast source table name"
 }
-$forecastDependencies = @(
+if ($NetworkSourceView -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "Invalid Glue Network source view name"
+}
+$analyticsDependencies = @(
     $ForecastSourceTable,
+    $NetworkSourceView,
     "vw_multimodal_forecast_feature_daily_context_v1",
     "vw_multimodal_provider_daily_context_v1",
     "vw_multimodal_shipment_daily_context_v1",
@@ -54,6 +59,7 @@ Write-Host "  Two backing Action tables: SELECT, DESCRIBE"
 Write-Host "  Operational Alert table: SELECT, DESCRIBE"
 Write-Host "  Operational Outcome table: SELECT, DESCRIBE"
 Write-Host "  Operational Forecast source table: SELECT, DESCRIBE"
+Write-Host "  Operational Network source view: SELECT, DESCRIBE"
 Write-Host "  Other tables or views: False"
 Write-Host "  Write or grantable permissions: False"
 Write-Host "  Production resources: False"
@@ -150,9 +156,9 @@ $null = Invoke-AwsJson @(
 $null = Invoke-AwsJson @(
     "glue", "get-table", "--database-name", $SourceDatabase, "--name", $OutcomeTable
 )
-foreach ($forecastDependency in $forecastDependencies) {
+foreach ($analyticsDependency in $analyticsDependencies) {
     $null = Invoke-AwsJson @(
-        "glue", "get-table", "--database-name", $SourceDatabase, "--name", $forecastDependency
+        "glue", "get-table", "--database-name", $SourceDatabase, "--name", $analyticsDependency
     )
 }
 
@@ -175,7 +181,7 @@ $alertTablePath = Write-TemporaryJson @{
 $outcomeTablePath = Write-TemporaryJson @{
     Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $OutcomeTable}
 }
-$forecastTablePaths = @($forecastDependencies | ForEach-Object {
+$analyticsTablePaths = @($analyticsDependencies | ForEach-Object {
     Write-TemporaryJson @{
         Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $_}
     }
@@ -183,7 +189,7 @@ $forecastTablePaths = @($forecastDependencies | ForEach-Object {
 try {
     if ($iamAllowedPrincipals) {
         $databaseChanged = $tableChanged = $baseTableChanged = $currentTableChanged = $false
-        $alertTableChanged = $outcomeTableChanged = $forecastTablesChanged = $false
+        $alertTableChanged = $outcomeTableChanged = $analyticsTablesChanged = $false
     } else {
         $databaseChanged = Grant-MissingPermissions $principalPath $databasePath @("DESCRIBE")
         $tableChanged = Grant-MissingPermissions $principalPath $tablePath @("SELECT", "DESCRIBE")
@@ -191,11 +197,11 @@ try {
         $currentTableChanged = Grant-MissingPermissions $principalPath $currentTablePath @("SELECT", "DESCRIBE")
         $alertTableChanged = Grant-MissingPermissions $principalPath $alertTablePath @("SELECT", "DESCRIBE")
         $outcomeTableChanged = Grant-MissingPermissions $principalPath $outcomeTablePath @("SELECT", "DESCRIBE")
-        $forecastTablesChanged = $false
-        foreach ($forecastTablePath in $forecastTablePaths) {
-            $forecastTablesChanged = (
-                (Grant-MissingPermissions $principalPath $forecastTablePath @("SELECT", "DESCRIBE")) -or
-                $forecastTablesChanged
+        $analyticsTablesChanged = $false
+        foreach ($analyticsTablePath in $analyticsTablePaths) {
+            $analyticsTablesChanged = (
+                (Grant-MissingPermissions $principalPath $analyticsTablePath @("SELECT", "DESCRIBE")) -or
+                $analyticsTablesChanged
             )
         }
     }
@@ -203,7 +209,7 @@ try {
     $cleanupPaths = @(
         $principalPath, $databasePath, $tablePath, $baseTablePath,
         $currentTablePath, $alertTablePath, $outcomeTablePath
-    ) + $forecastTablePaths
+    ) + $analyticsTablePaths
     Remove-Item -LiteralPath $cleanupPaths -Force -ErrorAction SilentlyContinue
 }
 
@@ -213,7 +219,8 @@ Write-Host "Governed backing Action table permissions configured: True"
 Write-Host "Governed operational Alert table permissions configured: True"
 Write-Host "Governed operational Outcome table permissions configured: True"
 Write-Host "Governed operational Forecast source table permissions configured: True"
+Write-Host "Governed operational Network source view permissions configured: True"
 Write-Host "Lake Formation IAM allowed-principals mode: $iamAllowedPrincipals"
 Write-Host "Exact table access enforced by Lambda IAM policy: True"
-Write-Host "Permissions changed in this run: $([bool]($databaseChanged -or $tableChanged -or $baseTableChanged -or $currentTableChanged -or $alertTableChanged -or $outcomeTableChanged -or $forecastTablesChanged))"
+Write-Host "Permissions changed in this run: $([bool]($databaseChanged -or $tableChanged -or $baseTableChanged -or $currentTableChanged -or $alertTableChanged -or $outcomeTableChanged -or $analyticsTablesChanged))"
 Write-Host "No account IDs, ARNs, database names, view names, or paths were printed"

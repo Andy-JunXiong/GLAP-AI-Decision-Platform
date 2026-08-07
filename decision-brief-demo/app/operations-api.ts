@@ -144,6 +144,55 @@ export type ForecastContract = {
   disclosure: string;
 };
 
+export type NetworkSummary = {
+  transport_mode: "AIR" | "OCEAN";
+  provider_code: string;
+  market_lane: string;
+  shipment_count: string;
+  active_shipment_count: string;
+  sla_breach_count: string;
+  sla_breach_rate_pct: string;
+  avg_planned_p2p_hours: string | null;
+  avg_actual_p2p_hours: string | null;
+};
+
+export type ShipmentEntity = {
+  metric_date: string;
+  shipment_id: string;
+  transport_mode: "AIR" | "OCEAN";
+  provider_code: string;
+  market_lane: string;
+  service_level: string;
+  lifecycle_stage: string;
+  lifecycle_status: "OPEN" | "CLOSED";
+  sla_breach_flag: "true" | "false";
+  planned_p2p_hours: string | null;
+  actual_p2p_hours: string | null;
+};
+
+type OperationalSource = {
+  execution_mode: "OPERATIONAL";
+  time_basis: "ACTUAL_CALENDAR";
+  evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE";
+};
+
+export type NetworkResponse = {
+  schema_version: "operations-api.v1";
+  as_of_date: string;
+  source: OperationalSource;
+  entity_access: boolean;
+  items: NetworkSummary[];
+  next_token: null;
+};
+
+export type ShipmentResponse = {
+  schema_version: "operations-api.v1";
+  as_of_date: string;
+  source: OperationalSource;
+  items: ShipmentEntity[];
+  next_token: string | null;
+};
+
 type QueueResponse = {
   schema_version: "operations-api.v1";
   items: OperationsAction[];
@@ -217,6 +266,30 @@ export async function loadPipelineHealth(token: string) {
 
 export async function loadForecastAccuracy(token: string) {
   return request<ForecastContract>("/v1/forecasts", token);
+}
+
+export async function loadNetworkSummary(
+  token: string, filters: { mode?: string; provider?: string; lane?: string } = {},
+) {
+  const query = new URLSearchParams();
+  if (filters.mode) query.set("mode", filters.mode);
+  if (filters.provider) query.set("provider", filters.provider);
+  if (filters.lane) query.set("lane", filters.lane);
+  const suffix = query.size ? `?${query.toString()}` : "";
+  return request<NetworkResponse>(`/v1/network${suffix}`, token);
+}
+
+export async function loadShipmentDrilldown(
+  token: string,
+  filters: { mode?: string; provider?: string; lane?: string; status?: string; nextToken?: string },
+) {
+  const query = new URLSearchParams({ limit: "25" });
+  if (filters.mode) query.set("mode", filters.mode);
+  if (filters.provider) query.set("provider", filters.provider);
+  if (filters.lane) query.set("lane", filters.lane);
+  if (filters.status) query.set("status", filters.status);
+  if (filters.nextToken) query.set("next_token", filters.nextToken);
+  return request<ShipmentResponse>(`/v1/shipments?${query.toString()}`, token);
 }
 
 export async function mutateAction(

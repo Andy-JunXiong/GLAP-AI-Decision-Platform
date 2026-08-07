@@ -7,6 +7,7 @@ forwards mutations with an actor derived from the authenticated identity.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import math
@@ -28,6 +29,9 @@ ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v
 OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
 FORECAST_SOURCE_TABLE = os.getenv(
     "FORECAST_SOURCE_TABLE", "vw_multimodal_forecast_feature_daily_v1"
+)
+NETWORK_SOURCE_VIEW = os.getenv(
+    "NETWORK_SOURCE_VIEW", "vw_multimodal_shipment_daily_v1"
 )
 MUTATION_FUNCTION = os.getenv("ACTION_MUTATION_FUNCTION", "")
 PIPELINE_STATUS_S3_URI = os.getenv("PIPELINE_STATUS_S3_URI", "")
@@ -60,18 +64,21 @@ PIPELINE_RUNBOOK_URL = (
     "blob/main/docs/runbooks/pipeline_reliability.md"
 )
 ROLE_PERMISSIONS = {
-    "viewer": {"risks:read", "actions:read", "outcomes:read", "health:read", "forecasts:read"},
+    "viewer": {
+        "risks:read", "actions:read", "outcomes:read", "health:read", "forecasts:read",
+        "network:read",
+    },
     "operator": {
         "risks:read", "actions:read", "actions:complete", "outcomes:read", "health:read",
-        "forecasts:read",
+        "forecasts:read", "network:read", "shipments:read",
     },
     "approver": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "outcomes:read",
-        "health:read", "forecasts:read",
+        "health:read", "forecasts:read", "network:read", "shipments:read",
     },
     "administrator": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "actions:complete",
-        "outcomes:read", "health:read", "forecasts:read",
+        "outcomes:read", "health:read", "forecasts:read", "network:read", "shipments:read",
     },
 }
 OPERATION_PERMISSION = {
@@ -80,6 +87,8 @@ OPERATION_PERMISSION = {
     "COMPLETE": "actions:complete",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
+SAFE_PROVIDER = re.compile(r"^[A-Z0-9][A-Z0-9._-]{1,31}$")
+SAFE_LANE = re.compile(r"^[A-Z0-9]{2,8}-[A-Z0-9]{2,8}$")
 LOGGER = logging.getLogger(__name__)
 
 
@@ -305,6 +314,120 @@ LEFT JOIN operational ON calendar.feature_date = operational.feature_date
 ORDER BY calendar.feature_date"""
 
 
+def _network_filters(
+    as_of_date: str, mode: str | None, provider: str | None, lane: str | None
+) -> str:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    filters = [
+        "temporal_scope_id = 'OPERATIONAL'",
+        "execution_mode = 'OPERATIONAL'",
+        "time_basis = 'ACTUAL_CALENDAR'",
+        f"as_of_date <= DATE '{as_of_date}'",
+        f"metric_date <= DATE '{as_of_date}'",
+    ]
+    if mode:
+        mode = mode.upper()
+        if mode not in {"AIR", "OCEAN"}:
+            raise ValueError("Unsupported transport mode filter")
+        filters.append(f"transport_mode = '{mode}'")
+    if provider:
+        provider = provider.upper()
+        if not SAFE_PROVIDER.fullmatch(provider):
+            raise ValueError("Invalid provider filter")
+        filters.append(f"carrier = '{provider}'")
+    if lane:
+        lane = lane.upper()
+        if not SAFE_LANE.fullmatch(lane):
+            raise ValueError("Invalid lane filter")
+        filters.append(f"market_lane = '{lane}'")
+    return " AND\n      ".join(filters)
+
+
+def build_network_summary_query(
+    as_of_date: str, mode: str | None = None, provider: str | None = None,
+    lane: str | None = None,
+) -> str:
+    filters = _network_filters(as_of_date, mode, provider, lane)
+    return f"""WITH ranked_shipments AS (
+    SELECT metric_date, shipment_id, transport_mode, carrier AS provider_code,
+           market_lane, lifecycle_status, sla_breach_flag,
+           planned_p2p_hours, actual_p2p_hours,
+           row_number() OVER (
+               PARTITION BY shipment_id ORDER BY metric_date DESC, as_of_date DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(NETWORK_SOURCE_VIEW)}
+    WHERE {filters}
+)
+SELECT transport_mode, provider_code, market_lane,
+       count(*) AS shipment_count,
+       count_if(lifecycle_status = 'OPEN') AS active_shipment_count,
+       count_if(sla_breach_flag) AS sla_breach_count,
+       round(100.0 * count_if(sla_breach_flag) / nullif(count(*), 0), 2)
+           AS sla_breach_rate_pct,
+       round(avg(planned_p2p_hours), 2) AS avg_planned_p2p_hours,
+       round(avg(actual_p2p_hours), 2) AS avg_actual_p2p_hours
+FROM ranked_shipments
+WHERE row_rank = 1
+GROUP BY transport_mode, provider_code, market_lane
+ORDER BY sla_breach_count DESC, active_shipment_count DESC,
+         transport_mode, provider_code, market_lane
+LIMIT 100"""
+
+
+def build_shipment_drilldown_query(
+    limit: int, as_of_date: str, mode: str | None = None,
+    provider: str | None = None, lane: str | None = None,
+    status: str | None = None, after: str | None = None,
+) -> str:
+    filters = _network_filters(as_of_date, mode, provider, lane)
+    if status:
+        status = status.upper()
+        if status not in {"OPEN", "CLOSED"}:
+            raise ValueError("Unsupported shipment status filter")
+    if after and not SAFE_ID.fullmatch(after):
+        raise ValueError("Invalid shipment page token")
+    status_filter = f" AND lifecycle_status = '{status}'" if status else ""
+    after_filter = f" AND shipment_id > '{after}'" if after else ""
+    return f"""WITH ranked_shipments AS (
+    SELECT metric_date, shipment_id, transport_mode, carrier AS provider_code,
+           market_lane, service_level, lifecycle_stage, lifecycle_status,
+           sla_breach_flag, planned_p2p_hours, actual_p2p_hours,
+           row_number() OVER (
+               PARTITION BY shipment_id ORDER BY metric_date DESC, as_of_date DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(NETWORK_SOURCE_VIEW)}
+    WHERE {filters}
+)
+SELECT CAST(metric_date AS varchar) AS metric_date, shipment_id, transport_mode,
+       provider_code, market_lane, service_level, lifecycle_stage,
+       lifecycle_status, CAST(sla_breach_flag AS varchar) AS sla_breach_flag,
+       CAST(planned_p2p_hours AS varchar) AS planned_p2p_hours,
+       CAST(actual_p2p_hours AS varchar) AS actual_p2p_hours
+FROM ranked_shipments
+WHERE row_rank = 1{status_filter}{after_filter}
+ORDER BY shipment_id
+LIMIT {limit + 1}"""
+
+
+def _encode_page_token(shipment_id: str) -> str:
+    return base64.urlsafe_b64encode(shipment_id.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def _decode_page_token(token: str | None) -> str | None:
+    if not token:
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9_-]{4,180}", token):
+        raise ValueError("Invalid shipment page token")
+    try:
+        value = base64.urlsafe_b64decode(token + "=" * (-len(token) % 4)).decode("utf-8")
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise ValueError("Invalid shipment page token") from exc
+    if not SAFE_ID.fullmatch(value):
+        raise ValueError("Invalid shipment page token")
+    return value
+
+
 def _parse_rows(response: dict[str, Any]) -> list[dict[str, str | None]]:
     result = response.get("ResultSet", {})
     rows = result.get("Rows", [])
@@ -329,7 +452,7 @@ def _query_rows(client: Any, query: str) -> list[dict[str, str | None]]:
     while True:
         state = client.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]["Status"]["State"]
         if state == "SUCCEEDED":
-            return _parse_rows(client.get_query_results(QueryExecutionId=query_id, MaxResults=101))
+            return _parse_rows(client.get_query_results(QueryExecutionId=query_id, MaxResults=102))
         if state in {"FAILED", "CANCELLED"}:
             raise RuntimeError("Operations query failed")
         if time.monotonic() >= deadline:
@@ -628,6 +751,61 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         subject, actor, permissions = _identity(event)
         method = str(event.get("requestContext", {}).get("http", {}).get("method") or "")
         path = str(event.get("rawPath") or "")
+        if method == "GET" and path == "/v1/network":
+            if "network:read" not in permissions:
+                raise PermissionError("Role cannot read network summaries")
+            import boto3
+            params = event.get("queryStringParameters") or {}
+            cutoff = _sydney_date()
+            rows = _query_rows(
+                boto3.client("athena"),
+                build_network_summary_query(
+                    cutoff, params.get("mode"), params.get("provider"), params.get("lane")
+                ),
+            )
+            return _response(200, {
+                "schema_version": "operations-api.v1",
+                "as_of_date": cutoff,
+                "source": {
+                    "execution_mode": "OPERATIONAL",
+                    "time_basis": "ACTUAL_CALENDAR",
+                    "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+                },
+                "entity_access": "shipments:read" in permissions,
+                "items": rows,
+                "next_token": None,
+            })
+
+        if method == "GET" and path == "/v1/shipments":
+            if "shipments:read" not in permissions:
+                raise PermissionError("Role cannot read shipment entities")
+            import boto3
+            params = event.get("queryStringParameters") or {}
+            limit = min(max(int(params.get("limit", 50)), 1), 100)
+            after = _decode_page_token(params.get("next_token"))
+            cutoff = _sydney_date()
+            rows = _query_rows(
+                boto3.client("athena"),
+                build_shipment_drilldown_query(
+                    limit, cutoff, params.get("mode"), params.get("provider"),
+                    params.get("lane"), params.get("status"), after,
+                ),
+            )
+            has_more = len(rows) > limit
+            items = rows[:limit]
+            next_token = _encode_page_token(str(items[-1]["shipment_id"])) if has_more else None
+            return _response(200, {
+                "schema_version": "operations-api.v1",
+                "as_of_date": cutoff,
+                "source": {
+                    "execution_mode": "OPERATIONAL",
+                    "time_basis": "ACTUAL_CALENDAR",
+                    "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE",
+                },
+                "items": items,
+                "next_token": next_token,
+            })
+
         if method == "GET" and path == "/v1/forecasts":
             if "forecasts:read" not in permissions:
                 raise PermissionError("Role cannot read Forecasts")

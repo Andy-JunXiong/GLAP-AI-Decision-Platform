@@ -48,6 +48,10 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /export async function loadPipelineHealth/);
   assert.match(client, /\/v1\/forecasts/);
   assert.match(client, /export async function loadForecastAccuracy/);
+  assert.match(client, /\/v1\/network/);
+  assert.match(client, /export async function loadNetworkSummary/);
+  assert.match(client, /\/v1\/shipments/);
+  assert.match(client, /export async function loadShipmentDrilldown/);
   assert.match(client, /timeZone: "Australia\/Sydney"/);
   assert.doesNotMatch(client, /localStorage/);
 
@@ -71,4 +75,7 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /title="Forecast Accuracy"/);
   assert.match(page, /Model promotion remains blocked/);
   assert.match(page, /future points remain unobserved projections/);
+  assert.match(page, /title="Network Drill-down"/);
+  assert.match(page, /shipment identifiers require an operator, approver, or administrator role/);
+  assert.match(page, /Costs, raw port identifiers, infrastructure identifiers, and future simulations are excluded/);
 });
