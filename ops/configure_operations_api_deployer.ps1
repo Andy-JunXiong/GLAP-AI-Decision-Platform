@@ -99,6 +99,7 @@ if ($queueArn -notmatch "^arn:$partition`:sqs:$Region`:$accountId`:glap-operatio
 }
 
 $executionRoleArn = "arn:${partition}:iam::${accountId}:role/${ExecutionRoleName}"
+$githubPolicyArn = "arn:${partition}:iam::${accountId}:policy/${GitHubPolicyName}"
 $runtimeRoleArn = "arn:${partition}:iam::${accountId}:role/${runtimeRoleName}"
 $functionArn = "arn:${partition}:lambda:${Region}:${accountId}:function:${functionName}"
 $stackArn = "arn:${partition}:cloudformation:${Region}:${accountId}:stack/${StackName}/*"
@@ -257,6 +258,7 @@ $githubPolicy = @{
 
 Write-Host "Operations API GitHub deployer policy plan"
 Write-Host "  GitHub role orchestration only: True"
+Write-Host "  GitHub orchestration policy is customer-managed: True"
 Write-Host "  Dedicated CloudFormation execution role: True"
 Write-Host "  Existing Operations API stack and physical resources only: True"
 Write-Host "  Artifact prefix scoped: True"
@@ -291,9 +293,42 @@ try {
     & aws iam put-role-policy --role-name $ExecutionRoleName `
         --policy-name $ExecutionPolicyName --policy-document "file://$executionPath" @awsScope
     if ($LASTEXITCODE -ne 0) { throw "Unable to configure the execution role policy" }
-    & aws iam put-role-policy --role-name $GitHubRoleName `
-        --policy-name $GitHubPolicyName --policy-document "file://$githubPath" @awsScope
-    if ($LASTEXITCODE -ne 0) { throw "Unable to configure the GitHub deployer policy" }
+
+    $localPolicies = Invoke-AwsJson @("iam", "list-policies", "--scope", "Local")
+    $githubManagedPolicyExists = @(
+        $localPolicies.Policies | Where-Object Arn -eq $githubPolicyArn
+    ).Count -eq 1
+    if ($githubManagedPolicyExists) {
+        $versions = Invoke-AwsJson @(
+            "iam", "list-policy-versions", "--policy-arn", $githubPolicyArn
+        )
+        foreach ($version in @($versions.Versions | Where-Object IsDefaultVersion -eq $false)) {
+            & aws iam delete-policy-version --policy-arn $githubPolicyArn `
+                --version-id $version.VersionId @awsScope
+            if ($LASTEXITCODE -ne 0) { throw "Unable to prune an old deployer policy version" }
+        }
+        & aws iam create-policy-version --policy-arn $githubPolicyArn `
+            --policy-document "file://$githubPath" --set-as-default @awsScope | Out-Null
+    } else {
+        & aws iam create-policy --policy-name $GitHubPolicyName `
+            --policy-document "file://$githubPath" `
+            --description "GitHub orchestration for the existing GLAP Operations API staging stack" `
+            --tags Key=Project,Value=GLAP Key=Environment,Value=staging `
+            @awsScope | Out-Null
+    }
+    if ($LASTEXITCODE -ne 0) { throw "Unable to configure the GitHub managed deployer policy" }
+    & aws iam attach-role-policy --role-name $GitHubRoleName `
+        --policy-arn $githubPolicyArn @awsScope
+    if ($LASTEXITCODE -ne 0) { throw "Unable to attach the GitHub deployer policy" }
+
+    $inlinePolicies = Invoke-AwsJson @(
+        "iam", "list-role-policies", "--role-name", $GitHubRoleName
+    )
+    if ($GitHubPolicyName -in @($inlinePolicies.PolicyNames)) {
+        & aws iam delete-role-policy --role-name $GitHubRoleName `
+            --policy-name $GitHubPolicyName @awsScope
+        if ($LASTEXITCODE -ne 0) { throw "Unable to remove the superseded inline policy" }
+    }
 } finally {
     Remove-Item -LiteralPath @($trustPath, $executionPath, $githubPath) `
         -Force -ErrorAction SilentlyContinue

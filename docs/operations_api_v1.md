@@ -184,7 +184,9 @@ applies it once:
   -Apply
 ```
 
-The GitHub OIDC role can upload only under the reviewed artifact prefix,
+The GitHub OIDC role receives this orchestration boundary as a separate
+customer-managed policy so it does not compete with existing inline policies'
+aggregate size quota. It can upload only under the reviewed artifact prefix,
 operate change sets only for `glap-operations-api-staging`, and pass only
 `glap-operations-api-cloudformation-staging-role` to CloudFormation. The
 dedicated execution role can update only the stack's currently discovered
