@@ -33,6 +33,11 @@ Current implementation and release boundaries are recorded in the
   browser client. It reads the operational queue and submits approve, reject,
   and complete events only when an internal HTTPS API and session token exist.
   Public GitHub Pages remains read-only and sends no Action request.
+- [x] Complete the authenticated cockpit with Risk Hotspots, Outcome Review,
+  Pipeline Health, Forecast Accuracy, authorised Network Drill-down, and
+  accessible loading/empty/stale/partial/failed states.
+- [x] Deploy the private frontend with portable ZIP paths and verify that its
+  JavaScript, CSS, sign-in entry, and accessible-state fingerprint are live.
 - [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
   for the pending Outcome; it remains pending and is not observed evidence today.
 
@@ -146,7 +151,7 @@ Current implementation and release boundaries are recorded in the
   the remaining `missing_provider_coverage` lifecycle check.
 
 Detailed evidence and next actions are in the
-[`6 August development handoff`](docs/development_handoff_2026-08-06.md).
+[`7 August development handoff`](docs/development_handoff_2026-08-07.md).
 The governing date boundary is in the
 [`temporal truthfulness contract`](docs/temporal_truthfulness.md).
 
@@ -161,8 +166,15 @@ The governing date boundary is in the
 - [x] Add and validate the exact staging-only CloudFormation execution policy
   needed by the Operations API workflow `deploy` action; rerun the complete
   post-deployment API and four-role verification matrix.
+- [x] Add accessible cockpit data states, correct manual Amplify nested-asset
+  packaging, and verify the complete deployed static bundle rather than only
+  the root HTML response.
 - [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
   step for the pending Outcome; do not simulate an early operational result.
+- [ ] Document grain, ownership, freshness, and reconciliation rules for every
+  remaining internal-only analytics view.
+- [ ] Add Athena workgroup budgets, query-cost alarms, and incremental-refresh
+  rules before proposing recurring analytics execution.
 
 ### Future plan
 
@@ -202,7 +214,7 @@ The governing date boundary is in the
 
 - [x] Freeze a versioned `multimodal_forecast_feature_daily_v1` feature contract
   and document feature availability, null handling, and training cutoff rules.
-- [ ] Backtest recent-level, moving-average, weekday-seasonal, and existing OLS
+- [x] Backtest recent-level, moving-average, weekday-seasonal, and existing OLS
   booking-volume baselines by mode and provider using rolling time windows.
   - [x] Run the first private AWS scenario backtest over `2026-08-04` through
     `2026-09-07`. Its future-dated rows validate backtest mechanics only;
@@ -308,7 +320,7 @@ Repository implementation checkpoint — 4 August 2026:
   causes, actions v2 action distribution, no legacy v1 or trace claims.
 - [x] Correct outcome ratio display (`0.375` means `37.5%`) and label every
   public outcome as simulated.
-- [ ] Publish the existing six-stage controller and quality-gate status without
+- [x] Publish the existing six-stage controller and quality-gate status without
   exposing private AWS identifiers.
 - [x] Seed a representative active population across lifecycle stages.
 - [x] Add approximately 14--18 new shipments per normal day while carrying
@@ -316,10 +328,10 @@ Repository implementation checkpoint — 4 August 2026:
 - [x] Preserve the single immutable P2P ETD/ETA and set ATD/ATA only when their
   milestones occur in the governed AWS writer.
 - [x] Stop active updates after delivery while retaining completed history.
-- [ ] Add SLA breach and cost anomaly alongside the existing high-risk-route
+- [x] Add SLA breach and cost anomaly alongside the existing high-risk-route
   alert, with explicit grain and stable lifecycle identity.
-- [ ] Add delayed, reproducible and context-dependent simulated outcomes.
-- [ ] Route learning into a human-reviewed decision-policy proposal, not an
+- [x] Add delayed, reproducible and context-dependent simulated outcomes.
+- [x] Route learning into a human-reviewed decision-policy proposal, not an
   automatic simulation-generator change.
 
 ## P0 — Pipeline reliability and truthful health
@@ -347,40 +359,37 @@ Repository checkpoint — 4 August 2026:
 - [x] Observe the first actual-calendar success-gated run on 6 August, verify
   all six stages and ten checks, then enable required OPS verification.
 
-- [ ] Replace time-only sequencing with success-gated orchestration from data
+- [x] Replace time-only sequencing with success-gated orchestration from data
   generation and validation through the current v3/v2 flywheel.
-- [ ] Add data-quality gates for missing dates, empty inputs, duplicate business
+- [x] Add data-quality gates for missing dates, empty inputs, duplicate business
   keys, abnormal volume changes, and stale stage outputs.
-- [ ] Publish per-stage start time, duration, completion state, and safe failure
+- [x] Publish per-stage start time, duration, completion state, and safe failure
   category in the OPS health contract.
-- [ ] Add runbook links and failed-stage drill-down from Analytics and the OPS
+- [x] Add runbook links and failed-stage drill-down from Analytics and the OPS
   Dashboard without exposing private AWS identifiers.
 - [ ] Verify CloudWatch alarms, retries, and DLQ coverage for every function in
   the current v3/v2 path.
 - [x] Retire the separate legacy 08:00 generator/flywheel scheduling pair; the
   flywheel function now runs only inside the success-gated chain.
-- [ ] Ensure downstream processing and Pages refresh cannot claim `current` after
+- [x] Ensure downstream processing and Pages refresh cannot claim `current` after
   any upstream validation or stage failure.
-  - 6 August: the controller itself passed all stages and checks, but the
-    pre-`#30` exporter still publishes `unverified` because it swallows the
-    status-object read error. PR `#30` preserves fail-closed behavior and adds a
-    public-safe diagnostic; verify the first post-merge Pages run before
-    calling the public health view current.
+  - 7 August: the post-`#30` exporter and private Pipeline Health contract both
+    fail closed on missing, stale, incomplete, failed, or future-dated status.
 
 ## P1 — Authenticated operator write-back loop
 
-- [ ] Define versioned request/response contracts for decision review, action
+- [x] Define versioned request/response contracts for decision review, action
   updates, outcome reconciliation, and audit events.
-- [ ] Add an authenticated internal Operations API using API Gateway and Lambda.
-- [ ] Add Cognito or IAM-based identities and role-based authorization for
+- [x] Add an authenticated internal Operations API using API Gateway and Lambda.
+- [x] Add Cognito or IAM-based identities and role-based authorization for
   viewer, operator, approver, and administrator responsibilities.
-- [ ] Read the real internal decision queue with pagination and safe filters.
+- [x] Read the real internal decision queue with pagination and safe filters.
 - [ ] Record approve, edit, and reject events with actor, timestamp, reason, and
   immutable source-decision version.
 - [ ] Create and update owned Actions with due date and controlled status values.
-- [ ] Record observed Outcomes separately from expected impact.
-- [ ] Add an append-only audit contract and idempotency keys for all writes.
-- [ ] Keep the public Pages deployment read-only and aggregate-only.
+- [x] Record observed Outcomes separately from expected impact.
+- [x] Add an append-only audit contract and idempotency keys for all writes.
+- [x] Keep the public Pages deployment read-only and aggregate-only.
 
 ## P2 — Governed operational analytics assets
 
@@ -400,9 +409,9 @@ Repository checkpoint — 4 August 2026:
 
 ## P3 — Forecast validation and model upgrade
 
-- [ ] Retain the 28-day OLS forecast as the required benchmark model.
-- [ ] Add moving-average, weekday-seasonal, and recent-level baselines.
-- [ ] Add rolling time-based backtests with MAE, RMSE, MAPE, bias, and interval
+- [x] Retain the 28-day OLS forecast as the required benchmark model.
+- [x] Add moving-average, weekday-seasonal, and recent-level baselines.
+- [x] Add rolling time-based backtests with MAE, RMSE, MAPE, bias, and interval
   coverage where the metric is defined.
 - [ ] Add route/carrier forecasts only to the authenticated internal analytics
   boundary.
@@ -410,9 +419,9 @@ Repository checkpoint — 4 August 2026:
   history is available.
 - [ ] Compare any XGBoost/LightGBM candidate against simple baselines before
   promotion.
-- [ ] Record model version, feature contract, training window, generated time,
+- [x] Record model version, feature contract, training window, generated time,
   and prediction interval with every forecast.
-- [ ] Add drift, data-completeness, and prediction-error monitoring.
+- [x] Add drift, data-completeness, and prediction-error monitoring.
 
 ## P4 — Internal operations cockpit and product cleanup
 
@@ -420,10 +429,10 @@ Repository checkpoint — 4 August 2026:
   `Shipment → Signal → Root Cause → Decision → Human Review → Action → Outcome → Learning`.
 - [ ] Keep **System** focused on AWS resources, Data Catalog, Lambda logic, SQL,
   monitoring, release controls, and lineage.
-- [ ] Add authenticated Risk Hotspots, Decision Queue, Action Board, Outcome
+- [x] Add authenticated Risk Hotspots, Decision Queue, Action Board, Outcome
   Review, Forecast Accuracy, and Pipeline Health views.
-- [ ] Add route/carrier/entity drill-down only for authorised internal users.
-- [ ] Distinguish synthetic scenario cards, live aggregate analytics, and measured
+- [x] Add route/carrier/entity drill-down only for authorised internal users.
+- [x] Distinguish synthetic scenario cards, live aggregate analytics, and measured
   operational outcomes everywhere in the UI.
 - [x] Add accessible loading, empty, stale, partial, and failed states.
   - `2026-08-07`: the authenticated cockpit now uses one semantic status pattern
@@ -450,7 +459,7 @@ Repository checkpoint — 4 August 2026:
 - [ ] Add API audit logging, lineage, operational SLOs, and cost dashboards.
 - [ ] Add backup, recovery, incident response, and operator runbooks.
 - [ ] Add load, concurrency, security, and failure-injection tests.
-- [ ] Preserve explicit labels for synthetic, validation, forecast, and measured
+- [x] Preserve explicit labels for synthetic, validation, forecast, and measured
   production evidence.
 
 ## Delivery order

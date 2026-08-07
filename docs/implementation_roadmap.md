@@ -2,11 +2,12 @@
 
 ## Purpose
 
-GLAP now has a deployed read-only analytics path: AWS Athena aggregates the
-current decision flywheel, GitHub Actions publishes a sanitized OPS contract,
-and the product displays stage freshness, operational KPIs, and a seven-day
-statistical forecast. The remaining work turns that evidence path into an
-authenticated operational system with governed writes and measured feedback.
+GLAP now has both a deployed public read-only analytics path and a separate
+authenticated staging cockpit. AWS Athena supplies governed evidence; the
+public product displays sanitized aggregates; authenticated operators can move
+from Risk to Decision, Action, Outcome, Pipeline Health, Forecast Accuracy, and
+authorised shipment evidence. The remaining work matures actual-calendar
+feedback, cost controls, governance, and production readiness.
 
 Public GitHub Pages must remain read-only and aggregate-only. Entity-level
 operations, approvals, Actions, and Outcomes belong behind an authenticated
@@ -313,52 +314,48 @@ Acceptance criteria:
 - evidence always distinguishes synthetic validation from measured production
   impact.
 
-## Recommended next implementation slice
+## Recommended next implementation slices
 
-Truthful Pipeline Health, the private closed-loop persistence layer, and the
-manual Action mutation/audit path are now implemented and verified. The next
-slice is the authenticated operator journey; forecast-model work remains
-calendar-gated and is not the immediate implementation priority.
+The authenticated operator journey, reliability exercises, accessible data
+states, and staging deployment path are implemented and verified. Work now
+splits into an unblocked governance/cost track and a calendar-gated evidence
+track.
 
-1. Define the viewer, operator, approver, and administrator permission matrix
-   and versioned internal Operations API contract.
-2. Put the authenticated API in front of the private Action mutation Lambda,
-   preserving named-human enforcement, valid transitions, stable request IDs,
-   and append-only audit history.
-3. Connect Decision Queue and Action Board screens to the API while keeping
-   GitHub Pages read-only and aggregate-only.
-4. Add alarms, DLQ/retry evidence, concurrency controls, and recovery guidance
-   before considering any production write path.
-5. On or after `2026-08-09` Sydney time, run the actual-calendar observation for
-   the pending Outcome. Never use a future simulation as observed evidence.
-6. Accumulate eligible actual-calendar Outcomes and provider coverage before
-   resuming forecast or supervised-model readiness decisions.
+1. Document grain, owner, source, freshness, and reconciliation rules for each
+   remaining internal-only analytics view.
+2. Configure Athena workgroup budgets, query-cost alarms, and incremental
+   refresh rules before expanding recurring analytics execution.
+3. On or after `2026-08-09` Sydney time, observe the pending Outcome using the
+   actual calendar and verify the cockpit transition without rewriting history.
+4. Accumulate eligible Outcomes and DHL/KN coverage before repeating
+   operational forecast/model-readiness decisions.
+5. Complete classification, retention/deletion, SLO, recovery, Iceberg
+   maintenance, and load/security testing before any production expansion.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic
 policy changes require separate review and explicit approval.
 
-## Repository checkpoint -- deployed governed closed loop and Action audit
+## Repository checkpoint -- authenticated staging cockpit, 7 August 2026
 
-The repository now contains the deterministic domain contract for the next
-closed-loop slice. Stable `SLA_BREACH` and `COST_ANOMALY` candidates reconcile
-into cross-day open/resolved alerts; alerts produce human-review-required
-actions; completed actions produce delayed, context-dependent simulated
-Outcomes; and sufficient closed Outcomes may create only a
-`PENDING_HUMAN_REVIEW` policy proposal with an explicit rollback version.
+The stable Alert, Action, Outcome, and review-only policy contracts now feed a
+deployed authenticated staging API and cockpit. Signed identities, role checks,
+named-human mutation rules, idempotency, and append-only audit history govern
+the write boundary. Public Pages remains separate and read-only.
 
 Actual-calendar eligibility is fail closed: only closed `OPERATIONAL` Outcomes
 with `time_basis=ACTUAL_CALENDAR` and an observed date on or before the Sydney
 as-of date may enter readiness evidence. Future simulations remain excluded.
 
-Private AWS staging now persists the governed Alerts, proposed Actions, delayed
-Outcomes, review-only policy proposals, and append-only Action audit events. A
-manual-only mutation Lambda enforces named-human approval, valid transitions,
-and request idempotency; a view derives current Action state without overwriting
-history. One controlled Action reached `COMPLETED`, and its same-date lifecycle
-continuation produced one `PENDING` Outcome due `2026-08-09`.
+Private AWS staging persists governed Alerts, proposed Actions, delayed
+Outcomes, review-only policy proposals, and append-only Action audit events.
+Risk Hotspots, Decision Queue, Action Board, Outcome Review, Pipeline Health,
+Forecast Accuracy, Network Drill-down, and authorised entity evidence are live
+behind Cognito. The hosting verifier proves both the HTML shell and its nested
+JavaScript/CSS are reachable.
 
-The remaining boundary is explicit: the Outcome is not observed evidence as of
-`2026-08-06`; authenticated write APIs, recurring execution, production aliases,
-and policy activation remain outside the deployed boundary and require separate
-approval. See [`governed_closed_loop.md`](governed_closed_loop.md).
+One controlled Action reached `COMPLETED` and produced one `PENDING` Outcome due
+`2026-08-09`. It is not observed evidence as of `2026-08-07`. Recurring
+execution, production aliases, public entity publication, policy activation,
+and model promotion remain outside the approved boundary. See
+[`development_handoff_2026-08-07.md`](development_handoff_2026-08-07.md).

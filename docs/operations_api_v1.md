@@ -269,6 +269,13 @@ The pending row had no observation date or effect value and remained explicitly
 `NOT_OBSERVED`; it is not performance, value, label-maturity, or promotion
 evidence before its `2026-08-09` Sydney due date.
 
+The private frontend now exposes accessible loading, empty, stale, partial,
+failed, sign-in-required, and idle states with retry and reduced-motion support.
+The final `2026-08-07` deployment also corrected Windows ZIP entry separators:
+the private staging verifier confirmed the root page, every referenced Next.js
+JavaScript/CSS asset, and the accessible-state fingerprint are reachable. A
+shell-only HTTP 200 can no longer pass the frontend release check.
+
 An IAM administrator can exercise the deployed allow/deny matrix without using
 real email addresses by running `ops/verify_operations_roles_staging.ps1` first
 in plan mode and then with `-Apply`. The script suppresses email delivery,
