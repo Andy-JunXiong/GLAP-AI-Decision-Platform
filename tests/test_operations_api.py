@@ -29,6 +29,13 @@ def request(method="GET", path="/v1/actions", groups="viewer", body=None):
 
 
 class OperationsApiTests(unittest.TestCase):
+    def test_safe_aws_error_diagnostic_omits_exception_message(self):
+        class AwsFailure(Exception):
+            response = {"Error": {"Code": "AccessDeniedException", "Message": "private path"}}
+
+        self.assertEqual(api._safe_aws_error_code(AwsFailure()), "AccessDeniedException")
+        self.assertNotIn("private", api._safe_aws_error_code(AwsFailure()))
+
     def test_permission_matrix_is_separated(self):
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
