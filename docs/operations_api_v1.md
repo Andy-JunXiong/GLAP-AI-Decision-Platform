@@ -81,16 +81,21 @@ workflow in `plan` mode. Deployment permissions remain a separate review gate.
 
 ## Current implementation boundary
 
-The contract, adapter, infrastructure template, plan-first deployment tool, and
-browser client are implemented in the repository. Decision Queue reads the
+The contract, adapter, API and identity infrastructure templates, plan-first
+deployment tools, and browser client are implemented in the repository. The
+dedicated identity stack creates an administrator-managed Cognito pool, four
+role groups, an authorization-code-with-PKCE web client, and a manually deployed
+Amplify staging branch. It has no repository connection and does not reuse
+public GitHub Pages. Decision Queue reads the
 operational queue and Action Board can approve, reject, or complete an Action
-when the build has an internal HTTPS API URL and the authenticated host has put
-its short-lived access token in session storage. Without both conditions the
+after an administrator creates a user and assigns the appropriate group. The
+browser obtains its short-lived access token through Cognito and keeps it only
+in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
 
-The stack has not yet been deployed or connected to an approved identity
-provider/origin. The read-only discovery policy is now reproducible, but an AWS
-IAM administrator must apply it once before the private plan can complete. Runtime
-AWS authorization and recovery evidence remain the next release gate. Public
-GitHub Pages must be built without the internal API URL and cannot submit these
-mutations.
+The dedicated identity and hosting stack is implemented but not yet deployed.
+After it is deployed, the Operations API plan reads its protected outputs by
+known stack name, masks them, and retains candidate discovery only as a fallback.
+Runtime AWS authorization and recovery evidence remain the next release gate.
+Public GitHub Pages must be built without the internal API or Cognito variables
+and cannot submit these mutations.

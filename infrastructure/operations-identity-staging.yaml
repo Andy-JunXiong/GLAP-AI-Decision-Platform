@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Dedicated Cognito identity and manually deployed internal web origin for GLAP Operations staging.
+
+Parameters:
+  InternalBranchName:
+    Type: String
+    Default: staging
+    AllowedPattern: '^[a-z0-9-]{1,32}$'
+  UserPoolDomainPrefix:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[a-z0-9-]{1,63}$'
+
+Conditions:
+  HasDomainPrefix: !Not [!Equals [!Ref UserPoolDomainPrefix, '']]
+
+Resources:
+  InternalWebApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: glap-operations-internal-staging
+      Platform: WEB
+      EnableBranchAutoDeletion: false
+      CustomRules:
+        - Source: '/<*>'
+          Target: '/index.html'
+          Status: '404-200'
+
+  InternalWebBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt InternalWebApp.AppId
+      BranchName: !Ref InternalBranchName
+      EnableAutoBuild: false
+      Stage: DEVELOPMENT
+
+  OperationsUserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: glap-operations-staging-users
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      MfaConfiguration: OPTIONAL
+      EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 14
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 2
+  OperationsUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref OperationsUserPool
+      Domain: !If
+        - HasDomainPrefix
+        - !Ref UserPoolDomainPrefix
+        - !Sub glap-operations-${AWS::AccountId}
+
+  OperationsWebClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: glap-operations-internal-staging
+      UserPoolId: !Ref OperationsUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs:
+        - !Join ['', ['https://', !Ref InternalWebBranch, '.', !GetAtt InternalWebApp.DefaultDomain, '/']]
+      LogoutURLs:
+        - !Join ['', ['https://', !Ref InternalWebBranch, '.', !GetAtt InternalWebApp.DefaultDomain, '/']]
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 1
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  ViewerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: viewer
+      Description: Read the governed Operations queue.
+      Precedence: 40
+      UserPoolId: !Ref OperationsUserPool
+
+  OperatorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: operator
+      Description: Complete approved Operations actions.
+      Precedence: 30
+      UserPoolId: !Ref OperationsUserPool
+
+  ApproverGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: approver
+      Description: Approve or reject proposed Operations actions.
+      Precedence: 20
+      UserPoolId: !Ref OperationsUserPool
+
+  AdministratorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: administrator
+      Description: Exercise all governed Operations actions.
+      Precedence: 10
+      UserPoolId: !Ref OperationsUserPool
+
+Outputs:
+  UserPoolId:
+    Value: !Ref OperationsUserPool
+  JwtIssuer:
+    Value: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${OperationsUserPool}
+  JwtAudience:
+    Value: !Ref OperationsWebClient
+  CognitoHostedUiDomain:
+    Value: !Sub https://${OperationsUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com
+  InternalOrigin:
+    Value: !Join ['', ['https://', !Ref InternalWebBranch, '.', !GetAtt InternalWebApp.DefaultDomain]]
+  AmplifyAppId:
+    Value: !GetAtt InternalWebApp.AppId
+  AmplifyBranchName:
+    Value: !Ref InternalWebBranch

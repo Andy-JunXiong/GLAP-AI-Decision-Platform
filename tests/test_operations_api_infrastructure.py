@@ -48,6 +48,8 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn('} >> "$GITHUB_ENV"', workflow)
         self.assertIn("Expected exactly one Cognito pool candidate", workflow)
         self.assertIn("Expected exactly one internal HTTPS origin candidate", workflow)
+        self.assertIn("glap-operations-identity-staging", workflow)
+        self.assertIn("Dedicated identity stack configuration available", workflow)
         discovery = workflow.split(
             "Resolve protected staging configuration privately", 1
         )[1].split("Validate protected staging configuration", 1)[0]
@@ -73,11 +75,15 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn('"cognito-idp:ListUserPoolClients"', script)
         self.assertIn('"amplify:ListApps"', script)
         self.assertIn('"apigateway:GET"', script)
+        self.assertIn('"cloudformation:DescribeStacks"', script)
+        self.assertIn('stack/${IdentityStackName}/*', script)
         self.assertIn("Deployment permissions: False", script)
         self.assertIn("Self-modifying deployer permission: False", script)
         self.assertNotIn('"iam:PassRole"', script)
         self.assertNotIn('"lambda:', script)
-        self.assertNotIn('"cloudformation:', script)
+        self.assertNotIn('"cloudformation:Create', script)
+        self.assertNotIn('"cloudformation:Execute', script)
+        self.assertNotIn('"cloudformation:Delete', script)
         self.assertNotIn('"s3:', script)
         self.assertNotIn('"sqs:', script)
         self.assertNotIn('"apigateway:POST"', script)

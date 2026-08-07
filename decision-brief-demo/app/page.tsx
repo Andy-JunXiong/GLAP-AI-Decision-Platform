@@ -9,6 +9,13 @@ import {
   mutateAction,
   readOperationsToken,
 } from "./operations-api";
+import {
+  finishOperationsSignIn,
+  internalAuthenticationEnabled,
+  operationsSignedIn,
+  signInOperations,
+  signOutOperations,
+} from "./operations-auth";
 import "./operations.css";
 
 type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "brief";
@@ -56,6 +63,7 @@ export default function Home() {
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [operationsMessage, setOperationsMessage] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
 
   const refreshOperations = useCallback(async () => {
     if (!internalOperationsEnabled()) return;
@@ -78,7 +86,17 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const initialLoad = window.setTimeout(() => { void refreshOperations(); }, 0);
+    const initialLoad = window.setTimeout(() => {
+      void finishOperationsSignIn()
+        .then(() => {
+          setSignedIn(operationsSignedIn());
+          return refreshOperations();
+        })
+        .catch((error) => {
+          setOperationsState("error");
+          setOperationsMessage(error instanceof Error ? error.message : "Internal sign-in failed");
+        });
+    }, 0);
     return () => window.clearTimeout(initialLoad);
   }, [refreshOperations]);
 
@@ -138,6 +156,11 @@ export default function Home() {
           </div>
           <div className="header-actions">
             <span className="demo-badge">Synthetic workspace</span>
+            {internalOperationsEnabled() && internalAuthenticationEnabled() && (
+              signedIn
+                ? <button className="auth-button" onClick={signOutOperations}>Sign out</button>
+                : <button className="auth-button" onClick={() => { void signInOperations(); }}>Internal sign in</button>
+            )}
             <button aria-label="Notifications" className="notification">●<b>3</b></button>
             <button className="help">?</button>
           </div>
