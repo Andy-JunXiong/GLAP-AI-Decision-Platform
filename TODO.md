@@ -127,6 +127,11 @@ Current implementation and release boundaries are recorded in the
   forecast and rolling accuracy in `insufficient_operational_history`; future
   points, when eligible, remain isolated staging simulations with no production
   effect or promotion authority.
+- [x] Connect the authenticated shipment journey to latest-snapshot provider
+  and lane aggregates, then permit entity drill-down only for operator,
+  approver, and administrator roles. Keep costs, raw ports, infrastructure
+  identifiers, future simulations, and all entity records out of the public
+  demonstration.
 - [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
   exists on or before the Sydney cutoff; do not use future simulations to pass
   the remaining `missing_provider_coverage` lifecycle check.
@@ -150,7 +155,8 @@ The governing date boundary is in the
 ### Future plan
 
 - [x] Complete the authenticated internal cockpit chain from Risk Hotspots
-  through Decision Queue, Action Board, and Outcome Review.
+  through Decision Queue, Action Board, Outcome Review, and authorised Network
+  Drill-down.
 - [ ] Accumulate actual-calendar closed Outcomes and route sufficient evidence
   only into separately reviewed policy proposals with rollback versions.
 - [ ] Reassess provider coverage and forecast/model readiness only when eligible

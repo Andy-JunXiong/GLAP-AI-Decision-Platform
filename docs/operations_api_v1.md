@@ -1,16 +1,16 @@
 # Internal Operations API v1
 
 This is the authenticated, staging-only boundary between the internal Risk
-Hotspots / Decision Queue / Action Board / Outcome Review / Forecast Accuracy
+Hotspots / Decision Queue / Action Board / Outcome Review / Network Drill-down / Forecast Accuracy
 journey and the
 governed lifecycle tables plus private append-only Action mutation function.
 Public GitHub Pages is not an API client and receives no write permission.
 
 ## Roles and permissions
 
-| Role | Read risks | Read queue | Read outcomes | Read forecasts/health | Approve | Reject | Complete |
+| Role | Read risks/queue/outcomes | Read forecasts/health | Read network aggregate | Read shipment entities | Approve | Reject | Complete |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `viewer` | yes | yes | yes | yes | no | no | no |
+| `viewer` | yes | yes | yes | no | no | no | no |
 | `operator` | yes | yes | yes | yes | no | no | yes |
 | `approver` | yes | yes | yes | yes | yes | yes | no |
 | `administrator` | yes | yes | yes | yes | yes | yes | yes |
@@ -59,6 +59,19 @@ system-derived staging `FUTURE_SIMULATION` scenario with
 `MODEL_PROJECTION` time basis, `ADVISORY_FORECAST_NOT_OBSERVED` points, and no
 production effect. Rolling accuracy requires at least seven past-only holdouts;
 it never authorizes model promotion.
+
+`GET /v1/network?mode=AIR&provider=DHL&lane=PVG-SYD` returns at most 100
+provider/lane aggregates from the latest snapshot of each shipment. All four
+internal roles may read this aggregate. The response states whether the caller
+also has entity access, but never includes a shipment identifier, raw port,
+cost, infrastructure identifier, or future-simulation row.
+
+`GET /v1/shipments?provider=DHL&lane=PVG-SYD&limit=25` is the explicitly
+authorised entity drill-down for `operator`, `approver`, and `administrator`;
+`viewer` receives 403. It returns only the latest operational snapshot at or
+before the Sydney cutoff, exposes a bounded operational field set, and uses an
+opaque `next_token` for stable shipment-ID pagination. `mode`, `provider`,
+`lane`, `status`, and page-token inputs are allow-listed before entering SQL.
 
 `POST /v1/actions/{action_id}/events` accepts:
 
@@ -121,8 +134,8 @@ governed database, it grants database `DESCRIBE` plus
 `fact_lifecycle_action_audit_staging_v1`, and current-state table,
 `fact_lifecycle_action_staging_v1`, plus the operational Alert table
 `fact_lifecycle_alert_staging_v1`, plus the operational Outcome table
-`fact_lifecycle_outcome_staging_v1`, plus the Forecast feature view, its context
-views, and its two lifecycle backing tables. Athena resolves stored views with the
+`fact_lifecycle_outcome_staging_v1`, plus the Forecast feature view, the Network
+source view, their context views, and their two lifecycle backing tables. Athena resolves stored views with the
 caller's permissions, so the Action view and both backing tables are required.
 The API role's Glue policy is restricted to those objects and the Alert and
 Outcome tables. When the database explicitly uses `IAM_ALLOWED_PRINCIPALS`, as

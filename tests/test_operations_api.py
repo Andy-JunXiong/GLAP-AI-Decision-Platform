@@ -15,7 +15,7 @@ assert SPEC.loader
 SPEC.loader.exec_module(api)
 
 
-def request(method="GET", path="/v1/actions", groups="viewer", body=None):
+def request(method="GET", path="/v1/actions", groups="viewer", body=None, query=None):
     return {
         "rawPath": path,
         "requestContext": {
@@ -25,6 +25,7 @@ def request(method="GET", path="/v1/actions", groups="viewer", body=None):
                 "sub": "person-123", "name": "Alex Chen", "cognito:groups": groups,
             }}},
         },
+        "queryStringParameters": query,
         "body": json.dumps(body) if body else None,
     }
 
@@ -100,6 +101,10 @@ class OperationsApiTests(unittest.TestCase):
             self.assertIn("outcomes:read", role)
             self.assertIn("health:read", role)
             self.assertIn("forecasts:read", role)
+            self.assertIn("network:read", role)
+        self.assertNotIn("shipments:read", api.ROLE_PERMISSIONS["viewer"])
+        self.assertIn("shipments:read", api.ROLE_PERMISSIONS["operator"])
+        self.assertIn("shipments:read", api.ROLE_PERMISSIONS["approver"])
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
         self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
@@ -160,6 +165,78 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("source.feature_date <= params.as_of_date", query)
         self.assertIn("vw_multimodal_forecast_feature_daily_v1", query)
         self.assertNotIn("FUTURE_SIMULATION", query)
+
+    def test_network_queries_are_latest_operational_actual_calendar_and_bounded(self):
+        summary = api.build_network_summary_query(
+            "2026-08-07", mode="air", provider="dhl", lane="pvg-syd"
+        )
+        self.assertIn("vw_multimodal_shipment_daily_v1", summary)
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", summary)
+        self.assertIn("execution_mode = 'OPERATIONAL'", summary)
+        self.assertIn("time_basis = 'ACTUAL_CALENDAR'", summary)
+        self.assertIn("as_of_date <= DATE '2026-08-07'", summary)
+        self.assertIn("metric_date <= DATE '2026-08-07'", summary)
+        self.assertIn("transport_mode = 'AIR'", summary)
+        self.assertIn("carrier = 'DHL'", summary)
+        self.assertIn("market_lane = 'PVG-SYD'", summary)
+        self.assertIn("row_rank = 1", summary)
+        self.assertNotIn("expected_total_cost", summary)
+        self.assertNotIn("origin_port", summary)
+
+        detail = api.build_shipment_drilldown_query(
+            25, "2026-08-07", status="open", after="SHIP-0007"
+        )
+        self.assertIn("lifecycle_status = 'OPEN'", detail)
+        self.assertIn("shipment_id > 'SHIP-0007'", detail)
+        self.assertIn("LIMIT 26", detail)
+        self.assertNotIn("FUTURE_SIMULATION", detail)
+
+    def test_network_filters_and_page_tokens_fail_closed(self):
+        with self.assertRaises(ValueError):
+            api.build_network_summary_query("tomorrow")
+        with self.assertRaises(ValueError):
+            api.build_network_summary_query("2026-08-07", provider="DHL' OR 1=1")
+        with self.assertRaises(ValueError):
+            api.build_network_summary_query("2026-08-07", lane="unsafe")
+        with self.assertRaises(ValueError):
+            api.build_shipment_drilldown_query(25, "2026-08-07", status="FUTURE")
+        token = api._encode_page_token("SHIP-0007")
+        self.assertEqual(api._decode_page_token(token), "SHIP-0007")
+        with self.assertRaises(ValueError):
+            api._decode_page_token("not+a+token")
+
+    def test_viewer_gets_network_summary_without_entity_access(self):
+        rows = [{"transport_mode": "AIR", "provider_code": "DHL", "market_lane": "PVG-SYD"}]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(request(path="/v1/network"), None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertFalse(body["entity_access"])
+        self.assertEqual(body["source"]["execution_mode"], "OPERATIONAL")
+        self.assertEqual(body["as_of_date"], "2026-08-07")
+
+    def test_shipment_entities_are_role_restricted_and_paginated(self):
+        denied = api.lambda_handler(request(path="/v1/shipments", groups="viewer"), None)
+        self.assertEqual(denied["statusCode"], 403)
+
+        rows = [
+            {"shipment_id": "SHIP-0001", "market_lane": "PVG-SYD"},
+            {"shipment_id": "SHIP-0002", "market_lane": "PVG-SYD"},
+        ]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(
+                request(path="/v1/shipments", groups="operator", query={"limit": "1"}), None
+            )
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual([item["shipment_id"] for item in body["items"]], ["SHIP-0001"])
+        self.assertEqual(api._decode_page_token(body["next_token"]), "SHIP-0001")
 
     def test_forecast_contract_separates_projection_from_historical_evaluation(self):
         contract = api.build_forecast_contract(forecast_rows(), "2026-08-07")

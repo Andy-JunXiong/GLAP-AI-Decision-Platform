@@ -9,6 +9,7 @@ param(
     [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
+    [string]$NetworkSourceView = "vw_multimodal_shipment_daily_v1",
     [switch]$Apply
 )
 
@@ -27,6 +28,9 @@ if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 }
 if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "ForecastSourceTable must be a safe Glue identifier"
+}
+if ($NetworkSourceView -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "NetworkSourceView must be a safe Glue identifier"
 }
 
 $identityArgs = @("sts", "get-caller-identity", "--region", $Region, "--output", "json")
@@ -89,7 +93,8 @@ $policy = @{
                 "arn:aws:glue:${Region}:${accountId}:catalog",
                 "arn:aws:glue:${Region}:${accountId}:database/${SourceDatabase}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1",
-                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${ForecastSourceTable}"
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${ForecastSourceTable}",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${NetworkSourceView}"
             )
         }
     )

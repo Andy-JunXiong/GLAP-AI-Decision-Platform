@@ -7,13 +7,18 @@ import {
   OperationsOutcome,
   PipelineHealth as PipelineHealthData,
   ForecastContract,
+  NetworkResponse,
+  NetworkSummary,
   OperationsRisk,
+  ShipmentEntity,
   internalOperationsEnabled,
   loadActionQueue,
   loadOutcomeReview,
   loadPipelineHealth,
   loadForecastAccuracy,
+  loadNetworkSummary,
   loadRiskHotspots,
+  loadShipmentDrilldown,
   mutateAction,
   readOperationsToken,
 } from "./operations-api";
@@ -73,6 +78,10 @@ export default function Home() {
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
   const [pipelineHealth, setPipelineHealth] = useState<PipelineHealthData | null>(null);
   const [forecastContract, setForecastContract] = useState<ForecastContract | null>(null);
+  const [networkContract, setNetworkContract] = useState<NetworkResponse | null>(null);
+  const [shipmentEntities, setShipmentEntities] = useState<ShipmentEntity[]>([]);
+  const [shipmentNextToken, setShipmentNextToken] = useState<string | null>(null);
+  const [shipmentSelection, setShipmentSelection] = useState<NetworkSummary | null>(null);
   const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
     internalOperationsEnabled() ? "loading" : "demo",
   );
@@ -85,6 +94,11 @@ export default function Home() {
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [forecastMessage, setForecastMessage] = useState("");
+  const [networkState, setNetworkState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+    internalOperationsEnabled() ? "loading" : "demo",
+  );
+  const [networkMessage, setNetworkMessage] = useState("");
+  const [shipmentState, setShipmentState] = useState<"idle" | "loading" | "connected" | "error">("idle");
   const [signedIn, setSignedIn] = useState(false);
 
   const refreshOperations = useCallback(async () => {
@@ -151,12 +165,72 @@ export default function Home() {
     }
   }, []);
 
+  const refreshNetwork = useCallback(async () => {
+    if (!internalOperationsEnabled()) return;
+    const token = readOperationsToken();
+    if (!token) {
+      setNetworkState("auth_required");
+      setNetworkMessage("Sign in through the approved internal identity provider.");
+      return;
+    }
+    setNetworkState("loading");
+    try {
+      setNetworkContract(await loadNetworkSummary(token));
+      setShipmentEntities([]);
+      setShipmentSelection(null);
+      setShipmentNextToken(null);
+      setShipmentState("idle");
+      setNetworkState("connected");
+      setNetworkMessage("");
+    } catch (error) {
+      setNetworkState("error");
+      setNetworkMessage(error instanceof Error ? error.message : "Unable to load Network Drill-down");
+    }
+  }, []);
+
+  const openShipmentGroup = useCallback(async (selection: NetworkSummary) => {
+    setShipmentSelection(selection);
+    setShipmentState("loading");
+    try {
+      const response = await loadShipmentDrilldown(readOperationsToken(), {
+        mode: selection.transport_mode,
+        provider: selection.provider_code,
+        lane: selection.market_lane,
+      });
+      setShipmentEntities(response.items);
+      setShipmentNextToken(response.next_token);
+      setShipmentState("connected");
+    } catch (error) {
+      setShipmentState("error");
+      setNetworkMessage(error instanceof Error ? error.message : "Unable to load shipment entities");
+    }
+  }, []);
+
+  const loadMoreShipments = useCallback(async () => {
+    if (!shipmentSelection || !shipmentNextToken) return;
+    setShipmentState("loading");
+    try {
+      const response = await loadShipmentDrilldown(readOperationsToken(), {
+        mode: shipmentSelection.transport_mode,
+        provider: shipmentSelection.provider_code,
+        lane: shipmentSelection.market_lane,
+        nextToken: shipmentNextToken,
+      });
+      setShipmentEntities((current) => [...current, ...response.items]);
+      setShipmentNextToken(response.next_token);
+      setShipmentState("connected");
+    } catch (error) {
+      setShipmentState("error");
+      setNetworkMessage(error instanceof Error ? error.message : "Unable to load the next shipment page");
+    }
+  }, [shipmentNextToken, shipmentSelection]);
+
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
       void finishOperationsSignIn()
         .then(() => {
           setSignedIn(operationsSignedIn());
-          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts()]);
+          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts(), refreshNetwork()]);
         })
         .catch((error) => {
           setOperationsState("error");
@@ -164,7 +238,7 @@ export default function Home() {
         });
     }, 0);
     return () => window.clearTimeout(initialLoad);
-  }, [refreshOperations, refreshPipelineHealth, refreshForecasts]);
+  }, [refreshOperations, refreshPipelineHealth, refreshForecasts, refreshNetwork]);
 
   const submitOperation = useCallback(async (
     actionId: string, operation: ActionOperation, reason: string,
@@ -236,7 +310,12 @@ export default function Home() {
         {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} risks={operationsRisks} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
-        {view === "shipments" && <Shipments go={go} />}
+        {view === "shipments" && <Shipments
+          go={go} contract={networkContract} entities={shipmentEntities}
+          state={networkState} message={networkMessage} shipmentState={shipmentState}
+          selection={shipmentSelection} nextToken={shipmentNextToken}
+          refresh={refreshNetwork} openGroup={openShipmentGroup} loadMore={loadMoreShipments}
+        />}
         {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
         {view === "forecasts" && <ForecastAccuracy contract={forecastContract} state={forecastState} message={forecastMessage} refresh={refreshForecasts} />}
@@ -522,9 +601,68 @@ function ForecastAccuracy({ contract, state, message, refresh }: {
   </div>;
 }
 
-function Shipments({ go }: { go: (view: View) => void }) {
+function Shipments({ go, contract, entities, state, message, shipmentState, selection, nextToken, refresh, openGroup, loadMore }: {
+  go: (view: View) => void;
+  contract: NetworkResponse | null;
+  entities: ShipmentEntity[];
+  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  message: string;
+  shipmentState: "idle" | "loading" | "connected" | "error";
+  selection: NetworkSummary | null;
+  nextToken: string | null;
+  refresh: () => Promise<void>;
+  openGroup: (selection: NetworkSummary) => Promise<void>;
+  loadMore: () => Promise<void>;
+}) {
+  if (state === "demo") return <DemoShipments go={go} />;
+  const rows = contract?.items ?? [];
+  const total = rows.reduce((sum, item) => sum + Number(item.shipment_count), 0);
+  const active = rows.reduce((sum, item) => sum + Number(item.active_shipment_count), 0);
+  const breaches = rows.reduce((sum, item) => sum + Number(item.sla_breach_count), 0);
+  const providers = new Set(rows.map((item) => item.provider_code)).size;
   return <div className="page">
-    <PageTitle eyebrow="OPERATE" title="Shipments & inventory" copy="Connect network risks to the cargo and inventory they affect." action={<button className="primary-button">＋ Add shipment</button>} />
+    <PageTitle eyebrow="OPERATE" title="Network Drill-down" copy="Move from provider and lane performance to the authorised shipment evidence behind it." action={<button className="outline-button" onClick={() => void refresh()}>Refresh network</button>} />
+    <OperationsState state={state} message={message} />
+    {state === "connected" && contract && <>
+      <section className="metric-grid compact">
+        <Metric label="Latest shipments" value={String(total)} note={`Sydney cutoff ${contract.as_of_date}`} />
+        <Metric label="Active" value={String(active)} note="Latest operational snapshot" />
+        <Metric label="SLA breaches" value={String(breaches)} note="Actual-calendar evidence" tone={breaches ? "red" : "green"} />
+        <Metric label="Providers" value={String(providers)} note={`${rows.length} provider-lane groups`} />
+      </section>
+      <section className="network-grid">
+        <article className="card network-card"><CardHead title="Provider and lane summary" copy="Select a row to open its shipment entities when your role permits it." />
+          <div className="network-summary-list">
+            {rows.map((item) => <button key={`${item.transport_mode}-${item.provider_code}-${item.market_lane}`} disabled={!contract.entity_access} onClick={() => void openGroup(item)}>
+              <span><b>{item.transport_mode}</b><strong>{item.provider_code}</strong><small>{item.market_lane}</small></span>
+              <span><strong>{item.active_shipment_count}</strong><small>active / {item.shipment_count} total</small></span>
+              <span><strong className={Number(item.sla_breach_count) ? "red-text" : "green-text"}>{item.sla_breach_count}</strong><small>{item.sla_breach_rate_pct}% SLA breach</small></span>
+              <i>→</i>
+            </button>)}
+          </div>
+          {!rows.length && <p className="data-disclaimer">No operational provider-lane rows are available at this cutoff.</p>}
+          {!contract.entity_access && <p className="data-disclaimer">Your viewer role can inspect aggregate performance, but shipment identifiers require an operator, approver, or administrator role.</p>}
+        </article>
+        <article className="card network-card"><CardHead title="Shipment evidence" copy={selection ? `${selection.provider_code} · ${selection.market_lane}` : "Choose an authorised provider-lane row"} />
+          {shipmentState === "loading" && <p className="data-disclaimer" role="status">Loading authorised shipment evidence…</p>}
+          {shipmentState === "error" && <p className="data-disclaimer" role="alert">{message}</p>}
+          {shipmentState === "idle" && <p className="data-disclaimer">Entity records are not fetched until an authorised user selects a provider and lane.</p>}
+          {entities.length > 0 && <div className="entity-list">{entities.map((item) => <article key={item.shipment_id}>
+            <div><small>{item.transport_mode} · {item.market_lane}</small><strong>{item.shipment_id}</strong><span>{item.provider_code} · {item.service_level}</span></div>
+            <dl><div><dt>Stage</dt><dd>{item.lifecycle_stage.replaceAll("_", " ")}</dd></div><div><dt>Status</dt><dd>{item.lifecycle_status}</dd></div><div><dt>SLA</dt><dd className={item.sla_breach_flag === "true" ? "red-text" : "green-text"}>{item.sla_breach_flag === "true" ? "Breached" : "Within"}</dd></div><div><dt>Evidence date</dt><dd>{item.metric_date}</dd></div></dl>
+          </article>)}</div>}
+          {shipmentState === "connected" && !entities.length && <p className="data-disclaimer">No shipment entities match this provider and lane.</p>}
+          {nextToken && <button className="outline-button network-more" disabled={shipmentState === "loading"} onClick={() => void loadMore()}>Load next 25</button>}
+        </article>
+      </section>
+      <p className="data-disclaimer">This internal view is bounded to operational actual-calendar evidence at or before {contract.as_of_date}. Costs, raw port identifiers, infrastructure identifiers, and future simulations are excluded.</p>
+    </>}
+  </div>;
+}
+
+function DemoShipments({ go }: { go: (view: View) => void }) {
+  return <div className="page">
+    <PageTitle eyebrow="OPERATE" title="Shipments & inventory" copy="Connect network risks to the cargo and inventory they affect." />
     <section className="metric-grid compact"><Metric label="Active shipments" value="46" note="21 inbound FCL" /><Metric label="Delayed" value="11" note="4 over 48 hours" tone="amber" /><Metric label="At-risk FCL" value="15" note="Across 2 ports" tone="red" /><Metric label="Critical SKUs" value="6" note="Below 10 days cover" /></section>
     <div className="table-card shipment-table">
       <div className="shipment-row table-head"><span>Reference</span><span>Route</span><span>ETA</span><span>FCL</span><span>Inventory cover</span><span>Risk</span><span>Action</span></div>
@@ -532,6 +670,7 @@ function Shipments({ go }: { go: (view: View) => void }) {
         <strong>{item.ref}</strong><span>{item.route}</span><span>{item.eta}</span><span>{item.fcl}</span><span>{item.inventory}</span><span><b className={`risk-pill ${item.risk.toLowerCase()}`}>{item.risk}</b></span><span className="row-link">{item.action} →</span>
       </button>)}
     </div>
+    <p className="data-disclaimer">Entity drill-down is available only inside the authenticated staging cockpit; this public workspace remains synthetic.</p>
   </div>;
 }
 
