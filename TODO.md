@@ -136,11 +136,11 @@ Current implementation and release boundaries are recorded in the
   then verify 12 aggregate provider/lane rows, viewer aggregate-only access,
   operator/approver/administrator entity access, pagination, date cutoff, field
   redaction, exact-origin CORS, alarms, and temporary-user cleanup.
-- [ ] Design and separately review an Operations API-specific CloudFormation
-  execution policy for the GitHub OIDC deployer. Automatic plan succeeds and
-  the local management-profile deployment is complete, but workflow `deploy`
-  currently fails closed at `CreateChangeSet`; do not broaden or reuse the
-  Stateful Lifecycle stack policy.
+- [x] Add and validate an Operations API-specific two-role CloudFormation
+  deployment boundary: GitHub OIDC has customer-managed orchestration access
+  to one stack and artifact prefix, while a CloudFormation-only execution role
+  can update only the existing physical resources. Workflow deploy run
+  `31156819949` succeeded without broadening the Stateful Lifecycle policy.
 - [ ] Resolve actual-calendar provider coverage only when eligible DHL/KN data
   exists on or before the Sydney cutoff; do not use future simulations to pass
   the remaining `missing_provider_coverage` lifecycle check.
@@ -158,8 +158,9 @@ The governing date boundary is in the
   implement the Decision Queue and Action Board journey.
 - [x] Add write-path alarms, DLQ/retry evidence, concurrency tests, and recovery
   guidance without enabling a recurring lifecycle schedule.
-- [ ] Add and validate the exact staging-only CloudFormation execution policy
-  needed by the Operations API workflow `deploy` action.
+- [x] Add and validate the exact staging-only CloudFormation execution policy
+  needed by the Operations API workflow `deploy` action; rerun the complete
+  post-deployment API and four-role verification matrix.
 - [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
   step for the pending Outcome; do not simulate an early operational result.
 

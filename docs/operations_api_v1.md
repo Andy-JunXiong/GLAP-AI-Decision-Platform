@@ -254,10 +254,15 @@ groups. Its viewer payload contained no shipment identifier and reported
 bounded-field, and next-page checks; costs, raw ports, infrastructure
 identifiers, and future simulations were absent. The API and internal Amplify
 page were deployed with the approved local `codex-readonly` management profile.
-The GitHub OIDC workflow's automatic plan succeeds, but its explicit `deploy`
-option currently fails closed at `cloudformation:CreateChangeSet`. Enabling that
-path requires a separately reviewed Operations API CloudFormation execution
-policy; it must not reuse or broaden the Stateful Lifecycle stack policy.
+The previously blocked GitHub OIDC deployment path is now operational without
+reusing or broadening the Stateful Lifecycle policy. Workflow run `31156819949`
+used the customer-managed orchestration policy to upload the commit-scoped
+artifact and operate the exact stack change set, then passed the dedicated
+CloudFormation execution role. The stack reached `UPDATE_COMPLETE` and records
+that role as its execution role. Post-deployment checks reconfirmed exact-origin
+CORS, alarms, redacted logs, seven unauthenticated route rejections, the full
+four-role read/mutation matrix, Network aggregate/entity boundaries, temporal
+cutoffs, pagination, and removal of all four temporary users.
 
 The Outcome runtime response contained one `PENDING` row and zero observed rows.
 The pending row had no observation date or effect value and remained explicitly
