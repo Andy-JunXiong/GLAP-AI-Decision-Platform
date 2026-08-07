@@ -56,6 +56,16 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("actions:approve", bracket_permissions)
         self.assertNotIn("actions:complete", bracket_permissions)
 
+    def test_cognito_access_token_username_is_a_signed_actor_fallback(self):
+        event = request(groups='["operator"]')
+        claims = event["requestContext"]["authorizer"]["jwt"]["claims"]
+        claims.pop("name")
+        claims["username"] = "signed-staging-user"
+        subject, actor, permissions = api._identity(event)
+        self.assertEqual(subject, "person-123")
+        self.assertEqual(actor, "signed-staging-user")
+        self.assertIn("actions:complete", permissions)
+
     def test_operator_cannot_approve(self):
         response = api.lambda_handler(request("POST", "/v1/actions/action-123/events", "operator", {
             "operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence"

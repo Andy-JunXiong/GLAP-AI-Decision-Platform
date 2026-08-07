@@ -65,7 +65,13 @@ def _identity(event: dict[str, Any]) -> tuple[str, str, set[str]]:
     jwt = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {})
     claims = jwt.get("claims") or {}
     subject = str(claims.get("sub") or "").strip()
-    actor = str(claims.get("name") or claims.get("email") or "").strip()
+    actor = str(
+        claims.get("name")
+        or claims.get("email")
+        or claims.get("username")
+        or claims.get("cognito:username")
+        or ""
+    ).strip()
     raw_groups = claims.get("cognito:groups") or claims.get("groups") or ""
     groups = _claim_groups(raw_groups)
     roles = {str(group).lower() for group in groups if str(group).lower() in ROLE_PERMISSIONS}
