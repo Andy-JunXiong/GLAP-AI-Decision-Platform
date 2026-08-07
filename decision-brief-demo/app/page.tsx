@@ -6,11 +6,13 @@ import {
   OperationsAction,
   OperationsOutcome,
   PipelineHealth as PipelineHealthData,
+  ForecastContract,
   OperationsRisk,
   internalOperationsEnabled,
   loadActionQueue,
   loadOutcomeReview,
   loadPipelineHealth,
+  loadForecastAccuracy,
   loadRiskHotspots,
   mutateAction,
   readOperationsToken,
@@ -24,7 +26,7 @@ import {
 } from "./operations-auth";
 import "./operations.css";
 
-type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "health" | "brief";
+type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "forecasts" | "health" | "brief";
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: "overview", label: "Control Tower", icon: "⌂" },
@@ -34,6 +36,7 @@ const navItems: { id: View; label: string; icon: string }[] = [
   { id: "outcomes", label: "Outcomes", icon: "↗" },
   { id: "actions", label: "Action Board", icon: "A" },
   { id: "health", label: "Pipeline Health", icon: "H" },
+  { id: "forecasts", label: "Forecast Accuracy", icon: "F" },
 ];
 
 const signals = [
@@ -69,6 +72,7 @@ export default function Home() {
   const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
   const [pipelineHealth, setPipelineHealth] = useState<PipelineHealthData | null>(null);
+  const [forecastContract, setForecastContract] = useState<ForecastContract | null>(null);
   const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
     internalOperationsEnabled() ? "loading" : "demo",
   );
@@ -77,6 +81,10 @@ export default function Home() {
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [healthMessage, setHealthMessage] = useState("");
+  const [forecastState, setForecastState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
+    internalOperationsEnabled() ? "loading" : "demo",
+  );
+  const [forecastMessage, setForecastMessage] = useState("");
   const [signedIn, setSignedIn] = useState(false);
 
   const refreshOperations = useCallback(async () => {
@@ -124,12 +132,31 @@ export default function Home() {
     }
   }, []);
 
+  const refreshForecasts = useCallback(async () => {
+    if (!internalOperationsEnabled()) return;
+    const token = readOperationsToken();
+    if (!token) {
+      setForecastState("auth_required");
+      setForecastMessage("Sign in through the approved internal identity provider.");
+      return;
+    }
+    setForecastState("loading");
+    try {
+      setForecastContract(await loadForecastAccuracy(token));
+      setForecastState("connected");
+      setForecastMessage("");
+    } catch (error) {
+      setForecastState("error");
+      setForecastMessage(error instanceof Error ? error.message : "Unable to load Forecast Accuracy");
+    }
+  }, []);
+
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
       void finishOperationsSignIn()
         .then(() => {
           setSignedIn(operationsSignedIn());
-          return Promise.all([refreshOperations(), refreshPipelineHealth()]);
+          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts()]);
         })
         .catch((error) => {
           setOperationsState("error");
@@ -137,7 +164,7 @@ export default function Home() {
         });
     }, 0);
     return () => window.clearTimeout(initialLoad);
-  }, [refreshOperations, refreshPipelineHealth]);
+  }, [refreshOperations, refreshPipelineHealth, refreshForecasts]);
 
   const submitOperation = useCallback(async (
     actionId: string, operation: ActionOperation, reason: string,
@@ -212,6 +239,7 @@ export default function Home() {
         {view === "shipments" && <Shipments go={go} />}
         {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
+        {view === "forecasts" && <ForecastAccuracy contract={forecastContract} state={forecastState} message={forecastMessage} refresh={refreshForecasts} />}
         {view === "brief" && (
           <DecisionBrief
             diverted={diverted}
@@ -441,6 +469,55 @@ function PipelineHealth({ health, state, message, refresh }: {
         </article>)}
       </section>
       <p className="data-disclaimer">This view contains operational actual-calendar evidence only. Future simulations cannot be presented as current pipeline health.</p>
+    </>}
+  </div>;
+}
+
+function ForecastAccuracy({ contract, state, message, refresh }: {
+  contract: ForecastContract | null;
+  state: "demo" | "loading" | "connected" | "auth_required" | "error";
+  message: string;
+  refresh: () => Promise<void>;
+}) {
+  if (state === "demo") return <div className="page">
+    <PageTitle eyebrow="PLAN" title="Forecast Accuracy" copy="Operational forecast and backtest evidence is available only inside the authenticated staging cockpit." />
+    <p className="data-disclaimer">The public demonstration does not present synthetic engineering results as measured forecast performance.</p>
+  </div>;
+  const metrics = contract?.accuracy.metrics;
+  const maxForecast = Math.max(...(contract?.forecast.points.map((point) => point.upper_bound) ?? [1]), 1);
+  return <div className="page">
+    <PageTitle eyebrow="PLAN" title="Forecast Accuracy" copy="Review the advisory shipment-volume baseline and the evidence that limits how it may be used." action={<button className="outline-button" onClick={() => void refresh()}>Refresh forecast</button>} />
+    <OperationsState state={state} message={message} />
+    {state === "connected" && contract && <>
+      <section className="forecast-boundary">
+        <div><small>Evidence boundary</small><strong>Synthetic operational-calendar baseline</strong><span>Cut off at {contract.as_of_date}; future points remain unobserved projections.</span></div>
+        <b>{contract.forecast.decision_use.replaceAll("_", " ")}</b>
+      </section>
+      <section className="metric-grid compact">
+        <Metric label="Forecast status" value={contract.forecast.status === "ready" ? "Advisory ready" : "History pending"} note="Never an operational target" tone={contract.forecast.status === "ready" ? "green" : "amber"} />
+        <Metric label="Backtest status" value={contract.accuracy.status === "engineering_evidence" ? "Engineering evidence" : "History pending"} note="Model promotion remains blocked" tone="amber" />
+        <Metric label="MAE" value={metrics ? metrics.mae.toFixed(2) : "—"} note={metrics ? `${metrics.forecast_count} rolling holdouts` : `Requires ${contract.coverage.minimum_accuracy_forecasts} holdouts`} />
+        <Metric label="Interval coverage" value={metrics ? `${metrics.interval_coverage_pct.toFixed(1)}%` : "—"} note="Synthetic engineering backtest" />
+      </section>
+      <section className="forecast-grid">
+        <article className="card forecast-card"><CardHead title="Seven-day advisory projection" copy={`${contract.forecast.method.replaceAll("_", " ")} · ${contract.forecast.model_version}`} />
+          {contract.forecast.points.length ? <div className="forecast-bars">{contract.forecast.points.map((point) => <div key={point.date}>
+            <span><i style={{height: `${Math.max(8, point.predicted_shipments / maxForecast * 100)}%`}} /></span>
+            <strong>{point.predicted_shipments}</strong><small>{point.date.slice(5)}</small>
+          </div>)}</div> : <p className="data-disclaimer">The current actual-calendar window has not reached the 28 eligible dates required for an advisory projection.</p>}
+        </article>
+        <article className="card forecast-card"><CardHead title="Accuracy and readiness" copy="Rolling one-step-ahead evaluation using dates at or before the Sydney cutoff" />
+          <dl className="forecast-metrics">
+            <div><dt>Eligible calendar dates</dt><dd>{contract.coverage.eligible_dates}/{contract.coverage.window_days}</dd></div>
+            <div><dt>RMSE</dt><dd>{metrics ? metrics.rmse.toFixed(2) : "—"}</dd></div>
+            <div><dt>Bias</dt><dd>{metrics ? metrics.bias.toFixed(2) : "—"}</dd></div>
+            <div><dt>MAPE</dt><dd>{metrics?.mape_pct === null || !metrics ? "—" : `${metrics.mape_pct.toFixed(1)}%`}</dd></div>
+            <div><dt>Promotion</dt><dd className="blocked">{contract.accuracy.model_promotion_status}</dd></div>
+            <div><dt>Production effect</dt><dd>{contract.forecast.production_effect ? "Enabled" : "None"}</dd></div>
+          </dl>
+        </article>
+      </section>
+      <p className="data-disclaimer">{contract.disclosure} Scenario: {contract.forecast.scenario_id}.</p>
     </>}
   </div>;
 }

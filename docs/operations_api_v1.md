@@ -1,18 +1,19 @@
 # Internal Operations API v1
 
 This is the authenticated, staging-only boundary between the internal Risk
-Hotspots / Decision Queue / Action Board / Outcome Review journey and the
+Hotspots / Decision Queue / Action Board / Outcome Review / Forecast Accuracy
+journey and the
 governed lifecycle tables plus private append-only Action mutation function.
 Public GitHub Pages is not an API client and receives no write permission.
 
 ## Roles and permissions
 
-| Role | Read risks | Read queue | Read outcomes | Approve | Reject | Complete |
-| --- | --- | --- | --- | --- | --- | --- |
-| `viewer` | yes | yes | yes | no | no | no |
-| `operator` | yes | yes | yes | no | no | yes |
-| `approver` | yes | yes | yes | yes | yes | no |
-| `administrator` | yes | yes | yes | yes | yes | yes |
+| Role | Read risks | Read queue | Read outcomes | Read forecasts/health | Approve | Reject | Complete |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `viewer` | yes | yes | yes | yes | no | no | no |
+| `operator` | yes | yes | yes | yes | no | no | yes |
+| `approver` | yes | yes | yes | yes | yes | yes | no |
+| `administrator` | yes | yes | yes | yes | yes | yes | yes |
 
 API Gateway validates the JWT issuer and audience. The adapter obtains the
 actor from signed `name`, `email`, or Cognito access-token `username` claims,
@@ -45,6 +46,19 @@ Pending rows must have no `observed_date` or `effect_pct` and are labelled
 before the cutoff and are labelled `OBSERVED_ACTUAL_CALENDAR`. Supported status
 filters are `PENDING`, `SUCCESSFUL`, `PARTIALLY_SUCCESSFUL`, `FAILED`, and
 `INCONCLUSIVE`.
+
+`GET /v1/pipeline-health` returns the sanitized six-stage controller status and
+ten quality checks without S3 paths, Lambda names, ARNs, or raw errors. A
+future logical date can never be returned as current operational health.
+
+`GET /v1/forecasts` reads only the operational, actual-calendar multimodal
+feature view through the current Sydney cutoff. Its historical window remains
+labelled synthetic operational-calendar engineering evidence. Seven-day points
+are returned only after 28 complete eligible dates and are isolated as a
+system-derived staging `FUTURE_SIMULATION` scenario with
+`MODEL_PROJECTION` time basis, `ADVISORY_FORECAST_NOT_OBSERVED` points, and no
+production effect. Rolling accuracy requires at least seven past-only holdouts;
+it never authorizes model promotion.
 
 `POST /v1/actions/{action_id}/events` accepts:
 
@@ -89,8 +103,8 @@ view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena
 workgroup, and S3 result/data permissions; it has no Glue writes or S3 deletes.
 Because IAM permission to request Lake Formation data is not itself a table
-grant, a Lake Formation administrator must also apply the exact database and
-view permissions once per created execution role:
+grant in an explicitly governed database, the plan-first access script detects
+the database mode before applying exact permissions:
 
 ```powershell
 .\\ops\\configure_operations_api_data_access.ps1
@@ -100,16 +114,21 @@ view permissions once per created execution role:
   -Apply
 ```
 
-The script is plan-first and idempotent. It grants database `DESCRIBE` plus
+The script is plan-first and idempotent. For an explicitly Lake Formation
+governed database, it grants database `DESCRIBE` plus
 `SELECT` and `DESCRIBE` on
 `vw_lifecycle_action_current_staging_v1` and its required backing audit table,
 `fact_lifecycle_action_audit_staging_v1`, and current-state table,
 `fact_lifecycle_action_staging_v1`, plus the operational Alert table
 `fact_lifecycle_alert_staging_v1`, plus the operational Outcome table
-`fact_lifecycle_outcome_staging_v1`. Athena resolves stored views with the
+`fact_lifecycle_outcome_staging_v1`, plus the Forecast feature view, its context
+views, and its two lifecycle backing tables. Athena resolves stored views with the
 caller's permissions, so the Action view and both backing tables are required.
 The API role's Glue policy is restricted to those objects and the Alert and
-Outcome tables.
+Outcome tables. When the database explicitly uses `IAM_ALLOWED_PRINCIPALS`, as
+the current staging database does, the script does not attempt an inapplicable
+Lake Formation grant; the same exact table boundary is enforced by the Lambda
+IAM policy.
 The script grants no write access, no grant option, and no permission on other
 tables or views. Its output omits protected resource identifiers.
 
@@ -161,18 +180,27 @@ checks with `ops/verify_operations_staging.ps1`.
 
 No persistent Cognito user is created automatically. An isolated runtime check
 created one temporary viewer, operator, approver, and administrator, verified
-Risk, queue, and Outcome reads plus every role-specific allow/deny boundary,
+Risk, queue, Outcome, Pipeline Health, and Forecast reads plus every role-specific allow/deny boundary,
 then removed all four. All reads returned HTTP 200 for all four roles. The Risk
 response contained 15 open operational Alerts, and every returned `as_of_date`
-was on or before the Sydney cutoff. The governed Alert table, Action view, and
-its two direct backing tables and the Outcome table have exact read-only Glue and Lake Formation
-permissions; no write or grant option was added. Reliability verification replayed one existing
+was on or before the Sydney cutoff. The governed Alert table, Action view, its
+two direct backing tables, Outcome table, and Forecast view chain have exact
+read-only Glue IAM permissions. The database remains in its existing
+IAM-allowed-principals mode; no write or grant option was added. Reliability
+verification replayed one existing
 request sequentially and concurrently without adding an audit row, produced and
 recovered from a controlled 503, observed bounded 429 responses, verified both
 alarms moved through `ALARM` and back to `OK`, and confirmed the synchronous DLQ
 remained empty. Public GitHub Pages is still built without the internal API or
 Cognito variables, uses synthetic Risk and Outcome examples, and cannot read
 private Alerts or Outcomes or submit these mutations.
+
+The Forecast runtime response is deliberately
+`insufficient_operational_history`: the operational view currently has three
+eligible actual-calendar dates, below both the 28-date advisory forecast gate
+and the seven-holdout accuracy gate. It therefore returns no future points and
+no accuracy metrics. This is a working fail-closed product state, not missing or
+manufactured performance evidence.
 
 The Outcome runtime response contained one `PENDING` row and zero observed rows.
 The pending row had no observation date or effect value and remained explicitly
