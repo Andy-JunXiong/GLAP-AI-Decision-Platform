@@ -56,6 +56,14 @@ function Invoke-ApiStatus(
     }
 }
 
+function Invoke-ApiJson([string]$Uri, [string]$Token) {
+    $response = Invoke-WebRequest -Uri $Uri -Method GET `
+        -Headers @{ Authorization = "Bearer $Token" } `
+        -UseBasicParsing -TimeoutSec 30
+    if ([int]$response.StatusCode -ne 200) { throw "Authenticated API read failed" }
+    return $response.Content | ConvertFrom-Json
+}
+
 function New-StrongPassword {
     $bytes = [byte[]]::new(32)
     $generator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
@@ -121,25 +129,44 @@ try {
     }
 
     $readStatuses = [ordered]@{}
+    $riskReadStatuses = [ordered]@{}
     foreach ($role in $roles) {
         $readStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens[$role]
+        $riskReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/risks?status=OPEN&limit=1" $tokens[$role]
     }
+    $riskPayload = Invoke-ApiJson "$endpoint/v1/risks?status=OPEN&limit=100" $tokens.viewer
+    $riskItems = @($riskPayload.items)
+    $riskDatesValid = @(
+        $riskItems | Where-Object {
+            -not $_.as_of_date -or [datetime]$_.as_of_date -gt [datetime]$logicalDate
+        }
+    ).Count -eq 0
+    $riskStatusesValid = @($riskItems | Where-Object { $_.status -ne "OPEN" }).Count -eq 0
 
     $checks = [ordered]@{
         "viewer read allowed" = $readStatuses.viewer -eq 200
+        "viewer risk read allowed" = $riskReadStatuses.viewer -eq 200
+        "risk response contract valid" = $riskPayload.schema_version -eq "operations-api.v1"
+        "risk cutoff dates valid" = $riskDatesValid
+        "risk status filter valid" = $riskStatusesValid
         "viewer approve denied" = (Action-Status "viewer" "APPROVE") -eq 403
         "viewer complete denied" = (Action-Status "viewer" "COMPLETE") -eq 403
         "operator read allowed" = $readStatuses.operator -eq 200
+        "operator risk read allowed" = $riskReadStatuses.operator -eq 200
         "operator approve denied" = (Action-Status "operator" "APPROVE") -eq 403
         "operator complete allowed by role" = (Action-Status "operator" "COMPLETE") -notin @(401, 403)
         "approver read allowed" = $readStatuses.approver -eq 200
+        "approver risk read allowed" = $riskReadStatuses.approver -eq 200
         "approver approve allowed by role" = (Action-Status "approver" "APPROVE") -notin @(401, 403)
         "approver complete denied" = (Action-Status "approver" "COMPLETE") -eq 403
         "administrator read allowed" = $readStatuses.administrator -eq 200
+        "administrator risk read allowed" = $riskReadStatuses.administrator -eq 200
         "administrator approve allowed by role" = (Action-Status "administrator" "APPROVE") -notin @(401, 403)
         "administrator complete allowed by role" = (Action-Status "administrator" "COMPLETE") -notin @(401, 403)
     }
     Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
+    Write-Host "Risk read HTTP statuses: viewer=$($riskReadStatuses.viewer), operator=$($riskReadStatuses.operator), approver=$($riskReadStatuses.approver), administrator=$($riskReadStatuses.administrator)"
+    Write-Host "Open operational Risk rows returned: $($riskItems.Count)"
     foreach ($entry in $checks.GetEnumerator()) {
         Write-Host "$($entry.Key): $($entry.Value)"
     }

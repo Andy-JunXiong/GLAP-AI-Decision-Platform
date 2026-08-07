@@ -16,9 +16,34 @@ export type OperationsAction = {
   created_date: string;
 };
 
+export type RiskStatus = "OPEN" | "RESOLVED";
+
+export type OperationsRisk = {
+  alert_fingerprint: string;
+  shipment_id: string;
+  alert_type: string;
+  alert_grain: string;
+  alert_dimension: string;
+  severity: string;
+  status: RiskStatus;
+  first_detected_date: string;
+  last_detected_date: string;
+  resolved_date: string | null;
+  metric_name: string;
+  metric_value: string;
+  threshold_value: string;
+  as_of_date: string;
+};
+
 type QueueResponse = {
   schema_version: "operations-api.v1";
   items: OperationsAction[];
+  next_token: string | null;
+};
+
+type RiskResponse = {
+  schema_version: "operations-api.v1";
+  items: OperationsRisk[];
   next_token: string | null;
 };
 
@@ -59,6 +84,11 @@ async function request<T>(path: string, token: string, init?: RequestInit): Prom
 export async function loadActionQueue(token: string, status?: ActionStatus) {
   const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
   return request<QueueResponse>(`/v1/actions${query}`, token);
+}
+
+export async function loadRiskHotspots(token: string, status?: RiskStatus) {
+  const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
+  return request<RiskResponse>(`/v1/risks${query}`, token);
 }
 
 export async function mutateAction(

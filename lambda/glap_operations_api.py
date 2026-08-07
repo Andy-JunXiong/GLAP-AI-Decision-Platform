@@ -12,19 +12,24 @@ import logging
 import os
 import re
 import time
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 DATABASE = os.getenv("ATHENA_SOURCE_DATABASE", "simulated_iceberg_m")
 WORKGROUP = os.getenv("ATHENA_WORKGROUP", "primary")
 OUTPUT = os.getenv("ATHENA_OUTPUT", "")
 ACTION_VIEW = os.getenv("LIFECYCLE_ACTION_CURRENT_VIEW", "vw_lifecycle_action_current_staging_v1")
+ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
 MUTATION_FUNCTION = os.getenv("ACTION_MUTATION_FUNCTION", "")
 ROLE_PERMISSIONS = {
-    "viewer": {"actions:read"},
-    "operator": {"actions:read", "actions:complete"},
-    "approver": {"actions:read", "actions:approve", "actions:reject"},
-    "administrator": {"actions:read", "actions:approve", "actions:reject", "actions:complete"},
+    "viewer": {"risks:read", "actions:read"},
+    "operator": {"risks:read", "actions:read", "actions:complete"},
+    "approver": {"risks:read", "actions:read", "actions:approve", "actions:reject"},
+    "administrator": {
+        "risks:read", "actions:read", "actions:approve", "actions:reject", "actions:complete",
+    },
 }
 OPERATION_PERMISSION = {
     "APPROVE": "actions:approve",
@@ -141,6 +146,42 @@ ORDER BY created_date DESC, action_id
 LIMIT {limit}"""
 
 
+def build_risk_hotspots_query(limit: int, status: str | None, as_of_date: str) -> str:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    status_filter = ""
+    if status:
+        if status not in {"OPEN", "RESOLVED"}:
+            raise ValueError("Unsupported Risk status filter")
+        status_filter = f" AND status = '{status}'"
+    return f"""WITH ranked_alerts AS (
+    SELECT alert_fingerprint, shipment_id, alert_type, alert_grain,
+           alert_dimension, severity, status, first_detected_date,
+           last_detected_date, resolved_date, metric_name, metric_value,
+           threshold_value, as_of_date,
+           row_number() OVER (
+               PARTITION BY alert_fingerprint
+               ORDER BY try_cast(dt AS date) DESC, updated_at DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(ALERT_TABLE)}
+    WHERE temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND try_cast(dt AS date) <= DATE '{as_of_date}'
+)
+SELECT alert_fingerprint, shipment_id, alert_type, alert_grain,
+       alert_dimension, severity, status, first_detected_date,
+       last_detected_date, resolved_date, metric_name, metric_value,
+       threshold_value, as_of_date
+FROM ranked_alerts
+WHERE row_rank = 1{status_filter}
+ORDER BY CASE severity WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2
+         WHEN 'MEDIUM' THEN 3 ELSE 4 END,
+         last_detected_date DESC, alert_fingerprint
+LIMIT {limit}"""
+
+
 def _parse_rows(response: dict[str, Any]) -> list[dict[str, str | None]]:
     result = response.get("ResultSet", {})
     rows = result.get("Rows", [])
@@ -154,7 +195,7 @@ def _parse_rows(response: dict[str, Any]) -> list[dict[str, str | None]]:
     return parsed
 
 
-def _query_actions(client: Any, query: str) -> list[dict[str, str | None]]:
+def _query_rows(client: Any, query: str) -> list[dict[str, str | None]]:
     query_id = client.start_query_execution(
         QueryString=query,
         QueryExecutionContext={"Database": DATABASE},
@@ -167,11 +208,15 @@ def _query_actions(client: Any, query: str) -> list[dict[str, str | None]]:
         if state == "SUCCEEDED":
             return _parse_rows(client.get_query_results(QueryExecutionId=query_id, MaxResults=101))
         if state in {"FAILED", "CANCELLED"}:
-            raise RuntimeError("Action queue query failed")
+            raise RuntimeError("Operations query failed")
         if time.monotonic() >= deadline:
             client.stop_query_execution(QueryExecutionId=query_id)
-            raise TimeoutError("Action queue query timed out")
+            raise TimeoutError("Operations query timed out")
         time.sleep(0.25)
+
+
+def _sydney_date() -> str:
+    return datetime.now(ZoneInfo("Australia/Sydney")).date().isoformat()
 
 
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
@@ -180,13 +225,25 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         subject, actor, permissions = _identity(event)
         method = str(event.get("requestContext", {}).get("http", {}).get("method") or "")
         path = str(event.get("rawPath") or "")
+        if method == "GET" and path == "/v1/risks":
+            if "risks:read" not in permissions:
+                raise PermissionError("Role cannot read Risks")
+            import boto3
+            params = event.get("queryStringParameters") or {}
+            limit = min(max(int(params.get("limit", 50)), 1), 100)
+            rows = _query_rows(
+                boto3.client("athena"),
+                build_risk_hotspots_query(limit, params.get("status"), _sydney_date()),
+            )
+            return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
+
         if method == "GET" and path == "/v1/actions":
             if "actions:read" not in permissions:
                 raise PermissionError("Role cannot read Actions")
             import boto3
             params = event.get("queryStringParameters") or {}
             limit = min(max(int(params.get("limit", 50)), 1), 100)
-            rows = _query_actions(boto3.client("athena"), build_action_queue_query(limit, params.get("status")))
+            rows = _query_rows(boto3.client("athena"), build_action_queue_query(limit, params.get("status")))
             return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
 
         match = re.fullmatch(r"/v1/actions/([^/]+)/events", path)

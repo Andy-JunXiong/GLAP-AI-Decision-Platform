@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Authenticated, internal-only GLAP Operations API for staging Actions.
+Description: Authenticated, internal-only GLAP Operations API for staging Risks and Actions.
 
 Parameters:
   ArtifactBucket: {Type: String}
@@ -52,6 +52,7 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_audit_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_action_staging_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_alert_staging_v1
               - Effect: Allow
                 Action: lakeformation:GetDataAccess
                 Resource: '*'
@@ -88,6 +89,7 @@ Resources:
           ATHENA_OUTPUT: !Ref AthenaOutputUri
           ATHENA_WORKGROUP: !Ref AthenaWorkgroup
           ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          LIFECYCLE_ALERT_TABLE: fact_lifecycle_alert_staging_v1
           LIFECYCLE_ACTION_CURRENT_VIEW: vw_lifecycle_action_current_staging_v1
 
   OperationsApi:
@@ -143,6 +145,15 @@ Resources:
     Properties:
       ApiId: !Ref OperationsApi
       RouteKey: GET /v1/actions
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Join ['/', [integrations, !Ref OperationsIntegration]]
+
+  ReadRisksRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OperationsApi
+      RouteKey: GET /v1/risks
       AuthorizationType: JWT
       AuthorizerId: !Ref JwtAuthorizer
       Target: !Join ['/', [integrations, !Ref OperationsIntegration]]

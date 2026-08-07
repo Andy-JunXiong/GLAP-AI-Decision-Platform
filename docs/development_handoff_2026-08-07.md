@@ -23,12 +23,20 @@ The frontend dependency baseline was upgraded from Next.js 16.2.6 to 16.3.0
 after the production dependency audit reported high-severity advisories. The
 post-upgrade production audit reports zero known vulnerabilities.
 
+Risk Hotspots is now the first authenticated cockpit surface in that journey.
+It reads the latest open operational Alerts through `GET /v1/risks`, applies
+the Australia/Sydney business-date cutoff, and excludes future simulations.
+Selecting a Risk leads to the existing Decision Queue, using the same Alert
+fingerprint that links lifecycle Alerts to Actions. The private frontend and
+API were deployed to staging; public Pages continues to use synthetic examples.
+
 ## Verification
 
 - Pull requests `#31`, `#36`-`#41` were merged; they cover the authenticated
   API, protected configuration, dedicated identity/hosting, deployment fixes,
   and staging quota compatibility.
-- 182 Python repository tests passed after adding reliability verification.
+- 185 Python repository tests passed after adding Risk Hotspots and reliability
+  verification.
 - The standard frontend build, the internal static export, and all 3
   rendered-output/connection tests passed.
 - ESLint passed with no errors.
@@ -40,10 +48,13 @@ post-upgrade production audit reports zero known vulnerabilities.
 - Unauthenticated API requests return 401. CORS preflight succeeds only for the
   exact internal Amplify origin. Protected URLs and identifiers were not logged.
 - The complete authenticated role matrix passed in staging: all four roles read
-  the queue with HTTP 200; viewer, operator, approver, and administrator allow
-  and deny boundaries matched the contract.
-- The governed Action view and both direct backing tables have exact Glue and
-  Lake Formation read permissions. No data write or grant option was added.
+  both Risk Hotspots and the queue with HTTP 200; viewer, operator, approver,
+  and administrator allow and deny boundaries matched the contract.
+- Risk Hotspots returned 15 open operational Alerts. Their response contract,
+  `OPEN` filter, and Sydney cutoff dates passed runtime checks.
+- The governed Alert table, Action view, and both direct backing tables have
+  exact Glue and Lake Formation read permissions. No data write or grant option
+  was added.
 - The four isolated Cognito test users were deleted, and the temporary Lake
   Formation administrator list was restored to zero entries.
 - Existing audit evidence was replayed sequentially and concurrently through
@@ -59,8 +70,9 @@ post-upgrade production audit reports zero known vulnerabilities.
 
 ## Next connection
 
-1. Connect the next authenticated cockpit surface to this proven API boundary
-   while keeping the same retry and conflict contract.
+1. Connect Outcome Review to completed Actions and mature Outcomes through this
+   proven API boundary, while keeping pending `2026-08-09` data out of observed
+   evidence until that Sydney business date arrives.
 2. Keep public Pages built without the internal API URL.
 3. On or after the Sydney business date `2026-08-09`, run the actual-calendar
    observation for the pending Outcome. As of `2026-08-07`, it is still pending

@@ -40,6 +40,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /sessionStorage\.getItem/);
   assert.match(client, /authorization: `Bearer \$\{token\}`/);
   assert.match(client, /\/v1\/actions\/\$\{encodeURIComponent\(actionId\)\}\/events/);
+  assert.match(client, /\/v1\/risks\$\{query\}/);
+  assert.match(client, /export async function loadRiskHotspots/);
   assert.match(client, /timeZone: "Australia\/Sydney"/);
   assert.doesNotMatch(client, /localStorage/);
 
@@ -48,4 +50,9 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(auth, /returnedState !== expectedState/);
   assert.match(auth, /window\.sessionStorage/);
   assert.doesNotMatch(auth, /localStorage/);
+
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /loadRiskHotspots\(token, "OPEN"\)/);
+  assert.match(page, /title="Risk hotspots"/);
+  assert.match(page, /onClick=\{\(\) => go\("decisions"\)\}/);
 });

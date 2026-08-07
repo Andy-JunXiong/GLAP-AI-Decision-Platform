@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActionOperation,
   OperationsAction,
+  OperationsRisk,
   internalOperationsEnabled,
   loadActionQueue,
+  loadRiskHotspots,
   mutateAction,
   readOperationsToken,
 } from "./operations-api";
@@ -59,6 +61,7 @@ export default function Home() {
   const [decision, setDecision] = useState<"pending" | "approved" | "rejected">("pending");
   const [signalFilter, setSignalFilter] = useState("All");
   const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
+  const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
   const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
     internalOperationsEnabled() ? "loading" : "demo",
   );
@@ -75,8 +78,12 @@ export default function Home() {
     }
     setOperationsState("loading");
     try {
-      const queue = await loadActionQueue(token);
+      const [queue, risks] = await Promise.all([
+        loadActionQueue(token),
+        loadRiskHotspots(token, "OPEN"),
+      ]);
       setOperationsActions(queue.items);
+      setOperationsRisks(risks.items);
       setOperationsState("connected");
       setOperationsMessage("");
     } catch (error) {
@@ -167,7 +174,7 @@ export default function Home() {
         </header>
 
         {view === "overview" && <Overview go={go} />}
-        {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} />}
+        {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} risks={operationsRisks} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments go={go} />}
@@ -245,8 +252,32 @@ function Overview({ go }: { go: (view: View) => void }) {
   </div>;
 }
 
-function Signals({ filter, setFilter, go }: { filter: string; setFilter: (v: string) => void; go: (view: View) => void }) {
+function Signals({ filter, setFilter, go, risks, operationsState, operationsMessage, refresh }: {
+  filter: string;
+  setFilter: (v: string) => void;
+  go: (view: View) => void;
+  risks: OperationsRisk[];
+  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsMessage: string;
+  refresh: () => Promise<void>;
+}) {
   const visible = filter === "All" ? signals : signals.filter((signal) => signal.severity === filter);
+  const visibleRisks = filter === "All" ? risks : risks.filter((risk) => risk.severity === filter.toUpperCase());
+  if (operationsState !== "demo") return <div className="page">
+    <PageTitle eyebrow="DETECT" title="Risk hotspots" copy="Authenticated operational Alerts ranked for human review." action={<button className="outline-button" onClick={() => void refresh()}>Refresh risks</button>} />
+    <div className="toolbar"><div className="filters">{["All","Critical","High","Medium"].map((item) => <button className={filter === item ? "active" : ""} onClick={() => setFilter(item)} key={item}>{item}{item === "All" && ` ${risks.length}`}</button>)}</div></div>
+    <OperationsState state={operationsState} message={operationsMessage} />
+    {operationsState === "connected" && <div className="table-card">
+      <div className="data-row table-head"><span>Risk</span><span>Alert</span><span>Current reading</span><span>Exposure</span><span>Detected</span><span /></div>
+      {visibleRisks.map((risk) => <button className="data-row" key={risk.alert_fingerprint} onClick={() => go("decisions")}>
+        <span><b className={`risk-pill ${risk.severity.toLowerCase()}`}>{risk.severity}</b></span>
+        <span><strong>{risk.alert_type.replaceAll("_", " ")}</strong><small>{risk.alert_grain} · {risk.alert_dimension}</small></span>
+        <span><strong>{risk.metric_value}</strong><small>Threshold {risk.threshold_value}</small></span>
+        <span>Shipment {risk.shipment_id}</span><span>{risk.last_detected_date}</span><span className="row-link">→</span>
+      </button>)}
+      {visibleRisks.length === 0 && <p className="data-disclaimer">No open operational Risks match this filter.</p>}
+    </div>}
+  </div>;
   return <div className="page">
     <PageTitle eyebrow="DETECT" title="Signal monitoring" copy="See emerging risks before they become operational disruption." action={<button className="primary-button">＋ Add source</button>} />
     <div className="toolbar"><div className="filters">{["All","Critical","High","Medium"].map((f) => <button className={filter === f ? "active" : ""} onClick={() => setFilter(f)} key={f}>{f}{f === "All" && " 4"}</button>)}</div><label className="search">⌕<input placeholder="Search signals" /></label></div>

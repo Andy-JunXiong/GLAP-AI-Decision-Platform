@@ -55,6 +55,8 @@ class OperationsApiTests(unittest.TestCase):
         self.assertNotIn("private", api._safe_aws_error_code(AwsFailure()))
 
     def test_permission_matrix_is_separated(self):
+        for role in api.ROLE_PERMISSIONS.values():
+            self.assertIn("risks:read", role)
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
         self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
@@ -66,6 +68,52 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("LIMIT 50", query)
         self.assertIn("alert_fingerprint", query)
         self.assertNotIn("owner", query)
+
+    def test_risk_query_is_operational_actual_calendar_and_sydney_bounded(self):
+        query = api.build_risk_hotspots_query(25, "OPEN", "2026-08-07")
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertIn("execution_mode = 'OPERATIONAL'", query)
+        self.assertIn("time_basis = 'ACTUAL_CALENDAR'", query)
+        self.assertIn("as_of_date <= DATE '2026-08-07'", query)
+        self.assertIn("try_cast(dt AS date) <= DATE '2026-08-07'", query)
+        self.assertIn("row_number() OVER", query)
+        self.assertIn("row_rank = 1 AND status = 'OPEN'", query)
+        self.assertIn("LIMIT 25", query)
+        self.assertNotIn("FUTURE_SIMULATION", query)
+
+    def test_risk_query_rejects_invalid_status_and_cutoff(self):
+        with self.assertRaises(ValueError):
+            api.build_risk_hotspots_query(25, "PENDING", "2026-08-07")
+        with self.assertRaises(ValueError):
+            api.build_risk_hotspots_query(25, "OPEN", "tomorrow")
+
+    def test_viewer_can_read_risks(self):
+        class AthenaClient:
+            def start_query_execution(self, **kwargs):
+                self.query = kwargs["QueryString"]
+                return {"QueryExecutionId": "query-1"}
+
+            def get_query_execution(self, **_kwargs):
+                return {"QueryExecution": {"Status": {"State": "SUCCEEDED"}}}
+
+            def get_query_results(self, **_kwargs):
+                return {
+                    "ResultSet": {
+                        "ResultSetMetadata": {"ColumnInfo": [{"Name": "alert_fingerprint"}]},
+                        "Rows": [
+                            {"Data": [{"VarCharValue": "alert_fingerprint"}]},
+                            {"Data": [{"VarCharValue": "alert-123"}]},
+                        ],
+                    }
+                }
+
+        client = AthenaClient()
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: client)
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(request(path="/v1/risks"), None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"])["items"][0]["alert_fingerprint"], "alert-123")
+        self.assertIn("as_of_date <= DATE '2026-08-07'", client.query)
 
     def test_missing_identity_fails_closed(self):
         event = request()
