@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActionOperation,
   OperationsAction,
+  OperationsOutcome,
   OperationsRisk,
   internalOperationsEnabled,
   loadActionQueue,
+  loadOutcomeReview,
   loadRiskHotspots,
   mutateAction,
   readOperationsToken,
@@ -62,6 +64,7 @@ export default function Home() {
   const [signalFilter, setSignalFilter] = useState("All");
   const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
   const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
+  const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
   const [operationsState, setOperationsState] = useState<"demo" | "loading" | "connected" | "auth_required" | "error">(
     internalOperationsEnabled() ? "loading" : "demo",
   );
@@ -78,12 +81,14 @@ export default function Home() {
     }
     setOperationsState("loading");
     try {
-      const [queue, risks] = await Promise.all([
+      const [queue, risks, outcomes] = await Promise.all([
         loadActionQueue(token),
         loadRiskHotspots(token, "OPEN"),
+        loadOutcomeReview(token),
       ]);
       setOperationsActions(queue.items);
       setOperationsRisks(risks.items);
+      setOperationsOutcomes(outcomes.items);
       setOperationsState("connected");
       setOperationsMessage("");
     } catch (error) {
@@ -162,7 +167,7 @@ export default function Home() {
             <span>Australia Operations</span><b>/</b><strong>{view === "brief" ? "Decision Brief" : navItems.find((item) => item.id === view)?.label}</strong>
           </div>
           <div className="header-actions">
-            <span className="demo-badge">Synthetic workspace</span>
+            <span className="demo-badge">{internalOperationsEnabled() ? "Internal staging" : "Synthetic workspace"}</span>
             {internalOperationsEnabled() && internalAuthenticationEnabled() && (
               signedIn
                 ? <button className="auth-button" onClick={signOutOperations}>Sign out</button>
@@ -178,7 +183,7 @@ export default function Home() {
         {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments go={go} />}
-        {view === "outcomes" && <Outcomes />}
+        {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "brief" && (
           <DecisionBrief
             diverted={diverted}
@@ -387,7 +392,42 @@ function Shipments({ go }: { go: (view: View) => void }) {
   </div>;
 }
 
-function Outcomes() {
+function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
+  outcomes: OperationsOutcome[];
+  operationsState: "demo" | "loading" | "connected" | "auth_required" | "error";
+  operationsMessage: string;
+  refresh: () => Promise<void>;
+}) {
+  if (operationsState === "demo") return <DemoOutcomes />;
+  const pending = outcomes.filter((item) => item.evidence_status === "NOT_OBSERVED");
+  const observed = outcomes.filter((item) => item.evidence_status === "OBSERVED_ACTUAL_CALENDAR");
+  const successful = observed.filter((item) => ["SUCCESSFUL", "PARTIALLY_SUCCESSFUL"].includes(item.outcome_status));
+  const averageEffect = observed.length
+    ? `${(observed.reduce((total, item) => total + Number(item.effect_pct ?? 0), 0) / observed.length).toFixed(1)}%`
+    : "—";
+  return <div className="page">
+    <PageTitle eyebrow="LEARN" title="Outcome review" copy="Compare completed Actions with evidence that is mature by the Sydney business-date cutoff." action={<button className="outline-button" onClick={() => void refresh()}>Refresh outcomes</button>} />
+    <OperationsState state={operationsState} message={operationsMessage} />
+    {operationsState === "connected" && <>
+      <section className="metric-grid compact">
+        <Metric label="Pending observation" value={String(pending.length)} note="Not counted as actual evidence" tone="amber" />
+        <Metric label="Observed outcomes" value={String(observed.length)} note="Actual-calendar evidence only" />
+        <Metric label="Successful outcomes" value={String(successful.length)} note={observed.length ? "Observed evidence" : "No mature evidence yet"} tone={successful.length ? "green" : ""} />
+        <Metric label="Average observed effect" value={averageEffect} note={observed.length ? "Across mature outcomes" : "Pending outcomes excluded"} />
+      </section>
+      <div className="decision-list">{outcomes.map((item) => <article className="decision-card" key={item.outcome_id}>
+        <div className={`decision-priority ${(item.alert_severity ?? "medium").toLowerCase()}`}><i /><span>{item.outcome_status}</span></div>
+        <div className="decision-main"><small>{item.outcome_id}</small><strong>{(item.action_type ?? "Completed Action").replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id} · Action {item.action_id}</span></div>
+        <div className="decision-value"><small>{item.evidence_status === "NOT_OBSERVED" ? "Evidence" : "Observed effect"}</small><strong>{item.evidence_status === "NOT_OBSERVED" ? "Not observed" : `${item.effect_pct}%`}</strong></div>
+        <div className="decision-due"><small>{item.evidence_status === "NOT_OBSERVED" ? "Observation due" : "Observed"}</small><strong>{item.evidence_status === "NOT_OBSERVED" ? item.observation_due_date : item.observed_date}</strong></div>
+        <span className="status-button">{item.evidence_status === "NOT_OBSERVED" ? "Pending" : "Actual calendar"}</span>
+      </article>)}</div>
+      {outcomes.length === 0 && <p className="data-disclaimer">No operational Outcomes are available at the current Sydney cutoff.</p>}
+    </>}
+  </div>;
+}
+
+function DemoOutcomes() {
   return <div className="page">
     <PageTitle eyebrow="LEARN" title="Outcomes & value" copy="Track whether decisions worked and quantify the value delivered." action={<button className="outline-button">This month⌄</button>} />
     <section className="metric-grid"><Metric label="Decisions executed" value="24" note="89% acceptance rate" /><Metric label="Estimated value" value="$128.4k" note="+18% vs last month" tone="green" /><Metric label="Storage avoided" value="$46.2k" note="12 interventions" /><Metric label="Stockouts prevented" value="7" note="Across 18 critical SKUs" /><Metric label="Forecast accuracy" value="84%" note="+6 pts this quarter" /></section>

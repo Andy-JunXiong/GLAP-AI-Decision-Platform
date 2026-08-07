@@ -57,6 +57,7 @@ class OperationsApiTests(unittest.TestCase):
     def test_permission_matrix_is_separated(self):
         for role in api.ROLE_PERMISSIONS.values():
             self.assertIn("risks:read", role)
+            self.assertIn("outcomes:read", role)
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
         self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
@@ -87,6 +88,27 @@ class OperationsApiTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             api.build_risk_hotspots_query(25, "OPEN", "tomorrow")
 
+    def test_outcome_query_separates_pending_from_observed_evidence(self):
+        query = api.build_outcome_review_query(50, "PENDING", "2026-08-07")
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertIn("execution_mode = 'OPERATIONAL'", query)
+        self.assertIn("time_basis = 'ACTUAL_CALENDAR'", query)
+        self.assertIn("as_of_date <= DATE '2026-08-07'", query)
+        self.assertIn("try_cast(dt AS date) <= DATE '2026-08-07'", query)
+        self.assertIn("status = 'PENDING' AND observed_date IS NULL", query)
+        self.assertIn("observed_date <= DATE '2026-08-07'", query)
+        self.assertIn("'NOT_OBSERVED'", query)
+        self.assertIn("'OBSERVED_ACTUAL_CALENDAR'", query)
+        self.assertIn("outcome_status = 'PENDING'", query)
+        self.assertIn("LEFT JOIN", query)
+        self.assertIn("LIMIT 50", query)
+
+    def test_outcome_query_rejects_invalid_status_and_cutoff(self):
+        with self.assertRaises(ValueError):
+            api.build_outcome_review_query(50, "OBSERVED", "2026-08-07")
+        with self.assertRaises(ValueError):
+            api.build_outcome_review_query(50, "PENDING", "tomorrow")
+
     def test_viewer_can_read_risks(self):
         class AthenaClient:
             def start_query_execution(self, **kwargs):
@@ -114,6 +136,34 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(json.loads(response["body"])["items"][0]["alert_fingerprint"], "alert-123")
         self.assertIn("as_of_date <= DATE '2026-08-07'", client.query)
+
+    def test_viewer_can_read_outcomes(self):
+        class AthenaClient:
+            def start_query_execution(self, **kwargs):
+                self.query = kwargs["QueryString"]
+                return {"QueryExecutionId": "query-1"}
+
+            def get_query_execution(self, **_kwargs):
+                return {"QueryExecution": {"Status": {"State": "SUCCEEDED"}}}
+
+            def get_query_results(self, **_kwargs):
+                return {
+                    "ResultSet": {
+                        "ResultSetMetadata": {"ColumnInfo": [{"Name": "outcome_id"}]},
+                        "Rows": [
+                            {"Data": [{"VarCharValue": "outcome_id"}]},
+                            {"Data": [{"VarCharValue": "outcome-123"}]},
+                        ],
+                    }
+                }
+
+        client = AthenaClient()
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: client)
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(request(path="/v1/outcomes"), None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"])["items"][0]["outcome_id"], "outcome-123")
+        self.assertIn("observed_date <= DATE '2026-08-07'", client.query)
 
     def test_missing_identity_fails_closed(self):
         event = request()
