@@ -156,6 +156,8 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("Existing Operations API stack and physical resources only: True", script)
         self.assertIn("Top-level resource creation or replacement permission: False", script)
         self.assertIn("GitHub role self-modification permission: False", script)
+        self.assertIn('@("iam", "list-roles")', script)
+        self.assertNotIn("iam get-role --role-name $ExecutionRoleName", script)
         self.assertNotIn('"cloudformation:*"', script)
         self.assertNotIn('"iam:CreateRole"', script)
         self.assertNotIn('"lambda:CreateFunction"', script)

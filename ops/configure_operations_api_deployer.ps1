@@ -273,9 +273,10 @@ $trustPath = Write-TemporaryJson $trustPolicy "cf-trust"
 $executionPath = Write-TemporaryJson $executionPolicy "cf-policy"
 $githubPath = Write-TemporaryJson $githubPolicy "github-policy"
 try {
-    $roleExists = $true
-    & aws iam get-role --role-name $ExecutionRoleName @awsScope --output json 2>$null | Out-Null
-    if ($LASTEXITCODE -ne 0) { $roleExists = $false }
+    $roles = Invoke-AwsJson @("iam", "list-roles")
+    $roleExists = @(
+        $roles.Roles | Where-Object RoleName -eq $ExecutionRoleName
+    ).Count -eq 1
     if ($roleExists) {
         & aws iam update-assume-role-policy --role-name $ExecutionRoleName `
             --policy-document "file://$trustPath" @awsScope
