@@ -195,8 +195,11 @@ checks with `ops/verify_operations_staging.ps1`.
 
 No persistent Cognito user is created automatically. An isolated runtime check
 created one temporary viewer, operator, approver, and administrator, verified
-Risk, queue, Outcome, Pipeline Health, and Forecast reads plus every role-specific allow/deny boundary,
-then removed all four. All reads returned HTTP 200 for all four roles. The Risk
+Risk, queue, Outcome, Pipeline Health, Forecast, Network aggregate, and shipment
+entity reads plus every role-specific allow/deny boundary, then removed all
+four. All aggregate reads returned HTTP 200 for all four roles. Shipment entity
+reads returned 403 for `viewer` and 200 for `operator`, `approver`, and
+`administrator`, as designed. The Risk
 response contained 15 open operational Alerts, and every returned `as_of_date`
 was on or before the Sydney cutoff. The governed Alert table, Action view, its
 two direct backing tables, Outcome table, and Forecast view chain have exact
@@ -216,6 +219,17 @@ eligible actual-calendar dates, below both the 28-date advisory forecast gate
 and the seven-holdout accuracy gate. It therefore returns no future points and
 no accuracy metrics. This is a working fail-closed product state, not missing or
 manufactured performance evidence.
+
+The deployed Network response contained 12 latest-snapshot provider/lane
+groups. Its viewer payload contained no shipment identifier and reported
+`entity_access=false`. The operator entity sample passed the Sydney cutoff,
+bounded-field, and next-page checks; costs, raw ports, infrastructure
+identifiers, and future simulations were absent. The API and internal Amplify
+page were deployed with the approved local `codex-readonly` management profile.
+The GitHub OIDC workflow's automatic plan succeeds, but its explicit `deploy`
+option currently fails closed at `cloudformation:CreateChangeSet`. Enabling that
+path requires a separately reviewed Operations API CloudFormation execution
+policy; it must not reuse or broaden the Stateful Lifecycle stack policy.
 
 The Outcome runtime response contained one `PENDING` row and zero observed rows.
 The pending row had no observation date or effect value and remained explicitly
