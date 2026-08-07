@@ -29,6 +29,24 @@ def request(method="GET", path="/v1/actions", groups="viewer", body=None):
 
 
 class OperationsApiTests(unittest.TestCase):
+    def test_failure_metric_is_exact_and_best_effort(self):
+        class CloudWatchClient:
+            request = None
+
+            def put_metric_data(self, **kwargs):
+                self.request = kwargs
+
+        client = CloudWatchClient()
+        self.assertTrue(api._record_failure_metric(client))
+        self.assertEqual(client.request["Namespace"], "GLAP/OperationsApi")
+        self.assertEqual(client.request["MetricData"][0]["MetricName"], "ServiceUnavailable")
+
+        class FailingClient:
+            def put_metric_data(self, **_kwargs):
+                raise RuntimeError("private failure")
+
+        self.assertFalse(api._record_failure_metric(FailingClient()))
+
     def test_safe_aws_error_diagnostic_omits_exception_message(self):
         class AwsFailure(Exception):
             response = {"Error": {"Code": "AccessDeniedException", "Message": "private path"}}
@@ -96,6 +114,32 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(client.sent["actor"], "Alex Chen")
         self.assertEqual(client.sent["execution_mode"], "OPERATIONAL")
+
+    def test_downstream_domain_failures_are_safe_http_responses(self):
+        class LambdaClient:
+            payload = {"errorType": "ValueError", "errorMessage": "Action was not found"}
+
+            def invoke(self, **_kwargs):
+                return {
+                    "FunctionError": "Unhandled",
+                    "Payload": io.BytesIO(json.dumps(self.payload).encode("utf-8")),
+                }
+
+        client = LambdaClient()
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: client)
+        mutation_request = request(
+            "POST", "/v1/actions/action-123/events", "approver",
+            {"operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence"},
+        )
+        with patch.dict(sys.modules, {"boto3": fake_boto3}):
+            self.assertEqual(api.lambda_handler(mutation_request, None)["statusCode"], 404)
+            client.payload = {
+                "errorType": "ActionConflictError",
+                "errorMessage": "private transition detail",
+            }
+            conflict = api.lambda_handler(mutation_request, None)
+        self.assertEqual(conflict["statusCode"], 409)
+        self.assertNotIn("private", conflict["body"])
 
 
 if __name__ == "__main__":
