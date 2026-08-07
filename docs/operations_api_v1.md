@@ -14,8 +14,9 @@ Public GitHub Pages is not an API client and receives no write permission.
 | `administrator` | yes | yes | yes | yes |
 
 API Gateway validates the JWT issuer and audience. The adapter obtains the
-actor from signed `name` or `email`, the stable identity from `sub`, and roles
-from `cognito:groups`/`groups`. Client-supplied actor names are never trusted.
+actor from signed `name`, `email`, or Cognito access-token `username` claims,
+the stable identity from `sub`, and roles from `cognito:groups`/`groups`.
+Client-supplied actor names are never trusted.
 
 The internal build sets `NEXT_PUBLIC_GLAP_OPERATIONS_API_URL` to the exact API
 origin. Its approved authentication shell supplies the short-lived access token
