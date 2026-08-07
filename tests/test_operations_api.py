@@ -48,6 +48,14 @@ class OperationsApiTests(unittest.TestCase):
         response = api.lambda_handler(event, None)
         self.assertEqual(response["statusCode"], 403)
 
+    def test_api_gateway_string_encoded_group_claims_are_supported(self):
+        _, _, json_permissions = api._identity(request(groups='["operator"]'))
+        _, _, bracket_permissions = api._identity(request(groups="[approver]"))
+        self.assertIn("actions:complete", json_permissions)
+        self.assertNotIn("actions:approve", json_permissions)
+        self.assertIn("actions:approve", bracket_permissions)
+        self.assertNotIn("actions:complete", bracket_permissions)
+
     def test_operator_cannot_approve(self):
         response = api.lambda_handler(request("POST", "/v1/actions/action-123/events", "operator", {
             "operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence"

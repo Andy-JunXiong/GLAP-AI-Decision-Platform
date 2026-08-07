@@ -47,13 +47,27 @@ def _response(status: int, body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _claim_groups(raw_groups: Any) -> list[str]:
+    if isinstance(raw_groups, list):
+        return [str(group) for group in raw_groups]
+    text = str(raw_groups or "").strip()
+    if text.startswith("["):
+        try:
+            decoded = json.loads(text)
+            if isinstance(decoded, list):
+                return [str(group) for group in decoded]
+        except json.JSONDecodeError:
+            pass
+    return [part.strip("[]\"'") for part in re.split(r"[ ,]+", text) if part.strip("[]\"'")]
+
+
 def _identity(event: dict[str, Any]) -> tuple[str, str, set[str]]:
     jwt = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {})
     claims = jwt.get("claims") or {}
     subject = str(claims.get("sub") or "").strip()
     actor = str(claims.get("name") or claims.get("email") or "").strip()
     raw_groups = claims.get("cognito:groups") or claims.get("groups") or ""
-    groups = raw_groups if isinstance(raw_groups, list) else re.split(r"[ ,]+", str(raw_groups))
+    groups = _claim_groups(raw_groups)
     roles = {str(group).lower() for group in groups if str(group).lower() in ROLE_PERMISSIONS}
     if not subject or not actor or not roles:
         raise PermissionError("Authenticated named identity with an Operations role is required")
