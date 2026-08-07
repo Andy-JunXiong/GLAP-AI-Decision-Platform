@@ -69,7 +69,6 @@ Resources:
       Role: !GetAtt OperationsApiRole.Arn
       Timeout: 35
       MemorySize: 256
-      ReservedConcurrentExecutions: 10
       DeadLetterConfig: {TargetArn: !GetAtt OperationsApiDLQ.Arn}
       Code: {S3Bucket: !Ref ArtifactBucket, S3Key: !Ref ApiArtifactKey}
       Environment:

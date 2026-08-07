@@ -47,8 +47,10 @@ Errors use `invalid_request`, `forbidden`, `not_found`, or
 
 ## Reliability and recovery
 
-The API has bounded concurrency plus failure and throttling alarms. The stack
-also provisions an encrypted DLQ, but API Gateway invokes Lambda synchronously,
+The API has API Gateway request-rate and burst limits plus failure and
+throttling alarms. It does not reserve Lambda concurrency because the staging
+account must retain its minimum unreserved concurrency. The stack also
+provisions an encrypted DLQ, but API Gateway invokes Lambda synchronously,
 so that DLQ is not evidence of synchronous API request recovery; those failures
 are covered by alarms, logs, client retries, and idempotent reconciliation.
 Synchronous callers must retry only with the same request ID. A timeout is
