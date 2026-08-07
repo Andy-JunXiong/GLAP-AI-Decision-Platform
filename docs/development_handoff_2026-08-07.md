@@ -44,6 +44,12 @@ Pipeline freshness, limited forecast history, and partially loaded shipment
 pages remain visible as distinct conditions instead of being confused with an
 empty or healthy result.
 
+The manual Amplify publisher also now creates URL-compatible ZIP entry paths.
+This closes a Windows packaging defect where `index.html` returned 200 while
+nested Next.js JavaScript and CSS returned 404. Deployment and runtime checks
+now fail closed unless the nested assets and accessible-state fingerprint are
+actually reachable.
+
 ## Verification
 
 - Pull requests `#31`, `#36`-`#41` were merged; they cover the authenticated
@@ -56,6 +62,8 @@ empty or healthy result.
 - The cockpit state contract is covered by rendered-source assertions for all
   five required conditions, retry semantics, live-region attributes, and
   reduced-motion support.
+- The internal hosting verifier checks the deployed JavaScript and CSS instead
+  of treating an HTTP 200 shell page as a successful frontend release.
 - ESLint passed with no errors.
 - `npm audit --omit=dev --audit-level=high` reported zero vulnerabilities after
   the Next.js upgrade.

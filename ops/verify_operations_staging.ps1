@@ -29,6 +29,28 @@ $endpoint = Get-Output $api "ApiEndpoint"
 $functionName = Get-Output $api "ApiFunctionName"
 
 $site = Invoke-WebRequest -Uri $origin -UseBasicParsing -TimeoutSec 20
+$assetPaths = @(
+    [regex]::Matches(
+        $site.Content,
+        '(?<!\\)(?:src|href)="(/_next/static/[^"?]+\.(?:js|css))"'
+    ) |
+        ForEach-Object { $_.Groups[1].Value } |
+        Sort-Object -Unique
+)
+$assetFetchOk = $assetPaths.Count -ge 2
+$deployedJavaScript = ""
+$deployedCss = ""
+foreach ($assetPath in $assetPaths) {
+    try {
+        $asset = Invoke-WebRequest -Uri ($origin.TrimEnd('/') + $assetPath) `
+            -UseBasicParsing -TimeoutSec 20
+        if ($asset.StatusCode -ne 200) { $assetFetchOk = $false }
+        if ($assetPath.EndsWith(".js")) { $deployedJavaScript += $asset.Content }
+        if ($assetPath.EndsWith(".css")) { $deployedCss += $asset.Content }
+    } catch {
+        $assetFetchOk = $false
+    }
+}
 $unauthorizedStatuses = @()
 try {
     Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/actions?limit=1") `
@@ -96,6 +118,12 @@ $checks = [ordered]@{
     "API Lambda active" = $function.State -eq "Active" -and $function.LastUpdateStatus -eq "Successful"
     "Internal frontend HTTP 200" = $site.StatusCode -eq 200
     "Internal sign-in rendered" = $site.Content -match "Internal sign in"
+    "Internal static assets reachable" = $assetFetchOk
+    "Accessible data states deployed" = `
+        $deployedJavaScript.Contains("Pipeline evidence is stale") -and `
+        $deployedJavaScript.Contains("Some shipment evidence is still available") -and `
+        $deployedJavaScript.Contains("aria-live") -and `
+        $deployedCss.Contains(".data-state")
     "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq 7 -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
     "CORS preflight successful" = $preflight.StatusCode -ge 200 -and $preflight.StatusCode -lt 300
     "CORS origin exact match" = $preflight.Headers["access-control-allow-origin"] -eq $origin
