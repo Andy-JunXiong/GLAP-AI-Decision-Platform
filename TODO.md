@@ -430,6 +430,9 @@ Repository checkpoint — 4 August 2026:
     with polite/assertive announcements, busy state, retry controls, reduced-motion
     support, explicit Pipeline Health freshness, limited forecast evidence, and
     recoverable partial shipment pagination.
+  - The manual Amplify publisher now writes portable `/` ZIP paths and both the
+    publisher and staging verifier fail closed unless nested Next.js JavaScript
+    and CSS assets are present and reachable.
 - [ ] Add a governed External Intelligence pipeline for weather, equipment
   shortage, geopolitical disruption, port congestion and labour-action evidence.
 - [ ] Use an LLM only to extract, normalize, classify and summarize sourced

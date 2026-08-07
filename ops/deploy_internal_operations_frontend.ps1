@@ -62,7 +62,51 @@ if (-not (Test-Path -LiteralPath (Join-Path $out "index.html"))) {
     throw "Static export did not produce index.html"
 }
 New-Item -ItemType Directory -Path (Split-Path $archive -Parent) -Force | Out-Null
-Compress-Archive -Path (Join-Path $out "*") -DestinationPath $archive -Force
+if (Test-Path -LiteralPath $archive) {
+    Remove-Item -LiteralPath $archive -Force
+}
+
+# Compress-Archive writes Windows path separators into ZIP entry names. Amplify
+# accepts the root files but cannot resolve nested browser assets from those
+# entries, leaving a 200 index page whose JavaScript and CSS return 404. Build
+# the archive explicitly so every entry uses the URL-compatible '/' separator.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+Add-Type -AssemblyName System.IO.Compression
+$sourceRoot = (Resolve-Path -LiteralPath $out).Path
+$zip = [System.IO.Compression.ZipFile]::Open(
+    $archive,
+    [System.IO.Compression.ZipArchiveMode]::Create
+)
+try {
+    Get-ChildItem -LiteralPath $sourceRoot -Recurse -File |
+        Sort-Object FullName |
+        ForEach-Object {
+            $entryName = $_.FullName.Substring($sourceRoot.Length).TrimStart(
+                "\", "/"
+            ).Replace("\", "/")
+            [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $zip,
+                $_.FullName,
+                $entryName,
+                [System.IO.Compression.CompressionLevel]::Optimal
+            )
+        }
+} finally {
+    $zip.Dispose()
+}
+
+$archiveCheck = [System.IO.Compression.ZipFile]::OpenRead($archive)
+try {
+    $entryNames = @($archiveCheck.Entries | ForEach-Object FullName)
+    $hasUnsafeSeparator = @($entryNames | Where-Object { $_.Contains("\") }).Count -gt 0
+    $hasIndex = $entryNames -contains "index.html"
+    $hasStaticAssets = @($entryNames | Where-Object { $_.StartsWith("_next/static/") }).Count -gt 0
+    if ($hasUnsafeSeparator -or -not $hasIndex -or -not $hasStaticAssets) {
+        throw "Internal frontend archive failed the portable path contract"
+    }
+} finally {
+    $archiveCheck.Dispose()
+}
 
 $deploymentJson = & aws amplify create-deployment --app-id $appId `
     --branch-name $branchName @awsScope --output json

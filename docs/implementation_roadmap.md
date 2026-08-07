@@ -288,7 +288,8 @@ failed-state contract is implemented across the authenticated cockpit. Runtime
 API errors can be retried, Pipeline Health freshness and failure states remain
 explicit, forecast history limitations are not presented as measured accuracy,
 and shipment pagination can preserve previously loaded evidence after a later
-page fails.
+page fails. The manual hosting path also verifies that nested JavaScript and CSS
+are reachable, so a shell-only HTTP 200 cannot satisfy this acceptance gate.
 
 ## P5 — Governance and production readiness
 
