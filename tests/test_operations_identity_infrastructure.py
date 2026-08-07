@@ -95,6 +95,9 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn("approver complete denied", script)
         self.assertIn("administrator approve allowed by role", script)
         self.assertIn("Tokens and users were not printed", script)
+        self.assertIn("RandomNumberGenerator]::Create()", script)
+        self.assertIn("$generator.Dispose()", script)
+        self.assertNotIn("RandomNumberGenerator]::Fill", script)
         self.assertNotIn("Write-Host $tokens", script)
 
 
