@@ -107,3 +107,9 @@ No Cognito user is created automatically. Named viewer, operator, approver, and
 administrator identities plus authenticated allow/deny and recovery exercises
 remain the next release gate. Public GitHub Pages is still built without the
 internal API or Cognito variables and cannot submit these mutations.
+
+An IAM administrator can exercise the deployed allow/deny matrix without using
+real email addresses by running `ops/verify_operations_roles_staging.ps1` first
+in plan mode and then with `-Apply`. The script suppresses email delivery,
+targets an unguessable missing Action ID, keeps passwords and tokens in process,
+and deletes all four temporary users in a `finally` block.
