@@ -6,6 +6,7 @@ param(
     [string]$PolicyName = "GLAPOperationsIdentityDiscovery",
     [string]$IdentityStackName = "glap-operations-identity-staging",
     [string]$PipelineReliabilityStackName = "glap-pipeline-reliability-staging",
+    [string]$OperationsApiStackName = "glap-operations-api-staging",
     [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
@@ -17,6 +18,7 @@ $ErrorActionPreference = "Stop"
 
 foreach ($name in @(
     $RoleName, $PolicyName, $IdentityStackName, $PipelineReliabilityStackName,
+    $OperationsApiStackName,
     $ActionMutationFunctionName
 )) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
@@ -76,7 +78,8 @@ $policy = @{
             Action = "cloudformation:DescribeStacks"
             Resource = @(
                 "arn:aws:cloudformation:${Region}:${accountId}:stack/${IdentityStackName}/*",
-                "arn:aws:cloudformation:${Region}:${accountId}:stack/${PipelineReliabilityStackName}/*"
+                "arn:aws:cloudformation:${Region}:${accountId}:stack/${PipelineReliabilityStackName}/*",
+                "arn:aws:cloudformation:${Region}:${accountId}:stack/${OperationsApiStackName}/*"
             )
         },
         @{
@@ -107,6 +110,7 @@ Write-Host "  Separate inline policy: $PolicyName"
 Write-Host "  Cognito and origin discovery: Read only"
 Write-Host "  Dedicated identity stack outputs: Read only"
 Write-Host "  Pipeline reliability stack output: Read only"
+Write-Host "  Operations API target stack state: Read only"
 Write-Host "  Named Lambda and Glue dependencies: Read only"
 Write-Host "  Deployment permissions: False"
 Write-Host "  Self-modifying deployer permission: False"

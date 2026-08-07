@@ -200,6 +200,8 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn('"cloudformation:DescribeStacks"', script)
         self.assertIn('stack/${IdentityStackName}/*', script)
         self.assertIn('stack/${PipelineReliabilityStackName}/*', script)
+        self.assertIn('stack/${OperationsApiStackName}/*', script)
+        self.assertIn("Operations API target stack state: Read only", script)
         self.assertIn('"lambda:GetFunction"', script)
         self.assertIn('function:${ActionMutationFunctionName}', script)
         self.assertIn('"glue:GetTable"', script)
