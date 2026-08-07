@@ -13,6 +13,7 @@ param(
     [Parameter(Mandatory)] [string]$PipelineStatusS3Uri,
     [Parameter(Mandatory)] [string]$PipelineStatusObjectArn,
     [Parameter(Mandatory)] [string]$AllowedOrigin,
+    [Parameter(Mandatory)] [string]$CloudFormationRoleArn,
     [switch]$Apply
 )
 
@@ -23,6 +24,9 @@ if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+$') { throw "AthenaOutputUri must 
 if ($ArtifactBucket -notmatch '^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$') { throw "Invalid artifact bucket" }
 if ($PipelineStatusS3Uri -notmatch '^s3://[^/]+/.+$') { throw "PipelineStatusS3Uri must identify one object" }
 if ($PipelineStatusObjectArn -notmatch '^arn:[^:]+:s3:::[^/]+/.+$') { throw "PipelineStatusObjectArn must identify one object" }
+if ($CloudFormationRoleArn -notmatch '^arn:aws(-[a-z]+)?:iam::\d{12}:role/glap-operations-api-cloudformation-staging-role$') {
+    throw "CloudFormationRoleArn must identify the dedicated Operations API staging execution role"
+}
 
 $root = Split-Path $PSScriptRoot -Parent
 $template = Join-Path $root "infrastructure/operations-api-staging.yaml"
@@ -35,6 +39,7 @@ Write-Host "  JWT issuer configured: $([bool]$JwtIssuer)"
 Write-Host "  JWT audience configured: $([bool]$JwtAudience)"
 Write-Host "  Allowed origin configured: $([bool]$AllowedOrigin)"
 Write-Host "  Private pipeline status configured: $([bool]$PipelineStatusS3Uri)"
+Write-Host "  Dedicated CloudFormation execution role configured: True"
 Write-Host "  Public Pages write access: False"
 Write-Host "  Schedule or production alias: False"
 if (-not $Apply) {
@@ -54,6 +59,7 @@ if ($LASTEXITCODE -ne 0) { throw "Unable to upload Operations API artifact" }
 
 & aws cloudformation deploy --template-file $template --stack-name $StackName `
     --capabilities CAPABILITY_IAM @awsScope --no-fail-on-empty-changeset `
+    --role-arn $CloudFormationRoleArn `
     --parameter-overrides `
       "ArtifactBucket=$ArtifactBucket" "ApiArtifactKey=$ApiArtifactKey" `
       "JwtIssuer=$JwtIssuer" "JwtAudience=$JwtAudience" `

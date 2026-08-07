@@ -168,6 +168,32 @@ Operations API target stack because `aws cloudformation deploy` reads its
 current state before preparing a change set. After this one-time bootstrap, rerun the Operations API
 workflow in `plan` mode. Deployment permissions remain a separate review gate.
 
+## Dedicated staging deployment bootstrap
+
+The Operations API uses a separate two-role deployment boundary instead of
+reusing the Stateful Lifecycle stack policy. An IAM administrator previews and
+applies it once:
+
+```powershell
+.\ops\configure_operations_api_deployer.ps1 `
+  -ArtifactBucket <reviewed-staging-artifact-bucket>
+
+.\ops\configure_operations_api_deployer.ps1 `
+  -AdminProfile codex-readonly `
+  -ArtifactBucket <reviewed-staging-artifact-bucket> `
+  -Apply
+```
+
+The GitHub OIDC role can upload only under the reviewed artifact prefix,
+operate change sets only for `glap-operations-api-staging`, and pass only
+`glap-operations-api-cloudformation-staging-role` to CloudFormation. The
+dedicated execution role can update only the stack's currently discovered
+Lambda, runtime role, API Gateway ID, queue, log group, and alarms. It has no
+top-level create/delete permission, schedule or alias permission, production
+resource access, or ability to modify the GitHub role. A physical resource
+replacement or new top-level resource type therefore fails closed until this
+bootstrap is reviewed and reapplied.
+
 ## Current implementation boundary
 
 The contract, adapter, API and identity infrastructure templates, plan-first
