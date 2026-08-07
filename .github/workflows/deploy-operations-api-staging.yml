@@ -74,6 +74,21 @@ jobs:
           audience="$JWT_AUDIENCE"
           origin="$INTERNAL_ORIGIN"
 
+          if [[ -z "$issuer" || -z "$audience" || -z "$origin" ]]; then
+            if identity_outputs=$(aws cloudformation describe-stacks \
+              --stack-name glap-operations-identity-staging --output json 2>/dev/null); then
+              stack_issuer=$(jq -r '[.Stacks[0].Outputs[] | select(.OutputKey == "JwtIssuer") | .OutputValue][0] // empty' <<< "$identity_outputs")
+              stack_audience=$(jq -r '[.Stacks[0].Outputs[] | select(.OutputKey == "JwtAudience") | .OutputValue][0] // empty' <<< "$identity_outputs")
+              stack_origin=$(jq -r '[.Stacks[0].Outputs[] | select(.OutputKey == "InternalOrigin") | .OutputValue][0] // empty' <<< "$identity_outputs")
+              [[ -n "$issuer" ]] || issuer="$stack_issuer"
+              [[ -n "$audience" ]] || audience="$stack_audience"
+              [[ -n "$origin" ]] || origin="$stack_origin"
+              echo "Dedicated identity stack configuration available: true"
+            else
+              echo "Dedicated identity stack configuration available: false"
+            fi
+          fi
+
           if [[ -z "$issuer" || -z "$audience" ]]; then
             if ! pool_text=$(aws cognito-idp list-user-pools --max-results 60 \
               --query 'UserPools[].Id' --output text 2>/dev/null); then

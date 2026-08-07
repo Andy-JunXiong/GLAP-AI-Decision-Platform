@@ -4,12 +4,13 @@ param(
     [string]$Region = "us-east-1",
     [string]$RoleName = "glap-github-staging-deployer",
     [string]$PolicyName = "GLAPOperationsIdentityDiscovery",
+    [string]$IdentityStackName = "glap-operations-identity-staging",
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
 
-foreach ($name in @($RoleName, $PolicyName)) {
+foreach ($name in @($RoleName, $PolicyName, $IdentityStackName)) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
         throw "Role and policy names must use safe AWS characters"
     }
@@ -51,6 +52,12 @@ $policy = @{
             Effect = "Allow"
             Action = "apigateway:GET"
             Resource = "arn:aws:apigateway:${Region}::/domainnames*"
+        },
+        @{
+            Sid = "ReadDedicatedOperationsIdentityOutputs"
+            Effect = "Allow"
+            Action = "cloudformation:DescribeStacks"
+            Resource = "arn:aws:cloudformation:${Region}:${accountId}:stack/${IdentityStackName}/*"
         }
     )
 }
@@ -60,6 +67,7 @@ Write-Host "Operations API protected-configuration discovery policy plan"
 Write-Host "  Role: $RoleName"
 Write-Host "  Separate inline policy: $PolicyName"
 Write-Host "  Cognito and origin discovery: Read only"
+Write-Host "  Dedicated identity stack outputs: Read only"
 Write-Host "  Deployment permissions: False"
 Write-Host "  Self-modifying deployer permission: False"
 

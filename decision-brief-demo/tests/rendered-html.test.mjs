@@ -42,4 +42,10 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /\/v1\/actions\/\$\{encodeURIComponent\(actionId\)\}\/events/);
   assert.match(client, /timeZone: "Australia\/Sydney"/);
   assert.doesNotMatch(client, /localStorage/);
+
+  const auth = await readFile(new URL("../app/operations-auth.ts", import.meta.url), "utf8");
+  assert.match(auth, /code_challenge_method: "S256"/);
+  assert.match(auth, /returnedState !== expectedState/);
+  assert.match(auth, /window\.sessionStorage/);
+  assert.doesNotMatch(auth, /localStorage/);
 });
