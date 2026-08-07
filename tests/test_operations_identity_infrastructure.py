@@ -17,6 +17,7 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn("AllowAdminCreateUserOnly: true", template)
         self.assertIn("GenerateSecret: false", template)
         self.assertIn("AllowedOAuthFlows: [code]", template)
+        self.assertIn("ALLOW_ADMIN_USER_PASSWORD_AUTH", template)
         self.assertIn("MfaConfiguration: OPTIONAL", template)
         for role in ("viewer", "operator", "approver", "administrator"):
             self.assertIn(f"GroupName: {role}", template)
@@ -78,6 +79,23 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertNotIn("update-", script.lower())
         self.assertNotIn("delete-", script.lower())
         self.assertNotIn("start-", script.lower())
+
+    def test_role_matrix_verification_is_manual_isolated_and_self_cleaning(self):
+        script = (
+            ROOT / "ops" / "verify_operations_roles_staging.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("--message-action SUPPRESS", script)
+        self.assertIn("example.invalid", script)
+        self.assertIn("admin-delete-user", script)
+        self.assertIn("finally", script)
+        self.assertIn("viewer approve denied", script)
+        self.assertIn("operator complete allowed by role", script)
+        self.assertIn("approver complete denied", script)
+        self.assertIn("administrator approve allowed by role", script)
+        self.assertIn("Tokens and users were not printed", script)
+        self.assertNotIn("Write-Host $tokens", script)
 
 
 if __name__ == "__main__":
