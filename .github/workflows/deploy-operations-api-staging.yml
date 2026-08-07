@@ -9,6 +9,7 @@ on:
       - "infrastructure/operations-api-staging.yaml"
       - "lambda/glap_operations_api.py"
       - "ops/deploy_operations_api_stack.ps1"
+      - "ops/configure_operations_api_deployer.ps1"
       - "tests/test_operations_api*.py"
   workflow_dispatch:
     inputs:
@@ -143,19 +144,23 @@ jobs:
           fi
 
           partition=$(aws sts get-caller-identity --query Arn --output text | cut -d: -f2)
+          account_id=$(aws sts get-caller-identity --query Account --output text)
           pipeline_status_object_arn="arn:${partition}:s3:::${pipeline_status_uri#s3://}"
+          cf_execution_role_arn="arn:${partition}:iam::${account_id}:role/glap-operations-api-cloudformation-staging-role"
 
           echo "::add-mask::$issuer"
           echo "::add-mask::$audience"
           echo "::add-mask::$origin"
           echo "::add-mask::$pipeline_status_uri"
           echo "::add-mask::$pipeline_status_object_arn"
+          echo "::add-mask::$cf_execution_role_arn"
           {
             echo "JWT_ISSUER=$issuer"
             echo "JWT_AUDIENCE=$audience"
             echo "INTERNAL_ORIGIN=$origin"
             echo "PIPELINE_STATUS_S3_URI=$pipeline_status_uri"
             echo "PIPELINE_STATUS_OBJECT_ARN=$pipeline_status_object_arn"
+            echo "CF_EXECUTION_ROLE_ARN=$cf_execution_role_arn"
           } >> "$GITHUB_ENV"
 
       - name: Validate protected staging configuration
@@ -166,6 +171,7 @@ jobs:
           [[ "$INTERNAL_ORIGIN" =~ ^https://[^/[:space:]]+$ ]]
           [[ "$PIPELINE_STATUS_S3_URI" =~ ^s3://[^/]+/.+ ]]
           [[ "$PIPELINE_STATUS_OBJECT_ARN" =~ ^arn:[^:]+:s3:::[^/]+/.+ ]]
+          [[ "$CF_EXECUTION_ROLE_ARN" =~ ^arn:aws(-[a-z]+)?:iam::[0-9]{12}:role/glap-operations-api-cloudformation-staging-role$ ]]
 
       - name: Verify private dependencies
         shell: bash
@@ -189,6 +195,7 @@ jobs:
             -LifecycleDataBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
             -PipelineStatusS3Uri $env:PIPELINE_STATUS_S3_URI `
             -PipelineStatusObjectArn $env:PIPELINE_STATUS_OBJECT_ARN `
+            -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
             -AllowedOrigin $env:INTERNAL_ORIGIN
 
       - name: Deploy authenticated staging API
@@ -206,6 +213,7 @@ jobs:
             -LifecycleDataBucketArn "arn:aws:s3:::$env:DATA_BUCKET" `
             -PipelineStatusS3Uri $env:PIPELINE_STATUS_S3_URI `
             -PipelineStatusObjectArn $env:PIPELINE_STATUS_OBJECT_ARN `
+            -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
             -AllowedOrigin $env:INTERNAL_ORIGIN `
             -Apply
 
