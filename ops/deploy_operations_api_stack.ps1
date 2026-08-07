@@ -27,8 +27,9 @@ $archive = Join-Path $root "dist/glap-operations-api.zip"
 
 Write-Host "Authenticated Operations API staging plan"
 Write-Host "  Stack: $StackName"
-Write-Host "  JWT issuer: $JwtIssuer"
-Write-Host "  Allowed origin: $AllowedOrigin"
+Write-Host "  JWT issuer configured: $([bool]$JwtIssuer)"
+Write-Host "  JWT audience configured: $([bool]$JwtAudience)"
+Write-Host "  Allowed origin configured: $([bool]$AllowedOrigin)"
 Write-Host "  Public Pages write access: False"
 Write-Host "  Schedule or production alias: False"
 if (-not $Apply) {
