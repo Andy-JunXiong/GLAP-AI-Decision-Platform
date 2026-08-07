@@ -21,6 +21,10 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         for role in ("viewer", "operator", "approver", "administrator"):
             self.assertIn(f"GroupName: {role}", template)
         self.assertIn("DeletionPolicy: Retain", template)
+        self.assertGreaterEqual(
+            template.count("!GetAtt InternalWebBranch.BranchName"), 3
+        )
+        self.assertNotIn("!Ref InternalWebBranch", template)
         self.assertNotIn("Repository:", template)
         self.assertNotIn("AWS::Scheduler::Schedule", template)
         self.assertNotIn("AWS::Lambda::Alias", template)

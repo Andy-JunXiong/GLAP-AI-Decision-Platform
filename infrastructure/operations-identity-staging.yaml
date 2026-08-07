@@ -80,9 +80,9 @@ Resources:
       AllowedOAuthScopes: [openid, email, profile]
       SupportedIdentityProviders: [COGNITO]
       CallbackURLs:
-        - !Join ['', ['https://', !Ref InternalWebBranch, '.', !GetAtt InternalWebApp.DefaultDomain, '/']]
+        - !Join ['', ['https://', !GetAtt InternalWebBranch.BranchName, '.', !GetAtt InternalWebApp.DefaultDomain, '/']]
       LogoutURLs:
-        - !Join ['', ['https://', !Ref InternalWebBranch, '.', !GetAtt InternalWebApp.DefaultDomain, '/']]
+        - !Join ['', ['https://', !GetAtt InternalWebBranch.BranchName, '.', !GetAtt InternalWebApp.DefaultDomain, '/']]
       AccessTokenValidity: 1
       IdTokenValidity: 1
       RefreshTokenValidity: 1
@@ -133,8 +133,8 @@ Outputs:
   CognitoHostedUiDomain:
     Value: !Sub https://${OperationsUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com
   InternalOrigin:
-    Value: !Join ['', ['https://', !Ref InternalWebBranch, '.', !GetAtt InternalWebApp.DefaultDomain]]
+    Value: !Join ['', ['https://', !GetAtt InternalWebBranch.BranchName, '.', !GetAtt InternalWebApp.DefaultDomain]]
   AmplifyAppId:
     Value: !GetAtt InternalWebApp.AppId
   AmplifyBranchName:
-    Value: !Ref InternalWebBranch
+    Value: !GetAtt InternalWebBranch.BranchName
