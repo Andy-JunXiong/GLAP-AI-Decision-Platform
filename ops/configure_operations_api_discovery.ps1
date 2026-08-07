@@ -5,15 +5,22 @@ param(
     [string]$RoleName = "glap-github-staging-deployer",
     [string]$PolicyName = "GLAPOperationsIdentityDiscovery",
     [string]$IdentityStackName = "glap-operations-identity-staging",
+    [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
+    [string]$SourceDatabase = "simulated_iceberg_m",
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
 
-foreach ($name in @($RoleName, $PolicyName, $IdentityStackName)) {
+foreach ($name in @(
+    $RoleName, $PolicyName, $IdentityStackName, $ActionMutationFunctionName
+)) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
         throw "Role and policy names must use safe AWS characters"
     }
+}
+if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "SourceDatabase must be a safe Glue identifier"
 }
 
 $identityArgs = @("sts", "get-caller-identity", "--region", $Region, "--output", "json")
@@ -58,6 +65,22 @@ $policy = @{
             Effect = "Allow"
             Action = "cloudformation:DescribeStacks"
             Resource = "arn:aws:cloudformation:${Region}:${accountId}:stack/${IdentityStackName}/*"
+        },
+        @{
+            Sid = "VerifyOperationsMutationDependency"
+            Effect = "Allow"
+            Action = "lambda:GetFunction"
+            Resource = "arn:aws:lambda:${Region}:${accountId}:function:${ActionMutationFunctionName}"
+        },
+        @{
+            Sid = "VerifyOperationsQueueViewDependency"
+            Effect = "Allow"
+            Action = "glue:GetTable"
+            Resource = @(
+                "arn:aws:glue:${Region}:${accountId}:catalog",
+                "arn:aws:glue:${Region}:${accountId}:database/${SourceDatabase}",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1"
+            )
         }
     )
 }
@@ -68,6 +91,7 @@ Write-Host "  Role: $RoleName"
 Write-Host "  Separate inline policy: $PolicyName"
 Write-Host "  Cognito and origin discovery: Read only"
 Write-Host "  Dedicated identity stack outputs: Read only"
+Write-Host "  Named Lambda and Glue dependencies: Read only"
 Write-Host "  Deployment permissions: False"
 Write-Host "  Self-modifying deployer permission: False"
 
