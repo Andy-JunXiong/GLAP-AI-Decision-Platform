@@ -17,7 +17,9 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
 
     def test_reliability_and_least_privilege_controls_exist(self):
         template = (ROOT / "infrastructure" / "operations-api-staging.yaml").read_text(encoding="utf-8")
-        self.assertIn("ReservedConcurrentExecutions: 10", template)
+        self.assertNotIn("ReservedConcurrentExecutions", template)
+        self.assertIn("ThrottlingBurstLimit: 20", template)
+        self.assertIn("ThrottlingRateLimit: 10", template)
         self.assertIn("DeadLetterConfig", template)
         self.assertIn("OperationsApiFailureAlarm", template)
         self.assertIn("OperationsApiThrottleAlarm", template)
