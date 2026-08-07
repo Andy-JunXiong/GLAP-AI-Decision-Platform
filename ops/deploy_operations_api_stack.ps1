@@ -10,6 +10,8 @@ param(
     [Parameter(Mandatory)] [string]$AthenaOutputUri,
     [Parameter(Mandatory)] [string]$AthenaResultsBucketArn,
     [Parameter(Mandatory)] [string]$LifecycleDataBucketArn,
+    [Parameter(Mandatory)] [string]$PipelineStatusS3Uri,
+    [Parameter(Mandatory)] [string]$PipelineStatusObjectArn,
     [Parameter(Mandatory)] [string]$AllowedOrigin,
     [switch]$Apply
 )
@@ -19,6 +21,8 @@ if ($JwtIssuer -notmatch '^https://') { throw "JwtIssuer must be HTTPS" }
 if ($AllowedOrigin -notmatch '^https://') { throw "AllowedOrigin must be one exact HTTPS origin" }
 if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+$') { throw "AthenaOutputUri must be prefix scoped" }
 if ($ArtifactBucket -notmatch '^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$') { throw "Invalid artifact bucket" }
+if ($PipelineStatusS3Uri -notmatch '^s3://[^/]+/.+$') { throw "PipelineStatusS3Uri must identify one object" }
+if ($PipelineStatusObjectArn -notmatch '^arn:[^:]+:s3:::[^/]+/.+$') { throw "PipelineStatusObjectArn must identify one object" }
 
 $root = Split-Path $PSScriptRoot -Parent
 $template = Join-Path $root "infrastructure/operations-api-staging.yaml"
@@ -30,6 +34,7 @@ Write-Host "  Stack: $StackName"
 Write-Host "  JWT issuer configured: $([bool]$JwtIssuer)"
 Write-Host "  JWT audience configured: $([bool]$JwtAudience)"
 Write-Host "  Allowed origin configured: $([bool]$AllowedOrigin)"
+Write-Host "  Private pipeline status configured: $([bool]$PipelineStatusS3Uri)"
 Write-Host "  Public Pages write access: False"
 Write-Host "  Schedule or production alias: False"
 if (-not $Apply) {
@@ -55,5 +60,7 @@ if ($LASTEXITCODE -ne 0) { throw "Unable to upload Operations API artifact" }
       "AthenaOutputUri=$AthenaOutputUri" `
       "AthenaResultsBucketArn=$AthenaResultsBucketArn" `
       "LifecycleDataBucketArn=$LifecycleDataBucketArn" `
+      "PipelineStatusS3Uri=$PipelineStatusS3Uri" `
+      "PipelineStatusObjectArn=$PipelineStatusObjectArn" `
       "AllowedOrigin=$AllowedOrigin"
 if ($LASTEXITCODE -ne 0) { throw "Operations API stack deployment failed" }

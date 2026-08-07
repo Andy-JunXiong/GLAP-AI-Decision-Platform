@@ -12,8 +12,9 @@ import logging
 import os
 import re
 import time
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 
@@ -24,15 +25,47 @@ ACTION_VIEW = os.getenv("LIFECYCLE_ACTION_CURRENT_VIEW", "vw_lifecycle_action_cu
 ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
 OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
 MUTATION_FUNCTION = os.getenv("ACTION_MUTATION_FUNCTION", "")
+PIPELINE_STATUS_S3_URI = os.getenv("PIPELINE_STATUS_S3_URI", "")
+PIPELINE_STAGE_ORDER = (
+    "generation",
+    "raw_to_iceberg",
+    "input_validation",
+    "decision_pipeline",
+    "decision_flywheel",
+    "output_validation",
+)
+PIPELINE_QUALITY_STAGES = {"input_validation", "output_validation"}
+PIPELINE_QUALITY_CHECKS = {
+    "missing_dates",
+    "empty_inputs",
+    "duplicate_business_keys",
+    "abnormal_volume_change",
+    "stale_stage_outputs",
+}
+SAFE_FAILURE_CATEGORIES = {
+    "dependency_failure",
+    "invalid_response",
+    "quality_contract_invalid",
+    "quality_gate_failed",
+    "unexpected_failure",
+}
+SAFE_STAGE_STATUS = {"blocked", "running", "succeeded", "failed", "not_invoked"}
+PIPELINE_RUNBOOK_URL = (
+    "https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/"
+    "blob/main/docs/runbooks/pipeline_reliability.md"
+)
 ROLE_PERMISSIONS = {
-    "viewer": {"risks:read", "actions:read", "outcomes:read"},
-    "operator": {"risks:read", "actions:read", "actions:complete", "outcomes:read"},
+    "viewer": {"risks:read", "actions:read", "outcomes:read", "health:read"},
+    "operator": {
+        "risks:read", "actions:read", "actions:complete", "outcomes:read", "health:read",
+    },
     "approver": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "outcomes:read",
+        "health:read",
     },
     "administrator": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "actions:complete",
-        "outcomes:read",
+        "outcomes:read", "health:read",
     },
 }
 OPERATION_PERMISSION = {
@@ -269,12 +302,144 @@ def _sydney_date() -> str:
     return datetime.now(ZoneInfo("Australia/Sydney")).date().isoformat()
 
 
+def _safe_timestamp(value: Any) -> str | None:
+    text = str(value or "")
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.isoformat().replace("+00:00", "Z")
+
+
+def _safe_failure(value: Any) -> str | None:
+    failure = str(value or "") or None
+    if failure and failure not in SAFE_FAILURE_CATEGORIES:
+        return "unexpected_failure"
+    return failure
+
+
+def sanitize_pipeline_health(run: dict[str, Any], sydney_date: str) -> dict[str, Any]:
+    """Return the internal stage-level view without infrastructure identifiers."""
+
+    cutoff = date.fromisoformat(sydney_date)
+    try:
+        logical_date = date.fromisoformat(str(run.get("logical_run_date") or ""))
+    except ValueError:
+        logical_date = None
+
+    execution_mode = str(run.get("execution_mode") or "OPERATIONAL").upper()
+    time_basis = str(run.get("time_basis") or "ACTUAL_CALENDAR").upper()
+    operational = (
+        execution_mode == "OPERATIONAL"
+        and time_basis == "ACTUAL_CALENDAR"
+        and not run.get("scenario_id")
+    )
+
+    safe_stages = []
+    for index, expected_name in enumerate(PIPELINE_STAGE_ORDER):
+        raw_stages = run.get("stages")
+        raw = raw_stages[index] if isinstance(raw_stages, list) and index < len(raw_stages) else {}
+        raw = raw if isinstance(raw, dict) and raw.get("name") == expected_name else {}
+        stage_status = str(raw.get("status") or "blocked").lower()
+        if stage_status not in SAFE_STAGE_STATUS:
+            stage_status = "blocked"
+        checks = []
+        for check in raw.get("quality_checks") or []:
+            if not isinstance(check, dict):
+                continue
+            name = str(check.get("name") or "")
+            status = str(check.get("status") or "").lower()
+            if name in PIPELINE_QUALITY_CHECKS and status in {"passed", "failed"}:
+                checks.append({"name": name, "status": status})
+        safe_stages.append({
+            "name": expected_name,
+            "status": stage_status,
+            "started_at": _safe_timestamp(raw.get("started_at")),
+            "completed_at": _safe_timestamp(raw.get("completed_at")),
+            "duration_ms": int(raw["duration_ms"])
+            if isinstance(raw.get("duration_ms"), (int, float)) and raw["duration_ms"] >= 0
+            else None,
+            "failure_category": _safe_failure(raw.get("failure_category")),
+            "quality_checks": checks,
+        })
+
+    contract_complete = all(
+        stage["name"] == expected and stage["status"] == "succeeded"
+        for stage, expected in zip(safe_stages, PIPELINE_STAGE_ORDER)
+    )
+    quality_complete = all(
+        {check["name"] for check in stage["quality_checks"]} == PIPELINE_QUALITY_CHECKS
+        and all(check["status"] == "passed" for check in stage["quality_checks"])
+        for stage in safe_stages if stage["name"] in PIPELINE_QUALITY_STAGES
+    )
+    raw_status = str(run.get("status") or "unknown").lower()
+    future_invalid = logical_date is not None and logical_date > cutoff
+    verified_success = (
+        operational and not future_invalid and raw_status in {"success", "succeeded"}
+        and contract_complete and quality_complete
+    )
+    if not operational or future_invalid or logical_date is None:
+        status = "unverified"
+        freshness = "future_invalid" if future_invalid else "unverified"
+    elif raw_status == "failed":
+        status, freshness = "failed", "current" if logical_date == cutoff else "stale"
+    elif raw_status == "running":
+        status, freshness = "running", "current" if logical_date == cutoff else "stale"
+    elif verified_success and logical_date == cutoff:
+        status, freshness = "current", "current"
+    elif verified_success:
+        status, freshness = "stale", "stale"
+    else:
+        status, freshness = "unverified", "unverified"
+
+    return {
+        "schema_version": "operations-api.v1",
+        "status": status,
+        "freshness_status": freshness,
+        "as_of_date": sydney_date,
+        "logical_run_date": logical_date.isoformat() if logical_date and not future_invalid else None,
+        "started_at": _safe_timestamp(run.get("started_at")),
+        "completed_at": _safe_timestamp(run.get("completed_at")),
+        "failed_stage": run.get("failed_stage")
+        if run.get("failed_stage") in PIPELINE_STAGE_ORDER else None,
+        "failure_category": _safe_failure(run.get("failure_category")),
+        "stages": safe_stages,
+        "stage_count": len(safe_stages),
+        "stages_succeeded": sum(stage["status"] == "succeeded" for stage in safe_stages),
+        "quality_checks_succeeded": sum(
+            check["status"] == "passed" for stage in safe_stages for check in stage["quality_checks"]
+        ),
+        "quality_checks_total": len(PIPELINE_QUALITY_CHECKS) * len(PIPELINE_QUALITY_STAGES),
+        "runbook_url": PIPELINE_RUNBOOK_URL,
+    }
+
+
+def _read_pipeline_health(client: Any, uri: str, sydney_date: str) -> dict[str, Any]:
+    parsed = urlparse(uri)
+    if parsed.scheme != "s3" or not parsed.netloc or not parsed.path.lstrip("/"):
+        raise RuntimeError("Pipeline status is not configured")
+    response = client.get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
+    raw = json.loads(response["Body"].read())
+    if not isinstance(raw, dict):
+        raise RuntimeError("Pipeline status is invalid")
+    return sanitize_pipeline_health(raw, sydney_date)
+
+
 def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     request_id = event.get("requestContext", {}).get("requestId")
     try:
         subject, actor, permissions = _identity(event)
         method = str(event.get("requestContext", {}).get("http", {}).get("method") or "")
         path = str(event.get("rawPath") or "")
+        if method == "GET" and path == "/v1/pipeline-health":
+            if "health:read" not in permissions:
+                raise PermissionError("Role cannot read Pipeline Health")
+            import boto3
+            return _response(
+                200,
+                _read_pipeline_health(boto3.client("s3"), PIPELINE_STATUS_S3_URI, _sydney_date()),
+            )
+
         if method == "GET" and path == "/v1/risks":
             if "risks:read" not in permissions:
                 raise PermissionError("Role cannot read Risks")

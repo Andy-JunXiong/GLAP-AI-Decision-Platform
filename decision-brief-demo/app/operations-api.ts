@@ -55,6 +55,39 @@ export type OperationsOutcome = {
   action_status: ActionStatus | null;
 };
 
+export type PipelineCheck = {
+  name: string;
+  status: "passed" | "failed";
+};
+
+export type PipelineStage = {
+  name: string;
+  status: "blocked" | "running" | "succeeded" | "failed" | "not_invoked";
+  started_at: string | null;
+  completed_at: string | null;
+  duration_ms: number | null;
+  failure_category: string | null;
+  quality_checks: PipelineCheck[];
+};
+
+export type PipelineHealth = {
+  schema_version: "operations-api.v1";
+  status: "current" | "stale" | "failed" | "running" | "unverified";
+  freshness_status: "current" | "stale" | "future_invalid" | "unverified";
+  as_of_date: string;
+  logical_run_date: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  failed_stage: string | null;
+  failure_category: string | null;
+  stages: PipelineStage[];
+  stage_count: number;
+  stages_succeeded: number;
+  quality_checks_succeeded: number;
+  quality_checks_total: number;
+  runbook_url: string;
+};
+
 type QueueResponse = {
   schema_version: "operations-api.v1";
   items: OperationsAction[];
@@ -120,6 +153,10 @@ export async function loadRiskHotspots(token: string, status?: RiskStatus) {
 export async function loadOutcomeReview(token: string, status?: OutcomeStatus) {
   const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
   return request<OutcomeResponse>(`/v1/outcomes${query}`, token);
+}
+
+export async function loadPipelineHealth(token: string) {
+  return request<PipelineHealth>("/v1/pipeline-health", token);
 }
 
 export async function mutateAction(

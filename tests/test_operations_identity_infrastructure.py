@@ -73,6 +73,7 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn("Unauthenticated API routes rejected with 401", script)
         self.assertIn("/v1/risks?limit=1", script)
         self.assertIn("/v1/outcomes?limit=1", script)
+        self.assertIn("/v1/pipeline-health", script)
         self.assertIn("CORS origin exact match", script)
         self.assertIn("API alarms present", script)
         self.assertIn("API alarms currently OK", script)
