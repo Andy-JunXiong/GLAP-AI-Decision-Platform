@@ -403,6 +403,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("multimodal_ops_validation.sql", stack)
         self.assertIn("lifecycle_validation.sql", stack)
         self.assertIn("failureCount -ne 0", validation)
+        self.assertIn('{{TEMPORAL_SCOPE_ID}}", $temporalScopeId', validation)
+        self.assertIn('"SIMULATION:$($temporalContext.scenario_id)"', validation)
+        self.assertIn('[ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]', validation)
 
     def test_lifecycle_workflow_is_manual_and_never_changes_production_alias(self):
         workflow = (
