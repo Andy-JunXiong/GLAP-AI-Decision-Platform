@@ -489,8 +489,10 @@ advancing. It stops on the first failure.
 Use `diagnose-integration-date` when a deployed controller run reports a
 lifecycle quality-gate failure. The action invokes the already deployed staging
 quality gate directly and emits only the allowlisted check count and failed
-check names. It does not invoke the generator, render against a newer local SQL
-contract, deploy resources, or write lifecycle rows.
+check names. It also reports aggregate status counts for Action Outcomes due on
+or before the selected logical date, using only the latest row per Outcome. It
+does not emit entity identifiers, invoke the generator, render against a newer
+local SQL contract, deploy resources, or write lifecycle rows.
 
 The extension payload contains only `logical_run_date`: it never requests a new
 seed population. The action neither deploys the stack nor creates a schedule or
