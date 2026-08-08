@@ -469,14 +469,16 @@ jobs:
             }
             $logicalDate = "${{ inputs.replay_start_date }}"
             $outcomeQuery = @(
-              "WITH latest_due AS ("
-              "SELECT outcome_id, max_by(status, dt) AS status"
+              "WITH ranked_outcomes AS ("
+              "SELECT outcome_id, status, observation_due_date,"
+              "row_number() OVER (PARTITION BY outcome_id"
+              "ORDER BY try_cast(dt AS date) DESC, as_of_date DESC) AS row_rank"
               "FROM $env:SOURCE_DATABASE.fact_lifecycle_outcome_staging_v1"
               "WHERE temporal_scope_id = '$scopeId'"
+              "AND try_cast(dt AS date) <= DATE '$logicalDate')"
+              "SELECT status, count(*) AS outcome_count FROM ranked_outcomes"
+              "WHERE row_rank = 1"
               "AND observation_due_date <= DATE '$logicalDate'"
-              "AND CAST(dt AS date) <= DATE '$logicalDate'"
-              "GROUP BY outcome_id)"
-              "SELECT status, count(*) AS outcome_count FROM latest_due"
               "GROUP BY status ORDER BY status"
             ) -join "`n"
             $queryId = & aws athena start-query-execution `
