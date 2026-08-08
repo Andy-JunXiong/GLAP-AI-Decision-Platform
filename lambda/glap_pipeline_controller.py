@@ -38,9 +38,12 @@ s3_client = boto3.client("s3")
 
 
 class StageFailure(RuntimeError):
-    def __init__(self, category: str) -> None:
+    def __init__(
+        self, category: str, quality_checks: list[dict[str, str]] | None = None
+    ) -> None:
         super().__init__(category)
         self.category = category
+        self.quality_checks = quality_checks or []
 
 
 def utc_now() -> datetime:
@@ -244,7 +247,7 @@ def validate_quality_checks(
             raise StageFailure("quality_contract_invalid")
         checks.append({"name": name, "status": state})
     if any(check["status"] != "passed" for check in checks):
-        raise StageFailure("quality_gate_failed")
+        raise StageFailure("quality_gate_failed", checks)
     return checks
 
 
@@ -375,6 +378,7 @@ def execute_pipeline(
                     "duration_ms": max(0, int((time.monotonic() - started_clock) * 1000)),
                     "status": "failed",
                     "failure_category": exc.category,
+                    "quality_checks": exc.quality_checks,
                 }
             )
             run.update(
@@ -460,8 +464,21 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     if run["status"] != "succeeded":
         # Raising makes EventBridge Scheduler apply its retry and DLQ policy. The
         # sanitized failure record has already been persisted for OPS readers.
+        failed_checks = []
+        for stage in run.get("stages", []):
+            if stage.get("name") == run.get("failed_stage"):
+                failed_checks = sorted(
+                    check["name"]
+                    for check in stage.get("quality_checks", [])
+                    if check.get("status") == "failed"
+                )
+                break
+        check_detail = (
+            f"; failed_checks={','.join(failed_checks)}" if failed_checks else ""
+        )
         raise RuntimeError(
-            f"Pipeline failed at {run['failed_stage']}: {run['failure_category']}"
+            f"Pipeline failed at {run['failed_stage']}: "
+            f"{run['failure_category']}{check_detail}"
         )
     return run
 

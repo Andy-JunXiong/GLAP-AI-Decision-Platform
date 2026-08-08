@@ -167,6 +167,14 @@ class PipelineControllerTests(unittest.TestCase):
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["failed_stage"], "input_validation")
         self.assertEqual(result["failure_category"], "quality_gate_failed")
+        self.assertEqual(
+            [
+                check["name"]
+                for check in result["stages"][1]["quality_checks"]
+                if check["status"] == "failed"
+            ],
+            ["duplicate_business_keys"],
+        )
         self.assertEqual(result["stages"][2]["status"], "blocked")
         self.assertEqual(client.invoke.call_count, 2)
         self.assertGreaterEqual(persist.call_count, 4)
@@ -420,6 +428,36 @@ class PipelineControllerTests(unittest.TestCase):
             clear=True,
         ), patch.object(module, "execute_pipeline", return_value=failed_run):
             with self.assertRaisesRegex(RuntimeError, "quality_gate_failed"):
+                module.lambda_handler({"logical_run_date": "2026-08-04"}, None)
+
+    def test_handler_reports_only_named_failed_quality_checks(self):
+        module = load_module()
+        failed_run = {
+            "status": "failed",
+            "failed_stage": "input_validation",
+            "failure_category": "quality_gate_failed",
+            "stages": [
+                {
+                    "name": "input_validation",
+                    "quality_checks": [
+                        {"name": "empty_inputs", "status": "passed"},
+                        {"name": "duplicate_business_keys", "status": "failed"},
+                    ],
+                }
+            ],
+        }
+        with patch.dict(
+            os.environ,
+            {
+                "PIPELINE_STAGES_JSON": json.dumps(STAGES),
+                "PIPELINE_STATUS_S3_URI": "s3://safe/status.json",
+            },
+            clear=True,
+        ), patch.object(module, "execute_pipeline", return_value=failed_run):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"quality_gate_failed; failed_checks=duplicate_business_keys$",
+            ):
                 module.lambda_handler({"logical_run_date": "2026-08-04"}, None)
 
     def test_handler_rejects_future_operational_date(self):

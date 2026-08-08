@@ -477,7 +477,7 @@ accumulation gate.
 Use the manual lifecycle workflow action `extend-integration-validate` to add
 consecutive staging scenario dates after the latest successful scenario date.
 Operational use is restricted to the current Sydney date or earlier. The action
-invokes the isolated controller once per date and requires generation, 20
+invokes the isolated controller once per date and requires generation, 28
 lifecycle checks, 5 compatibility checks, and 8 analytics checks to pass before
 advancing. It stops on the first failure.
 

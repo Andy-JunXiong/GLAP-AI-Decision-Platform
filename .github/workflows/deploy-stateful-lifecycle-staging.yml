@@ -18,6 +18,7 @@ on:
           - extend-integration-validate
           - deploy-recovery-controller
           - recover-failed-integration-date
+          - diagnose-integration-date
       execution_mode:
         description: Real calendar boundary or explicitly isolated future simulation
         required: true
@@ -125,6 +126,9 @@ jobs:
             test "${{ inputs.replay_days }}" -le 12
           fi
           if [[ "${{ inputs.action }}" == "recover-failed-integration-date" ]]; then
+            test "${{ inputs.replay_days }}" -eq 1
+          fi
+          if [[ "${{ inputs.action }}" == "diagnose-integration-date" ]]; then
             test "${{ inputs.replay_days }}" -eq 1
           fi
           if [[ "${{ inputs.action }}" == "deploy-operational-baseline" ]]; then
@@ -395,6 +399,19 @@ jobs:
             -MaxElapsedMinutes 50 `
             -ExecutionMode "${{ inputs.execution_mode }}" `
             -ScenarioId "${{ inputs.scenario_id }}" `
+            -Apply
+
+      - name: Diagnose one lifecycle date without mutation
+        if: inputs.action == 'diagnose-integration-date'
+        shell: pwsh
+        run: |
+          ./ops/validate_stateful_lifecycle_staging.ps1 `
+            -Region $env:AWS_REGION `
+            -SourceDatabase $env:SOURCE_DATABASE `
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -Workgroup $env:ATHENA_WORKGROUP `
+            -StartDate "${{ inputs.replay_start_date }}" `
+            -Days 1 `
             -Apply
 
       - name: Recover one failed lifecycle date through governed controller

@@ -108,7 +108,9 @@ foreach ($logicalDate in $dates) {
                 if ($candidate -match (
                     '^Pipeline failed at [a-z][a-z0-9_]{1,47}: ' +
                     '(dependency_failure|invalid_response|quality_gate_failed|' +
-                    'quality_contract_invalid|unexpected_failure)$'
+                    'quality_contract_invalid|unexpected_failure)' +
+                    '(; failed_checks=[a-z][a-z0-9_]{1,63}' +
+                    '(,[a-z][a-z0-9_]{1,63})*)?$'
                 )) {
                     $failureDetail = $candidate
                 }
