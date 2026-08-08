@@ -79,6 +79,7 @@ jobs:
       STACK_NAME: glap-stateful-lifecycle-staging
       FUNCTION_NAME: glap-stateful-lifecycle-generator-staging
       CONTROLLER_FUNCTION: glap-stateful-lifecycle-controller-staging
+      QUALITY_GATE_FUNCTION: glap-stateful-lifecycle-quality-gate-staging
       ARTIFACT_PREFIX: stateful-lifecycle-staging/artifacts
       LIFECYCLE_DATA_PREFIX: stateful-lifecycle-staging/data
       ARTIFACT_BUCKET: ${{ vars.AWS_LIFECYCLE_ARTIFACT_BUCKET }}
@@ -411,16 +412,62 @@ jobs:
         if: inputs.action == 'diagnose-integration-date'
         shell: pwsh
         run: |
-          ./ops/validate_stateful_lifecycle_staging.ps1 `
-            -Region $env:AWS_REGION `
-            -SourceDatabase $env:SOURCE_DATABASE `
-            -AthenaOutputUri $env:ATHENA_OUTPUT `
-            -Workgroup $env:ATHENA_WORKGROUP `
-            -StartDate "${{ inputs.replay_start_date }}" `
-            -Days 1 `
-            -ExecutionMode "${{ inputs.execution_mode }}" `
-            -ScenarioId "${{ inputs.scenario_id }}" `
-            -Apply
+          $payload = @{
+            logical_run_date = "${{ inputs.replay_start_date }}"
+            pipeline_stage = "lifecycle_validation"
+            quality_contract = "lifecycle_v1"
+            execution_mode = "${{ inputs.execution_mode }}"
+            scenario_id = "${{ inputs.scenario_id }}"
+          } | ConvertTo-Json -Compress
+          $payloadPath = [IO.Path]::GetTempFileName()
+          $responsePath = [IO.Path]::GetTempFileName()
+          try {
+            [IO.File]::WriteAllText(
+              $payloadPath, $payload, [Text.UTF8Encoding]::new($false)
+            )
+            $metadataJson = & aws lambda invoke `
+              --function-name $env:QUALITY_GATE_FUNCTION `
+              --payload "fileb://$payloadPath" `
+              --cli-read-timeout 300 `
+              --cli-connect-timeout 60 `
+              --region $env:AWS_REGION `
+              $responsePath `
+              --output json
+            if ($LASTEXITCODE -ne 0 -or -not $metadataJson) {
+              throw "Unable to invoke the deployed lifecycle quality gate"
+            }
+            $metadata = $metadataJson | ConvertFrom-Json
+            if ($metadata.FunctionError) {
+              throw "The deployed lifecycle quality gate returned a FunctionError"
+            }
+            $response = Get-Content -LiteralPath $responsePath -Raw | ConvertFrom-Json
+            if ($response.status -ne "success" -or
+                $response.pipeline_stage -ne "lifecycle_validation") {
+              throw "The deployed lifecycle quality gate returned an invalid contract"
+            }
+            $checks = @($response.quality_checks.psobject.Properties)
+            if ($checks.Count -lt 1 -or
+                @($checks | Where-Object {
+                  $_.Name -notmatch '^[a-z][a-z0-9_]{1,63}$' -or
+                  $_.Value -notin @("passed", "failed")
+                }).Count -ne 0) {
+              throw "The deployed lifecycle quality gate returned unsafe checks"
+            }
+            $failedChecks = @(
+              $checks | Where-Object { $_.Value -eq "failed" } |
+                ForEach-Object { $_.Name } | Sort-Object
+            )
+            Write-Host (
+              "Deployed lifecycle quality gate: $($checks.Count) checks, " +
+              "$($failedChecks.Count) failed"
+            )
+            if ($failedChecks.Count -ne 0) {
+              throw "Deployed lifecycle quality gate failed: $($failedChecks -join ',')"
+            }
+          } finally {
+            Remove-Item -LiteralPath $payloadPath -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Recover one failed lifecycle date through governed controller
         if: inputs.action == 'recover-failed-integration-date'

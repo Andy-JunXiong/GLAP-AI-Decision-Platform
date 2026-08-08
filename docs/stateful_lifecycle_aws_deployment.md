@@ -486,6 +486,12 @@ invokes the isolated controller once per date and requires generation, 28
 lifecycle checks, 5 compatibility checks, and 8 analytics checks to pass before
 advancing. It stops on the first failure.
 
+Use `diagnose-integration-date` when a deployed controller run reports a
+lifecycle quality-gate failure. The action invokes the already deployed staging
+quality gate directly and emits only the allowlisted check count and failed
+check names. It does not invoke the generator, render against a newer local SQL
+contract, deploy resources, or write lifecycle rows.
+
 The extension payload contains only `logical_run_date`: it never requests a new
 seed population. The action neither deploys the stack nor creates a schedule or
 production alias. `replay_start_date` is the first new date and `replay_days`
