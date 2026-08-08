@@ -221,7 +221,9 @@ jobs:
             -AthenaOutputUri $env:ATHENA_OUTPUT `
             -Workgroup $env:ATHENA_WORKGROUP `
             -StartDate "${{ inputs.replay_start_date }}" `
-            -Days ${{ inputs.replay_days }}
+            -Days ${{ inputs.replay_days }} `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}"
 
       - name: Create lifecycle schema and optional first seed
         if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
@@ -344,6 +346,8 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -StartDate "${{ inputs.integration_logical_date }}" `
             -Days 1 `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Replay 28 logical dates
@@ -371,6 +375,8 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days ${{ inputs.replay_days }} `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Validate lifecycle pipeline integration
@@ -412,6 +418,8 @@ jobs:
             -Workgroup $env:ATHENA_WORKGROUP `
             -StartDate "${{ inputs.replay_start_date }}" `
             -Days 1 `
+            -ExecutionMode "${{ inputs.execution_mode }}" `
+            -ScenarioId "${{ inputs.scenario_id }}" `
             -Apply
 
       - name: Recover one failed lifecycle date through governed controller

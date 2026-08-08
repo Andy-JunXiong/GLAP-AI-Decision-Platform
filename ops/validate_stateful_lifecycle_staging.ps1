@@ -7,10 +7,14 @@ param(
     [string]$Workgroup = "primary",
     [datetime]$StartDate = "2026-08-04",
     [ValidateRange(1, 90)] [int]$Days = 28,
+    [ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]
+    [string]$ExecutionMode = "OPERATIONAL",
+    [string]$ScenarioId = "",
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "temporal_boundary.ps1")
 if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "SourceDatabase is not a safe Athena identifier"
 }
@@ -19,11 +23,22 @@ if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+') {
 }
 
 $dates = 0..($Days - 1) | ForEach-Object { $StartDate.Date.AddDays($_) }
+$temporalContext = Resolve-TemporalContext `
+    -LastLogicalDate $dates[-1] `
+    -ExecutionMode $ExecutionMode `
+    -ScenarioId $ScenarioId
+$temporalScopeId = if ($temporalContext.execution_mode -eq "OPERATIONAL") {
+    "OPERATIONAL"
+} else {
+    "SIMULATION:$($temporalContext.scenario_id)"
+}
 Write-Host "Stateful lifecycle staging validation plan"
 Write-Host "  Database: $SourceDatabase"
 Write-Host "  First date: $($dates[0].ToString('yyyy-MM-dd'))"
 Write-Host "  Last date: $($dates[-1].ToString('yyyy-MM-dd'))"
 Write-Host "  Days: $Days"
+Write-Host "  Execution mode: $($temporalContext.execution_mode)"
+Write-Host "  Temporal scope: $temporalScopeId"
 Write-Host "  Contracts: lifecycle + multimodal analytics"
 Write-Host "  Expected result for every check: 0"
 
@@ -97,6 +112,7 @@ foreach ($logicalDate in $dates) {
     foreach ($validationTemplate in $validationTemplates) {
         $rendered = $validationTemplate.Replace("{{SOURCE_DATABASE}}", $SourceDatabase)
         $rendered = $rendered.Replace("{{LOGICAL_RUN_DATE}}", $day)
+        $rendered = $rendered.Replace("{{TEMPORAL_SCOPE_ID}}", $temporalScopeId)
         if ($rendered -match '\{\{[^}]+\}\}') {
             throw "Unresolved validation template token for $day"
         }

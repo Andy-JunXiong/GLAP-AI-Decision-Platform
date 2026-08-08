@@ -233,8 +233,13 @@ Then fail closed on any reconciliation error:
 ```powershell
 .\ops\validate_stateful_lifecycle_staging.ps1 `
   -AthenaOutputUri "s3://<private-query-bucket>/athena-results/" `
+  -ExecutionMode OPERATIONAL `
   -Apply
 ```
+
+The validator resolves one temporal scope before rendering either SQL contract:
+`OPERATIONAL` for actual-calendar evidence, or the isolated
+`SIMULATION:<scenario_id>` scope for an explicitly named future simulation.
 
 ## Required staging evidence
 
