@@ -462,66 +462,10 @@ jobs:
               "$($failedChecks.Count) failed"
             )
 
-            $scopeId = if ("${{ inputs.execution_mode }}" -eq "OPERATIONAL") {
-              "OPERATIONAL"
-            } else {
-              "SIMULATION:${{ inputs.scenario_id }}"
-            }
-            $logicalDate = "${{ inputs.replay_start_date }}"
-            $outcomeQuery = @(
-              "WITH ranked_outcomes AS ("
-              "SELECT outcome_id, status, observation_due_date,"
-              "row_number() OVER (PARTITION BY outcome_id"
-              "ORDER BY try_cast(dt AS date) DESC, as_of_date DESC) AS row_rank"
-              "FROM $env:SOURCE_DATABASE.fact_lifecycle_outcome_staging_v1"
-              "WHERE temporal_scope_id = '$scopeId'"
-              "AND try_cast(dt AS date) <= DATE '$logicalDate')"
-              "SELECT status, count(*) AS outcome_count FROM ranked_outcomes"
-              "WHERE row_rank = 1"
-              "AND observation_due_date <= DATE '$logicalDate'"
-              "GROUP BY status ORDER BY status"
-            ) -join "`n"
-            $queryId = & aws athena start-query-execution `
-              --query-string $outcomeQuery `
-              --query-execution-context "Database=$env:SOURCE_DATABASE" `
-              --result-configuration "OutputLocation=$env:ATHENA_OUTPUT" `
-              --work-group $env:ATHENA_WORKGROUP `
-              --region $env:AWS_REGION `
-              --query QueryExecutionId `
-              --output text
-            if ($LASTEXITCODE -ne 0 -or -not $queryId) {
-              throw "Unable to start the due-outcome aggregate query"
-            }
-            do {
-              Start-Sleep -Seconds 1
-              $queryExecution = & aws athena get-query-execution `
-                --query-execution-id $queryId `
-                --region $env:AWS_REGION `
-                --output json | ConvertFrom-Json
-              $queryState = $queryExecution.QueryExecution.Status.State
-            } while ($queryState -in @("QUEUED", "RUNNING"))
-            if ($queryState -ne "SUCCEEDED") {
-              throw "The due-outcome aggregate query did not succeed"
-            }
-            $queryResult = & aws athena get-query-results `
-              --query-execution-id $queryId `
-              --max-results 20 `
-              --region $env:AWS_REGION `
-              --output json | ConvertFrom-Json
-            $outcomeStates = @("PENDING", "SUCCESSFUL", "PARTIALLY_SUCCESSFUL", "FAILED", "INCONCLUSIVE")
-            $outcomeSummary = @()
-            foreach ($row in @($queryResult.ResultSet.Rows | Select-Object -Skip 1)) {
-              $status = [string]$row.Data[0].VarCharValue
-              $count = [int64]$row.Data[1].VarCharValue
-              if ($status -notin $outcomeStates -or $count -lt 0) {
-                throw "The due-outcome aggregate query returned an unsafe result"
-              }
-              $outcomeSummary += "$status=$count"
-            }
-            if ($outcomeSummary.Count -eq 0) {
-              $outcomeSummary = @("NONE=0")
-            }
-            Write-Host "Due Action Outcomes through $logicalDate`: $($outcomeSummary -join ',')"
+            Write-Host (
+              "Action Outcome review is intentionally excluded: use the authenticated " +
+              "Operations API /v1/outcomes; this workflow has no closed-loop table access."
+            )
             if ($failedChecks.Count -ne 0) {
               throw "Deployed lifecycle quality gate failed: $($failedChecks -join ',')"
             }
