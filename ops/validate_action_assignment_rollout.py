@@ -49,7 +49,7 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     if contract.get("schema_version") != "action-assignment-rollout.v1":
         errors.append("unsupported schema_version")
-    if contract.get("status") != "PLAN_ONLY_BLOCKED_RELEASE_PATH":
+    if contract.get("status") != "PLAN_ONLY_BLOCKED_AWS_WRITE_AUTHORIZATION":
         errors.append("rollout must remain plan-only with the release-path blocker visible")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
@@ -79,8 +79,8 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("schema migration must not be automatically wired")
 
     release_paths = contract.get("release_paths", {})
-    if release_paths.get("action_mutation_lambda") != "BLOCKED_NARROW_RELEASE_PATH_REVIEW":
-        errors.append("narrow mutation release-path blocker is hidden")
+    if release_paths.get("action_mutation_lambda") != "WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION":
+        errors.append("mutation release write-authority blocker is hidden")
     if release_paths.get("candidate_design_contract") != (
         "docs/action_mutation_staging_release_contract.json"
     ):

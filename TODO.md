@@ -77,9 +77,14 @@ Current implementation and release boundaries are recorded in the
   checks, and the bounded AWS inspection with no upload, change set, deployment,
   IAM/CloudFormation modification, operational mutation, or production effect.
   The agent did not modify IAM.
-- [ ] Review and approve a narrow staging release path for the Action mutation
-  Lambda prepare/execute phases. That remains a later decision; the read
-  permission approval does not authorise artifact upload or change-set execution.
+- [x] Implement the reviewed narrow staging release workflow for separate
+  prepare and execute phases, with two protected environments, an immutable
+  commit-addressed artifact, and the exact one-resource change-set guard.
+- [x] Record a non-executable, account-free least-privilege proposal and
+  named-human checklist for the two protected release identities.
+- [ ] Have a named human configure and approve the two least-privilege release
+  roles, then separately authorise artifact upload/change-set preparation and
+  execution. Workflow implementation does not authorise either AWS write.
 
 ## End-of-day handoff -- 6 August 2026
 
@@ -434,12 +439,13 @@ Repository checkpoint — 4 August 2026:
 - [x] Extend authenticated Actions with an owner and due date; do not infer
   these fields from demonstration-only UI content.
 - [x] Prepare the ordered, plan-only staging rollout and rollback contract for
-  Action assignment. The narrow mutation-Lambda release path remains blocked
-  pending human review; no migration or deployment has been performed.
+  Action assignment. The narrow mutation-Lambda workflow is implemented but
+  remains blocked on separate AWS write roles and approval; no migration or
+  deployment has been performed.
 - [x] Document the candidate mutation release design and fail-closed guard. It
   keeps CloudFormation ownership and allows only `ActionMutationFunction` code
-  to change. Its read-only plan phase is implemented; AWS write phases remain
-  unimplemented and unapproved.
+  to change. Its prepare/execute phases are implemented behind separate
+  protected environments; AWS writes remain unconfigured and unapproved.
 - [x] Document administrator-managed internal user onboarding, role assignment,
   first access, and offboarding in `docs/internal_user_onboarding.md`.
 - [x] Record observed Outcomes separately from expected impact.

@@ -118,9 +118,11 @@ additive schema migration, read-only validation, mutation Lambda, Operations
 API, private frontend, read-only smoke checks, four-role checks, then a
 named-human canary.
 
-The mutation Lambda currently has no authorised narrow staging release path. The
-existing stateful lifecycle workflow updates a broader stack and must not be
-used as an implicit substitute. No schema migration, Lambda/API deployment,
+The mutation Lambda now has a narrow staging release workflow implemented in
+the repository. Its prepare and execute jobs use separate protected
+environments, but their least-privilege roles are not configured or authorised.
+The existing stateful lifecycle workflow updates a broader stack and must not
+be used as an implicit substitute. No schema migration, Lambda/API deployment,
 frontend publication, or Action mutation is authorised by the rollout plan.
 
 The proposed narrow path is documented in
@@ -135,6 +137,7 @@ OIDC role and validated the repository, then failed closed on the exact missing
 single exact-resource read capability for named-human application. The named
 repository owner applied it, and read-only run `31298179885` then passed the AWS
 inspection while verifying stable stack ownership and Lambda configuration. The
-agent did not modify IAM, and prepare/execute authority remains separately
-unapproved. The manual plan workflow contains no artifact upload, change-set
-creation/execution, Lambda update, or IAM command.
+agent did not modify IAM. The later prepare/execute implementation preserves
+separate approvals and exact commit, artifact, and one-resource checks;
+prepare/execute authority remains separately unapproved and neither phase has
+run.

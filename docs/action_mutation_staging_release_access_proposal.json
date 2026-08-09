@@ -1,0 +1,94 @@
+{
+  "schema_version": "action-mutation-staging-release-access-proposal.v1",
+  "status": "PROPOSED_AWAITING_NAMED_HUMAN_REVIEW",
+  "purpose": "Configure separate GitHub OIDC identities for preparing and executing the exact one-resource Action mutation staging change set.",
+  "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
+  "identities": {
+    "prepare": {
+      "github_environment": "action-mutation-staging-prepare",
+      "github_variable": "AWS_ACTION_MUTATION_PREPARE_ROLE_ARN",
+      "required_reviewers": true,
+      "actions": [
+        "s3:PutObject",
+        "iam:PassRole",
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:DeleteChangeSet",
+        "cloudformation:DescribeStacks"
+      ]
+    },
+    "execute": {
+      "github_environment": "action-mutation-staging-execute",
+      "github_variable": "AWS_ACTION_MUTATION_EXECUTE_ROLE_ARN",
+      "required_reviewers": true,
+      "actions": [
+        "s3:GetObject",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DescribeStacks",
+        "lambda:GetFunctionConfiguration"
+      ]
+    },
+    "cloudformation_execution": {
+      "trusted_service": "cloudformation.amazonaws.com",
+      "github_variable": "ACTION_MUTATION_CF_EXECUTION_ROLE_ARN",
+      "actions": [
+        "s3:GetObject",
+        "lambda:GetFunctionConfiguration",
+        "lambda:UpdateFunctionCode"
+      ]
+    }
+  },
+  "resource_selectors": {
+    "stack": {
+      "name": "glap-stateful-lifecycle-staging",
+      "wildcard_stack_name_allowed": false
+    },
+    "lambda": {
+      "cloudformation_logical_resource_id": "ActionMutationFunction",
+      "function_name": "glap-lifecycle-action-mutation-staging",
+      "qualified_or_other_function_allowed": false
+    },
+    "artifact": {
+      "bucket_from_existing_stack_parameter": "ArtifactBucket",
+      "key_pattern": "action-mutation/<40-character-git-commit>/glap-action-mutation-<sha256>.zip",
+      "other_prefix_allowed": false
+    },
+    "cloudformation_execution_role": {
+      "role_name": "glap-action-mutation-cloudformation-staging-role",
+      "passable_only_to": "cloudformation.amazonaws.com",
+      "direct_assumption_by_github_allowed": false
+    }
+  },
+  "explicitly_excluded_actions": [
+    "iam:*",
+    "lambda:UpdateFunctionConfiguration",
+    "lambda:PublishVersion",
+    "lambda:UpdateAlias",
+    "scheduler:*",
+    "cloudformation:CreateStack",
+    "cloudformation:DeleteStack",
+    "cloudformation:UpdateStack",
+    "s3:DeleteObject"
+  ],
+  "github_protection": {
+    "deployment_branch": "main",
+    "self_approval_allowed": false,
+    "prepare_and_execute_same_approval_allowed": false,
+    "environment_creation_by_agent_allowed": false
+  },
+  "proposal_shape": {
+    "executable_iam_policy_document": false,
+    "contains_account_id_or_arn": false,
+    "review_only": true
+  },
+  "authority": {
+    "repository_proposal_authorized": true,
+    "agent_iam_change_authorized": false,
+    "agent_github_environment_change_authorized": false,
+    "prepare_aws_write_authorized": false,
+    "execute_aws_write_authorized": false,
+    "deployment_authorized": false,
+    "production_change_authorized": false
+  }
+}

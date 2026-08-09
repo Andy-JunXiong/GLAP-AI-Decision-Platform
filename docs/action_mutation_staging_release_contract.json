@@ -1,6 +1,6 @@
 {
-  "schema_version": "action-mutation-staging-release.v3",
-  "status": "READ_ONLY_PLAN_VERIFIED_AWAITING_RELEASE_AUTHORIZATION",
+  "schema_version": "action-mutation-staging-release.v4",
+  "status": "RELEASE_WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
@@ -43,6 +43,17 @@
     "aws_access": "READ_ONLY_INSPECTION",
     "implemented": true
   },
+  "release_workflow": {
+    "workflow": ".github/workflows/release-action-mutation-staging.yml",
+    "prepare_script": "ops/prepare_action_mutation_staging_release.ps1",
+    "execute_script": "ops/execute_action_mutation_staging_release.ps1",
+    "trigger": "workflow_dispatch_only",
+    "prepare_environment": "action-mutation-staging-prepare",
+    "execute_environment": "action-mutation-staging-execute",
+    "cloudformation_execution_role_variable": "ACTION_MUTATION_CF_EXECUTION_ROLE_ARN",
+    "implemented": true,
+    "executed": false
+  },
   "runtime_evidence": {
     "github_actions_run_id": 31298179885,
     "git_commit": "ed475f3a577c3e736bb639e1c05513e7bb80c490",
@@ -63,6 +74,7 @@
     "production_effect": false
   },
   "read_permission_proposal": "docs/action_mutation_staging_read_permission_proposal.json",
+  "release_access_proposal": "docs/action_mutation_staging_release_access_proposal.json",
   "release_phases": [
     {
       "id": "plan",
@@ -93,6 +105,7 @@
     "live_iam_permission_applied": true,
     "agent_iam_change_authorized": false,
     "narrow_workflow_implemented": true,
+    "prepare_execute_workflow_implemented": true,
     "release_write_authority_approved": false,
     "schema_migration_applied": false
   },

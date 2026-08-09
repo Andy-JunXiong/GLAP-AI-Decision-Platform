@@ -357,7 +357,10 @@ track.
    applied it and run `31298179885` passed the bounded AWS inspection with
    stable ownership/configuration and no AWS write. The agent cannot modify IAM,
    and no prepare or execute authority is granted; a broad stack update is not
-   an implicit substitute.
+   an implicit substitute. The separate prepare/execute workflow is now
+   implemented with two protected environments and the same one-resource
+   fail-closed guard, but it has not run and its AWS write roles are not
+   configured or authorised by repository code.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic

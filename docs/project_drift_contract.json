@@ -55,10 +55,15 @@
         "docs/action_mutation_staging_release_contract.json",
         "docs/action_mutation_staging_release_rfc.md",
         "docs/action_mutation_staging_read_permission_proposal.json",
+        "docs/action_mutation_staging_release_access_proposal.json",
+        "docs/action_mutation_staging_release_access.md",
         ".github/workflows/plan-action-mutation-staging.yml",
+        ".github/workflows/release-action-mutation-staging.yml",
         "ops/validate_action_assignment_rollout.py",
         "ops/validate_action_mutation_staging_release.py",
         "ops/plan_action_mutation_staging_release.ps1",
+        "ops/prepare_action_mutation_staging_release.ps1",
+        "ops/execute_action_mutation_staging_release.ps1",
         "docs/implementation_roadmap.md",
         "TODO.md"
       ]

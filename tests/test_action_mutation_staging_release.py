@@ -43,6 +43,23 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
             validator.validate_permission_proposal(proposal),
         )
 
+    def test_release_access_proposal_is_review_only_and_phase_separated(self):
+        proposal = validator.load_access_proposal()
+        self.assertEqual(validator.validate_access_proposal(proposal), [])
+        proposal["authority"]["prepare_aws_write_authorized"] = True
+        self.assertIn(
+            "release-access proposal expands protected authority",
+            validator.validate_access_proposal(proposal),
+        )
+
+    def test_release_access_proposal_rejects_broader_lambda_access(self):
+        proposal = validator.load_access_proposal()
+        proposal["identities"]["execute"]["actions"].append("lambda:*")
+        self.assertIn(
+            "execute identity actions or approval boundary changed",
+            validator.validate_access_proposal(proposal),
+        )
+
     def test_direct_lambda_update_cannot_be_enabled(self):
         contract = copy.deepcopy(validator.load_contract())
         contract["cloudformation_ownership"][
@@ -107,6 +124,36 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
         ):
             self.assertNotIn(command, combined)
         self.assertNotIn("[switch]$Apply", script)
+
+    def test_prepare_and_execute_are_separate_manual_approval_phases(self):
+        workflow = (
+            ROOT / ".github" / "workflows" / "release-action-mutation-staging.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertNotIn("  push:", workflow)
+        self.assertNotIn("  schedule:", workflow)
+        self.assertIn("environment: action-mutation-staging-prepare", workflow)
+        self.assertIn("environment: action-mutation-staging-execute", workflow)
+        self.assertIn("AWS_ACTION_MUTATION_PREPARE_ROLE_ARN", workflow)
+        self.assertIn("AWS_ACTION_MUTATION_EXECUTE_ROLE_ARN", workflow)
+        self.assertEqual(workflow.count("ACTION_MUTATION_CF_EXECUTION_ROLE_ARN"), 2)
+
+    def test_release_scripts_preserve_cloudformation_ownership(self):
+        prepare = (
+            ROOT / "ops" / "prepare_action_mutation_staging_release.ps1"
+        ).read_text(encoding="utf-8").lower()
+        execute = (
+            ROOT / "ops" / "execute_action_mutation_staging_release.ps1"
+        ).read_text(encoding="utf-8").lower()
+        combined = prepare + execute
+        self.assertIn("cloudformation create-change-set", prepare)
+        self.assertIn("--use-previous-template", prepare)
+        self.assertIn("--role-arn $cloudformationrolearn", prepare)
+        self.assertIn("cloudformation delete-change-set", prepare)
+        self.assertIn("cloudformation execute-change-set", execute)
+        self.assertIn('"s3api", "head-object"', execute)
+        self.assertNotIn("update-function-code", combined)
+        self.assertNotIn("aws iam ", combined)
 
 
 if __name__ == "__main__":

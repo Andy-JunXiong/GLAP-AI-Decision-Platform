@@ -296,14 +296,14 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
     )
     schema = rollout.get("schema", {})
     bounded = (
-        rollout.get("status") == "PLAN_ONLY_BLOCKED_RELEASE_PATH"
+        rollout.get("status") == "PLAN_ONLY_BLOCKED_AWS_WRITE_AUTHORIZATION"
         and rollout.get("business_timezone") == "Australia/Sydney"
         and rollout.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and all(authority.get(field) is False for field in protected_authority)
         and schema.get("additive_only") is True
         and schema.get("automatic_workflow_wiring") is False
         and rollout.get("release_paths", {}).get("action_mutation_lambda")
-        == "BLOCKED_NARROW_RELEASE_PATH_REVIEW"
+        == "WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION"
         and rollout.get("rollback", {}).get(
             "package_rollback_requires_zero_edit_events"
         )
@@ -315,7 +315,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment rollout remains ordered, plan-only, and blocked on a narrow mutation release path.",
+            "Action assignment rollout remains ordered and plan-only; its implemented release workflow is blocked on AWS write authorization.",
             "Action assignment rollout hides its blocker or expands deployment, mutation, or scheduling authority.",
             (
                 contract_path,
@@ -343,9 +343,17 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
     blockers = release.get("current_blockers", {})
     runtime = release.get("runtime_evidence", {})
     proposal_authority = proposal.get("authority", {})
+    access_path = "docs/action_mutation_staging_release_access_proposal.json"
+    access_file = root / access_path
+    access = (
+        json.loads(access_file.read_text(encoding="utf-8"))
+        if access_file.is_file()
+        else {}
+    )
+    access_authority = access.get("authority", {})
     bounded = (
         release.get("status")
-        == "READ_ONLY_PLAN_VERIFIED_AWAITING_RELEASE_AUTHORIZATION"
+        == "RELEASE_WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION"
         and release.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and authority.get("workflow_implementation_authorized") is True
         and authority.get("read_permission_human_approved") is True
@@ -374,6 +382,7 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
         and blockers.get("live_iam_permission_applied") is True
         and blockers.get("agent_iam_change_authorized") is False
         and blockers.get("narrow_workflow_implemented") is True
+        and blockers.get("prepare_execute_workflow_implemented") is True
         and blockers.get("release_write_authority_approved") is False
         and runtime.get("result") == "READ_ONLY_PLAN_PASSED"
         and runtime.get("aws_inspection_passed") is True
@@ -386,6 +395,7 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
         and runtime.get("iam_or_cloudformation_modified") is False
         and runtime.get("production_effect") is False
         and release.get("read_permission_proposal") == proposal_path
+        and release.get("release_access_proposal") == access_path
         and proposal.get("status")
         == "APPROVED_FOR_NAMED_HUMAN_APPLICATION"
         and proposal.get("requested_capability", {}).get("actions")
@@ -405,19 +415,33 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
                 "human_application_authorized",
             )
         )
+        and access.get("status") == "PROPOSED_AWAITING_NAMED_HUMAN_REVIEW"
+        and access.get("proposal_shape", {}).get("executable_iam_policy_document") is False
+        and access.get("proposal_shape", {}).get("contains_account_id_or_arn") is False
+        and access_authority.get("repository_proposal_authorized") is True
+        and all(
+            value is False
+            for key, value in access_authority.items()
+            if key != "repository_proposal_authorized"
+        )
     )
     return [
         _result(
             "action_mutation_release_boundary",
             "governance",
             bounded,
-            "The named human applied the exact read permission and the read-only plan passed; agent IAM and release writes remain prohibited.",
+            "The narrow prepare/execute workflow is implemented behind separate approvals; agent IAM and AWS release writes remain prohibited.",
             "The mutation release expands authority, hides runtime evidence, or broadens the read-permission proposal.",
             (
                 contract_path,
                 proposal_path,
+                access_path,
+                "docs/action_mutation_staging_release_access.md",
                 "docs/action_mutation_staging_release_rfc.md",
                 "ops/validate_action_mutation_staging_release.py",
+                ".github/workflows/release-action-mutation-staging.yml",
+                "ops/prepare_action_mutation_staging_release.ps1",
+                "ops/execute_action_mutation_staging_release.ps1",
             ),
         )
     ]

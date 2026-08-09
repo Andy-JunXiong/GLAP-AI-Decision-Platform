@@ -1,6 +1,6 @@
 # Action assignment staging rollout
 
-**Status:** plan-only; blocked pending a reviewed narrow mutation-Lambda release path
+**Status:** plan-only; release workflow implemented, blocked on AWS write approval
 
 This package prepares the repository implementation of Action `EDIT`, owner,
 due date, and `EDITED` review state for private staging. It does not authorize
@@ -15,13 +15,13 @@ creation, or an operational Action mutation.
    `sql/15_action_assignment_v1.sql` migration.
 4. Run the read-only `sql/16_action_assignment_validation.sql`; all five checks
    must return zero.
-5. Release the Action mutation Lambda. This is currently blocked: the existing
-   lifecycle workflow updates the whole stateful stack, so a narrow sanctioned
-   release path must be reviewed before continuing. The proposed previous-
+5. Release the Action mutation Lambda. The existing lifecycle workflow updates
+   the whole stateful stack and remains prohibited. The reviewed previous-
    template, one-resource change-set design is documented in
    [`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md).
-   Its manual read-only plan stage is implemented, but no AWS write phase is
-   approved or implemented.
+   Its manual prepare and execute phases are implemented with separate protected
+   environments, but the required roles are not configured and no AWS write is
+   approved or executed.
 6. Run the existing Operations API workflow in `plan`, then separately approve
    its `deploy` action.
 7. Run the existing internal frontend publisher in plan mode, then separately

@@ -105,9 +105,9 @@ separate approver. This is repository evidence only: the additive staging
 schema migration in `sql/15_action_assignment_v1.sql` is plan-only and the
 deployed Operations boundary remains the three-operation contract above.
 The rollout package now has fail-closed schema validation, opt-in read-only and
-four-role checks, and an evidence-preserving rollback rule. Deployment remains
-blocked because no authorised narrow staging release path exists for the Action
-mutation Lambda; the full stateful stack is not an approved substitute.
+four-role checks, and an evidence-preserving rollback rule. The narrow release
+workflow is implemented, but deployment remains blocked on separate AWS write
+roles and approval; the full stateful stack is not an approved substitute.
 The current RFC proposes retaining the existing CloudFormation owner and using
 the previous template with only `ActionMutationArtifactKey` changed. Execution
 must fail closed unless the change set contains only a non-replacing
@@ -119,8 +119,9 @@ failed closed on the missing `lambda:GetFunctionConfiguration` read capability.
 The repository owner applied only that exact-resource read capability. Follow-up
 run `31298179885` passed the read-only AWS inspection and verified stable
 CloudFormation ownership and Lambda configuration. The agent did not modify IAM.
+The prepare/execute jobs are implemented behind separate protected environments.
 Artifact upload, change-set creation/execution, deployment, and operational
-mutation remain unapproved and unimplemented.
+mutation remain unapproved and unexecuted.
 
 This staging deployment does not authorise production expansion: production
 aliases, recurring lifecycle or forecast schedules, automatic policy

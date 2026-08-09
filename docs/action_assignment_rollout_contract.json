@@ -1,6 +1,6 @@
 {
   "schema_version": "action-assignment-rollout.v1",
-  "status": "PLAN_ONLY_BLOCKED_RELEASE_PATH",
+  "status": "PLAN_ONLY_BLOCKED_AWS_WRITE_AUTHORIZATION",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
@@ -30,7 +30,7 @@
     "automatic_workflow_wiring": false
   },
   "release_paths": {
-    "action_mutation_lambda": "BLOCKED_NARROW_RELEASE_PATH_REVIEW",
+    "action_mutation_lambda": "WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION",
     "candidate_design_contract": "docs/action_mutation_staging_release_contract.json",
     "operations_api": "EXISTING_MANUAL_PLAN_FIRST_WORKFLOW",
     "internal_frontend": "EXISTING_MANUAL_PLAN_FIRST_SCRIPT"

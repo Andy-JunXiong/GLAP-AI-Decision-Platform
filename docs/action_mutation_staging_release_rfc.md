@@ -1,6 +1,6 @@
 # RFC: narrow Action mutation Lambda staging release
 
-**Status:** read-only plan verified; release writes await separate approval
+**Status:** prepare/execute workflow implemented; release writes await separate approval
 
 ## Approved decision
 
@@ -10,7 +10,9 @@ staging release path that retains the existing CloudFormation-owned
 replay the broader stateful lifecycle deployment.
 
 The manual plan workflow and local packaging/inspection script are repository
-implementation evidence. This approval does not authorise an IAM or
+implementation evidence. On 9 August 2026, the user subsequently authorised
+repository implementation of the prepare/execute phases, without authorising
+their AWS execution. This approval does not authorise an IAM or
 CloudFormation change, artifact upload, change-set creation or execution,
 schema migration, frontend/API deployment, or operational Action mutation.
 
@@ -100,6 +102,14 @@ previous artifact parameter and code digest for rollback.
 Artifact upload and change-set creation are AWS writes. They are not authorised
 by this RFC alone.
 
+The repository implementation is
+`.github/workflows/release-action-mutation-staging.yml` with
+`ops/prepare_action_mutation_staging_release.ps1`. It uses the protected
+`action-mutation-staging-prepare` environment, requires an exact commit already
+on `main`, uploads to a commit-and-digest-addressed key, creates an unexecuted
+change set with the previous template, and deletes that change set if the exact
+one-resource guard fails.
+
 ### Phase 3: execute
 
 A separate human approval must re-read the change set, confirm it is unchanged,
@@ -107,6 +117,22 @@ and execute it with a revision/concurrency guard. Wait for stack completion and
 verify that only the mutation Lambda code digest changed. The function must
 remain staging-only, unaliased, unscheduled, and connected only to the private
 Operations API.
+
+The execute job uses a separate protected
+`action-mutation-staging-execute` environment and
+`ops/execute_action_mutation_staging_release.ps1`. It revalidates the commit,
+change-set identity and state, exact resource change, artifact path and object
+metadata before execution. The workflow is implemented but has not been run;
+its two GitHub OIDC role variables, dedicated CloudFormation execution-role
+variable, and least-privilege AWS permissions remain a named-human
+configuration and approval task. Only the CloudFormation service role may hold
+the exact Lambda code-update permission; GitHub cannot call that API directly.
+
+The exact review-only action and resource selectors are recorded in
+[`action_mutation_staging_release_access_proposal.json`](action_mutation_staging_release_access_proposal.json),
+with the named-human configuration checklist in
+[`action_mutation_staging_release_access.md`](action_mutation_staging_release_access.md).
+Neither file is an executable IAM policy or an AWS-write approval.
 
 ### Phase 4: verify and canary
 
@@ -138,8 +164,8 @@ forward-fix while preserving the reader and audit contract.
 
 ## Human decisions still required
 
-1. Separately authorise implementation of prepare/execute workflow phases and
-   their protected environment approvals.
+1. Configure and approve the two protected environments and their separate,
+   least-privilege role variables. The agent may not modify IAM.
 2. Separately authorise schema migration, change-set preparation/execution, API
    and frontend deployment, role-test user creation, and named-human canary.
 

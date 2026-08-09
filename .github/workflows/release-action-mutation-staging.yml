@@ -1,0 +1,94 @@
+name: Release Action mutation staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Prepare an unexecuted change set or execute a separately approved one
+        required: true
+        type: choice
+        options: [prepare, execute]
+      git_commit:
+        description: Full 40-character commit SHA already pushed to main
+        required: true
+        type: string
+      change_set_name:
+        description: Immutable reviewed change-set name
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: action-mutation-staging-${{ inputs.phase }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: inputs.phase == 'prepare'
+    environment: action-mutation-staging-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.git_commit }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Validate repository and exact commit
+        env:
+          REQUESTED_COMMIT: ${{ inputs.git_commit }}
+        run: |
+          test "$REQUESTED_COMMIT" = "$GITHUB_SHA"
+          test "$GITHUB_REF" = "refs/heads/main"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$REQUESTED_COMMIT" origin/main
+          python -m compileall -q lambda ops tests
+          python -m unittest discover -s tests -v
+          python ops/audit_project_drift.py
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ACTION_MUTATION_PREPARE_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: glap-action-mutation-prepare-${{ github.run_id }}
+      - name: Upload candidate and prepare unexecuted change set
+        shell: pwsh
+        env:
+          REQUESTED_COMMIT: ${{ inputs.git_commit }}
+          REQUESTED_CHANGE_SET: ${{ inputs.change_set_name }}
+          CF_EXECUTION_ROLE_ARN: ${{ vars.ACTION_MUTATION_CF_EXECUTION_ROLE_ARN }}
+        run: ./ops/prepare_action_mutation_staging_release.ps1 -GitCommit $env:REQUESTED_COMMIT -ChangeSetName $env:REQUESTED_CHANGE_SET -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN
+
+  execute:
+    if: inputs.phase == 'execute'
+    environment: action-mutation-staging-execute
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.git_commit }}
+      - name: Require exact reviewed commit
+        env:
+          REQUESTED_COMMIT: ${{ inputs.git_commit }}
+        run: |
+          test "$REQUESTED_COMMIT" = "$GITHUB_SHA"
+          test "$GITHUB_REF" = "refs/heads/main"
+          test -z "$(git status --porcelain)"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$REQUESTED_COMMIT" origin/main
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ACTION_MUTATION_EXECUTE_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: glap-action-mutation-execute-${{ github.run_id }}
+      - name: Revalidate and execute reviewed change set
+        shell: pwsh
+        env:
+          REQUESTED_COMMIT: ${{ inputs.git_commit }}
+          REQUESTED_CHANGE_SET: ${{ inputs.change_set_name }}
+          CF_EXECUTION_ROLE_ARN: ${{ vars.ACTION_MUTATION_CF_EXECUTION_ROLE_ARN }}
+        run: ./ops/execute_action_mutation_staging_release.ps1 -GitCommit $env:REQUESTED_COMMIT -ChangeSetName $env:REQUESTED_CHANGE_SET -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN
