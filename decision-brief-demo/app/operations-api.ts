@@ -1,5 +1,5 @@
-export type ActionStatus = "PROPOSED" | "APPROVED" | "REJECTED" | "COMPLETED";
-export type ActionOperation = "APPROVE" | "REJECT" | "COMPLETE";
+export type ActionStatus = "PROPOSED" | "EDITED" | "APPROVED" | "REJECTED" | "COMPLETED";
+export type ActionOperation = "EDIT" | "APPROVE" | "REJECT" | "COMPLETE";
 
 export type OperationsAction = {
   action_id: string;
@@ -13,6 +13,8 @@ export type OperationsAction = {
   approved_by: string | null;
   approved_at: string | null;
   completed_at: string | null;
+  action_owner: string | null;
+  action_due_date: string | null;
   created_date: string;
 };
 
@@ -226,12 +228,6 @@ export function readOperationsToken() {
   return window.sessionStorage.getItem(tokenKey) ?? "";
 }
 
-function sydneyDate() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Australia/Sydney", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-}
-
 async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (!internalOperationsEnabled()) throw new Error("Internal Operations API is not configured");
   if (!token) throw new Error("Authenticated internal session is required");
@@ -294,6 +290,7 @@ export async function loadShipmentDrilldown(
 
 export async function mutateAction(
   token: string, actionId: string, operation: ActionOperation, reason: string,
+  assignment: { actionOwner?: string; actionDueDate?: string } = {},
 ) {
   return request<{ schema_version: string; action: { action_status: ActionStatus } }>(
     `/v1/actions/${encodeURIComponent(actionId)}/events`, token, {
@@ -302,7 +299,8 @@ export async function mutateAction(
         operation,
         request_id: crypto.randomUUID(),
         reason,
-        logical_run_date: sydneyDate(),
+        action_owner: assignment.actionOwner,
+        action_due_date: assignment.actionDueDate,
       }),
     },
   );

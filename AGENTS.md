@@ -143,6 +143,33 @@ not invented. For the full temporal boundary, see Temporal Truthfulness below.
 These boundaries exist regardless of whether CI passes, tests are green, or
 code compiles. Production authority is always human-owned.
 
+## Commit and Push Method (AI Radar Pattern)
+
+Commit and push are separate, human-authorized local Git actions. When the
+user explicitly says `commit`, `push`, or `commit and push`, use the existing
+repository Git authentication path (normally Windows Git Credential Manager)
+and ordinary `git` commands. `gh auth status` and `gh auth login` are not
+prerequisites for committing or pushing, and the agent must not ask the user
+for GitHub credentials or tokens.
+
+Before committing:
+
+1. inspect `git status -sb` and the diff;
+2. confirm that all staged paths belong to the approved task;
+3. run the applicable validation and drift gates;
+4. stage only the approved paths and create a terse, scoped commit.
+
+For push, use `git push` to the current repository only. Do not create a pull
+request unless the user asks for one. If pushing the current branch would
+trigger a deployment or public Pages publication that the user did not
+authorize, create and push a non-deploying feature branch instead. Push never
+grants AWS deployment, production mutation, Pages publication, alias movement,
+schedule activation, or policy/model promotion authority.
+
+If `git push` itself fails authentication, report that concrete failure and
+stop. Do not switch to GitHub CLI authentication, request secrets, or treat an
+unrelated `gh` session as the repository's Git credential source.
+
 ## Validation
 
 Route your change to the right validation. All commands verified from CI/CD

@@ -1,6 +1,6 @@
 """Private, idempotent Action mutation handler for GLAP staging.
 
-The proposed Action row is immutable.  Every APPROVE, REJECT, or COMPLETE
+The proposed Action row is immutable.  Every EDIT, APPROVE, REJECT, or COMPLETE
 operation appends one audit event; the current state is derived by an Athena
 view.  This function has no public API integration or schedule.
 """
@@ -30,8 +30,11 @@ AUDIT_TABLE = os.getenv(
     "LIFECYCLE_ACTION_AUDIT_TABLE", "fact_lifecycle_action_audit_staging_v1"
 )
 TRANSITIONS = {
+    ("PROPOSED", "EDIT"): "EDITED",
     ("PROPOSED", "APPROVE"): "APPROVED",
     ("PROPOSED", "REJECT"): "REJECTED",
+    ("EDITED", "APPROVE"): "APPROVED",
+    ("EDITED", "REJECT"): "REJECTED",
     ("APPROVED", "COMPLETE"): "COMPLETED",
 }
 
@@ -65,14 +68,15 @@ def _literal(value: Any) -> str:
 
 
 def build_current_action_query(action_id: str, scope_id: str) -> str:
-    return f"""SELECT action_id, status, approved_by, approved_at, completed_at
+    return f"""SELECT action_id, status, action_owner, action_due_date,
+approved_by, approved_at, completed_at
 FROM {_identifier(DATABASE)}.{_identifier(ACTION_CURRENT_VIEW)}
 WHERE action_id = {_literal(action_id)} AND temporal_scope_id = {_literal(scope_id)}"""
 
 
 def build_idempotency_query(request_id: str, scope_id: str) -> str:
     return f"""SELECT event_id, action_id, event_type, previous_status, new_status,
-actor, reason, occurred_at
+actor, reason, occurred_at, action_owner, action_due_date
 FROM {_identifier(DATABASE)}.{_identifier(AUDIT_TABLE)}
 WHERE request_id = {_literal(request_id)} AND temporal_scope_id = {_literal(scope_id)}"""
 
@@ -81,7 +85,8 @@ def build_audit_merge(row: dict[str, Any]) -> str:
     columns = (
         "event_id", "request_id", "action_id", "event_type", "previous_status",
         "new_status", "actor", "reason", "occurred_at", "approved_by",
-        "approved_at", "completed_at", "created_date", "temporal_scope_id",
+        "approved_at", "completed_at", "action_owner", "action_due_date",
+        "created_date", "temporal_scope_id",
         "execution_mode", "time_basis", "as_of_date", "execution_scenario_id",
     )
     values = ", ".join(_literal(row.get(column)) for column in columns)
@@ -108,8 +113,8 @@ def plan_mutation(
     request_id = str(event.get("request_id") or "")
     actor = str(event.get("actor") or "").strip()
     reason = str(event.get("reason") or "").strip()
-    if operation not in {"APPROVE", "REJECT", "COMPLETE"}:
-        raise ValueError("operation must be APPROVE, REJECT, or COMPLETE")
+    if operation not in {"EDIT", "APPROVE", "REJECT", "COMPLETE"}:
+        raise ValueError("operation must be EDIT, APPROVE, REJECT, or COMPLETE")
     if not SAFE_ID.fullmatch(action_id) or not SAFE_ID.fullmatch(request_id):
         raise ValueError("action_id and request_id must be safe stable identifiers")
     if not SAFE_ACTOR.fullmatch(actor) or actor.lower() in {"system", "automation", "model"}:
@@ -124,7 +129,25 @@ def plan_mutation(
     approved_by = current_action.get("approved_by")
     approved_at = current_action.get("approved_at")
     completed_at = current_action.get("completed_at")
-    if operation == "APPROVE":
+    action_owner = current_action.get("action_owner")
+    action_due_date = current_action.get("action_due_date")
+    if isinstance(action_due_date, str) and action_due_date:
+        action_due_date = date.fromisoformat(action_due_date)
+    if operation == "EDIT":
+        action_owner = str(event.get("action_owner") or "").strip()
+        if (
+            not SAFE_ACTOR.fullmatch(action_owner)
+            or action_owner.lower() in {"system", "automation", "model"}
+        ):
+            raise ValueError("A named human Action owner is required")
+        try:
+            action_due_date = date.fromisoformat(str(event.get("action_due_date") or ""))
+            logical_run_date = date.fromisoformat(str(event.get("logical_run_date") or ""))
+        except ValueError as exc:
+            raise ValueError("action_due_date and logical_run_date must be ISO dates") from exc
+        if action_due_date < logical_run_date:
+            raise ValueError("action_due_date cannot precede the operational date")
+    elif operation == "APPROVE":
         approved_by, approved_at = actor, now
     elif operation == "COMPLETE":
         completed_at = now
@@ -143,6 +166,8 @@ def plan_mutation(
         "approved_by": approved_by,
         "approved_at": approved_at,
         "completed_at": completed_at,
+        "action_owner": action_owner,
+        "action_due_date": action_due_date,
         "created_date": now.date(),
     }
 
@@ -206,7 +231,9 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         return {
             "status": "success", "idempotent_replay": True,
             "action_id": action_id, "event_id": row.get("event_id"),
-            "action_status": row.get("new_status"), **temporal,
+            "action_status": row.get("new_status"),
+            "action_owner": row.get("action_owner"),
+            "action_due_date": row.get("action_due_date"), **temporal,
         }
     actions = _run_query(client, build_current_action_query(action_id, scope_id))
     if len(actions) != 1:
@@ -215,6 +242,8 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     for field in ("approved_at", "completed_at"):
         if current.get(field):
             current[field] = datetime.fromisoformat(str(current[field])).replace(tzinfo=UTC)
+    if current.get("action_due_date"):
+        current["action_due_date"] = date.fromisoformat(str(current["action_due_date"]))
     mutation = plan_mutation(event, current, datetime.now(UTC))
     mutation.update({
         "temporal_scope_id": scope_id,
@@ -235,5 +264,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         "action_id": action_id, "event_id": mutation["event_id"],
         "previous_status": mutation["previous_status"],
         "action_status": mutation["new_status"],
+        "action_owner": mutation["action_owner"],
+        "action_due_date": mutation["action_due_date"],
         "dry_run": bool(event.get("dry_run", False)), **temporal,
     }

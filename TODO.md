@@ -54,6 +54,9 @@ Current implementation and release boundaries are recorded in the
   CI enforcement, and a repository-scoped pre-commit gate that validates the
   exact staged snapshot before allowing a commit. The gate has no AWS role,
   deployment authority, recurring schedule, or production effect.
+- [x] Implement and locally verify the repository Action assignment extension:
+  operator/admin `EDIT`, named owner, due date, `EDITED` review state, and
+  separate approver decision. Its staging schema migration is not deployed.
 
 ## End-of-day handoff -- 6 August 2026
 
@@ -189,8 +192,10 @@ The governing date boundary is in the
 - [x] Document grain, ownership, freshness, and reconciliation rules for every
   remaining internal-only analytics view in
   `docs/internal_analytics_governance.md`.
-- [ ] Add Athena workgroup budgets, query-cost alarms, and incremental-refresh
-  rules before proposing recurring analytics execution.
+- [x] Define Athena workgroup budgets, query-cost alarms, and incremental-refresh
+  rules in validated plan-only contracts before proposing recurring execution.
+- [ ] Apply those AWS controls only after explicit infrastructure approval and
+  measured Operations API query baselines.
 
 ### Future plan
 
@@ -400,11 +405,13 @@ Repository checkpoint — 4 August 2026:
 - [x] Add Cognito or IAM-based identities and role-based authorization for
   viewer, operator, approver, and administrator responsibilities.
 - [x] Read the real internal decision queue with pagination and safe filters.
-- [ ] Add a governed Action edit event with actor, timestamp, reason, and
-  immutable source version; v1 currently implements only approve, reject, and
-  complete events.
-- [ ] Extend authenticated Actions with an owner and due date; do not infer
+- [x] Add a governed Action edit event with actor, timestamp, reason, and
+  immutable source version; the repository contract now uses `PROPOSED -> EDITED`
+  before separate approval. The additive staging migration is not deployed.
+- [x] Extend authenticated Actions with an owner and due date; do not infer
   these fields from demonstration-only UI content.
+- [x] Document administrator-managed internal user onboarding, role assignment,
+  first access, and offboarding in `docs/internal_user_onboarding.md`.
 - [x] Record observed Outcomes separately from expected impact.
 - [x] Add an append-only audit contract and idempotency keys for all writes.
 - [x] Keep the public Pages deployment read-only and aggregate-only.
@@ -423,7 +430,10 @@ Repository checkpoint — 4 August 2026:
   internal-only analytics view in `docs/internal_analytics_governance.md`.
 - [ ] Materialise a new mart only when reconciliation or performance evidence
   proves the existing assets cannot meet the requirement.
-- [ ] Add Athena cost controls and incremental refresh rules.
+- [x] Define fail-closed Athena cost controls and per-view incremental refresh
+  rules in validated plan-only contracts.
+- [ ] Apply the approved Athena workgroup controls and query-cost alarms; no AWS
+  infrastructure change is authorised by the design contract.
 
 ## P3 — Forecast validation and model upgrade
 
@@ -469,13 +479,18 @@ Repository checkpoint — 4 August 2026:
 
 ## P5 — Governance and production readiness
 
-- [ ] Define data classification, redaction, retention, and deletion policies.
+- [x] Define data classification, redaction, proposed retention/deletion,
+  recovery, incident, SLO, and Iceberg maintenance policies in
+  `docs/data_governance_operations.md`.
 - [ ] Apply least-privilege IAM and Lake Formation permissions to internal read
   and write paths.
 - [ ] Configure Athena workgroup budgets and query-cost monitoring.
-- [ ] Configure Iceberg compaction, snapshot expiration, and orphan-file cleanup.
+- [ ] Configure Iceberg compaction, snapshot expiration, and orphan-file cleanup;
+  the plan and safety boundary are documented but not applied.
 - [ ] Add API audit logging, lineage, operational SLOs, and cost dashboards.
-- [ ] Add backup, recovery, incident response, and operator runbooks.
+- [x] Add plan-level recovery, incident-response, actual-calendar evidence, and
+  internal-user onboarding runbooks.
+- [ ] Execute and retain evidence from staging recovery and incident exercises.
 - [ ] Add load, concurrency, security, and failure-injection tests.
 - [x] Preserve explicit labels for synthetic, validation, forecast, and measured
   production evidence.

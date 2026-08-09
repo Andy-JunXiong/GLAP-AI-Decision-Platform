@@ -69,7 +69,7 @@ ROLE_PERMISSIONS = {
         "network:read",
     },
     "operator": {
-        "risks:read", "actions:read", "actions:complete", "outcomes:read", "health:read",
+        "risks:read", "actions:read", "actions:edit", "actions:complete", "outcomes:read", "health:read",
         "forecasts:read", "network:read", "shipments:read",
     },
     "approver": {
@@ -77,11 +77,12 @@ ROLE_PERMISSIONS = {
         "health:read", "forecasts:read", "network:read", "shipments:read",
     },
     "administrator": {
-        "risks:read", "actions:read", "actions:approve", "actions:reject", "actions:complete",
+        "risks:read", "actions:read", "actions:edit", "actions:approve", "actions:reject", "actions:complete",
         "outcomes:read", "health:read", "forecasts:read", "network:read", "shipments:read",
     },
 }
 OPERATION_PERMISSION = {
+    "EDIT": "actions:edit",
     "APPROVE": "actions:approve",
     "REJECT": "actions:reject",
     "COMPLETE": "actions:complete",
@@ -186,12 +187,12 @@ def _identity(event: dict[str, Any]) -> tuple[str, str, set[str]]:
 def build_action_queue_query(limit: int, status: str | None) -> str:
     where = "WHERE temporal_scope_id = 'OPERATIONAL'"
     if status:
-        if status not in {"PROPOSED", "APPROVED", "REJECTED", "COMPLETED"}:
+        if status not in {"PROPOSED", "EDITED", "APPROVED", "REJECTED", "COMPLETED"}:
             raise ValueError("Unsupported Action status filter")
         where += f" AND status = '{status}'"
     return f"""SELECT action_id, alert_fingerprint, shipment_id, action_type,
 alert_type, alert_severity, status, approval_required, approved_by,
-approved_at, completed_at, created_date
+approved_at, completed_at, action_owner, action_due_date, created_date
 FROM {_identifier(DATABASE)}.{_identifier(ACTION_VIEW)}
 {where}
 ORDER BY created_date DESC, action_id
@@ -872,9 +873,11 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 "operation": operation,
                 "request_id": str(body.get("request_id") or ""),
                 "reason": str(body.get("reason") or ""),
+                "action_owner": str(body.get("action_owner") or ""),
+                "action_due_date": str(body.get("action_due_date") or ""),
                 "actor": actor,
                 "actor_subject": subject,
-                "logical_run_date": str(body.get("logical_run_date") or ""),
+                "logical_run_date": _sydney_date(),
                 "execution_mode": "OPERATIONAL",
                 "time_basis": "ACTUAL_CALENDAR",
             }

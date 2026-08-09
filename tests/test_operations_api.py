@@ -106,6 +106,8 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("shipments:read", api.ROLE_PERMISSIONS["operator"])
         self.assertIn("shipments:read", api.ROLE_PERMISSIONS["approver"])
         self.assertNotIn("actions:approve", api.ROLE_PERMISSIONS["operator"])
+        self.assertIn("actions:edit", api.ROLE_PERMISSIONS["operator"])
+        self.assertNotIn("actions:edit", api.ROLE_PERMISSIONS["approver"])
         self.assertNotIn("actions:complete", api.ROLE_PERMISSIONS["approver"])
         self.assertIn("actions:complete", api.ROLE_PERMISSIONS["administrator"])
 
@@ -115,7 +117,9 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("status = 'PROPOSED'", query)
         self.assertIn("LIMIT 50", query)
         self.assertIn("alert_fingerprint", query)
-        self.assertNotIn("owner", query)
+        self.assertIn("action_owner", query)
+        self.assertIn("action_due_date", query)
+        self.assertIn("status = 'EDITED'", api.build_action_queue_query(50, "EDITED"))
 
     def test_risk_query_is_operational_actual_calendar_and_sydney_bounded(self):
         query = api.build_risk_hotspots_query(25, "OPEN", "2026-08-07")
@@ -422,6 +426,38 @@ class OperationsApiTests(unittest.TestCase):
         }), None)
         self.assertEqual(response["statusCode"], 403)
 
+    def test_operator_can_edit_assignment_but_approver_cannot(self):
+        class LambdaClient:
+            sent = None
+
+            def invoke(self, **kwargs):
+                self.sent = json.loads(kwargs["Payload"])
+                return {"Payload": io.BytesIO(b'{"status":"success"}')}
+
+        client = LambdaClient()
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: client)
+        body = {
+            "operation": "EDIT", "request_id": "request-edit-123",
+            "reason": "Assign for operational follow-up",
+            "action_owner": "Jordan Lee", "action_due_date": "2026-08-09",
+            "logical_run_date": "2026-08-08",
+        }
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(
+            api, "_sydney_date", return_value="2026-08-09"
+        ):
+            response = api.lambda_handler(
+                request("POST", "/v1/actions/action-123/events", "operator", body), None
+            )
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(client.sent["actor"], "Alex Chen")
+        self.assertEqual(client.sent["action_owner"], "Jordan Lee")
+        self.assertEqual(client.sent["action_due_date"], "2026-08-09")
+        self.assertEqual(client.sent["logical_run_date"], "2026-08-09")
+        denied = api.lambda_handler(
+            request("POST", "/v1/actions/action-123/events", "approver", body), None
+        )
+        self.assertEqual(denied["statusCode"], 403)
+
     def test_approver_identity_overrides_any_client_actor(self):
         class LambdaClient:
             sent = None
@@ -434,7 +470,9 @@ class OperationsApiTests(unittest.TestCase):
             "operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence",
             "logical_run_date": "2026-08-07", "actor": "system",
         })
-        with patch.dict(sys.modules, {"boto3": fake_boto3}):
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(
+            api, "_sydney_date", return_value="2026-08-09"
+        ):
             response = api.lambda_handler(event, None)
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(client.sent["actor"], "Alex Chen")
@@ -456,7 +494,9 @@ class OperationsApiTests(unittest.TestCase):
             "POST", "/v1/actions/action-123/events", "approver",
             {"operation": "APPROVE", "request_id": "request-123", "reason": "Reviewed evidence"},
         )
-        with patch.dict(sys.modules, {"boto3": fake_boto3}):
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(
+            api, "_sydney_date", return_value="2026-08-09"
+        ):
             self.assertEqual(api.lambda_handler(mutation_request, None)["statusCode"], 404)
             client.payload = {
                 "errorType": "ActionConflictError",

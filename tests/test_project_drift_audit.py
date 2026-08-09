@@ -29,14 +29,16 @@ class ProjectDriftAuditTests(unittest.TestCase):
             (root / "lambda").mkdir()
             (root / "docs").mkdir()
             (root / "lambda" / "glap_action_mutation.py").write_text(
-                'if operation not in {"APPROVE", "REJECT", "COMPLETE", "EDIT"}:\n    pass\n',
+                'if operation not in {"APPROVE", "REJECT", "COMPLETE"}:\n    pass\n',
                 encoding="utf-8",
             )
             (root / "docs" / "implementation_roadmap.md").write_text(
-                "Current Action surface.\n", encoding="utf-8"
+                "approve/edit/reject/complete\n", encoding="utf-8"
             )
             (root / "TODO.md").write_text(
-                "Action edit event\nowner and due date\n", encoding="utf-8"
+                "- [x] Add a governed Action edit event\n"
+                "- [x] Extend authenticated Actions with an owner and due date\n",
+                encoding="utf-8",
             )
             results = AUDIT.check_action_contract(root, contract)
         operation = next(item for item in results if item.check_id == "action_operations")

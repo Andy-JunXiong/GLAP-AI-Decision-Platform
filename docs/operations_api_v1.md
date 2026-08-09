@@ -8,12 +8,12 @@ Public GitHub Pages is not an API client and receives no write permission.
 
 ## Roles and permissions
 
-| Role | Read risks/queue/outcomes | Read forecasts/health | Read network aggregate | Read shipment entities | Approve | Reject | Complete |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `viewer` | yes | yes | yes | no | no | no | no |
-| `operator` | yes | yes | yes | yes | no | no | yes |
-| `approver` | yes | yes | yes | yes | yes | yes | no |
-| `administrator` | yes | yes | yes | yes | yes | yes | yes |
+| Role | Read risks/queue/outcomes | Read forecasts/health | Read network aggregate | Read shipment entities | Edit assignment | Approve | Reject | Complete |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `viewer` | yes | yes | yes | no | no | no | no | no |
+| `operator` | yes | yes | yes | yes | yes | no | no | yes |
+| `approver` | yes | yes | yes | yes | no | yes | yes | no |
+| `administrator` | yes | yes | yes | yes | yes | yes | yes | yes |
 
 API Gateway validates the JWT issuer and audience. The adapter obtains the
 actor from signed `name`, `email`, or Cognito access-token `username` claims,
@@ -38,6 +38,8 @@ downstream Action.
 `GET /v1/actions?status=PROPOSED&limit=50` returns at most 100 operational,
 actual-calendar Action records. The v1 response is
 `{"schema_version":"operations-api.v1","items":[],"next_token":null}`.
+Supported states include `PROPOSED`, `EDITED`, `APPROVED`, `REJECTED`, and
+`COMPLETED`; assignment fields are `action_owner` and `action_due_date`.
 
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
 Outcome version for each completed Action, bounded by the current Sydney date.
@@ -79,15 +81,35 @@ opaque `next_token` for stable shipment-ID pagination. `mode`, `provider`,
 {
   "operation": "APPROVE",
   "request_id": "stable-client-request-id",
-  "reason": "Reviewed current operational evidence",
-  "logical_run_date": "2026-08-07"
+  "reason": "Reviewed current operational evidence"
 }
 ```
 
-Operations are `APPROVE`, `REJECT`, or `COMPLETE`. Existing transition and
+Operations are `EDIT`, `APPROVE`, `REJECT`, or `COMPLETE`. Existing transition and
 request-id idempotency rules remain authoritative in the mutation Lambda.
 Errors use `invalid_request`, `forbidden`, `not_found`, `conflict`, or
 `service_unavailable`; responses are `no-store` and never expose AWS IDs.
+
+The repository v1 extension accepts `EDIT` from `PROPOSED`:
+
+```json
+{
+  "operation": "EDIT",
+  "request_id": "stable-client-request-id",
+  "reason": "Assigned for operational follow-up",
+  "action_owner": "Jordan Lee",
+  "action_due_date": "2026-08-09"
+}
+```
+
+The API derives `logical_run_date` from the current Australia/Sydney date and
+does not trust a client-supplied operational date. `EDIT` appends an immutable
+audit event and moves the Action to `EDITED`; it
+does not approve it. The owner must be a named human and the due date cannot
+precede the operational date. `EDITED` may then be approved or rejected by an
+authorised approver. This extension is implemented and locally verified in the
+repository, but `sql/15_action_assignment_v1.sql` is a plan-only staging
+migration and has not been applied to AWS.
 
 ## Reliability and recovery
 
@@ -205,11 +227,13 @@ role groups, an authorization-code-with-PKCE web client, and a manually deployed
 Amplify staging branch. It has no repository connection and does not reuse
 public GitHub Pages. Risk Hotspots reads current operational Alerts, a selected
 Alert leads into Decision Queue through the shared `alert_fingerprint`, and
-Action Board can approve, reject, or complete an Action after an administrator
+Action Board can assign/edit, approve, reject, or complete an Action after an administrator
 creates a user and assigns the appropriate group. Outcome Review then links the
 completed Action to its latest governed Outcome and separates pending rows from
 mature actual-calendar evidence. The
-browser obtains its short-lived access token through Cognito and keeps it only
+The deployed AWS boundary still reflects the earlier approve/reject/complete
+schema until the additive staging migration and code release receive explicit
+human approval. The browser obtains its short-lived access token through Cognito and keeps it only
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
 

@@ -99,6 +99,12 @@ They support the governed Decision Queue, Action Board, `APPROVE` / `REJECT` /
 Accuracy, and authorised Network Drill-down. Public GitHub Pages remains
 aggregate-only and read-only, with no private API or Cognito configuration.
 
+The repository additionally implements an append-only `EDIT` event for a named
+Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a
+separate approver. This is repository evidence only: the additive staging
+schema migration in `sql/15_action_assignment_v1.sql` is plan-only and the
+deployed Operations boundary remains the three-operation contract above.
+
 This staging deployment does not authorise production expansion: production
 aliases, recurring lifecycle or forecast schedules, automatic policy
 activation, supervised-model promotion, and public entity-level writes remain

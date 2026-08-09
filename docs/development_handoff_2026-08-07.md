@@ -151,12 +151,15 @@ Keeping them separate is the intended fail-closed behavior, not a data drift.
 
 ### Next unblocked development session
 
-1. Document grain, owner, source, freshness expectation, and reconciliation
-   rule for every remaining internal-only analytics view.
-2. Add Athena workgroup budgets, query-cost alarms, and incremental-refresh
-   rules before expanding recurring analytics execution.
-3. Close the remaining governance documentation gaps: data classification,
-   retention/deletion, recovery ownership, SLOs, and incident procedures.
+1. Completed in the repository: document every remaining internal analytics
+   view and define validated, plan-only Athena cost and incremental-refresh
+   contracts. AWS workgroup and alarm changes still require explicit approval.
+2. Completed in the repository: document classification, retention/deletion,
+   recovery ownership, SLO, incident, Iceberg maintenance, evidence accumulation,
+   and internal-user onboarding boundaries. Runtime controls and exercises remain.
+3. Completed and locally verified in the repository: append-only Action `EDIT`
+   with named owner and due date, followed by separate approval. Its additive
+   staging schema migration is plan-only and has not been deployed.
 
 ### 9 August 2026 Sydney follow-up
 

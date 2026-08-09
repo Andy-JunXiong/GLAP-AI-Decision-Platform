@@ -1,0 +1,87 @@
+{
+  "schema_version": "production-readiness-contract.v1",
+  "status": "DESIGNED_NOT_DEPLOYED",
+  "business_timezone": "Australia/Sydney",
+  "evidence_boundary": "SYNTHETIC_ENGINEERING_ONLY",
+  "authority": {
+    "named_human_owner_required": true,
+    "recurring_schedule_enabled": false,
+    "production_alias_change_authorized": false,
+    "production_table_write_authorized": false,
+    "policy_activation_authorized": false,
+    "model_promotion_authorized": false
+  },
+  "athena": {
+    "workgroup_state": "HUMAN_APPROVAL_REQUIRED",
+    "engine_version": 3,
+    "encryption_required": true,
+    "enforced_result_location_required": true,
+    "default_query_scan_budget_bytes": 104857600,
+    "query_evidence_fields": [
+      "query_id",
+      "query_class",
+      "workgroup",
+      "logical_date",
+      "execution_mode",
+      "temporal_scope_id",
+      "data_scanned_bytes",
+      "scan_budget_bytes",
+      "outcome"
+    ],
+    "query_classes": [
+      {
+        "id": "forecast_feature",
+        "budget_bytes": 104857600,
+        "enforcement": "IMPLEMENTED_IN_CALLER"
+      },
+      {
+        "id": "label_readiness",
+        "budget_bytes": 104857600,
+        "enforcement": "IMPLEMENTED_IN_CALLER"
+      },
+      {
+        "id": "operations_api_read",
+        "budget_bytes": null,
+        "enforcement": "MEASURE_BASELINE_BEFORE_WORKGROUP_CUTOFF"
+      },
+      {
+        "id": "operational_baseline",
+        "budget_bytes": null,
+        "enforcement": "MEASURE_BASELINE_BEFORE_WORKGROUP_CUTOFF"
+      }
+    ]
+  },
+  "incremental_views": [
+    "vw_multimodal_shipment_daily_v1",
+    "vw_multimodal_ops_daily_v1",
+    "vw_multimodal_provider_daily_v1",
+    "vw_multimodal_mode_decision_v1",
+    "vw_multimodal_forecast_feature_daily_v1",
+    "vw_multimodal_outcome_label_v1",
+    "vw_multimodal_operational_baseline_v1"
+  ],
+  "retention_proposals": [
+    {
+      "class": "TEMPORARY_QUERY_RESULT",
+      "days": 14
+    },
+    {
+      "class": "PRIVATE_API_ACCESS_LOG",
+      "days": 30
+    },
+    {
+      "class": "SYNTHETIC_STAGING_ENTITY",
+      "days": 90
+    },
+    {
+      "class": "GOVERNED_AUDIT_AND_OUTCOME",
+      "days": 365
+    }
+  ],
+  "engineering_targets": {
+    "operations_api_availability_pct": 99.0,
+    "pipeline_status_freshness_hours": 24,
+    "staging_recovery_time_hours": 8,
+    "staging_recovery_point": "LAST_VERIFIED_ICEBERG_SNAPSHOT_AND_VERSIONED_STATUS"
+  }
+}

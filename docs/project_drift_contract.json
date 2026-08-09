@@ -43,9 +43,12 @@
     },
     {
       "id": "action_edit_owner_due_date",
-      "state": "NOT_IMPLEMENTED",
-      "boundary": "future authenticated Action contract extension",
+      "state": "PARTIAL",
+      "boundary": "repository implementation with plan-only staging schema migration; not deployed",
       "evidence_files": [
+        "lambda/glap_action_mutation.py",
+        "lambda/glap_operations_api.py",
+        "sql/15_action_assignment_v1.sql",
         "docs/implementation_roadmap.md",
         "TODO.md"
       ]
@@ -79,9 +82,14 @@
     },
     {
       "id": "production_readiness_governance",
-      "state": "NOT_IMPLEMENTED",
-      "boundary": "P5 governance and production-readiness work",
+      "state": "PARTIAL",
+      "boundary": "validated plan-only contracts; no AWS controls deployed",
       "evidence_files": [
+        "docs/production_readiness_contract.json",
+        "docs/athena_cost_governance.md",
+        "docs/incremental_refresh_contract.md",
+        "docs/data_governance_operations.md",
+        "docs/actual_calendar_evidence_runbook.md",
         "docs/implementation_roadmap.md",
         "docs/internal_analytics_governance.md"
       ]
@@ -100,15 +108,16 @@
   ],
   "action_contract": {
     "implemented_operations": [
+      "EDIT",
       "APPROVE",
       "REJECT",
       "COMPLETE"
     ],
-    "not_implemented": [
-      "EDIT",
+    "required_assignment_fields": [
       "owner",
       "due_date"
-    ]
+    ],
+    "not_implemented": []
   },
   "readiness_thresholds": {
     "minimum_backtest_history": 14,

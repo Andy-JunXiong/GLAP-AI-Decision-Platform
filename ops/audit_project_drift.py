@@ -251,16 +251,21 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
     actual = _extract_action_operations(mutation)
     expected = set(contract.get("action_contract", {}).get("implemented_operations", []))
     not_implemented = set(contract.get("action_contract", {}).get("not_implemented", []))
-    overclaims_absent = (
-        "approve/edit/reject workflow" not in roadmap
-        and "controlled Action states, owners, and due dates" not in roadmap
+    required_fields = set(contract.get("action_contract", {}).get("required_assignment_fields", []))
+    fields_implemented = required_fields == {"owner", "due_date"} and all(
+        token in mutation for token in ("action_owner", "action_due_date")
     )
-    gaps_visible = all(token in todo for token in ("Action edit event", "owner and due date"))
+    roadmap_current = "approve/edit/reject/complete" in roadmap
+    todo_current = bool(
+        re.search(r"(?m)^- \[x\] Add a governed Action edit event", todo)
+        and re.search(r"(?m)^- \[x\] Extend authenticated Actions with an owner and due date", todo)
+    )
     return [
         _result(
             "action_operations",
             "function",
-            bool(actual) and actual == expected and actual.isdisjoint(not_implemented),
+            bool(actual) and actual == expected and actual.isdisjoint(not_implemented)
+            and fields_implemented,
             "Implemented Action operations match the capability contract.",
             "Action operations differ from the declared capability contract.",
             (mutation_path, "docs/project_drift_contract.json"),
@@ -268,11 +273,41 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
         _result(
             "action_documentation",
             "documentation",
-            overclaims_absent and gaps_visible,
-            "Roadmap and TODO describe the current Action surface without overclaiming edit/ownership.",
-            "Roadmap or TODO overclaims or hides the unimplemented Action edit/ownership surface.",
+            roadmap_current and todo_current,
+            "Roadmap and TODO match the repository Action edit/assignment implementation.",
+            "Roadmap or TODO differs from the repository Action edit/assignment implementation.",
             (roadmap_path, todo_path),
         ),
+    ]
+
+
+def check_readiness_contract(root: Path) -> list[CheckResult]:
+    contract_path = "docs/production_readiness_contract.json"
+    contract = json.loads((root / contract_path).read_text(encoding="utf-8"))
+    authority = contract.get("authority", {})
+    forbidden_authority = (
+        "recurring_schedule_enabled",
+        "production_alias_change_authorized",
+        "production_table_write_authorized",
+        "policy_activation_authorized",
+        "model_promotion_authorized",
+    )
+    bounded = (
+        contract.get("status") == "DESIGNED_NOT_DEPLOYED"
+        and authority.get("named_human_owner_required") is True
+        and all(authority.get(field) is False for field in forbidden_authority)
+        and contract.get("business_timezone") == "Australia/Sydney"
+        and contract.get("evidence_boundary") == "SYNTHETIC_ENGINEERING_ONLY"
+    )
+    return [
+        _result(
+            "production_readiness_boundary",
+            "governance",
+            bounded,
+            "Production-readiness controls remain explicit, plan-only, and authority bounded.",
+            "The production-readiness contract claims deployment or expands protected authority.",
+            (contract_path, "docs/athena_cost_governance.md", "docs/incremental_refresh_contract.md"),
+        )
     ]
 
 
@@ -304,6 +339,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_audit_automation(root))
     checks.extend(check_action_contract(root, contract))
+    checks.extend(check_readiness_contract(root))
     checks.extend(check_temporal_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()

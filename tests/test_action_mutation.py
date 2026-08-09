@@ -22,13 +22,20 @@ NOW = datetime(2026, 8, 6, 10, 30, tzinfo=timezone.utc)
 
 
 def event(operation="APPROVE", request_id="request-001", actor="Alex Chen"):
-    return {
+    payload = {
         "operation": operation,
         "action_id": "abc123def456",
         "request_id": request_id,
         "actor": actor,
         "reason": "Reviewed operational evidence",
     }
+    if operation == "EDIT":
+        payload.update({
+            "action_owner": "Jordan Lee",
+            "action_due_date": "2026-08-09",
+            "logical_run_date": "2026-08-06",
+        })
+    return payload
 
 
 class ActionMutationTests(unittest.TestCase):
@@ -49,6 +56,36 @@ class ActionMutationTests(unittest.TestCase):
         self.assertEqual(row["new_status"], "COMPLETED")
         self.assertEqual(row["approved_at"], approved_at)
         self.assertEqual(row["completed_at"], NOW)
+
+    def test_edit_assigns_named_owner_and_due_date_without_approving(self):
+        row = mutation.plan_mutation(event("EDIT"), {"status": "PROPOSED"}, NOW)
+        self.assertEqual(row["new_status"], "EDITED")
+        self.assertEqual(row["action_owner"], "Jordan Lee")
+        self.assertEqual(row["action_due_date"].isoformat(), "2026-08-09")
+        self.assertIsNone(row["approved_by"])
+
+    def test_edit_rejects_automatic_owner_and_past_due_date(self):
+        invalid_owner = event("EDIT")
+        invalid_owner["action_owner"] = "system"
+        with self.assertRaisesRegex(ValueError, "named human Action owner"):
+            mutation.plan_mutation(invalid_owner, {"status": "PROPOSED"}, NOW)
+        past_due = event("EDIT")
+        past_due["action_due_date"] = "2026-08-05"
+        with self.assertRaisesRegex(ValueError, "cannot precede"):
+            mutation.plan_mutation(past_due, {"status": "PROPOSED"}, NOW)
+
+    def test_edited_action_can_be_approved_and_preserves_assignment(self):
+        row = mutation.plan_mutation(
+            event(),
+            {
+                "status": "EDITED", "action_owner": "Jordan Lee",
+                "action_due_date": "2026-08-09",
+            },
+            NOW,
+        )
+        self.assertEqual(row["new_status"], "APPROVED")
+        self.assertEqual(row["action_owner"], "Jordan Lee")
+        self.assertEqual(row["action_due_date"].isoformat(), "2026-08-09")
 
     def test_invalid_transition_and_automatic_actor_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "Invalid Action transition"):
@@ -79,6 +116,8 @@ class ActionMutationTests(unittest.TestCase):
         self.assertIn("target.request_id = source.request_id", sql)
         self.assertIn("target.action_id = source.action_id", sql)
         self.assertIn("target.previous_status = source.previous_status", sql)
+        self.assertIn("action_owner", sql)
+        self.assertIn("action_due_date", sql)
 
     def test_competing_transition_fails_when_request_was_not_persisted(self):
         handler_event = event()
@@ -90,6 +129,7 @@ class ActionMutationTests(unittest.TestCase):
         current = [{
             "action_id": "abc123def456", "status": "PROPOSED",
             "approved_by": None, "approved_at": None, "completed_at": None,
+            "action_owner": None, "action_due_date": None,
         }]
         fake_boto3 = types.SimpleNamespace(client=lambda *_args, **_kwargs: object())
         with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(

@@ -254,9 +254,10 @@ export default function Home() {
 
   const submitOperation = useCallback(async (
     actionId: string, operation: ActionOperation, reason: string,
+    assignment: { actionOwner?: string; actionDueDate?: string } = {},
   ) => {
     try {
-      await mutateAction(readOperationsToken(), actionId, operation, reason);
+      await mutateAction(readOperationsToken(), actionId, operation, reason, assignment);
       await refreshOperations();
     } catch (error) {
       setOperationsState("error");
@@ -456,14 +457,14 @@ function Decisions({ go, actions, operationsState, operationsMessage, refresh }:
     <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Authenticated operational Actions ready for human review." action={<button className="outline-button" onClick={() => void refresh()}>Refresh queue</button>} />
     <OperationsState state={operationsState} message={operationsMessage} label="decision queue" onRetry={refresh} />
     {operationsState === "connected" && <div className="decision-list">
-      {actions.filter((item) => item.status === "PROPOSED").map((item) => <button className="decision-card" key={item.action_id} onClick={() => go("actions")}>
+      {actions.filter((item) => item.status === "PROPOSED" || item.status === "EDITED").map((item) => <button className="decision-card" key={item.action_id} onClick={() => go("actions")}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
         <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id}</span></div>
         <div className="decision-value"><small>Alert</small><strong>{item.alert_type.replaceAll("_", " ")}</strong></div>
-        <div className="decision-due"><small>Created</small><strong>{item.created_date}</strong></div>
+        <div className="decision-due"><small>{item.action_due_date ? "Due" : "Created"}</small><strong>{item.action_due_date ?? item.created_date}</strong></div>
         <span className="status-button">Review now</span>
       </button>)}
-      {actions.every((item) => item.status !== "PROPOSED") && <DataState kind="empty" title="Decision queue is clear" message="No Actions are waiting for human review at this Sydney cutoff." />}
+      {actions.every((item) => item.status !== "PROPOSED" && item.status !== "EDITED") && <DataState kind="empty" title="Decision queue is clear" message="No Actions are waiting for human review at this Sydney cutoff." />}
     </div>}
   </div>;
 }
@@ -486,14 +487,21 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
   actions: OperationsAction[];
   operationsState: OperationsLoadState;
   operationsMessage: string;
-  submitOperation: (actionId: string, operation: ActionOperation, reason: string) => Promise<void>;
+  submitOperation: (actionId: string, operation: ActionOperation, reason: string, assignment?: { actionOwner?: string; actionDueDate?: string }) => Promise<void>;
   refresh: () => Promise<void>;
 }) {
   const [reason, setReason] = useState("Reviewed current operational evidence");
+  const [actionOwner, setActionOwner] = useState("");
+  const [actionDueDate, setActionDueDate] = useState("");
   const [busyAction, setBusyAction] = useState("");
   const run = async (action: OperationsAction, operation: ActionOperation) => {
     setBusyAction(action.action_id);
-    try { await submitOperation(action.action_id, operation, reason); }
+    try {
+      await submitOperation(
+        action.action_id, operation, reason,
+        operation === "EDIT" ? { actionOwner, actionDueDate } : {},
+      );
+    }
     finally { setBusyAction(""); }
   };
   return <div className="page">
@@ -505,12 +513,15 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
       {actions.length === 0
         ? <DataState kind="empty" title="No governed Actions" message="There are no Actions available for this authenticated role and cutoff." />
         : <><label className="select-label"><span>Audit reason for the next update</span><input className="operations-reason" value={reason} minLength={3} maxLength={500} onChange={(event) => setReason(event.target.value)} /></label>
+        <label className="select-label"><span>Named Action owner (used by Edit)</span><input className="operations-reason" value={actionOwner} maxLength={128} onChange={(event) => setActionOwner(event.target.value)} /></label>
+        <label className="select-label"><span>Action due date (used by Edit)</span><input className="operations-reason" type="date" value={actionDueDate} onChange={(event) => setActionDueDate(event.target.value)} /></label>
         <div className="decision-list">{actions.map((item) => <article className="decision-card" key={item.action_id}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
-        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span></div>
+        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span><span>Owner: {item.action_owner ?? "Unassigned"} · Due: {item.action_due_date ?? "Not set"}</span></div>
         <div className="decision-value"><small>Status</small><strong>{item.status}</strong></div>
         <div className="decision-buttons">
-          {item.status === "PROPOSED" && <><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "REJECT")}>Reject</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "APPROVE")}>Approve</button></>}
+          {item.status === "PROPOSED" && <><button disabled={busyAction === item.action_id || reason.trim().length < 3 || actionOwner.trim().length < 2 || !actionDueDate} onClick={() => void run(item, "EDIT")}>Assign &amp; edit</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "REJECT")}>Reject</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "APPROVE")}>Approve</button></>}
+          {item.status === "EDITED" && <><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "REJECT")}>Reject</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "APPROVE")}>Approve</button></>}
           {item.status === "APPROVED" && <button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "COMPLETE")}>Mark complete</button>}
           {(item.status === "REJECTED" || item.status === "COMPLETED") && <span className="status-button">Closed</span>}
         </div>

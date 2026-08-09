@@ -1,7 +1,8 @@
 # Governed exception-to-outcome contract
 
 **Business-date boundary:** Australia/Sydney
-**Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06
+**Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06;
+Action assignment/edit is repository-verified with an unapplied staging migration
 
 The governed closed loop connects lifecycle evidence without allowing synthetic
 learning to change either the generator or an effective policy automatically:
@@ -34,10 +35,16 @@ model actors cannot approve it. Only an approved and completed action may
 produce an outcome.
 
 The proposed Action row is immutable. A private, manual-only mutation function
-appends every `APPROVE`, `REJECT`, or `COMPLETE` event to an Iceberg audit table.
+appends every `EDIT`, `APPROVE`, `REJECT`, or `COMPLETE` event to an Iceberg audit table.
 Valid transitions are fail closed, and stable request IDs make retries
 idempotent. A view overlays the latest audit event to expose current Action
 state without erasing its history.
+
+The repository extension uses `PROPOSED -> EDITED` to record a named owner and
+due date without approving the Action. `EDITED` then requires a separate
+approver to approve or reject it. Assignment is carried forward into later
+audit events, while the source proposal remains unchanged. The additive
+staging schema migration is plan-only and is not deployed evidence.
 
 Outcomes remain `PENDING` until their observation lag expires. Once due, the
 result is reproducible from stable entity/version identifiers and depends on

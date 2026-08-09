@@ -273,10 +273,17 @@ checks AS (
     SELECT 'invalid_action_audit_transition', count(*)
     FROM current_action_audit
     WHERE actor IS NULL OR trim(actor) = '' OR length(reason) < 3
-       OR event_type NOT IN ('APPROVE', 'REJECT', 'COMPLETE')
+       OR event_type NOT IN ('EDIT', 'APPROVE', 'REJECT', 'COMPLETE')
+       OR (event_type = 'EDIT' AND (
+            action_owner IS NULL OR trim(action_owner) = ''
+            OR action_due_date IS NULL OR action_due_date < as_of_date
+          ))
        OR new_status <> CASE
+            WHEN previous_status = 'PROPOSED' AND event_type = 'EDIT' THEN 'EDITED'
             WHEN previous_status = 'PROPOSED' AND event_type = 'APPROVE' THEN 'APPROVED'
             WHEN previous_status = 'PROPOSED' AND event_type = 'REJECT' THEN 'REJECTED'
+            WHEN previous_status = 'EDITED' AND event_type = 'APPROVE' THEN 'APPROVED'
+            WHEN previous_status = 'EDITED' AND event_type = 'REJECT' THEN 'REJECTED'
             WHEN previous_status = 'APPROVED' AND event_type = 'COMPLETE' THEN 'COMPLETED'
             ELSE 'INVALID'
           END

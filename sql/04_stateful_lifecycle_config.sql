@@ -395,6 +395,8 @@ CREATE TABLE IF NOT EXISTS {{SOURCE_DATABASE}}.fact_lifecycle_action_audit_stagi
     approved_by string,
     approved_at timestamp,
     completed_at timestamp,
+    action_owner string,
+    action_due_date date,
     created_date date,
     temporal_scope_id string,
     execution_mode string,
@@ -413,9 +415,10 @@ WITH latest_event AS (
         ORDER BY
             occurred_at DESC,
             CASE event_type
-                WHEN 'COMPLETE' THEN 3
-                WHEN 'REJECT' THEN 2
-                WHEN 'APPROVE' THEN 1
+                WHEN 'COMPLETE' THEN 4
+                WHEN 'REJECT' THEN 3
+                WHEN 'APPROVE' THEN 2
+                WHEN 'EDIT' THEN 1
                 ELSE 0
             END DESC,
             event_id DESC
@@ -435,6 +438,8 @@ SELECT
     coalesce(event.approved_by, action.approved_by) AS approved_by,
     coalesce(event.approved_at, action.approved_at) AS approved_at,
     coalesce(event.completed_at, action.completed_at) AS completed_at,
+    event.action_owner,
+    event.action_due_date,
     action.provenance,
     action.created_date,
     action.temporal_scope_id,

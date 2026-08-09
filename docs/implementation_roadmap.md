@@ -174,15 +174,16 @@ Implemented private-staging capabilities:
 
 - versioned API contracts and idempotency keys;
 - viewer, operator, approver, and administrator permissions;
-- approve/reject/complete workflow with signed actor, reason, timestamp, and
+- approve/edit/reject/complete workflow with signed actor, reason, timestamp, and
   immutable source Action state;
-- controlled Action transitions and observation dates;
+- controlled Action transitions, named owners, due dates, and observation dates;
 - observed Outcome reconciliation separated from expected impact;
 - immutable audit events for every mutation.
 
-Action edit events, an assigned owner, and an Action due date are not part of
-the implemented v1 contract. They remain an explicit authenticated-product
-extension rather than being inferred from demonstration-only UI content.
+Action edit events, an assigned owner, and an Action due date are implemented
+and locally verified as an authenticated v1 repository extension. The source
+Action stays immutable and edit moves it to `EDITED` for separate approval.
+The additive staging schema migration remains plan-only and is not deployed.
 
 Acceptance criteria:
 
@@ -278,7 +279,8 @@ Implemented private-staging views:
 
 - Today's Operations and Risk Hotspots;
 - Decision Queue and review history;
-- Action Board with current status and governed approve/reject/complete controls;
+- Action Board with current status and governed assign/edit/approve/reject/complete controls
+  in the repository; the assignment schema migration is not deployed;
 - Outcome Review with expected-versus-observed values;
 - Forecast and Forecast Accuracy;
 - Pipeline Health and runbook drill-down.
@@ -334,14 +336,16 @@ track.
 1. Completed: document grain, owner, source, freshness, and reconciliation
    rules for each remaining internal-only analytics view in
    [`internal_analytics_governance.md`](internal_analytics_governance.md).
-2. Configure Athena workgroup budgets, query-cost alarms, and incremental
-   refresh rules before expanding recurring analytics execution.
-3. On or after `2026-08-09` Sydney time, observe the pending Outcome using the
-   actual calendar and verify the cockpit transition without rewriting history.
-4. Accumulate eligible Outcomes and DHL/KN coverage before repeating
-   operational forecast/model-readiness decisions.
-5. Complete classification, retention/deletion, SLO, recovery, Iceberg
-   maintenance, and load/security testing before any production expansion.
+2. Completed design: define fail-closed Athena workgroup budgets, baseline-first
+   query-cost alarms, and per-view incremental refresh rules. Applying AWS
+   controls remains a separately approved infrastructure action.
+3. Ready for manual execution: use the actual-calendar evidence runbook for an
+   eligible Sydney date, without rewriting history or enabling a schedule.
+4. Continue accumulating eligible Outcomes and DHL/KN coverage before repeating
+   operational forecast/model-readiness decisions; thresholds remain unchanged.
+5. Completed design: classification, retention/deletion, SLO, recovery and
+   Iceberg maintenance boundaries are documented. Enforcement, recovery drills,
+   and load/security testing remain before any production expansion.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic

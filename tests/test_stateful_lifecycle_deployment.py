@@ -121,6 +121,24 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             len(statements(ROOT / "sql" / "14_operational_baseline_validation.sql")),
             1,
         )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "15_action_assignment_v1.sql")),
+            2,
+        )
+
+    def test_action_assignment_migration_is_additive_and_not_auto_deployed(self):
+        migration = (ROOT / "sql" / "15_action_assignment_v1.sql").read_text(
+            encoding="utf-8"
+        )
+        workflow = (
+            ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("PLAN ONLY", migration)
+        self.assertIn("ADD COLUMNS", migration)
+        self.assertIn("action_owner string", migration)
+        self.assertIn("action_due_date date", migration)
+        self.assertIn("WHEN 'EDIT' THEN 1", migration)
+        self.assertNotIn("15_action_assignment_v1.sql", workflow)
 
     def test_temporal_backfill_is_manual_bounded_and_verified(self):
         script = (ROOT / "ops" / "backfill_temporal_scope.ps1").read_text(
