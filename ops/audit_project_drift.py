@@ -1,0 +1,393 @@
+"""Read-only architecture, capability, documentation, and evidence drift audit."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Iterable
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY_ROOT / "lambda"))
+from glap_temporal_boundary import sydney_business_date  # noqa: E402
+
+
+SCHEMA_VERSION = "project-drift-contract.v1"
+ALLOWED_CAPABILITY_STATES = {
+    "IMPLEMENTED_VERIFIED",
+    "IMPLEMENTED_STAGING",
+    "PARTIAL",
+    "BLOCKED_EVIDENCE",
+    "NOT_IMPLEMENTED",
+}
+PROTECTED_MANUAL_WORKFLOWS = (
+    ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+    ".github/workflows/backtest-multimodal-forecast-staging.yml",
+    ".github/workflows/project-drift-audit.yml",
+)
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    check_id: str
+    category: str
+    status: str
+    summary: str
+    evidence: tuple[str, ...] = ()
+
+
+def _result(
+    check_id: str,
+    category: str,
+    passed: bool,
+    success: str,
+    failure: str,
+    evidence: Iterable[str] = (),
+) -> CheckResult:
+    return CheckResult(
+        check_id=check_id,
+        category=category,
+        status="PASS" if passed else "DRIFT",
+        summary=success if passed else failure,
+        evidence=tuple(evidence),
+    )
+
+
+def load_contract(root: Path) -> dict[str, Any]:
+    path = root / "docs/project_drift_contract.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def check_contract(root: Path, contract: dict[str, Any]) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    capabilities = contract.get("capabilities", [])
+    capability_ids = [item.get("id") for item in capabilities]
+    states = {item.get("state") for item in capabilities}
+    baseline_date = str(contract.get("baseline_date", ""))
+    try:
+        parsed_baseline = datetime.strptime(baseline_date, "%Y-%m-%d").date()
+        current_sydney = sydney_business_date()
+        baseline_valid = parsed_baseline <= current_sydney
+    except ValueError:
+        baseline_valid = False
+
+    results.append(
+        _result(
+            "contract_schema",
+            "contract",
+            contract.get("schema_version") == SCHEMA_VERSION,
+            "The drift contract schema is supported.",
+            "The drift contract schema is missing or unsupported.",
+            ("docs/project_drift_contract.json",),
+        )
+    )
+    results.append(
+        _result(
+            "contract_capabilities",
+            "contract",
+            bool(capabilities)
+            and len(capability_ids) == len(set(capability_ids))
+            and states <= ALLOWED_CAPABILITY_STATES,
+            "Capability IDs are unique and use governed states.",
+            "Capability IDs are duplicated or use an unsupported state.",
+            ("docs/project_drift_contract.json",),
+        )
+    )
+    results.append(
+        _result(
+            "contract_calendar_boundary",
+            "evidence",
+            baseline_valid and contract.get("business_timezone") == "Australia/Sydney",
+            "The baseline date respects the current Sydney calendar boundary.",
+            "The baseline date is invalid, future-dated, or uses the wrong timezone.",
+            ("docs/project_drift_contract.json", "docs/temporal_truthfulness.md"),
+        )
+    )
+
+    evidence_files: list[str] = list(contract.get("canonical_sources", []))
+    for capability in capabilities:
+        evidence_files.extend(capability.get("evidence_files", []))
+    safe_paths = all(
+        path
+        and not Path(path).is_absolute()
+        and ".." not in Path(path).parts
+        for path in evidence_files
+    )
+    present = safe_paths and all((root / path).is_file() and (root / path).stat().st_size for path in evidence_files)
+    results.append(
+        _result(
+            "contract_evidence_files",
+            "evidence",
+            present,
+            "Every declared evidence file exists and is non-empty.",
+            "A declared evidence path is unsafe, missing, or empty.",
+            tuple(sorted(set(evidence_files))),
+        )
+    )
+    return results
+
+
+def check_manual_staging_boundary(root: Path) -> list[CheckResult]:
+    results: list[CheckResult] = []
+    scheduled: list[str] = []
+    for relative_path in PROTECTED_MANUAL_WORKFLOWS:
+        text = (root / relative_path).read_text(encoding="utf-8")
+        if re.search(r"(?m)^  schedule:\s*$", text):
+            scheduled.append(relative_path)
+    results.append(
+        _result(
+            "manual_staging_workflows",
+            "architecture",
+            not scheduled,
+            "Protected staging and audit workflows remain manual-only.",
+            "A protected staging workflow contains a recurring schedule trigger.",
+            PROTECTED_MANUAL_WORKFLOWS,
+        )
+    )
+
+    template_path = "infrastructure/stateful-lifecycle-staging.yaml"
+    template = (root / template_path).read_text(encoding="utf-8")
+    forbidden_resources = ("AWS::Scheduler::Schedule", "AWS::Lambda::Alias")
+    results.append(
+        _result(
+            "isolated_stateful_stack",
+            "architecture",
+            not any(resource in template for resource in forbidden_resources),
+            "The stateful staging stack has no Scheduler or Lambda alias resource.",
+            "The stateful staging stack gained a Scheduler or Lambda alias resource.",
+            (template_path,),
+        )
+    )
+    return results
+
+
+def check_public_private_boundary(root: Path) -> list[CheckResult]:
+    workflow_path = ".github/workflows/pages.yml"
+    workflow = (root / workflow_path).read_text(encoding="utf-8").upper()
+    private_markers = (
+        "GLAP_OPERATIONS",
+        "COGNITO",
+        "OPERATIONS_API_URL",
+        "OPERATIONS_JWT",
+    )
+    return [
+        _result(
+            "public_private_configuration",
+            "architecture",
+            not any(marker in workflow for marker in private_markers),
+            "The public Pages workflow contains no private Operations/Cognito configuration.",
+            "The public Pages workflow contains a private Operations or Cognito marker.",
+            (workflow_path, "docs/ops_snapshot.md"),
+        )
+    ]
+
+
+def check_audit_automation(root: Path) -> list[CheckResult]:
+    ci_path = ".github/workflows/ci.yml"
+    workflow_path = ".github/workflows/project-drift-audit.yml"
+    ci = (root / ci_path).read_text(encoding="utf-8")
+    workflow = (root / workflow_path).read_text(encoding="utf-8")
+    command = "python ops/audit_project_drift.py"
+    read_only = (
+        "contents: read" in workflow
+        and "id-token: write" not in workflow
+        and "pages: write" not in workflow
+        and "actions: write" not in workflow
+    )
+    hook_path = ".githooks/pre-commit"
+    gate_path = "ops/run_pre_commit_checks.py"
+    installer_path = "ops/install_project_hooks.ps1"
+    hook = (root / hook_path).read_text(encoding="utf-8")
+    gate = (root / gate_path).read_text(encoding="utf-8")
+    installer = (root / installer_path).read_text(encoding="utf-8")
+    staged_gate = (
+        gate_path in hook
+        and "--worktree" not in hook
+        and '"checkout-index", "--all"' in gate
+        and '"git", "diff", "--cached", "--check"' in gate
+        and "git config --local core.hooksPath .githooks" in installer
+        and "git config --local glap.pythonPath $pythonPath" in installer
+        and "--global" not in installer
+    )
+    return [
+        _result(
+            "drift_audit_automation",
+            "automation",
+            command in ci and command in workflow and read_only,
+            "CI and the manual report workflow run the same read-only drift audit.",
+            "Drift automation is missing from CI/manual reporting or gained write permission.",
+            (ci_path, workflow_path),
+        ),
+        _result(
+            "pre_commit_drift_gate",
+            "automation",
+            staged_gate,
+            "The versioned pre-commit hook audits the exact staged snapshot before commit.",
+            "The pre-commit hook is missing, worktree-only, or not repository-scoped.",
+            (hook_path, gate_path, installer_path),
+        ),
+    ]
+
+
+def _extract_action_operations(source: str) -> set[str]:
+    match = re.search(r"operation\s+not\s+in\s+\{([^}]+)\}", source)
+    if not match:
+        return set()
+    return set(re.findall(r'\"([A-Z_]+)\"', match.group(1)))
+
+
+def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckResult]:
+    mutation_path = "lambda/glap_action_mutation.py"
+    roadmap_path = "docs/implementation_roadmap.md"
+    todo_path = "TODO.md"
+    mutation = (root / mutation_path).read_text(encoding="utf-8")
+    roadmap = (root / roadmap_path).read_text(encoding="utf-8")
+    todo = (root / todo_path).read_text(encoding="utf-8")
+    actual = _extract_action_operations(mutation)
+    expected = set(contract.get("action_contract", {}).get("implemented_operations", []))
+    not_implemented = set(contract.get("action_contract", {}).get("not_implemented", []))
+    overclaims_absent = (
+        "approve/edit/reject workflow" not in roadmap
+        and "controlled Action states, owners, and due dates" not in roadmap
+    )
+    gaps_visible = all(token in todo for token in ("Action edit event", "owner and due date"))
+    return [
+        _result(
+            "action_operations",
+            "function",
+            bool(actual) and actual == expected and actual.isdisjoint(not_implemented),
+            "Implemented Action operations match the capability contract.",
+            "Action operations differ from the declared capability contract.",
+            (mutation_path, "docs/project_drift_contract.json"),
+        ),
+        _result(
+            "action_documentation",
+            "documentation",
+            overclaims_absent and gaps_visible,
+            "Roadmap and TODO describe the current Action surface without overclaiming edit/ownership.",
+            "Roadmap or TODO overclaims or hides the unimplemented Action edit/ownership surface.",
+            (roadmap_path, todo_path),
+        ),
+    ]
+
+
+def check_temporal_boundary(root: Path) -> list[CheckResult]:
+    api_path = "lambda/glap_operations_api.py"
+    source = (root / api_path).read_text(encoding="utf-8")
+    required = (
+        "temporal_scope_id = 'OPERATIONAL'",
+        "time_basis = 'ACTUAL_CALENDAR'",
+        '"production_effect": False',
+    )
+    return [
+        _result(
+            "operations_temporal_boundary",
+            "architecture",
+            all(marker in source for marker in required),
+            "Private Operations queries retain operational-calendar filters and no production forecast effect.",
+            "A required operational-calendar or no-production-effect marker is missing.",
+            (api_path, "docs/temporal_truthfulness.md"),
+        )
+    ]
+
+
+def run_audit(root: Path) -> dict[str, Any]:
+    contract = load_contract(root)
+    checks: list[CheckResult] = []
+    checks.extend(check_contract(root, contract))
+    checks.extend(check_manual_staging_boundary(root))
+    checks.extend(check_public_private_boundary(root))
+    checks.extend(check_audit_automation(root))
+    checks.extend(check_action_contract(root, contract))
+    checks.extend(check_temporal_boundary(root))
+    overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"
+    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    sydney_date = sydney_business_date().isoformat()
+    return {
+        "schema_version": "project-drift-report.v1",
+        "generated_at": generated_at,
+        "sydney_as_of_date": sydney_date,
+        "overall_status": overall,
+        "summary": {
+            "checks": len(checks),
+            "passed": sum(check.status == "PASS" for check in checks),
+            "drift": sum(check.status == "DRIFT" for check in checks),
+        },
+        "checks": [asdict(check) for check in checks],
+        "capabilities": contract["capabilities"],
+    }
+
+
+def render_markdown(report: dict[str, Any]) -> str:
+    lines = [
+        "# GLAP project drift audit",
+        "",
+        f"- Overall: **{report['overall_status']}**",
+        f"- Sydney as-of date: `{report['sydney_as_of_date']}`",
+        f"- Checks: {report['summary']['passed']} passed / {report['summary']['drift']} drift",
+        "",
+        "## Checks",
+        "",
+        "| Category | Check | Status | Result |",
+        "| --- | --- | --- | --- |",
+    ]
+    for check in report["checks"]:
+        summary = str(check["summary"]).replace("|", "\\|")
+        lines.append(
+            f"| {check['category']} | `{check['check_id']}` | {check['status']} | {summary} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Capability baseline",
+            "",
+            "| Capability | State | Boundary |",
+            "| --- | --- | --- |",
+        ]
+    )
+    for capability in report["capabilities"]:
+        lines.append(
+            f"| `{capability['id']}` | {capability['state']} | {capability['boundary']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "This report is repository evidence only. It does not deploy, mutate AWS,",
+            "activate a schedule, promote a model, or establish real logistics performance.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--format", choices=("json", "markdown"), default="markdown")
+    parser.add_argument("--output", type=Path)
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    report = run_audit(args.repo.resolve())
+    rendered = (
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n"
+        if args.format == "json"
+        else render_markdown(report)
+    )
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(rendered, encoding="utf-8")
+    else:
+        print(rendered, end="" if rendered.endswith("\n") else "\n")
+    return 1 if report["overall_status"] == "DRIFT" else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

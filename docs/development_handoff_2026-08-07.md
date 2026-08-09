@@ -1,7 +1,44 @@
 # Development handoff — 7 August 2026
 
-This handoff closes the Sydney business day `2026-08-07`. Dates after today
-remain future scenarios unless and until their actual calendar date arrives.
+This handoff closes the Sydney business day `2026-08-07`. Dates after that
+handoff date remained future scenarios unless and until their actual calendar
+date arrived. A later authenticated verification is recorded below without
+rewriting the evidence state that was true at this handoff.
+
+## Post-handoff verification -- 9 August 2026
+
+An authenticated `viewer` refreshed private Outcome Review on the Sydney
+business date `2026-08-09`. The response contained zero pending Outcomes, one
+observed `SUCCESSFUL` Outcome, an observed date of `2026-08-09`,
+`time_basis=ACTUAL_CALENDAR`, and a 20.0% simulated effect. The historical
+Action and execution record remained unchanged.
+
+This closes the dated observation task and supplies one eligible closed-loop
+staging record. It does not establish real logistics performance, sufficient
+label maturity, provider coverage, model readiness, production readiness, or
+authority to activate a policy. All logistics values remain synthetic.
+
+The broader operational readiness follow-up then completed with
+[plan run `31287933972`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/31287933972)
+and read-only
+[backtest run `31287952855`](https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/actions/runs/31287952855).
+The report used `execution_mode=OPERATIONAL`, `time_basis=ACTUAL_CALENDAR`, a
+null scenario ID, and a cutoff of `2026-08-09`.
+
+- Forecast readiness found four Maersk feature rows from `2026-08-04` through
+  `2026-08-09`, two missing calendar days, and insufficient history for any
+  evaluation, metric, recommendation, or prediction.
+- Supervised-label readiness found 67 pending Maersk shipment labels and zero
+  observed labels. Every target remained
+  `blocked_insufficient_observed_labels`, and pending labels were excluded from
+  training.
+- The forecast and label queries scanned 8,481 and 52,984 bytes respectively,
+  both inside the 100 MiB per-query budget.
+
+The observed governed Action Outcome and the still-pending multimodal shipment
+labels are separate evidence contracts. The first measures a delayed simulated
+Action effect; the second becomes trainable only after a shipment is delivered.
+Keeping them separate is the intended fail-closed behavior, not a data drift.
 
 ## What was completed today
 
@@ -98,7 +135,7 @@ remain future scenarios unless and until their actual calendar date arrives.
 - Protected URLs, credentials, tokens, and infrastructure identifiers were not
   written to logs or documentation.
 
-## Remaining boundaries
+## Remaining boundaries at the 7 August handoff
 
 - The pending Outcome must remain `NOT_OBSERVED` until its actual Sydney date.
 - Future simulations remain isolated staging engineering evidence and cannot
@@ -121,13 +158,15 @@ remain future scenarios unless and until their actual calendar date arrives.
 3. Close the remaining governance documentation gaps: data classification,
    retention/deletion, recovery ownership, SLOs, and incident procedures.
 
-### On or after 9 August 2026 Sydney time
+### 9 August 2026 Sydney follow-up
 
-1. Run the actual-calendar observation for the pending Outcome.
-2. Verify Outcome Review changes it from pending to mature evidence without
-   rewriting its historical Action or execution record.
-3. Re-run the readiness filters and confirm that only closed
-   `OPERATIONAL` / `ACTUAL_CALENDAR` evidence is counted.
+- [x] Confirm the actual-calendar observation matured the pending Outcome.
+- [x] Verify Outcome Review changed it from pending to mature evidence without
+  rewriting its historical Action or execution record.
+- [x] Re-run the broader readiness filters and confirm that only closed
+  `OPERATIONAL` / `ACTUAL_CALENDAR` evidence is counted. One observed governed
+  Action Outcome did not bypass the separate shipment-label thresholds; model
+  and production readiness remain blocked.
 
 ### As actual-calendar evidence accumulates
 

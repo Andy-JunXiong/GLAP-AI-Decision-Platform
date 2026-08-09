@@ -83,6 +83,24 @@ reports `COMPLETED`, and the same-date generator continuation created one
 `PENDING` Outcome whose observation is due on `2026-08-09`. It has no observed
 date and is not actual outcome evidence as of `2026-08-06`.
 
+On the Sydney business date `2026-08-09`, an authenticated `viewer` refreshed
+private Outcome Review and verified that the dated record had matured without
+rewriting its historical Action or execution evidence. The response contained
+zero pending Outcomes and one observed `SUCCESSFUL` Outcome with
+`observed_date=2026-08-09`, `time_basis=ACTUAL_CALENDAR`, and a 20.0% simulated
+effect. This is one eligible synthetic staging record; it is not real logistics
+performance, sufficient label maturity, model readiness, production readiness,
+or authority to activate a policy.
+
+The same-date broader readiness run kept the governed Action Outcome separate
+from the multimodal shipment-label contract. Its operational, actual-calendar
+cohort contained 67 pending Maersk shipment labels and zero observed shipment
+labels, so every supervised target remained
+`blocked_insufficient_observed_labels`. This is expected: an Action Outcome
+records a delayed simulated intervention effect, while a shipment label becomes
+observed only after delivery. The pending labels were excluded from training,
+and no future-simulation scope contributed to the result.
+
 The expanded 28-check lifecycle gate passed the duplicate-request and invalid
 audit-transition checks, while retaining one pre-existing failure:
 `missing_provider_coverage`. The actual-calendar baseline for this date contains

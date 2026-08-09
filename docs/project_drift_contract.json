@@ -1,0 +1,121 @@
+{
+  "schema_version": "project-drift-contract.v1",
+  "business_timezone": "Australia/Sydney",
+  "baseline_date": "2026-08-09",
+  "canonical_sources": [
+    "docs/architecture_current.md",
+    "INFRASTRUCTURE.md",
+    "TODO.md",
+    "docs/implementation_roadmap.md",
+    "docs/temporal_truthfulness.md"
+  ],
+  "capabilities": [
+    {
+      "id": "success_gated_pipeline",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "scheduled synthetic production track",
+      "evidence_files": [
+        "lambda/glap_pipeline_controller.py",
+        "lambda/glap_data_quality_gate.py",
+        "infrastructure/pipeline-reliability.yaml",
+        "docs/pipeline_reliability.md"
+      ]
+    },
+    {
+      "id": "stateful_multimodal_lifecycle",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "manual isolated staging only",
+      "evidence_files": [
+        "lambda/glap_stateful_lifecycle_generator.py",
+        "infrastructure/stateful-lifecycle-staging.yaml",
+        "docs/shipment_lifecycle_design.md"
+      ]
+    },
+    {
+      "id": "authenticated_operations_loop",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "private Cognito-authenticated staging only",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "lambda/glap_action_mutation.py",
+        "docs/operations_api_v1.md"
+      ]
+    },
+    {
+      "id": "action_edit_owner_due_date",
+      "state": "NOT_IMPLEMENTED",
+      "boundary": "future authenticated Action contract extension",
+      "evidence_files": [
+        "docs/implementation_roadmap.md",
+        "TODO.md"
+      ]
+    },
+    {
+      "id": "governed_action_outcome",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "synthetic actual-calendar staging evidence",
+      "evidence_files": [
+        "lambda/glap_governed_closed_loop.py",
+        "docs/governed_closed_loop.md"
+      ]
+    },
+    {
+      "id": "forecast_backtest_framework",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "private advisory evaluation only",
+      "evidence_files": [
+        "ops/backtest_multimodal_forecast.py",
+        "docs/multimodal_forecast_feature_contract.md"
+      ]
+    },
+    {
+      "id": "supervised_model_training",
+      "state": "BLOCKED_EVIDENCE",
+      "boundary": "requires governed observed shipment labels",
+      "evidence_files": [
+        "ops/assess_multimodal_label_readiness.py",
+        "docs/multimodal_forecast_feature_contract.md"
+      ]
+    },
+    {
+      "id": "production_readiness_governance",
+      "state": "NOT_IMPLEMENTED",
+      "boundary": "P5 governance and production-readiness work",
+      "evidence_files": [
+        "docs/implementation_roadmap.md",
+        "docs/internal_analytics_governance.md"
+      ]
+    },
+    {
+      "id": "pre_commit_drift_gate",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local staged-snapshot validation before commit",
+      "evidence_files": [
+        ".githooks/pre-commit",
+        "ops/run_pre_commit_checks.py",
+        "ops/install_project_hooks.ps1",
+        "tests/test_pre_commit_gate.py"
+      ]
+    }
+  ],
+  "action_contract": {
+    "implemented_operations": [
+      "APPROVE",
+      "REJECT",
+      "COMPLETE"
+    ],
+    "not_implemented": [
+      "EDIT",
+      "owner",
+      "due_date"
+    ]
+  },
+  "readiness_thresholds": {
+    "minimum_backtest_history": 14,
+    "minimum_advisory_forecast_dates": 28,
+    "minimum_observed_labels_per_mode_provider": 200,
+    "minimum_positive_class_labels": 20,
+    "minimum_negative_class_labels": 20,
+    "minimum_distinct_cost_labels": 10
+  }
+}

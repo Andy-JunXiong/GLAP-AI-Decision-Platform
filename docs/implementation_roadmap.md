@@ -174,10 +174,15 @@ Implemented private-staging capabilities:
 
 - versioned API contracts and idempotency keys;
 - viewer, operator, approver, and administrator permissions;
-- approve/edit/reject workflow with actor, reason, timestamp, and source version;
-- controlled Action states, owners, and due dates;
+- approve/reject/complete workflow with signed actor, reason, timestamp, and
+  immutable source Action state;
+- controlled Action transitions and observation dates;
 - observed Outcome reconciliation separated from expected impact;
 - immutable audit events for every mutation.
+
+Action edit events, an assigned owner, and an Action due date are not part of
+the implemented v1 contract. They remain an explicit authenticated-product
+extension rather than being inferred from demonstration-only UI content.
 
 Acceptance criteria:
 
@@ -273,7 +278,7 @@ Implemented private-staging views:
 
 - Today's Operations and Risk Hotspots;
 - Decision Queue and review history;
-- Action Board with owner, due date, and status;
+- Action Board with current status and governed approve/reject/complete controls;
 - Outcome Review with expected-versus-observed values;
 - Forecast and Forecast Accuracy;
 - Pipeline Health and runbook drill-down.

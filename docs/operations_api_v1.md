@@ -269,6 +269,13 @@ The pending row had no observation date or effect value and remained explicitly
 `NOT_OBSERVED`; it is not performance, value, label-maturity, or promotion
 evidence before its `2026-08-09` Sydney due date.
 
+Post-handoff verification on the Sydney business date `2026-08-09` refreshed
+the same authenticated Outcome Review and returned zero pending rows and one
+observed `SUCCESSFUL` Action Outcome with a 20.0% simulated effect. This matured
+the dated synthetic staging record without rewriting its Action or audit
+history. It does not supply an observed shipment-delivery label, real logistics
+performance, model readiness, production readiness, or policy authority.
+
 The private frontend now exposes accessible loading, empty, stale, partial,
 failed, sign-in-required, and idle states with retry and reduced-motion support.
 The final `2026-08-07` deployment also corrected Windows ZIP entry separators:

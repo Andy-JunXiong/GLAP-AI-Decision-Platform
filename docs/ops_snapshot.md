@@ -181,8 +181,9 @@ asset inventory, and the matching seven-day forecast baseline are documented in
 ## Next boundary
 
 This contract remains read-only and aggregate-only. Decision review, Action
-updates, and observed Outcome writes will be implemented behind an authenticated
-internal API; they will not be added to the GitHub Pages role. Pipeline
-reliability gates must be completed before that write path is enabled. See the
-[implementation roadmap](implementation_roadmap.md) and the approved
-[stateful shipment lifecycle design](shipment_lifecycle_design.md).
+updates, and Outcome reads are now implemented behind the separate authenticated
+staging Operations API; they have not been added to the GitHub Pages role.
+Production expansion still requires the cost, recovery, security, access, and
+evidence gates in the [implementation roadmap](implementation_roadmap.md). See
+the approved [stateful shipment lifecycle design](shipment_lifecycle_design.md)
+for the isolated staging boundary.

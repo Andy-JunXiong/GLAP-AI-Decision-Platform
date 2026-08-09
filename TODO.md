@@ -38,9 +38,22 @@ Current implementation and release boundaries are recorded in the
   accessible loading/empty/stale/partial/failed states.
 - [x] Deploy the private frontend with portable ZIP paths and verify that its
   JavaScript, CSS, sign-in entry, and accessible-state fingerprint are live.
-- [ ] The `2026-08-09` Sydney observation date has arrived. Verify the governed
-  Outcome through authenticated Outcome Review; its current state is unknown
-  until that read succeeds, so do not call it pending or observed evidence.
+- [x] Verify the governed Outcome through authenticated Outcome Review on
+  `2026-08-09` Sydney time. A fresh viewer read returned zero pending Outcomes,
+  one observed `SUCCESSFUL` Outcome, an observed date of `2026-08-09`,
+  `ACTUAL_CALENDAR` time basis, and a 20.0% simulated effect. This is eligible
+  closed-loop staging evidence, not real logistics performance or production
+  readiness evidence.
+- [x] Re-run the broader operational forecast and supervised-label readiness
+  filters through `2026-08-09`. Four Maersk feature rows remained
+  `insufficient_history`; the shipment-label cohort contained 67 pending and
+  zero observed labels, so every supervised target remained
+  `blocked_insufficient_observed_labels`. Pending labels were excluded from
+  training and no future-simulation scope was counted.
+- [x] Add a machine-readable project drift baseline, read-only audit report,
+  CI enforcement, and a repository-scoped pre-commit gate that validates the
+  exact staged snapshot before allowing a commit. The gate has no AWS role,
+  deployment authority, recurring schedule, or production effect.
 
 ## End-of-day handoff -- 6 August 2026
 
@@ -86,8 +99,8 @@ Current implementation and release boundaries are recorded in the
 - [x] Fix the exporter `urlparse` import defect that kept Pipeline Health
   `unverified`, add bounded status-object retries and safe diagnostics, then
   verify the republished snapshot as `current` with 6/6 stages and 10/10 checks.
-- [ ] Accumulate real closed outcomes only as their Sydney calendar dates
-  arrive, then reassess backtest and supervised-label readiness.
+- [ ] Accumulate actual-calendar closed synthetic Outcomes only as their Sydney
+  calendar dates arrive, then reassess backtest and supervised-label readiness.
 - [ ] Keep production aliases, recurring lifecycle/forecast schedules, and
   public entity-level publication out of scope pending separate approval.
 - [x] Add the repository domain contract for stable cross-day `SLA_BREACH` and
@@ -170,8 +183,9 @@ The governing date boundary is in the
 - [x] Add accessible cockpit data states, correct manual Amplify nested-asset
   packaging, and verify the complete deployed static bundle rather than only
   the root HTML response.
-- [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
-  step for the pending Outcome; do not simulate an early operational result.
+- [x] On `2026-08-09` Sydney time, confirm the actual-calendar observation step
+  matured the pending Outcome without advancing the date early. Authenticated
+  Outcome Review reported zero pending and one observed `SUCCESSFUL` Outcome.
 - [x] Document grain, ownership, freshness, and reconciliation rules for every
   remaining internal-only analytics view in
   `docs/internal_analytics_governance.md`.
@@ -386,9 +400,11 @@ Repository checkpoint — 4 August 2026:
 - [x] Add Cognito or IAM-based identities and role-based authorization for
   viewer, operator, approver, and administrator responsibilities.
 - [x] Read the real internal decision queue with pagination and safe filters.
-- [ ] Record approve, edit, and reject events with actor, timestamp, reason, and
-  immutable source-decision version.
-- [ ] Create and update owned Actions with due date and controlled status values.
+- [ ] Add a governed Action edit event with actor, timestamp, reason, and
+  immutable source version; v1 currently implements only approve, reject, and
+  complete events.
+- [ ] Extend authenticated Actions with an owner and due date; do not infer
+  these fields from demonstration-only UI content.
 - [x] Record observed Outcomes separately from expected impact.
 - [x] Add an append-only audit contract and idempotency keys for all writes.
 - [x] Keep the public Pages deployment read-only and aggregate-only.
@@ -403,8 +419,8 @@ Repository checkpoint — 4 August 2026:
   shipment `event_time`.
 - [x] Keep calculations in Athena and GitHub Actions limited to orchestration and
   aggregate snapshot publication.
-- [ ] Document grain, ownership, and freshness for each remaining internal-only
-  analytics view.
+- [x] Document grain, ownership, freshness, and reconciliation for each
+  internal-only analytics view in `docs/internal_analytics_governance.md`.
 - [ ] Materialise a new mart only when reconciliation or performance evidence
   proves the existing assets cannot meet the requirement.
 - [ ] Add Athena cost controls and incremental refresh rules.

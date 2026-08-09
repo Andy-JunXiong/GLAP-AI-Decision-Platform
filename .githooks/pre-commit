@@ -1,0 +1,21 @@
+#!/bin/sh
+set -u
+
+repo_root=$(git rev-parse --show-toplevel) || exit 1
+cd "$repo_root" || exit 1
+
+if command -v python >/dev/null 2>&1 && python -c "import sys" >/dev/null 2>&1; then
+  exec python ops/run_pre_commit_checks.py
+fi
+if command -v python3 >/dev/null 2>&1 && python3 -c "import sys" >/dev/null 2>&1; then
+  exec python3 ops/run_pre_commit_checks.py
+fi
+if command -v py >/dev/null 2>&1 && py -3 -c "import sys" >/dev/null 2>&1; then
+  exec py -3 ops/run_pre_commit_checks.py
+fi
+if command -v powershell.exe >/dev/null 2>&1; then
+  exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File ops/run_pre_commit_checks.ps1
+fi
+
+echo "Python 3 is required for the GLAP pre-commit gate." >&2
+exit 1

@@ -33,6 +33,12 @@ and keeps human approval, execution evidence and outcomes traceable.
 > while their milestones and cost units remain mode-specific. This staging path
 > has no recurring schedule, production alias, or production-table write.
 
+> **9 August 2026 status:** the authenticated private staging cockpit and
+> governed human Action loop are implemented. One synthetic Action Outcome has
+> matured on its actual Sydney calendar date; forecast history and supervised
+> shipment labels remain insufficient, so model and production readiness are
+> still blocked.
+
 ## Explore the interactive product story
 
 The most complete product walkthrough is a self-contained browser demo:
@@ -123,6 +129,8 @@ its source metrics.
 | Stateful multimodal staging | Cross-date lifecycle for Maersk/KN Ocean and DHL Air; 15--20% simulated Air booking control |
 | Multimodal analytics foundation | Six read-only Athena views plus 8 fail-closed operations/feature/label checks |
 | Forecast validation | Private AWS backtest retained recent-level for Maersk; DHL/KN remain partial-history and supervised labels remain blocked |
+| Authenticated Operations | Private staging cockpit with Cognito roles, governed Action mutations, Outcome Review, Pipeline Health, Forecast Accuracy and authorised Network drill-down |
+| Drift prevention | Staged-snapshot pre-commit gate plus independent CI architecture/capability audit |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is
@@ -183,7 +191,7 @@ flowchart TB
 - [Multimodal operations, feature and label views](sql/09_multimodal_ops_analytics.sql)
 - [Multimodal forecast feature contract](docs/multimodal_forecast_feature_contract.md)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
-- [5 August 2026 development handoff](docs/development_handoff_2026-08-05.md)
+- [7 August 2026 development handoff and 9 August follow-up](docs/development_handoff_2026-08-07.md)
 - [Prioritized project TODO](TODO.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)
 - [Zero-install interactive demo](offline/glap-demo.html)
