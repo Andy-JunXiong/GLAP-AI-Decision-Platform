@@ -353,9 +353,11 @@ track.
    read-only plan workflow is implemented and its first run safely identified
    the missing `lambda:GetFunctionConfiguration` permission after OIDC and all
    repository gates passed. The repository owner approved the non-executable
-   exact-resource read proposal for named-human application. It is not yet
-   applied, the agent cannot modify IAM, and no prepare or execute authority is
-   granted; a broad stack update is not an implicit substitute.
+   exact-resource read proposal for named-human application. The named owner
+   applied it and run `31298179885` passed the bounded AWS inspection with
+   stable ownership/configuration and no AWS write. The agent cannot modify IAM,
+   and no prepare or execute authority is granted; a broad stack update is not
+   an implicit substitute.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic

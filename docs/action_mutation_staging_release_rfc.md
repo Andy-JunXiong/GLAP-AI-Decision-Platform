@@ -1,6 +1,6 @@
 # RFC: narrow Action mutation Lambda staging release
 
-**Status:** one read permission approved; awaiting named-human IAM application
+**Status:** read-only plan verified; release writes await separate approval
 
 ## Approved decision
 
@@ -39,6 +39,15 @@ That artifact is deliberately not an executable IAM policy, contains no account
 ID or ARN, and permits no wildcard. On 9 August 2026, the repository owner
 approved that exact read capability for named-human application. The approval
 does not permit the agent to modify IAM and does not approve any release write.
+
+The named repository owner then applied the exact-resource permission. GitHub
+Actions run `31298179885` on commit `ed475f3` passed 231 unit tests, all 15 drift
+checks, OIDC assumption, local two-file packaging, and the bounded AWS
+inspection. It verified stable CloudFormation ownership and Lambda
+configuration. Artifact upload, change-set creation or execution, Lambda code
+update, IAM/CloudFormation modification, operational Action mutation, and
+production effect were all absent. This closes only the read-permission blocker;
+release write authority remains unapproved.
 
 ## Proposed design
 
@@ -129,13 +138,9 @@ forward-fix while preserving the reader and audit contract.
 
 ## Human decisions still required
 
-1. A named human must apply the approved `lambda:GetFunctionConfiguration`
-   permission to the staging OIDC role for the exact physical Lambda resolved
-   from `ActionMutationFunction`, then rerun the read-only plan. Agent-side IAM
-   application remains prohibited.
-2. Separately authorise implementation of prepare/execute workflow phases and
+1. Separately authorise implementation of prepare/execute workflow phases and
    their protected environment approvals.
-3. Separately authorise schema migration, change-set preparation/execution, API
+2. Separately authorise schema migration, change-set preparation/execution, API
    and frontend deployment, role-test user creation, and named-human canary.
 
 The machine-readable boundary is

@@ -132,7 +132,9 @@ modification. The repository deployer-policy definition currently omits this
 function and role. Read-only run `31297032412` successfully assumed the staging
 OIDC role and validated the repository, then failed closed on the exact missing
 `lambda:GetFunctionConfiguration` capability. The repository owner approved that
-single exact-resource read capability for named-human application. The agent may
-not apply IAM, and prepare/execute authority remains separately unapproved. The
-manual plan workflow contains no artifact upload, change-set creation/execution,
-Lambda update, or IAM command.
+single exact-resource read capability for named-human application. The named
+repository owner applied it, and read-only run `31298179885` then passed the AWS
+inspection while verifying stable stack ownership and Lambda configuration. The
+agent did not modify IAM, and prepare/execute authority remains separately
+unapproved. The manual plan workflow contains no artifact upload, change-set
+creation/execution, Lambda update, or IAM command.

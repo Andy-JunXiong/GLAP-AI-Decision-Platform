@@ -72,8 +72,11 @@ Current implementation and release boundaries are recorded in the
 - [x] Record repository-owner approval for the single
   `lambda:GetFunctionConfiguration` staging read capability. The approval is
   limited to named-human IAM application and does not approve release writes.
-- [ ] Have a named human apply the approved exact-resource read permission, then
-  rerun the manual plan workflow. The agent must not modify IAM.
+- [x] Have a named human apply the approved exact-resource read permission, then
+  rerun the manual plan workflow. Run `31298179885` passed 231 tests, 15 drift
+  checks, and the bounded AWS inspection with no upload, change set, deployment,
+  IAM/CloudFormation modification, operational mutation, or production effect.
+  The agent did not modify IAM.
 - [ ] Review and approve a narrow staging release path for the Action mutation
   Lambda prepare/execute phases. That remains a later decision; the read
   permission approval does not authorise artifact upload or change-set execution.

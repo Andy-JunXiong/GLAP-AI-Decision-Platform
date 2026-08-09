@@ -77,6 +77,14 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
             validator.validate_contract(contract),
         )
 
+    def test_read_only_success_cannot_grant_release_write_authority(self):
+        contract = copy.deepcopy(validator.load_contract())
+        contract["current_blockers"]["release_write_authority_approved"] = True
+        self.assertIn(
+            "read-only verification cannot grant release write authority",
+            validator.validate_contract(contract),
+        )
+
     def test_plan_workflow_is_manual_and_has_no_aws_write_command(self):
         workflow = (
             ROOT / ".github" / "workflows" / "plan-action-mutation-staging.yml"

@@ -149,9 +149,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     if contract.get("schema_version") != "action-mutation-staging-release.v3":
         errors.append("unsupported schema_version")
     if contract.get("status") != (
-        "READ_PERMISSION_APPROVED_AWAITING_HUMAN_APPLICATION"
+        "READ_ONLY_PLAN_VERIFIED_AWAITING_RELEASE_AUTHORIZATION"
     ):
-        errors.append("release must await named-human read-permission application")
+        errors.append("release must remain gated on separate write authorization")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -191,16 +191,23 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
 
     runtime = contract.get("runtime_evidence", {})
     if runtime != {
-        "github_actions_run_id": 31297032412,
-        "git_commit": "35e2d467e25b35bd2bc9f92527bbdc817503966a",
+        "github_actions_run_id": 31298179885,
+        "git_commit": "ed475f3a577c3e736bb639e1c05513e7bb80c490",
         "observed_on_sydney_date": "2026-08-09",
-        "result": "SAFE_FAILURE_MISSING_READ_PERMISSION",
+        "result": "READ_ONLY_PLAN_PASSED",
         "oidc_session_established": True,
         "repository_contracts_passed": True,
-        "unit_tests_passed": 228,
+        "unit_tests_passed": 231,
         "drift_checks_passed": 15,
         "aws_write_observed": False,
-        "denied_action": "lambda:GetFunctionConfiguration",
+        "aws_inspection_passed": True,
+        "cloudformation_ownership_verified": True,
+        "stable_lambda_configuration_verified": True,
+        "artifact_upload_observed": False,
+        "change_set_created_or_executed": False,
+        "lambda_code_updated": False,
+        "iam_or_cloudformation_modified": False,
+        "production_effect": False,
     }:
         errors.append("runtime evidence is incomplete or overclaims AWS effect")
     proposal_relative_path = contract.get("read_permission_proposal")
@@ -235,16 +242,18 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("repository deployer-policy gap is hidden")
     if blockers.get("actual_aws_permissions_inspected") is not True:
         errors.append("contract hides the completed AWS read inspection")
-    if blockers.get("required_lambda_read_permission_present") is not False:
-        errors.append("contract hides the missing Lambda read permission")
+    if blockers.get("required_lambda_read_permission_present") is not True:
+        errors.append("contract hides the verified Lambda read permission")
     if blockers.get("read_permission_human_approved") is not True:
         errors.append("contract hides the recorded human read-permission approval")
-    if blockers.get("live_iam_permission_applied") is not False:
-        errors.append("contract cannot claim unverified live IAM application")
+    if blockers.get("live_iam_permission_applied") is not True:
+        errors.append("contract hides the named-human IAM application")
     if blockers.get("agent_iam_change_authorized") is not False:
         errors.append("contract cannot grant the agent IAM authority")
     if blockers.get("narrow_workflow_implemented") is not True:
         errors.append("implemented plan workflow is not recorded")
+    if blockers.get("release_write_authority_approved") is not False:
+        errors.append("read-only verification cannot grant release write authority")
 
     rollback = contract.get("rollback", {})
     required_rollback = (
@@ -336,8 +345,8 @@ def main() -> int:
             print(f"DRIFT: {error}")
         return 1
     print(
-        "PASS: Action mutation plan evidence and read-permission proposal are "
-        "bounded and human-gated"
+        "PASS: Action mutation read-only plan passed and release writes remain "
+        "human-gated"
     )
     return 0
 

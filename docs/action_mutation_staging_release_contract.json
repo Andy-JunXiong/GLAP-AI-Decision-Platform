@@ -1,6 +1,6 @@
 {
   "schema_version": "action-mutation-staging-release.v3",
-  "status": "READ_PERMISSION_APPROVED_AWAITING_HUMAN_APPLICATION",
+  "status": "READ_ONLY_PLAN_VERIFIED_AWAITING_RELEASE_AUTHORIZATION",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
@@ -44,16 +44,23 @@
     "implemented": true
   },
   "runtime_evidence": {
-    "github_actions_run_id": 31297032412,
-    "git_commit": "35e2d467e25b35bd2bc9f92527bbdc817503966a",
+    "github_actions_run_id": 31298179885,
+    "git_commit": "ed475f3a577c3e736bb639e1c05513e7bb80c490",
     "observed_on_sydney_date": "2026-08-09",
-    "result": "SAFE_FAILURE_MISSING_READ_PERMISSION",
+    "result": "READ_ONLY_PLAN_PASSED",
     "oidc_session_established": true,
     "repository_contracts_passed": true,
-    "unit_tests_passed": 228,
+    "unit_tests_passed": 231,
     "drift_checks_passed": 15,
     "aws_write_observed": false,
-    "denied_action": "lambda:GetFunctionConfiguration"
+    "aws_inspection_passed": true,
+    "cloudformation_ownership_verified": true,
+    "stable_lambda_configuration_verified": true,
+    "artifact_upload_observed": false,
+    "change_set_created_or_executed": false,
+    "lambda_code_updated": false,
+    "iam_or_cloudformation_modified": false,
+    "production_effect": false
   },
   "read_permission_proposal": "docs/action_mutation_staging_read_permission_proposal.json",
   "release_phases": [
@@ -81,11 +88,12 @@
   "current_blockers": {
     "repository_deployer_policy_includes_mutation_function": false,
     "actual_aws_permissions_inspected": true,
-    "required_lambda_read_permission_present": false,
+    "required_lambda_read_permission_present": true,
     "read_permission_human_approved": true,
-    "live_iam_permission_applied": false,
+    "live_iam_permission_applied": true,
     "agent_iam_change_authorized": false,
     "narrow_workflow_implemented": true,
+    "release_write_authority_approved": false,
     "schema_migration_applied": false
   },
   "rejected_alternatives": [

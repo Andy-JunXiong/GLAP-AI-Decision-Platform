@@ -116,8 +116,9 @@ were reviewed for plan-only implementation. The manual plan workflow now
 packages locally and inspects the current stack/function through read-only AWS
 calls. Its first AWS run established OIDC and passed repository gates, then
 failed closed on the missing `lambda:GetFunctionConfiguration` read capability.
-The repository owner approved only that exact-resource read capability for
-named-human application; it is not yet applied, and the agent cannot apply it.
+The repository owner applied only that exact-resource read capability. Follow-up
+run `31298179885` passed the read-only AWS inspection and verified stable
+CloudFormation ownership and Lambda configuration. The agent did not modify IAM.
 Artifact upload, change-set creation/execution, deployment, and operational
 mutation remain unapproved and unimplemented.
 
