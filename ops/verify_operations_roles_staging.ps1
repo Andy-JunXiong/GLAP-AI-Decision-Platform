@@ -4,6 +4,7 @@ param(
     [string]$Region = "us-east-1",
     [string]$IdentityStackName = "glap-operations-identity-staging",
     [string]$ApiStackName = "glap-operations-api-staging",
+    [switch]$RequireActionAssignment,
     [switch]$Apply
 )
 
@@ -15,6 +16,7 @@ Write-Host "Operations staging role-matrix verification plan"
 Write-Host "  Temporary users: viewer, operator, approver, administrator"
 Write-Host "  Email delivery: False"
 Write-Host "  Existing Action mutation: False (unguessable missing Action ID)"
+Write-Host "  Require Action assignment role checks: $RequireActionAssignment"
 Write-Host "  Test users deleted after verification: True"
 Write-Host "  Tokens or user identifiers printed: False"
 if (-not $Apply) {
@@ -122,8 +124,12 @@ try {
             operation = $Operation
             request_id = [guid]::NewGuid().ToString("N")
             reason = "Isolated staging role-matrix verification"
-            logical_run_date = $logicalDate
-        } | ConvertTo-Json -Compress
+        }
+        if ($Operation -eq "EDIT") {
+            $body.action_owner = "Isolated Role Check"
+            $body.action_due_date = ([datetime]$logicalDate).AddDays(7).ToString("yyyy-MM-dd")
+        }
+        $body = $body | ConvertTo-Json -Compress
         return Invoke-ApiStatus "$endpoint/v1/actions/$missingAction/events" `
             $tokens[$Role] "POST" $body
     }
@@ -297,6 +303,14 @@ try {
         "administrator shipment entity read allowed" = $shipmentReadStatuses.administrator -eq 200
         "administrator approve allowed by role" = (Action-Status "administrator" "APPROVE") -notin @(401, 403)
         "administrator complete allowed by role" = (Action-Status "administrator" "COMPLETE") -notin @(401, 403)
+    }
+    if ($RequireActionAssignment) {
+        $checks["viewer edit denied"] = (Action-Status "viewer" "EDIT") -eq 403
+        $checks["operator edit allowed by role"] = `
+            (Action-Status "operator" "EDIT") -notin @(401, 403)
+        $checks["approver edit denied"] = (Action-Status "approver" "EDIT") -eq 403
+        $checks["administrator edit allowed by role"] = `
+            (Action-Status "administrator" "EDIT") -notin @(401, 403)
     }
     Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
     Write-Host "Risk read HTTP statuses: viewer=$($riskReadStatuses.viewer), operator=$($riskReadStatuses.operator), approver=$($riskReadStatuses.approver), administrator=$($riskReadStatuses.administrator)"

@@ -1,0 +1,57 @@
+{
+  "schema_version": "action-assignment-rollout.v1",
+  "status": "PLAN_ONLY_BLOCKED_RELEASE_PATH",
+  "business_timezone": "Australia/Sydney",
+  "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
+  "authority": {
+    "schema_migration_authorized": false,
+    "lambda_deployment_authorized": false,
+    "api_deployment_authorized": false,
+    "frontend_publication_authorized": false,
+    "operational_action_mutation_authorized": false,
+    "recurring_schedule_authorized": false
+  },
+  "release_order": [
+    "schema_migration",
+    "post_migration_validation",
+    "action_mutation_lambda_release",
+    "operations_api_release",
+    "internal_frontend_release",
+    "read_only_runtime_verification",
+    "four_role_verification",
+    "named_human_canary"
+  ],
+  "schema": {
+    "migration_sql": "sql/15_action_assignment_v1.sql",
+    "validation_sql": "sql/16_action_assignment_validation.sql",
+    "migration_statement_count": 2,
+    "validation_statement_count": 1,
+    "additive_only": true,
+    "automatic_workflow_wiring": false
+  },
+  "release_paths": {
+    "action_mutation_lambda": "BLOCKED_NARROW_RELEASE_PATH_REVIEW",
+    "operations_api": "EXISTING_MANUAL_PLAN_FIRST_WORKFLOW",
+    "internal_frontend": "EXISTING_MANUAL_PLAN_FIRST_SCRIPT"
+  },
+  "role_matrix": {
+    "viewer": [],
+    "operator": ["EDIT", "COMPLETE"],
+    "approver": ["APPROVE", "REJECT"],
+    "administrator": ["EDIT", "APPROVE", "REJECT", "COMPLETE"]
+  },
+  "rollback": {
+    "drop_columns_allowed": false,
+    "delete_audit_events_allowed": false,
+    "rewrite_edited_status_allowed": false,
+    "package_rollback_requires_zero_edit_events": true,
+    "nonzero_edit_event_strategy": "DISABLE_NEW_EDIT_ENTRY_AND_FORWARD_FIX"
+  },
+  "canary": {
+    "agent_execution_allowed": false,
+    "named_signed_operator_required": true,
+    "named_signed_approver_required": true,
+    "stable_request_id_retry_required": true,
+    "expected_states": ["PROPOSED", "EDITED", "APPROVED", "REJECTED"]
+  }
+}

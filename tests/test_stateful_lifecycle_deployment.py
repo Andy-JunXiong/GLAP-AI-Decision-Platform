@@ -125,11 +125,18 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             len(statements(ROOT / "sql" / "15_action_assignment_v1.sql")),
             2,
         )
+        self.assertEqual(
+            len(statements(ROOT / "sql" / "16_action_assignment_validation.sql")),
+            1,
+        )
 
     def test_action_assignment_migration_is_additive_and_not_auto_deployed(self):
         migration = (ROOT / "sql" / "15_action_assignment_v1.sql").read_text(
             encoding="utf-8"
         )
+        validation = (
+            ROOT / "sql" / "16_action_assignment_validation.sql"
+        ).read_text(encoding="utf-8")
         workflow = (
             ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
         ).read_text(encoding="utf-8")
@@ -139,6 +146,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("action_due_date date", migration)
         self.assertIn("WHEN 'EDIT' THEN 1", migration)
         self.assertNotIn("15_action_assignment_v1.sql", workflow)
+        self.assertIn("missing_action_audit_assignment_columns", validation)
+        self.assertIn("invalid_action_edit_event", validation)
+        self.assertIn("missing_assignment_on_edited_followup", validation)
+        self.assertIn("invalid_current_edited_action", validation)
+        self.assertNotIn("16_action_assignment_validation.sql", workflow)
 
     def test_temporal_backfill_is_manual_bounded_and_verified(self):
         script = (ROOT / "ops" / "backfill_temporal_scope.ps1").read_text(

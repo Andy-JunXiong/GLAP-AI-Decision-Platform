@@ -107,3 +107,18 @@ cause or decision records.
 The first complete OIDC deployment succeeded on 2026-07-23. GitHub Actions run
 `29973354442` published version 4, promoted only `staging`, and completed both
 dry-run smoke tests. Production remained on version 2.
+
+## Action assignment staging extension
+
+The repository implementation of Action `EDIT`, owner, due date, and `EDITED`
+is not covered by the production orchestrator release channel above. Its
+staging rollout remains plan-only and must follow
+[`action_assignment_staging_rollout.md`](action_assignment_staging_rollout.md):
+additive schema migration, read-only validation, mutation Lambda, Operations
+API, private frontend, read-only smoke checks, four-role checks, then a
+named-human canary.
+
+The mutation Lambda currently has no reviewed narrow staging release path. The
+existing stateful lifecycle workflow updates a broader stack and must not be
+used as an implicit substitute. No schema migration, Lambda/API deployment,
+frontend publication, or Action mutation is authorised by the rollout plan.

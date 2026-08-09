@@ -104,6 +104,10 @@ Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a
 separate approver. This is repository evidence only: the additive staging
 schema migration in `sql/15_action_assignment_v1.sql` is plan-only and the
 deployed Operations boundary remains the three-operation contract above.
+The rollout package now has fail-closed schema validation, opt-in read-only and
+four-role checks, and an evidence-preserving rollback rule. Deployment remains
+blocked because no reviewed narrow staging release path exists for the Action
+mutation Lambda; the full stateful stack is not an approved substitute.
 
 This staging deployment does not authorise production expansion: production
 aliases, recurring lifecycle or forecast schedules, automatic policy

@@ -3,7 +3,8 @@ param(
     [string]$Profile = $env:AWS_PROFILE,
     [string]$Region = "us-east-1",
     [string]$IdentityStackName = "glap-operations-identity-staging",
-    [string]$ApiStackName = "glap-operations-api-staging"
+    [string]$ApiStackName = "glap-operations-api-staging",
+    [switch]$RequireActionAssignment
 )
 
 $ErrorActionPreference = "Stop"
@@ -124,6 +125,10 @@ $checks = [ordered]@{
         $deployedJavaScript.Contains("Some shipment evidence is still available") -and `
         $deployedJavaScript.Contains("aria-live") -and `
         $deployedCss.Contains(".data-state")
+    "Action assignment controls deployed when required" = `
+        -not $RequireActionAssignment -or `
+        ($deployedJavaScript.Contains("Assign & edit") -and `
+         $deployedJavaScript.Contains("EDITED"))
     "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq 7 -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
     "CORS preflight successful" = $preflight.StatusCode -ge 200 -and $preflight.StatusCode -lt 300
     "CORS origin exact match" = $preflight.Headers["access-control-allow-origin"] -eq $origin

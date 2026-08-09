@@ -94,6 +94,9 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn("Redacted API access log present", script)
         self.assertIn("API throttle metric filter present", script)
         self.assertIn("Protected identifiers were not printed", script)
+        self.assertIn("[switch]$RequireActionAssignment", script)
+        self.assertIn("Assign & edit", script)
+        self.assertIn('$deployedJavaScript.Contains("EDITED")', script)
         self.assertNotIn("put-", script.lower())
         self.assertNotIn("create-", script.lower())
         self.assertNotIn("update-", script.lower())
@@ -121,6 +124,19 @@ class OperationsIdentityInfrastructureTests(unittest.TestCase):
         self.assertIn("Tokens and users were not printed", script)
         self.assertIn("RandomNumberGenerator]::Create()", script)
         self.assertIn("$generator.Dispose()", script)
+        self.assertIn("[switch]$RequireActionAssignment", script)
+        self.assertIn('$Operation -eq "EDIT"', script)
+        self.assertIn('$body.action_owner = "Isolated Role Check"', script)
+        self.assertIn("$body.action_due_date", script)
+        self.assertIn('(Action-Status "viewer" "EDIT") -eq 403', script)
+        self.assertIn(
+            '(Action-Status "operator" "EDIT") -notin @(401, 403)', script
+        )
+        self.assertIn('(Action-Status "approver" "EDIT") -eq 403', script)
+        self.assertIn(
+            '(Action-Status "administrator" "EDIT") -notin @(401, 403)', script
+        )
+        self.assertNotIn("logical_run_date = $logicalDate", script)
         self.assertNotIn("RandomNumberGenerator]::Fill", script)
         self.assertNotIn("Write-Host $tokens", script)
 

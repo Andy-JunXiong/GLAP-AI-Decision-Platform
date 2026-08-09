@@ -57,6 +57,10 @@ Current implementation and release boundaries are recorded in the
 - [x] Implement and locally verify the repository Action assignment extension:
   operator/admin `EDIT`, named owner, due date, `EDITED` review state, and
   separate approver decision. Its staging schema migration is not deployed.
+- [x] Add a plan-only Action assignment rollout contract, post-migration
+  validation query, rollback gate, and opt-in runtime/four-role verification.
+- [ ] Review and approve a narrow staging release path for the Action mutation
+  Lambda. Do not use a whole stateful-stack update as an implicit substitute.
 
 ## End-of-day handoff -- 6 August 2026
 
@@ -410,6 +414,9 @@ Repository checkpoint — 4 August 2026:
   before separate approval. The additive staging migration is not deployed.
 - [x] Extend authenticated Actions with an owner and due date; do not infer
   these fields from demonstration-only UI content.
+- [x] Prepare the ordered, plan-only staging rollout and rollback contract for
+  Action assignment. The narrow mutation-Lambda release path remains blocked
+  pending human review; no migration or deployment has been performed.
 - [x] Document administrator-managed internal user onboarding, role assignment,
   first access, and offboarding in `docs/internal_user_onboarding.md`.
 - [x] Record observed Outcomes separately from expected impact.

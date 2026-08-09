@@ -281,6 +281,51 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
     ]
 
 
+def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
+    contract_path = "docs/action_assignment_rollout_contract.json"
+    rollout = json.loads((root / contract_path).read_text(encoding="utf-8"))
+    authority = rollout.get("authority", {})
+    protected_authority = (
+        "schema_migration_authorized",
+        "lambda_deployment_authorized",
+        "api_deployment_authorized",
+        "frontend_publication_authorized",
+        "operational_action_mutation_authorized",
+        "recurring_schedule_authorized",
+    )
+    schema = rollout.get("schema", {})
+    bounded = (
+        rollout.get("status") == "PLAN_ONLY_BLOCKED_RELEASE_PATH"
+        and rollout.get("business_timezone") == "Australia/Sydney"
+        and rollout.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
+        and all(authority.get(field) is False for field in protected_authority)
+        and schema.get("additive_only") is True
+        and schema.get("automatic_workflow_wiring") is False
+        and rollout.get("release_paths", {}).get("action_mutation_lambda")
+        == "BLOCKED_NARROW_RELEASE_PATH_REVIEW"
+        and rollout.get("rollback", {}).get(
+            "package_rollback_requires_zero_edit_events"
+        )
+        is True
+        and rollout.get("canary", {}).get("agent_execution_allowed") is False
+    )
+    return [
+        _result(
+            "action_assignment_rollout_boundary",
+            "governance",
+            bounded,
+            "Action assignment rollout remains ordered, plan-only, and blocked on a narrow mutation release path.",
+            "Action assignment rollout hides its blocker or expands deployment, mutation, or scheduling authority.",
+            (
+                contract_path,
+                "docs/action_assignment_staging_rollout.md",
+                "ops/validate_action_assignment_rollout.py",
+                "sql/16_action_assignment_validation.sql",
+            ),
+        )
+    ]
+
+
 def check_readiness_contract(root: Path) -> list[CheckResult]:
     contract_path = "docs/production_readiness_contract.json"
     contract = json.loads((root / contract_path).read_text(encoding="utf-8"))
@@ -339,6 +384,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_audit_automation(root))
     checks.extend(check_action_contract(root, contract))
+    checks.extend(check_action_assignment_rollout(root))
     checks.extend(check_readiness_contract(root))
     checks.extend(check_temporal_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"

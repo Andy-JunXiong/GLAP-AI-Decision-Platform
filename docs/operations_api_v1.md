@@ -111,6 +111,13 @@ authorised approver. This extension is implemented and locally verified in the
 repository, but `sql/15_action_assignment_v1.sql` is a plan-only staging
 migration and has not been applied to AWS.
 
+The ordered release, validation, role-check, canary, and evidence-preserving
+rollback boundary is defined in
+[`action_assignment_staging_rollout.md`](action_assignment_staging_rollout.md).
+Rollout remains blocked until a narrow, reviewed staging release path exists
+for the Action mutation Lambda; the whole stateful stack must not be updated as
+an implicit substitute.
+
 ## Reliability and recovery
 
 The API has API Gateway request-rate and burst limits plus failure and

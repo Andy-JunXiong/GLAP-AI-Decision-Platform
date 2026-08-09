@@ -346,6 +346,11 @@ track.
 5. Completed design: classification, retention/deletion, SLO, recovery and
    Iceberg maintenance boundaries are documented. Enforcement, recovery drills,
    and load/security testing remain before any production expansion.
+6. Prepared, not deployed: the Action assignment rollout now has an ordered
+   schema validation, runtime/role smoke checks, named-human canary, and bounded
+   rollback contract. The next implementation decision is a reviewed narrow
+   staging release path for the Action mutation Lambda; a whole stateful-stack
+   update is not an implicit substitute.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic
