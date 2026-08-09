@@ -40,6 +40,66 @@ labels are separate evidence contracts. The first measures a delayed simulated
 Action effect; the second becomes trainable only after a shipment is delivered.
 Keeping them separate is the intended fail-closed behavior, not a data drift.
 
+## End-of-day closeout -- 9 August 2026
+
+The repository now contains the complete reviewable prepare/execute path for
+the Action assignment mutation Lambda. Commit `3b4dd78` was pushed to `main`,
+and CI run `31305106451` completed successfully. The workflow is manual-only;
+this push did not match the Operations API deployment or public Pages path
+filters and did not deploy anything.
+
+The release design now uses three separated identities:
+
+- a prepare GitHub OIDC identity that may upload one commit-addressed artifact
+  and create, inspect, or delete an unexecuted change set;
+- an execute GitHub OIDC identity that may revalidate and execute the reviewed
+  change set but cannot call the Lambda code-update API directly;
+- a CloudFormation-only service role that may read that artifact and update
+  only the existing `ActionMutationFunction` code.
+
+Both phases require the exact commit, artifact digest, change-set identity, and
+CloudFormation execution role. Prepare deletes an invalid unexecuted change set.
+Execute repeats the one-resource/non-replacement checks and verifies the Lambda
+code digest changed while the stack returned to `UPDATE_COMPLETE`. Direct
+Lambda update, broad lifecycle-stack deployment, IAM mutation, aliases,
+schedules, other functions, and production remain excluded.
+
+Repository validation passed 236 tests and all 15 drift checks before commit.
+The account-free access proposal and checklist are in
+[`action_mutation_staging_release_access_proposal.json`](action_mutation_staging_release_access_proposal.json)
+and
+[`action_mutation_staging_release_access.md`](action_mutation_staging_release_access.md).
+They are review artifacts, not executable IAM or release authority.
+
+Read-only GitHub inspection found only the existing `github-pages` and
+`staging` environments. The required
+`action-mutation-staging-prepare` and
+`action-mutation-staging-execute` environments have not been created. The
+environment-variable metadata request returned HTTP 401, so no role-variable
+state is claimed. Credentials, role ARNs, account IDs, bucket names, and
+protected URLs were not requested or recorded.
+
+### First actions for the next session
+
+1. A named AWS/GitHub administrator reviews the access proposal, creates the
+   two protected environments, configures their independent reviewers and
+   `main` restriction, applies the two OIDC roles and CloudFormation service
+   role, and sets the three environment-scoped role variables privately.
+2. Rerun `Plan Action mutation staging release`. It must remain read-only and
+   verify the exact stack owner and Lambda configuration.
+3. Obtain an explicit approval for prepare only. Prepare may upload the
+   `3b4dd78` artifact and create an unexecuted change set; it may not execute it.
+4. Review the change set and require exactly one non-replacing
+   `ActionMutationFunction` property modification. Obtain a new approval before
+   execute.
+5. Only after the Lambda release is verified, continue the separately approved
+   additive schema migration, Operations API/private frontend releases,
+   four-role checks, and two-named-human canary in the documented order.
+
+The agent may analyse plans, logs, diffs, and verification results, but may not
+modify IAM, create the protected environments, approve either release phase,
+run the operational canary, or infer production authority.
+
 ## What was completed today
 
 ### Authenticated Operations product

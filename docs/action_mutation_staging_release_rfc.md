@@ -2,6 +2,11 @@
 
 **Status:** prepare/execute workflow implemented; release writes await separate approval
 
+Commit `3b4dd78` published this implementation to `main`; CI run `31305106451`
+passed. Read-only GitHub inspection found that the two required protected
+environments are not yet configured. No release phase has run and no AWS write
+or GitHub permission change occurred.
+
 ## Approved decision
 
 On 9 August 2026, the user approved implementing only the plan stage of a

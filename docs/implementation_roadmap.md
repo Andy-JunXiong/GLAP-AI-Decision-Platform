@@ -362,6 +362,12 @@ track.
    fail-closed guard, but it has not run and its AWS write roles are not
    configured or authorised by repository code.
 
+   Closeout on `2026-08-09`: commit `3b4dd78` published the bounded workflow
+   and CI run `31305106451` passed. Read-only inspection found neither required
+   protected release environment. The next step is named-administrator role and
+   environment configuration, followed by a read-only plan; prepare and execute
+   remain separate approvals and neither has run.
+
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic
 policy changes require separate review and explicit approval.

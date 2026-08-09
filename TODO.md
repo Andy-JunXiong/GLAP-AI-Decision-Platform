@@ -6,6 +6,34 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 Current implementation and release boundaries are recorded in the
 [`7 August development handoff`](docs/development_handoff_2026-08-07.md).
 
+## 9 August 2026 closeout
+
+- [x] Implement, validate, commit, and push the manual Action mutation staging
+  release workflow. Commit `3b4dd78` separates prepare and execute approvals,
+  pins the exact `main` commit and artifact digest, retains CloudFormation
+  ownership, and rejects any change set other than one non-replacing
+  `ActionMutationFunction` property modification.
+- [x] Separate the two GitHub OIDC orchestration identities from a dedicated
+  CloudFormation service role. Only CloudFormation may receive the exact Lambda
+  code-update permission; neither GitHub identity may update Lambda directly.
+- [x] Record the account-free, non-executable least-privilege proposal and
+  named-human configuration checklist. CI run `31305106451` passed for
+  `3b4dd78`; no AWS write, IAM change, GitHub Environment change, deployment,
+  operational Action mutation, or production effect occurred.
+- [x] Inspect the public GitHub Environment inventory read-only. Only
+  `github-pages` and `staging` were present; the environment-variable metadata
+  endpoint required authentication, so no variable configuration was inferred.
+- [ ] A named administrator must create and protect
+  `action-mutation-staging-prepare` and
+  `action-mutation-staging-execute`, configure the two OIDC roles plus the
+  CloudFormation execution role, and set the three environment-scoped role
+  variables without publishing their values.
+- [ ] After that configuration, rerun the existing read-only plan. Prepare may
+  run only after a separate explicit approval, and execute requires a second
+  approval after the exact unexecuted change set has been reviewed.
+
+No further staging or production work is authorised by this closeout.
+
 ## 7 August 2026 implementation checkpoint
 
 - [x] Define the viewer, operator, approver, and administrator permission
