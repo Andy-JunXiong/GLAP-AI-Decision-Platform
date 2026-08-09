@@ -1,6 +1,6 @@
 {
-  "schema_version": "action-mutation-staging-release.v1",
-  "status": "PLAN_WORKFLOW_IMPLEMENTED_AWAITING_AWS_AUTHORITY_REVIEW",
+  "schema_version": "action-mutation-staging-release.v2",
+  "status": "PLAN_RUNTIME_INSPECTED_BLOCKED_READ_PERMISSION_APPROVAL",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
@@ -42,6 +42,19 @@
     "aws_access": "READ_ONLY_INSPECTION",
     "implemented": true
   },
+  "runtime_evidence": {
+    "github_actions_run_id": 31297032412,
+    "git_commit": "35e2d467e25b35bd2bc9f92527bbdc817503966a",
+    "observed_on_sydney_date": "2026-08-09",
+    "result": "SAFE_FAILURE_MISSING_READ_PERMISSION",
+    "oidc_session_established": true,
+    "repository_contracts_passed": true,
+    "unit_tests_passed": 228,
+    "drift_checks_passed": 15,
+    "aws_write_observed": false,
+    "denied_action": "lambda:GetFunctionConfiguration"
+  },
+  "read_permission_proposal": "docs/action_mutation_staging_read_permission_proposal.json",
   "release_phases": [
     {
       "id": "plan",
@@ -66,7 +79,9 @@
   ],
   "current_blockers": {
     "repository_deployer_policy_includes_mutation_function": false,
-    "actual_aws_permissions_reviewed": false,
+    "actual_aws_permissions_inspected": true,
+    "required_lambda_read_permission_present": false,
+    "iam_change_authorized": false,
     "narrow_workflow_implemented": true,
     "schema_migration_applied": false
   },

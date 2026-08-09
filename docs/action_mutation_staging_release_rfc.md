@@ -1,6 +1,6 @@
 # RFC: narrow Action mutation Lambda staging release
 
-**Status:** design approved; plan-only workflow implemented; AWS write authority not approved
+**Status:** plan runtime inspected; blocked on one unapproved read permission
 
 ## Approved decision
 
@@ -24,9 +24,19 @@ unaliased staging function by its exact name.
 The existing lifecycle deployment packages four Lambdas and submits the whole
 repository template and every stack parameter. That is too broad for this
 release. The repository deployer-policy script also omits the Action mutation
-function and execution role from its managed-resource lists. Actual deployed
-AWS permissions have not been inspected in this RFC, so permission must fail
-closed until a named human reviews them.
+function and execution role from its managed-resource lists.
+
+GitHub Actions run `31297032412` inspected the boundary on 9 August 2026 from
+commit `35e2d46`. OIDC role assumption, repository validation, 228 unit tests,
+and all 15 drift checks passed. The plan then failed closed because the staging
+role lacks `lambda:GetFunctionConfiguration` for the CloudFormation-owned
+`ActionMutationFunction`. The run reported no artifact upload, change set,
+Lambda update, IAM/CloudFormation modification, or production effect.
+
+The exact missing capability is recorded in
+[`action_mutation_staging_read_permission_proposal.json`](action_mutation_staging_read_permission_proposal.json).
+That artifact is deliberately not an executable IAM policy, contains no account
+ID or ARN, permits no wildcard, and does not authorise an IAM change.
 
 ## Proposed design
 
@@ -117,8 +127,10 @@ forward-fix while preserving the reader and audit contract.
 
 ## Human decisions still required
 
-1. Inspect the actual staging OIDC and CloudFormation authority and approve the
-   minimum exact resource permissions, if any are missing.
+1. A named human must separately review and, if acceptable, authorise adding
+   only `lambda:GetFunctionConfiguration` for the exact physical Lambda resolved
+   from `ActionMutationFunction`. The observed gap does not itself grant that
+   authority.
 2. Separately authorise implementation of prepare/execute workflow phases and
    their protected environment approvals.
 3. Separately authorise schema migration, change-set preparation/execution, API

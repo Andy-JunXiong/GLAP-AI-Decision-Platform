@@ -118,7 +118,7 @@ additive schema migration, read-only validation, mutation Lambda, Operations
 API, private frontend, read-only smoke checks, four-role checks, then a
 named-human canary.
 
-The mutation Lambda currently has no reviewed narrow staging release path. The
+The mutation Lambda currently has no authorised narrow staging release path. The
 existing stateful lifecycle workflow updates a broader stack and must not be
 used as an implicit substitute. No schema migration, Lambda/API deployment,
 frontend publication, or Action mutation is authorised by the rollout plan.
@@ -129,8 +129,10 @@ It retains the existing CloudFormation owner, uses the previous stack template,
 changes only `ActionMutationArtifactKey`, and rejects execution unless the
 change set contains exactly one non-replacing `ActionMutationFunction`
 modification. The repository deployer-policy definition currently omits this
-function and role, so actual AWS authority requires separate human inspection
-and approval before any prepare or execute workflow implementation. The
-approved manual plan workflow only packages locally and uses `DescribeStacks`,
-`ListStackResources`, and `GetFunctionConfiguration`; it contains no artifact
-upload, change-set creation/execution, Lambda update, or IAM command.
+function and role. Read-only run `31297032412` successfully assumed the staging
+OIDC role and validated the repository, then failed closed on the exact missing
+`lambda:GetFunctionConfiguration` capability. A non-executable proposal records
+that single read requirement without granting it. Separate human approval is
+still required before any IAM, prepare, or execute implementation. The manual
+plan workflow contains no artifact upload, change-set creation/execution, Lambda
+update, or IAM command.

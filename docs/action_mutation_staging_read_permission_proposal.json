@@ -1,0 +1,43 @@
+{
+  "schema_version": "action-mutation-staging-read-permission-proposal.v1",
+  "status": "PROPOSED_NOT_AUTHORIZED",
+  "purpose": "Allow the manual plan workflow to inspect only the current CloudFormation-owned Action mutation Lambda configuration.",
+  "runtime_evidence": {
+    "github_actions_run_id": 31297032412,
+    "git_commit": "35e2d467e25b35bd2bc9f92527bbdc817503966a",
+    "observed_on_sydney_date": "2026-08-09",
+    "oidc_session_established": true,
+    "denied_action": "lambda:GetFunctionConfiguration",
+    "aws_write_observed": false
+  },
+  "requested_capability": {
+    "identity_boundary": "EXISTING_GITHUB_STAGING_OIDC_ROLE",
+    "actions": [
+      "lambda:GetFunctionConfiguration"
+    ],
+    "resource_selector": {
+      "stack_name": "glap-stateful-lifecycle-staging",
+      "logical_resource_id": "ActionMutationFunction",
+      "resource_type": "AWS::Lambda::Function",
+      "resolve_physical_resource_read_only_at_review_time": true,
+      "wildcard_allowed": false
+    }
+  },
+  "explicitly_excluded_actions": [
+    "lambda:UpdateFunctionCode",
+    "cloudformation:CreateChangeSet",
+    "cloudformation:ExecuteChangeSet",
+    "iam:*"
+  ],
+  "proposal_shape": {
+    "executable_iam_policy_document": false,
+    "contains_account_id_or_arn": false,
+    "review_only": true
+  },
+  "authority": {
+    "proposal_recording_authorized": true,
+    "iam_change_authorized": false,
+    "deployment_authorized": false,
+    "aws_write_authorized": false
+  }
+}

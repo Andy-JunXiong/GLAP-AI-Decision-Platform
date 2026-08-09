@@ -93,6 +93,14 @@ class ProjectDriftAuditTests(unittest.TestCase):
             )
             contract_path.parent.mkdir(parents=True)
             contract_path.write_text(json.dumps(source), encoding="utf-8")
+            proposal_source = (
+                ROOT
+                / "docs"
+                / "action_mutation_staging_read_permission_proposal.json"
+            ).read_text(encoding="utf-8")
+            (root / "docs" / "action_mutation_staging_read_permission_proposal.json").write_text(
+                proposal_source, encoding="utf-8"
+            )
             result = AUDIT.check_action_mutation_release(root)[0]
         self.assertEqual(result.status, "DRIFT")
 

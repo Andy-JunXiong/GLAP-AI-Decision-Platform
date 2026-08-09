@@ -106,7 +106,7 @@ schema migration in `sql/15_action_assignment_v1.sql` is plan-only and the
 deployed Operations boundary remains the three-operation contract above.
 The rollout package now has fail-closed schema validation, opt-in read-only and
 four-role checks, and an evidence-preserving rollback rule. Deployment remains
-blocked because no reviewed narrow staging release path exists for the Action
+blocked because no authorised narrow staging release path exists for the Action
 mutation Lambda; the full stateful stack is not an approved substitute.
 The current RFC proposes retaining the existing CloudFormation owner and using
 the previous template with only `ActionMutationArtifactKey` changed. Execution
@@ -114,8 +114,11 @@ must fail closed unless the change set contains only a non-replacing
 `ActionMutationFunction` modification. The design and its AWS permission gap
 were reviewed for plan-only implementation. The manual plan workflow now
 packages locally and inspects the current stack/function through read-only AWS
-calls. IAM changes, artifact upload, change-set creation/execution, deployment,
-and operational mutation remain unapproved and unimplemented.
+calls. Its first AWS run established OIDC and passed repository gates, then
+failed closed on the missing `lambda:GetFunctionConfiguration` read capability.
+The exact-resource proposal is review-only and grants no authority. IAM changes,
+artifact upload, change-set creation/execution, deployment, and operational
+mutation remain unapproved and unimplemented.
 
 This staging deployment does not authorise production expansion: production
 aliases, recurring lifecycle or forecast schedules, automatic policy

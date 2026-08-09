@@ -350,9 +350,11 @@ track.
    schema validation, runtime/role smoke checks, named-human canary, and bounded
    rollback contract. A narrow existing-stack, previous-template change-set RFC
    now limits the candidate release to `ActionMutationFunction`. Its manual,
-   read-only plan workflow is implemented. Human review of the actual AWS
-   permission gap and separate approval remain required before any prepare or
-   execute phase; a broad stack update is not an implicit substitute.
+   read-only plan workflow is implemented and its first run safely identified
+   the missing `lambda:GetFunctionConfiguration` permission after OIDC and all
+   repository gates passed. A non-executable exact-resource proposal is ready
+   for separate human review. No IAM, prepare, or execute authority is granted;
+   a broad stack update is not an implicit substitute.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic

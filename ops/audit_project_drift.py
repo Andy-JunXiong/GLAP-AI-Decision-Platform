@@ -330,13 +330,22 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
 def check_action_mutation_release(root: Path) -> list[CheckResult]:
     contract_path = "docs/action_mutation_staging_release_contract.json"
     release = json.loads((root / contract_path).read_text(encoding="utf-8"))
+    proposal_path = "docs/action_mutation_staging_read_permission_proposal.json"
+    proposal_file = root / proposal_path
+    proposal = (
+        json.loads(proposal_file.read_text(encoding="utf-8"))
+        if proposal_file.is_file()
+        else {}
+    )
     authority = release.get("authority", {})
     design = release.get("selected_design", {})
     ownership = release.get("cloudformation_ownership", {})
     blockers = release.get("current_blockers", {})
+    runtime = release.get("runtime_evidence", {})
+    proposal_authority = proposal.get("authority", {})
     bounded = (
         release.get("status")
-        == "PLAN_WORKFLOW_IMPLEMENTED_AWAITING_AWS_AUTHORITY_REVIEW"
+        == "PLAN_RUNTIME_INSPECTED_BLOCKED_READ_PERMISSION_APPROVAL"
         and release.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and authority.get("workflow_implementation_authorized") is True
         and all(
@@ -354,17 +363,38 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
         == "ActionMutationFunction"
         and blockers.get("repository_deployer_policy_includes_mutation_function")
         is False
+        and blockers.get("actual_aws_permissions_inspected") is True
+        and blockers.get("required_lambda_read_permission_present") is False
+        and blockers.get("iam_change_authorized") is False
         and blockers.get("narrow_workflow_implemented") is True
+        and runtime.get("result") == "SAFE_FAILURE_MISSING_READ_PERMISSION"
+        and runtime.get("denied_action") == "lambda:GetFunctionConfiguration"
+        and runtime.get("aws_write_observed") is False
+        and release.get("read_permission_proposal") == proposal_path
+        and proposal.get("status") == "PROPOSED_NOT_AUTHORIZED"
+        and proposal.get("requested_capability", {}).get("actions")
+        == ["lambda:GetFunctionConfiguration"]
+        and proposal.get("requested_capability", {})
+        .get("resource_selector", {})
+        .get("wildcard_allowed")
+        is False
+        and proposal_authority.get("proposal_recording_authorized") is True
+        and all(
+            value is False
+            for key, value in proposal_authority.items()
+            if key != "proposal_recording_authorized"
+        )
     )
     return [
         _result(
             "action_mutation_release_boundary",
             "governance",
             bounded,
-            "The mutation plan workflow is manual and read-only; deployment remains human-gated.",
-            "The mutation release expands authority, hides a blocker, or permits broader stack drift.",
+            "The mutation plan safely recorded one exact read-permission gap; IAM and deployment remain human-gated.",
+            "The mutation release expands authority, hides runtime evidence, or broadens the read-permission proposal.",
             (
                 contract_path,
+                proposal_path,
                 "docs/action_mutation_staging_release_rfc.md",
                 "ops/validate_action_mutation_staging_release.py",
             ),

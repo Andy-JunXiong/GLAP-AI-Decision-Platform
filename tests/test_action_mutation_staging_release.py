@@ -18,6 +18,23 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
     def test_repository_release_contract_is_proposed_and_bounded(self):
         self.assertEqual(validator.validate_contract(validator.load_contract()), [])
 
+    def test_read_permission_proposal_is_single_action_and_not_authority(self):
+        proposal = validator.load_permission_proposal()
+        self.assertEqual(validator.validate_permission_proposal(proposal), [])
+        proposal["requested_capability"]["actions"] = ["lambda:*"]
+        self.assertIn(
+            "read-permission proposal is not limited to one read action",
+            validator.validate_permission_proposal(proposal),
+        )
+
+    def test_read_permission_proposal_cannot_claim_iam_authority(self):
+        proposal = validator.load_permission_proposal()
+        proposal["authority"]["iam_change_authorized"] = True
+        self.assertIn(
+            "read-permission proposal expands protected authority",
+            validator.validate_permission_proposal(proposal),
+        )
+
     def test_direct_lambda_update_cannot_be_enabled(self):
         contract = copy.deepcopy(validator.load_contract())
         contract["cloudformation_ownership"][

@@ -65,10 +65,14 @@ Current implementation and release boundaries are recorded in the
 - [x] Implement the approved manual plan-only workflow and local script. They
   package only the mutation Lambda, inspect ownership/configuration through
   read-only AWS calls, and expose no upload, change-set, deployment, or IAM path.
+- [x] Run the manual plan workflow and identify the exact fail-closed AWS gap.
+  Run `31297032412` established OIDC, passed 228 tests and 15 drift checks, then
+  stopped because `lambda:GetFunctionConfiguration` is not allowed. No AWS write
+  occurred. Record a non-executable, exact-resource read-permission proposal.
 - [ ] Review and approve a narrow staging release path for the Action mutation
-  Lambda's prepare/execute phases, including the actual AWS permission gap. The
-  approved plan workflow does not authorise IAM changes, artifact upload, or
-  change-set execution.
+  Lambda. First decide separately whether to approve the single read permission;
+  prepare/execute authority remains a later decision. The approved plan workflow
+  does not authorise IAM changes, artifact upload, or change-set execution.
 
 ## End-of-day handoff -- 6 August 2026
 

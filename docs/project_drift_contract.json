@@ -54,6 +54,7 @@
         "docs/action_assignment_staging_rollout.md",
         "docs/action_mutation_staging_release_contract.json",
         "docs/action_mutation_staging_release_rfc.md",
+        "docs/action_mutation_staging_read_permission_proposal.json",
         ".github/workflows/plan-action-mutation-staging.yml",
         "ops/validate_action_assignment_rollout.py",
         "ops/validate_action_mutation_staging_release.py",

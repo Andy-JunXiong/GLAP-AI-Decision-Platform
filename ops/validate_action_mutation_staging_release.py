@@ -10,6 +10,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "docs" / "action_mutation_staging_release_contract.json"
+PROPOSAL_PATH = (
+    ROOT / "docs" / "action_mutation_staging_read_permission_proposal.json"
+)
 EXPECTED_AUTHORITY = {
     "workflow_implementation_authorized": True,
     "iam_change_authorized": False,
@@ -38,14 +41,101 @@ def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_permission_proposal(path: Path = PROPOSAL_PATH) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def validate_permission_proposal(proposal: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if set(proposal) != {
+        "schema_version",
+        "status",
+        "purpose",
+        "runtime_evidence",
+        "requested_capability",
+        "explicitly_excluded_actions",
+        "proposal_shape",
+        "authority",
+    }:
+        errors.append("read-permission proposal contains unexpected fields")
+    if proposal.get("schema_version") != (
+        "action-mutation-staging-read-permission-proposal.v1"
+    ):
+        errors.append("unsupported read-permission proposal schema")
+    if proposal.get("status") != "PROPOSED_NOT_AUTHORIZED":
+        errors.append("read-permission proposal cannot claim approval")
+
+    evidence = proposal.get("runtime_evidence", {})
+    if not (
+        evidence.get("github_actions_run_id") == 31297032412
+        and evidence.get("git_commit")
+        == "35e2d467e25b35bd2bc9f92527bbdc817503966a"
+        and evidence.get("observed_on_sydney_date") == "2026-08-09"
+        and evidence.get("oidc_session_established") is True
+        and evidence.get("denied_action") == "lambda:GetFunctionConfiguration"
+        and evidence.get("aws_write_observed") is False
+    ):
+        errors.append("read-permission proposal runtime evidence changed")
+
+    capability = proposal.get("requested_capability", {})
+    selector = capability.get("resource_selector", {})
+    if capability.get("identity_boundary") != "EXISTING_GITHUB_STAGING_OIDC_ROLE":
+        errors.append("read-permission proposal changes the identity boundary")
+    if capability.get("actions") != ["lambda:GetFunctionConfiguration"]:
+        errors.append("read-permission proposal is not limited to one read action")
+    if not (
+        selector.get("stack_name") == "glap-stateful-lifecycle-staging"
+        and selector.get("logical_resource_id") == "ActionMutationFunction"
+        and selector.get("resource_type") == "AWS::Lambda::Function"
+        and selector.get("resolve_physical_resource_read_only_at_review_time")
+        is True
+        and selector.get("wildcard_allowed") is False
+    ):
+        errors.append("read-permission proposal is not exact-resource bounded")
+
+    shape = proposal.get("proposal_shape", {})
+    if shape != {
+        "executable_iam_policy_document": False,
+        "contains_account_id_or_arn": False,
+        "review_only": True,
+    }:
+        errors.append("read-permission proposal became executable or identifying")
+    if proposal.get("authority") != {
+        "proposal_recording_authorized": True,
+        "iam_change_authorized": False,
+        "deployment_authorized": False,
+        "aws_write_authorized": False,
+    }:
+        errors.append("read-permission proposal expands protected authority")
+    def nested_keys(value: Any) -> list[str]:
+        if isinstance(value, dict):
+            return [str(key) for key in value] + [
+                key
+                for nested in value.values()
+                for key in nested_keys(nested)
+            ]
+        if isinstance(value, list):
+            return [key for nested in value for key in nested_keys(nested)]
+        return []
+
+    if {key.lower() for key in nested_keys(proposal)} & {
+        "statement",
+        "effect",
+        "resource",
+        "principal",
+    }:
+        errors.append("read-permission proposal must not be an executable IAM policy")
+    return errors
+
+
 def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
-    if contract.get("schema_version") != "action-mutation-staging-release.v1":
+    if contract.get("schema_version") != "action-mutation-staging-release.v2":
         errors.append("unsupported schema_version")
     if contract.get("status") != (
-        "PLAN_WORKFLOW_IMPLEMENTED_AWAITING_AWS_AUTHORITY_REVIEW"
+        "PLAN_RUNTIME_INSPECTED_BLOCKED_READ_PERMISSION_APPROVAL"
     ):
-        errors.append("release must remain plan-only and blocked on AWS authority review")
+        errors.append("release must remain plan-only and blocked on read permission approval")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -83,6 +173,36 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     }:
         errors.append("plan workflow contract is incomplete or expanded")
 
+    runtime = contract.get("runtime_evidence", {})
+    if runtime != {
+        "github_actions_run_id": 31297032412,
+        "git_commit": "35e2d467e25b35bd2bc9f92527bbdc817503966a",
+        "observed_on_sydney_date": "2026-08-09",
+        "result": "SAFE_FAILURE_MISSING_READ_PERMISSION",
+        "oidc_session_established": True,
+        "repository_contracts_passed": True,
+        "unit_tests_passed": 228,
+        "drift_checks_passed": 15,
+        "aws_write_observed": False,
+        "denied_action": "lambda:GetFunctionConfiguration",
+    }:
+        errors.append("runtime evidence is incomplete or overclaims AWS effect")
+    proposal_relative_path = contract.get("read_permission_proposal")
+    if proposal_relative_path != (
+        "docs/action_mutation_staging_read_permission_proposal.json"
+    ):
+        errors.append("read-permission proposal is not linked")
+    else:
+        proposal_path = root / proposal_relative_path
+        if not proposal_path.is_file():
+            errors.append("read-permission proposal is missing")
+        else:
+            errors.extend(
+                validate_permission_proposal(
+                    json.loads(proposal_path.read_text(encoding="utf-8"))
+                )
+            )
+
     phases = [
         (
             phase.get("id"),
@@ -97,8 +217,12 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     blockers = contract.get("current_blockers", {})
     if blockers.get("repository_deployer_policy_includes_mutation_function") is not False:
         errors.append("repository deployer-policy gap is hidden")
-    if blockers.get("actual_aws_permissions_reviewed") is not False:
-        errors.append("contract cannot claim unrecorded AWS permission review")
+    if blockers.get("actual_aws_permissions_inspected") is not True:
+        errors.append("contract hides the completed AWS read inspection")
+    if blockers.get("required_lambda_read_permission_present") is not False:
+        errors.append("contract hides the missing Lambda read permission")
+    if blockers.get("iam_change_authorized") is not False:
+        errors.append("contract cannot claim IAM authority")
     if blockers.get("narrow_workflow_implemented") is not True:
         errors.append("implemented plan workflow is not recorded")
 
@@ -191,7 +315,10 @@ def main() -> int:
         for error in errors:
             print(f"DRIFT: {error}")
         return 1
-    print("PASS: Action mutation plan workflow is manual, read-only, and human-gated")
+    print(
+        "PASS: Action mutation plan evidence and read-permission proposal are "
+        "bounded and human-gated"
+    )
     return 0
 
 
