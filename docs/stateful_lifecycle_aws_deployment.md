@@ -489,18 +489,24 @@ advancing. It stops on the first failure.
 Use `diagnose-integration-date` when a deployed controller run reports a
 lifecycle quality-gate failure. The action invokes the already deployed staging
 quality gate directly and emits only the allowlisted check count and failed
-check names. It also reports aggregate status counts for Action Outcomes due on
-or before the selected logical date, using only the latest row per Outcome. It
-does not emit entity identifiers, invoke the generator, render against a newer
-local SQL contract, deploy resources, or write lifecycle rows.
+check names. Action Outcome review remains behind the authenticated Operations
+API `/v1/outcomes`; this workflow has no direct closed-loop table access. The
+diagnostic does not emit entity identifiers, invoke the generator, render
+against a newer local SQL contract, deploy resources, or write lifecycle rows.
 
-The extension payload contains only `logical_run_date`: it never requests a new
-seed population. The action neither deploys the stack nor creates a schedule or
-production alias. `replay_start_date` is the first new date and `replay_days`
-is technically limited to 45, but the GitHub OIDC role currently issues a
-one-hour credential. Until the workflow enforces a lower bound, use no more
-than 20 dates per invocation and leave additional margin when observed stage
-duration approaches three minutes per date.
+The extension payload carries the logical date and its system-resolved temporal
+context; it never requests a new seed population. The action neither deploys
+the stack nor creates a schedule or production alias. `replay_start_date` is
+the first new date and `replay_days` is limited to 12 so the run retains margin
+inside the one-hour GitHub OIDC credential window.
+
+For GitHub OIDC validation, the script delegates the 28 closed-loop lifecycle
+checks to the already deployed quality-gate Lambda, whose execution role owns
+the exact table reads. It still renders and runs the current repository's eight
+analytics checks directly, so a newly changed analytics SQL contract is not
+silently validated through older deployed code. Local administrators may omit
+`-LifecycleQualityGateFunction` to run both SQL contracts directly with an
+appropriately authorised profile.
 
 ### Deploy row-level temporal isolation
 
