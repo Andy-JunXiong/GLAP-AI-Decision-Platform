@@ -90,10 +90,19 @@ The staging stack has no Scheduler resource, production alias, or permission to
 write the current v2 production tables. Its next consumer is private,
 time-ordered forecast backtesting, not autonomous production decisions.
 
-## Planned internal operations boundary — not deployed
+## Authenticated internal Operations boundary — implemented in private staging
 
-The next implementation phase adds authenticated writes without granting them
-to GitHub Pages:
+The authenticated Operations API, Cognito four-role boundary, and private
+Operations cockpit are implemented, deployed, and verified in private staging.
+They support the governed Decision Queue, Action Board, `APPROVE` / `REJECT` /
+`COMPLETE` mutations, Risk Hotspots, Outcome Review, Pipeline Health, Forecast
+Accuracy, and authorised Network Drill-down. Public GitHub Pages remains
+aggregate-only and read-only, with no private API or Cognito configuration.
+
+This staging deployment does not authorise production expansion: production
+aliases, recurring lifecycle or forecast schedules, automatic policy
+activation, supervised-model promotion, and public entity-level writes remain
+separate human-approved decisions.
 
 ```mermaid
 flowchart LR
@@ -112,7 +121,9 @@ flowchart LR
     LAKE -->|aggregate only| PUBLISH[Public OPS snapshot]
 ```
 
-Success-gated orchestration and data-quality controls are required before this
-write boundary is enabled. See the
-[implementation roadmap](implementation_roadmap.md) for dependencies and
-acceptance criteria.
+The private staging boundary retains success-gated orchestration and
+data-quality controls. Future simulations remain isolated engineering evidence
+and do not establish operational performance, outcome maturity, model
+readiness, promotion, or production reporting. See the
+[implementation roadmap](implementation_roadmap.md) for remaining production
+readiness dependencies.

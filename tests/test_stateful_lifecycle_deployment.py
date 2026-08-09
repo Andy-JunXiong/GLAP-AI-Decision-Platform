@@ -378,6 +378,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("scenario_id = $temporalContext.scenario_id", script)
         self.assertNotIn("seed_population =", script)
         self.assertIn("28, 5, 8", script)
+        self.assertIn("four stages and 41 checks passed", script)
         self.assertIn("Controller quality check failed", script)
         self.assertIn("--cli-read-timeout 900", script)
         self.assertIn("Remove-Item -LiteralPath $payloadPath", script)
@@ -406,6 +407,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('{{TEMPORAL_SCOPE_ID}}", $temporalScopeId', validation)
         self.assertIn('"SIMULATION:$($temporalContext.scenario_id)"', validation)
         self.assertIn('[ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]', validation)
+        self.assertIn('[string]$LifecycleQualityGateFunction = ""', validation)
+        self.assertIn("Invoke-DeployedLifecycleQualityGate", validation)
+        self.assertIn("$checks.Count -ne 28", validation)
+        self.assertIn("Deployed lifecycle validation failed", validation)
+        self.assertIn("sql/10_multimodal_ops_validation.sql", validation)
 
     def test_lifecycle_workflow_is_manual_and_never_changes_production_alias(self):
         workflow = (
@@ -438,6 +444,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Operations API /v1/outcomes", workflow)
         self.assertIn("this workflow has no closed-loop table access", workflow)
         self.assertIn("Remove-Item -LiteralPath $responsePath", workflow)
+        self.assertIn(
+            "-LifecycleQualityGateFunction $env:QUALITY_GATE_FUNCTION", workflow
+        )
+        self.assertIn('len(stages[1]["quality_checks"]) == 28', workflow)
+        self.assertNotIn('len(stages[1]["quality_checks"]) == 20', workflow)
         self.assertIn("Deploy Q4 simulated rate configuration", workflow)
         self.assertIn("-Q4ConfigurationOnly", workflow)
         self.assertIn("-RetryFailedRun", workflow)

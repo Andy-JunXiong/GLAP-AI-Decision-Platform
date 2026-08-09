@@ -88,7 +88,7 @@ The full evidence trail and next actions are recorded in
 The operational/simulation boundary is defined in
 [`temporal_truthfulness.md`](temporal_truthfulness.md).
 
-## Public evidence checkpoint -- 6 August 2026
+## Historical public evidence checkpoint -- 6 August 2026
 
 The repository and public site now apply the temporal boundary end to end.
 PRs `#22`--`#25` enforce Sydney-date truthfulness at run, row, query, quality,
@@ -143,12 +143,17 @@ Acceptance criteria:
   seeing private AWS identifiers;
 - a controlled failure reaches the expected alarm and recovery path.
 
-## P1 — Authenticated operator write-back loop
+## P1 — Authenticated operator write-back loop (implemented in private staging)
 
 **Objective:** turn recommendations into governed human decisions and measurable
 Actions.
 
-Planned internal flow:
+As of the 7 August handoff, this flow is implemented and verified in private
+staging. It is not a production authorisation: production aliases, recurring
+schedules, automatic policy activation, supervised-model promotion, and public
+entity-level writes remain subject to separate evidence and human approval.
+
+Implemented private-staging flow:
 
 ```mermaid
 flowchart LR
@@ -165,7 +170,7 @@ flowchart LR
     AUDIT --> ICEBERG
 ```
 
-Deliverables:
+Implemented private-staging capabilities:
 
 - versioned API contracts and idempotency keys;
 - viewer, operator, approver, and administrator permissions;
@@ -259,12 +264,12 @@ Acceptance criteria:
   `current` status;
 - forecasts remain advisory until a human-owned policy explicitly consumes them.
 
-## P4 — Internal operations cockpit
+## P4 — Internal operations cockpit (implemented in private staging)
 
 **Objective:** let an operator move from risk to evidence, review, Action, and
 Outcome in one authenticated product journey.
 
-Planned views:
+Implemented private-staging views:
 
 - Today's Operations and Risk Hotspots;
 - Decision Queue and review history;
@@ -321,8 +326,9 @@ states, and staging deployment path are implemented and verified. Work now
 splits into an unblocked governance/cost track and a calendar-gated evidence
 track.
 
-1. Document grain, owner, source, freshness, and reconciliation rules for each
-   remaining internal-only analytics view.
+1. Completed: document grain, owner, source, freshness, and reconciliation
+   rules for each remaining internal-only analytics view in
+   [`internal_analytics_governance.md`](internal_analytics_governance.md).
 2. Configure Athena workgroup budgets, query-cost alarms, and incremental
    refresh rules before expanding recurring analytics execution.
 3. On or after `2026-08-09` Sydney time, observe the pending Outcome using the

@@ -141,7 +141,7 @@ foreach ($logicalDate in $dates) {
             }
         }
         $duration = ($stages | Measure-Object -Property duration_ms -Sum).Sum
-        Write-Host "$day`: four stages and 32 checks passed in $duration ms"
+        Write-Host "$day`: four stages and 41 checks passed in $duration ms"
     } finally {
         Remove-Item -LiteralPath $payloadPath -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue

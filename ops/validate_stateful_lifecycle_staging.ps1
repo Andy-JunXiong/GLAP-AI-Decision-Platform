@@ -10,6 +10,7 @@ param(
     [ValidateSet("OPERATIONAL", "FUTURE_SIMULATION")]
     [string]$ExecutionMode = "OPERATIONAL",
     [string]$ScenarioId = "",
+    [string]$LifecycleQualityGateFunction = "",
     [switch]$Apply
 )
 
@@ -20,6 +21,10 @@ if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 }
 if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+') {
     throw "AthenaOutputUri must be a prefix-scoped s3:// URI"
+}
+if ($LifecycleQualityGateFunction -and
+    $LifecycleQualityGateFunction -notmatch '^[A-Za-z0-9_-]{1,64}$') {
+    throw "LifecycleQualityGateFunction must use safe Lambda name characters"
 }
 
 $dates = 0..($Days - 1) | ForEach-Object { $StartDate.Date.AddDays($_) }
@@ -40,6 +45,14 @@ Write-Host "  Days: $Days"
 Write-Host "  Execution mode: $($temporalContext.execution_mode)"
 Write-Host "  Temporal scope: $temporalScopeId"
 Write-Host "  Contracts: lifecycle + multimodal analytics"
+Write-Host (
+    "  Lifecycle validation path: " +
+    $(if ($LifecycleQualityGateFunction) {
+        "deployed quality-gate Lambda"
+    } else {
+        "direct Athena SQL"
+    })
+)
 Write-Host "  Expected result for every check: 0"
 
 if (-not $Apply) {
@@ -52,12 +65,76 @@ if ($Profile) {
     $awsScope += @("--profile", $Profile)
 }
 $root = Split-Path $PSScriptRoot -Parent
-$validationTemplates = @(
-    Get-Content -LiteralPath `
+$validationTemplates = @()
+if (-not $LifecycleQualityGateFunction) {
+    $validationTemplates += Get-Content -LiteralPath `
         (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") -Raw
-    Get-Content -LiteralPath `
-        (Join-Path $root "sql/10_multimodal_ops_validation.sql") -Raw
-)
+}
+$validationTemplates += Get-Content -LiteralPath `
+    (Join-Path $root "sql/10_multimodal_ops_validation.sql") -Raw
+
+function Invoke-DeployedLifecycleQualityGate {
+    param([Parameter(Mandatory)] [string]$LogicalDate)
+
+    $payload = @{
+        logical_run_date = $LogicalDate
+        pipeline_stage = "lifecycle_validation"
+        quality_contract = "lifecycle_v1"
+        execution_mode = $temporalContext.execution_mode
+        scenario_id = $temporalContext.scenario_id
+    } | ConvertTo-Json -Compress
+    $payloadPath = [IO.Path]::GetTempFileName()
+    $responsePath = [IO.Path]::GetTempFileName()
+    try {
+        [IO.File]::WriteAllText(
+            $payloadPath, $payload, [Text.UTF8Encoding]::new($false)
+        )
+        $metadataJson = & aws lambda invoke `
+            --function-name $LifecycleQualityGateFunction `
+            --payload "fileb://$payloadPath" `
+            --cli-read-timeout 300 `
+            --cli-connect-timeout 60 `
+            @awsScope `
+            $responsePath `
+            --output json
+        if ($LASTEXITCODE -ne 0 -or -not $metadataJson) {
+            throw "Unable to invoke deployed lifecycle validation for $LogicalDate"
+        }
+        $metadata = $metadataJson | ConvertFrom-Json
+        if ($metadata.FunctionError) {
+            throw "Deployed lifecycle validation returned a FunctionError for $LogicalDate"
+        }
+        $response = Get-Content -LiteralPath $responsePath -Raw | ConvertFrom-Json
+        if ($response.status -ne "success" -or
+            $response.logical_run_date -ne $LogicalDate -or
+            $response.pipeline_stage -ne "lifecycle_validation" -or
+            $response.quality_contract -ne "lifecycle_v1") {
+            throw "Deployed lifecycle validation returned an invalid contract for $LogicalDate"
+        }
+        $checks = @($response.quality_checks.psobject.Properties)
+        if ($checks.Count -ne 28 -or
+            @($checks | Where-Object {
+                $_.Name -notmatch '^[a-z][a-z0-9_]{1,63}$' -or
+                $_.Value -notin @("passed", "failed")
+            }).Count -ne 0) {
+            throw "Deployed lifecycle validation returned unsafe checks for $LogicalDate"
+        }
+        $failedChecks = @(
+            $checks | Where-Object { $_.Value -eq "failed" } |
+                ForEach-Object { $_.Name } | Sort-Object
+        )
+        if ($failedChecks.Count -ne 0) {
+            throw (
+                "Deployed lifecycle validation failed for $LogicalDate`: " +
+                "$($failedChecks -join ',')"
+            )
+        }
+        return $checks.Count
+    } finally {
+        Remove-Item -LiteralPath $payloadPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue
+    }
+}
 
 function Invoke-ValidationStatement {
     param(
@@ -109,6 +186,9 @@ function Invoke-ValidationStatement {
 foreach ($logicalDate in $dates) {
     $day = $logicalDate.ToString("yyyy-MM-dd")
     $checkCount = 0
+    if ($LifecycleQualityGateFunction) {
+        $checkCount += Invoke-DeployedLifecycleQualityGate -LogicalDate $day
+    }
     foreach ($validationTemplate in $validationTemplates) {
         $rendered = $validationTemplate.Replace("{{SOURCE_DATABASE}}", $SourceDatabase)
         $rendered = $rendered.Replace("{{LOGICAL_RUN_DATE}}", $day)

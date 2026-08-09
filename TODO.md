@@ -38,8 +38,9 @@ Current implementation and release boundaries are recorded in the
   accessible loading/empty/stale/partial/failed states.
 - [x] Deploy the private frontend with portable ZIP paths and verify that its
   JavaScript, CSS, sign-in entry, and accessible-state fingerprint are live.
-- [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
-  for the pending Outcome; it remains pending and is not observed evidence today.
+- [ ] The `2026-08-09` Sydney observation date has arrived. Verify the governed
+  Outcome through authenticated Outcome Review; its current state is unknown
+  until that read succeeds, so do not call it pending or observed evidence.
 
 ## End-of-day handoff -- 6 August 2026
 
@@ -171,8 +172,9 @@ The governing date boundary is in the
   the root HTML response.
 - [ ] On or after `2026-08-09` Sydney time, run the actual-calendar observation
   step for the pending Outcome; do not simulate an early operational result.
-- [ ] Document grain, ownership, freshness, and reconciliation rules for every
-  remaining internal-only analytics view.
+- [x] Document grain, ownership, freshness, and reconciliation rules for every
+  remaining internal-only analytics view in
+  `docs/internal_analytics_governance.md`.
 - [ ] Add Athena workgroup budgets, query-cost alarms, and incremental-refresh
   rules before proposing recurring analytics execution.
 
