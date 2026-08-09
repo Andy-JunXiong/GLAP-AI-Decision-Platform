@@ -122,3 +122,15 @@ The mutation Lambda currently has no reviewed narrow staging release path. The
 existing stateful lifecycle workflow updates a broader stack and must not be
 used as an implicit substitute. No schema migration, Lambda/API deployment,
 frontend publication, or Action mutation is authorised by the rollout plan.
+
+The proposed narrow path is documented in
+[`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md).
+It retains the existing CloudFormation owner, uses the previous stack template,
+changes only `ActionMutationArtifactKey`, and rejects execution unless the
+change set contains exactly one non-replacing `ActionMutationFunction`
+modification. The repository deployer-policy definition currently omits this
+function and role, so actual AWS authority requires separate human inspection
+and approval before any prepare or execute workflow implementation. The
+approved manual plan workflow only packages locally and uses `DescribeStacks`,
+`ListStackResources`, and `GetFunctionConfiguration`; it contains no artifact
+upload, change-set creation/execution, Lambda update, or IAM command.

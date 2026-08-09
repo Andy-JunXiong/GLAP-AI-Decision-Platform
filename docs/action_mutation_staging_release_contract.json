@@ -1,0 +1,86 @@
+{
+  "schema_version": "action-mutation-staging-release.v1",
+  "status": "PLAN_WORKFLOW_IMPLEMENTED_AWAITING_AWS_AUTHORITY_REVIEW",
+  "business_timezone": "Australia/Sydney",
+  "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
+  "authority": {
+    "workflow_implementation_authorized": true,
+    "iam_change_authorized": false,
+    "artifact_upload_authorized": false,
+    "change_set_creation_authorized": false,
+    "change_set_execution_authorized": false,
+    "operational_action_mutation_authorized": false,
+    "production_change_authorized": false
+  },
+  "cloudformation_ownership": {
+    "stack_name": "glap-stateful-lifecycle-staging",
+    "template": "infrastructure/stateful-lifecycle-staging.yaml",
+    "logical_resource_id": "ActionMutationFunction",
+    "resource_type": "AWS::Lambda::Function",
+    "artifact_parameter": "ActionMutationArtifactKey",
+    "direct_update_function_code_allowed": false
+  },
+  "selected_design": {
+    "kind": "EXISTING_STACK_PREVIOUS_TEMPLATE_PARAMETER_ONLY_CHANGE_SET",
+    "use_previous_template": true,
+    "changed_parameters": ["ActionMutationArtifactKey"],
+    "fail_closed_on_unexpected_change": true,
+    "allowed_changes": [
+      {
+        "action": "Modify",
+        "logical_resource_id": "ActionMutationFunction",
+        "resource_type": "AWS::Lambda::Function",
+        "replacement": "False",
+        "scope": ["Properties"]
+      }
+    ]
+  },
+  "plan_workflow": {
+    "workflow": ".github/workflows/plan-action-mutation-staging.yml",
+    "script": "ops/plan_action_mutation_staging_release.ps1",
+    "trigger": "workflow_dispatch_only",
+    "aws_access": "READ_ONLY_INSPECTION",
+    "implemented": true
+  },
+  "release_phases": [
+    {
+      "id": "plan",
+      "aws_write": false,
+      "human_approval_required": false
+    },
+    {
+      "id": "prepare_change_set",
+      "aws_write": true,
+      "human_approval_required": true
+    },
+    {
+      "id": "execute_change_set",
+      "aws_write": true,
+      "human_approval_required": true
+    },
+    {
+      "id": "verify_and_canary",
+      "aws_write": true,
+      "human_approval_required": true
+    }
+  ],
+  "current_blockers": {
+    "repository_deployer_policy_includes_mutation_function": false,
+    "actual_aws_permissions_reviewed": false,
+    "narrow_workflow_implemented": true,
+    "schema_migration_applied": false
+  },
+  "rejected_alternatives": [
+    "DIRECT_LAMBDA_UPDATE_CREATES_CLOUDFORMATION_DRIFT",
+    "BROAD_STATEFUL_STACK_DEPLOY_HAS_EXCESS_BLAST_RADIUS",
+    "NEW_STACK_REQUIRES_RESOURCE_IMPORT_OR_REPLACEMENT"
+  ],
+  "rollback": {
+    "previous_artifact_parameter_required": true,
+    "previous_code_sha256_required": true,
+    "same_single_resource_guard_required": true,
+    "package_rollback_requires_zero_edit_events": true,
+    "audit_event_deletion_allowed": false,
+    "schema_column_drop_allowed": false
+  }
+}

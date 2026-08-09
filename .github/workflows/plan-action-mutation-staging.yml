@@ -1,0 +1,75 @@
+name: Plan Action mutation staging release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: action-mutation-staging-plan
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Read-only mutation release plan
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    env:
+      AWS_REGION: us-east-1
+      STACK_NAME: glap-stateful-lifecycle-staging
+      FUNCTION_NAME: glap-lifecycle-action-mutation-staging
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Validate plan-only release contracts
+        run: |
+          python -m compileall -q lambda ops tests
+          python ops/validate_action_assignment_rollout.py
+          python ops/validate_action_mutation_staging_release.py
+          python ops/audit_project_drift.py --format markdown
+          python -m unittest discover -s tests -v
+
+      - name: Require an immutable clean main commit
+        shell: bash
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main"
+          test -z "$(git status --porcelain)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Configure read-only staging session
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: glap-action-mutation-plan-${{ github.run_id }}
+
+      - name: Package locally and inspect current ownership
+        shell: pwsh
+        run: |
+          ./ops/plan_action_mutation_staging_release.ps1 `
+            -Region $env:AWS_REGION `
+            -StackName $env:STACK_NAME `
+            -FunctionName $env:FUNCTION_NAME `
+            -InspectAws
+
+      - name: Record authority boundary
+        shell: bash
+        run: |
+          {
+            echo "### Action mutation staging release plan"
+            echo "- Artifact upload: false"
+            echo "- Change-set creation or execution: false"
+            echo "- Lambda, IAM, or CloudFormation modification: false"
+            echo "- Operational Action mutation: false"
+            echo "- AWS write-authority review: still required"
+          } >> "$GITHUB_STEP_SUMMARY"

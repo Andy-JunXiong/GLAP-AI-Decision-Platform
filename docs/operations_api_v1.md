@@ -117,6 +117,10 @@ rollback boundary is defined in
 Rollout remains blocked until a narrow, reviewed staging release path exists
 for the Action mutation Lambda; the whole stateful stack must not be updated as
 an implicit substitute.
+The proposed narrow CloudFormation change-set design is recorded in
+[`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md)
+and its read-only plan stage is implemented. AWS write phases remain
+unapproved and unimplemented.
 
 ## Reliability and recovery
 

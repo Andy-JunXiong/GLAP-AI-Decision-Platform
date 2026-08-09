@@ -29,6 +29,7 @@ PROTECTED_MANUAL_WORKFLOWS = (
     ".github/workflows/deploy-stateful-lifecycle-staging.yml",
     ".github/workflows/backtest-multimodal-forecast-staging.yml",
     ".github/workflows/project-drift-audit.yml",
+    ".github/workflows/plan-action-mutation-staging.yml",
 )
 
 
@@ -326,6 +327,51 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_action_mutation_release(root: Path) -> list[CheckResult]:
+    contract_path = "docs/action_mutation_staging_release_contract.json"
+    release = json.loads((root / contract_path).read_text(encoding="utf-8"))
+    authority = release.get("authority", {})
+    design = release.get("selected_design", {})
+    ownership = release.get("cloudformation_ownership", {})
+    blockers = release.get("current_blockers", {})
+    bounded = (
+        release.get("status")
+        == "PLAN_WORKFLOW_IMPLEMENTED_AWAITING_AWS_AUTHORITY_REVIEW"
+        and release.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
+        and authority.get("workflow_implementation_authorized") is True
+        and all(
+            value is False
+            for key, value in authority.items()
+            if key != "workflow_implementation_authorized"
+        )
+        and ownership.get("direct_update_function_code_allowed") is False
+        and design.get("kind")
+        == "EXISTING_STACK_PREVIOUS_TEMPLATE_PARAMETER_ONLY_CHANGE_SET"
+        and design.get("use_previous_template") is True
+        and design.get("changed_parameters") == ["ActionMutationArtifactKey"]
+        and len(design.get("allowed_changes", [])) == 1
+        and design["allowed_changes"][0].get("logical_resource_id")
+        == "ActionMutationFunction"
+        and blockers.get("repository_deployer_policy_includes_mutation_function")
+        is False
+        and blockers.get("narrow_workflow_implemented") is True
+    )
+    return [
+        _result(
+            "action_mutation_release_boundary",
+            "governance",
+            bounded,
+            "The mutation plan workflow is manual and read-only; deployment remains human-gated.",
+            "The mutation release expands authority, hides a blocker, or permits broader stack drift.",
+            (
+                contract_path,
+                "docs/action_mutation_staging_release_rfc.md",
+                "ops/validate_action_mutation_staging_release.py",
+            ),
+        )
+    ]
+
+
 def check_readiness_contract(root: Path) -> list[CheckResult]:
     contract_path = "docs/production_readiness_contract.json"
     contract = json.loads((root / contract_path).read_text(encoding="utf-8"))
@@ -385,6 +431,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_audit_automation(root))
     checks.extend(check_action_contract(root, contract))
     checks.extend(check_action_assignment_rollout(root))
+    checks.extend(check_action_mutation_release(root))
     checks.extend(check_readiness_contract(root))
     checks.extend(check_temporal_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"

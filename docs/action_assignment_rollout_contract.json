@@ -31,6 +31,7 @@
   },
   "release_paths": {
     "action_mutation_lambda": "BLOCKED_NARROW_RELEASE_PATH_REVIEW",
+    "candidate_design_contract": "docs/action_mutation_staging_release_contract.json",
     "operations_api": "EXISTING_MANUAL_PLAN_FIRST_WORKFLOW",
     "internal_frontend": "EXISTING_MANUAL_PLAN_FIRST_SCRIPT"
   },

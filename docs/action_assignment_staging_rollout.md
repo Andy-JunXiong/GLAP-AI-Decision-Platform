@@ -17,7 +17,11 @@ creation, or an operational Action mutation.
    must return zero.
 5. Release the Action mutation Lambda. This is currently blocked: the existing
    lifecycle workflow updates the whole stateful stack, so a narrow sanctioned
-   release path must be reviewed before continuing.
+   release path must be reviewed before continuing. The proposed previous-
+   template, one-resource change-set design is documented in
+   [`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md).
+   Its manual read-only plan stage is implemented, but no AWS write phase is
+   approved or implemented.
 6. Run the existing Operations API workflow in `plan`, then separately approve
    its `deploy` action.
 7. Run the existing internal frontend publisher in plan mode, then separately

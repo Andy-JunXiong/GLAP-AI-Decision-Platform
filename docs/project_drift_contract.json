@@ -52,7 +52,12 @@
         "sql/16_action_assignment_validation.sql",
         "docs/action_assignment_rollout_contract.json",
         "docs/action_assignment_staging_rollout.md",
+        "docs/action_mutation_staging_release_contract.json",
+        "docs/action_mutation_staging_release_rfc.md",
+        ".github/workflows/plan-action-mutation-staging.yml",
         "ops/validate_action_assignment_rollout.py",
+        "ops/validate_action_mutation_staging_release.py",
+        "ops/plan_action_mutation_staging_release.ps1",
         "docs/implementation_roadmap.md",
         "TODO.md"
       ]

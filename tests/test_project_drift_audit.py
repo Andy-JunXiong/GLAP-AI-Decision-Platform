@@ -75,6 +75,27 @@ class ProjectDriftAuditTests(unittest.TestCase):
             result = AUDIT.check_action_assignment_rollout(root)[0]
         self.assertEqual(result.status, "DRIFT")
 
+    def test_action_mutation_release_scope_expansion_is_detected(self):
+        source = json.loads(
+            (
+                ROOT
+                / "docs"
+                / "action_mutation_staging_release_contract.json"
+            ).read_text(encoding="utf-8")
+        )
+        source["selected_design"]["changed_parameters"].append(
+            "GeneratorArtifactKey"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            contract_path = (
+                root / "docs" / "action_mutation_staging_release_contract.json"
+            )
+            contract_path.parent.mkdir(parents=True)
+            contract_path.write_text(json.dumps(source), encoding="utf-8")
+            result = AUDIT.check_action_mutation_release(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
     def test_json_report_is_serializable(self):
         report = AUDIT.run_audit(ROOT)
         encoded = json.dumps(report)

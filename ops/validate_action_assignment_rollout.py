@@ -81,6 +81,10 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     release_paths = contract.get("release_paths", {})
     if release_paths.get("action_mutation_lambda") != "BLOCKED_NARROW_RELEASE_PATH_REVIEW":
         errors.append("narrow mutation release-path blocker is hidden")
+    if release_paths.get("candidate_design_contract") != (
+        "docs/action_mutation_staging_release_contract.json"
+    ):
+        errors.append("candidate mutation release design is not connected")
     if release_paths.get("operations_api") != "EXISTING_MANUAL_PLAN_FIRST_WORKFLOW":
         errors.append("Operations API release must remain manual and plan-first")
     if release_paths.get("internal_frontend") != "EXISTING_MANUAL_PLAN_FIRST_SCRIPT":

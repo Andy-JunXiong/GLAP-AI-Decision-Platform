@@ -59,8 +59,16 @@ Current implementation and release boundaries are recorded in the
   separate approver decision. Its staging schema migration is not deployed.
 - [x] Add a plan-only Action assignment rollout contract, post-migration
   validation query, rollback gate, and opt-in runtime/four-role verification.
+- [x] Propose a narrow mutation-Lambda staging release RFC using the existing
+  stack's previous template, one artifact parameter, and an exact one-resource
+  change-set guard. Direct Lambda updates and broad stack deploys are rejected.
+- [x] Implement the approved manual plan-only workflow and local script. They
+  package only the mutation Lambda, inspect ownership/configuration through
+  read-only AWS calls, and expose no upload, change-set, deployment, or IAM path.
 - [ ] Review and approve a narrow staging release path for the Action mutation
-  Lambda. Do not use a whole stateful-stack update as an implicit substitute.
+  Lambda's prepare/execute phases, including the actual AWS permission gap. The
+  approved plan workflow does not authorise IAM changes, artifact upload, or
+  change-set execution.
 
 ## End-of-day handoff -- 6 August 2026
 
@@ -417,6 +425,10 @@ Repository checkpoint — 4 August 2026:
 - [x] Prepare the ordered, plan-only staging rollout and rollback contract for
   Action assignment. The narrow mutation-Lambda release path remains blocked
   pending human review; no migration or deployment has been performed.
+- [x] Document the candidate mutation release design and fail-closed guard. It
+  keeps CloudFormation ownership and allows only `ActionMutationFunction` code
+  to change. Its read-only plan phase is implemented; AWS write phases remain
+  unimplemented and unapproved.
 - [x] Document administrator-managed internal user onboarding, role assignment,
   first access, and offboarding in `docs/internal_user_onboarding.md`.
 - [x] Record observed Outcomes separately from expected impact.

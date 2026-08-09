@@ -348,9 +348,11 @@ track.
    and load/security testing remain before any production expansion.
 6. Prepared, not deployed: the Action assignment rollout now has an ordered
    schema validation, runtime/role smoke checks, named-human canary, and bounded
-   rollback contract. The next implementation decision is a reviewed narrow
-   staging release path for the Action mutation Lambda; a whole stateful-stack
-   update is not an implicit substitute.
+   rollback contract. A narrow existing-stack, previous-template change-set RFC
+   now limits the candidate release to `ActionMutationFunction`. Its manual,
+   read-only plan workflow is implemented. Human review of the actual AWS
+   permission gap and separate approval remain required before any prepare or
+   execute phase; a broad stack update is not an implicit substitute.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic
