@@ -1,10 +1,11 @@
 {
-  "schema_version": "action-mutation-staging-release.v2",
-  "status": "PLAN_RUNTIME_INSPECTED_BLOCKED_READ_PERMISSION_APPROVAL",
+  "schema_version": "action-mutation-staging-release.v3",
+  "status": "READ_PERMISSION_APPROVED_AWAITING_HUMAN_APPLICATION",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
     "workflow_implementation_authorized": true,
+    "read_permission_human_approved": true,
     "iam_change_authorized": false,
     "artifact_upload_authorized": false,
     "change_set_creation_authorized": false,
@@ -81,7 +82,9 @@
     "repository_deployer_policy_includes_mutation_function": false,
     "actual_aws_permissions_inspected": true,
     "required_lambda_read_permission_present": false,
-    "iam_change_authorized": false,
+    "read_permission_human_approved": true,
+    "live_iam_permission_applied": false,
+    "agent_iam_change_authorized": false,
     "narrow_workflow_implemented": true,
     "schema_migration_applied": false
   },

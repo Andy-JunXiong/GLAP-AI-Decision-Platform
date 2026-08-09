@@ -345,13 +345,18 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
     proposal_authority = proposal.get("authority", {})
     bounded = (
         release.get("status")
-        == "PLAN_RUNTIME_INSPECTED_BLOCKED_READ_PERMISSION_APPROVAL"
+        == "READ_PERMISSION_APPROVED_AWAITING_HUMAN_APPLICATION"
         and release.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and authority.get("workflow_implementation_authorized") is True
+        and authority.get("read_permission_human_approved") is True
         and all(
             value is False
             for key, value in authority.items()
-            if key != "workflow_implementation_authorized"
+            if key
+            not in (
+                "workflow_implementation_authorized",
+                "read_permission_human_approved",
+            )
         )
         and ownership.get("direct_update_function_code_allowed") is False
         and design.get("kind")
@@ -365,13 +370,16 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
         is False
         and blockers.get("actual_aws_permissions_inspected") is True
         and blockers.get("required_lambda_read_permission_present") is False
-        and blockers.get("iam_change_authorized") is False
+        and blockers.get("read_permission_human_approved") is True
+        and blockers.get("live_iam_permission_applied") is False
+        and blockers.get("agent_iam_change_authorized") is False
         and blockers.get("narrow_workflow_implemented") is True
         and runtime.get("result") == "SAFE_FAILURE_MISSING_READ_PERMISSION"
         and runtime.get("denied_action") == "lambda:GetFunctionConfiguration"
         and runtime.get("aws_write_observed") is False
         and release.get("read_permission_proposal") == proposal_path
-        and proposal.get("status") == "PROPOSED_NOT_AUTHORIZED"
+        and proposal.get("status")
+        == "APPROVED_FOR_NAMED_HUMAN_APPLICATION"
         and proposal.get("requested_capability", {}).get("actions")
         == ["lambda:GetFunctionConfiguration"]
         and proposal.get("requested_capability", {})
@@ -379,10 +387,15 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
         .get("wildcard_allowed")
         is False
         and proposal_authority.get("proposal_recording_authorized") is True
+        and proposal_authority.get("human_application_authorized") is True
         and all(
             value is False
             for key, value in proposal_authority.items()
-            if key != "proposal_recording_authorized"
+            if key
+            not in (
+                "proposal_recording_authorized",
+                "human_application_authorized",
+            )
         )
     )
     return [
@@ -390,7 +403,7 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
             "action_mutation_release_boundary",
             "governance",
             bounded,
-            "The mutation plan safely recorded one exact read-permission gap; IAM and deployment remain human-gated.",
+            "The exact read permission is human-approved but not applied; agent IAM and deployment remain prohibited.",
             "The mutation release expands authority, hides runtime evidence, or broadens the read-permission proposal.",
             (
                 contract_path,

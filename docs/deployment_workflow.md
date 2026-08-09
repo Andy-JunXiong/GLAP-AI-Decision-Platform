@@ -131,8 +131,8 @@ change set contains exactly one non-replacing `ActionMutationFunction`
 modification. The repository deployer-policy definition currently omits this
 function and role. Read-only run `31297032412` successfully assumed the staging
 OIDC role and validated the repository, then failed closed on the exact missing
-`lambda:GetFunctionConfiguration` capability. A non-executable proposal records
-that single read requirement without granting it. Separate human approval is
-still required before any IAM, prepare, or execute implementation. The manual
-plan workflow contains no artifact upload, change-set creation/execution, Lambda
-update, or IAM command.
+`lambda:GetFunctionConfiguration` capability. The repository owner approved that
+single exact-resource read capability for named-human application. The agent may
+not apply IAM, and prepare/execute authority remains separately unapproved. The
+manual plan workflow contains no artifact upload, change-set creation/execution,
+Lambda update, or IAM command.

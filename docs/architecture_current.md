@@ -116,8 +116,9 @@ were reviewed for plan-only implementation. The manual plan workflow now
 packages locally and inspects the current stack/function through read-only AWS
 calls. Its first AWS run established OIDC and passed repository gates, then
 failed closed on the missing `lambda:GetFunctionConfiguration` read capability.
-The exact-resource proposal is review-only and grants no authority. IAM changes,
-artifact upload, change-set creation/execution, deployment, and operational
+The repository owner approved only that exact-resource read capability for
+named-human application; it is not yet applied, and the agent cannot apply it.
+Artifact upload, change-set creation/execution, deployment, and operational
 mutation remain unapproved and unimplemented.
 
 This staging deployment does not authorise production expansion: production

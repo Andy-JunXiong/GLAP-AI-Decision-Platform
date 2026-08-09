@@ -69,10 +69,14 @@ Current implementation and release boundaries are recorded in the
   Run `31297032412` established OIDC, passed 228 tests and 15 drift checks, then
   stopped because `lambda:GetFunctionConfiguration` is not allowed. No AWS write
   occurred. Record a non-executable, exact-resource read-permission proposal.
+- [x] Record repository-owner approval for the single
+  `lambda:GetFunctionConfiguration` staging read capability. The approval is
+  limited to named-human IAM application and does not approve release writes.
+- [ ] Have a named human apply the approved exact-resource read permission, then
+  rerun the manual plan workflow. The agent must not modify IAM.
 - [ ] Review and approve a narrow staging release path for the Action mutation
-  Lambda. First decide separately whether to approve the single read permission;
-  prepare/execute authority remains a later decision. The approved plan workflow
-  does not authorise IAM changes, artifact upload, or change-set execution.
+  Lambda prepare/execute phases. That remains a later decision; the read
+  permission approval does not authorise artifact upload or change-set execution.
 
 ## End-of-day handoff -- 6 August 2026
 

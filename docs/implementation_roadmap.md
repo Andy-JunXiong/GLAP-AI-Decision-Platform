@@ -352,9 +352,10 @@ track.
    now limits the candidate release to `ActionMutationFunction`. Its manual,
    read-only plan workflow is implemented and its first run safely identified
    the missing `lambda:GetFunctionConfiguration` permission after OIDC and all
-   repository gates passed. A non-executable exact-resource proposal is ready
-   for separate human review. No IAM, prepare, or execute authority is granted;
-   a broad stack update is not an implicit substitute.
+   repository gates passed. The repository owner approved the non-executable
+   exact-resource read proposal for named-human application. It is not yet
+   applied, the agent cannot modify IAM, and no prepare or execute authority is
+   granted; a broad stack update is not an implicit substitute.
 
 Public Pages remains read-only and aggregate-only. Recurring lifecycle or
 forecast schedules, production aliases, authenticated writes, and automatic

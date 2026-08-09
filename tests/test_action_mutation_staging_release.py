@@ -27,11 +27,19 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
             validator.validate_permission_proposal(proposal),
         )
 
-    def test_read_permission_proposal_cannot_claim_iam_authority(self):
+    def test_read_permission_proposal_cannot_grant_agent_iam_authority(self):
         proposal = validator.load_permission_proposal()
-        proposal["authority"]["iam_change_authorized"] = True
+        proposal["authority"]["agent_iam_change_authorized"] = True
         self.assertIn(
             "read-permission proposal expands protected authority",
+            validator.validate_permission_proposal(proposal),
+        )
+
+    def test_read_permission_approval_cannot_include_release_execution(self):
+        proposal = validator.load_permission_proposal()
+        proposal["approval_scope"]["prepare_or_execute_release_approved"] = True
+        self.assertIn(
+            "read-permission approval scope expanded or became ambiguous",
             validator.validate_permission_proposal(proposal),
         )
 

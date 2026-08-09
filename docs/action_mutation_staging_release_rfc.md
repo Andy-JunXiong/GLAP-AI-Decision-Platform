@@ -1,6 +1,6 @@
 # RFC: narrow Action mutation Lambda staging release
 
-**Status:** plan runtime inspected; blocked on one unapproved read permission
+**Status:** one read permission approved; awaiting named-human IAM application
 
 ## Approved decision
 
@@ -36,7 +36,9 @@ Lambda update, IAM/CloudFormation modification, or production effect.
 The exact missing capability is recorded in
 [`action_mutation_staging_read_permission_proposal.json`](action_mutation_staging_read_permission_proposal.json).
 That artifact is deliberately not an executable IAM policy, contains no account
-ID or ARN, permits no wildcard, and does not authorise an IAM change.
+ID or ARN, and permits no wildcard. On 9 August 2026, the repository owner
+approved that exact read capability for named-human application. The approval
+does not permit the agent to modify IAM and does not approve any release write.
 
 ## Proposed design
 
@@ -127,10 +129,10 @@ forward-fix while preserving the reader and audit contract.
 
 ## Human decisions still required
 
-1. A named human must separately review and, if acceptable, authorise adding
-   only `lambda:GetFunctionConfiguration` for the exact physical Lambda resolved
-   from `ActionMutationFunction`. The observed gap does not itself grant that
-   authority.
+1. A named human must apply the approved `lambda:GetFunctionConfiguration`
+   permission to the staging OIDC role for the exact physical Lambda resolved
+   from `ActionMutationFunction`, then rerun the read-only plan. Agent-side IAM
+   application remains prohibited.
 2. Separately authorise implementation of prepare/execute workflow phases and
    their protected environment approvals.
 3. Separately authorise schema migration, change-set preparation/execution, API

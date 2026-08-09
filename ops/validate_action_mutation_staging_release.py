@@ -15,6 +15,7 @@ PROPOSAL_PATH = (
 )
 EXPECTED_AUTHORITY = {
     "workflow_implementation_authorized": True,
+    "read_permission_human_approved": True,
     "iam_change_authorized": False,
     "artifact_upload_authorized": False,
     "change_set_creation_authorized": False,
@@ -53,6 +54,7 @@ def validate_permission_proposal(proposal: dict[str, Any]) -> list[str]:
         "purpose",
         "runtime_evidence",
         "requested_capability",
+        "approval_scope",
         "explicitly_excluded_actions",
         "proposal_shape",
         "authority",
@@ -62,8 +64,8 @@ def validate_permission_proposal(proposal: dict[str, Any]) -> list[str]:
         "action-mutation-staging-read-permission-proposal.v1"
     ):
         errors.append("unsupported read-permission proposal schema")
-    if proposal.get("status") != "PROPOSED_NOT_AUTHORIZED":
-        errors.append("read-permission proposal cannot claim approval")
+    if proposal.get("status") != "APPROVED_FOR_NAMED_HUMAN_APPLICATION":
+        errors.append("read-permission proposal approval state changed")
 
     evidence = proposal.get("runtime_evidence", {})
     if not (
@@ -93,6 +95,19 @@ def validate_permission_proposal(proposal: dict[str, Any]) -> list[str]:
     ):
         errors.append("read-permission proposal is not exact-resource bounded")
 
+    if proposal.get("approval_scope") != {
+        "approved_on_sydney_date": "2026-08-09",
+        "approving_authority": "HUMAN_REPOSITORY_OWNER",
+        "approved_action": "lambda:GetFunctionConfiguration",
+        "approved_resource_selector": (
+            "CLOUDFORMATION_LOGICAL_RESOURCE_ACTION_MUTATION_FUNCTION"
+        ),
+        "application_actor": "NAMED_HUMAN_ONLY",
+        "agent_application_allowed": False,
+        "prepare_or_execute_release_approved": False,
+    }:
+        errors.append("read-permission approval scope expanded or became ambiguous")
+
     shape = proposal.get("proposal_shape", {})
     if shape != {
         "executable_iam_policy_document": False,
@@ -102,7 +117,8 @@ def validate_permission_proposal(proposal: dict[str, Any]) -> list[str]:
         errors.append("read-permission proposal became executable or identifying")
     if proposal.get("authority") != {
         "proposal_recording_authorized": True,
-        "iam_change_authorized": False,
+        "human_application_authorized": True,
+        "agent_iam_change_authorized": False,
         "deployment_authorized": False,
         "aws_write_authorized": False,
     }:
@@ -130,12 +146,12 @@ def validate_permission_proposal(proposal: dict[str, Any]) -> list[str]:
 
 def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
-    if contract.get("schema_version") != "action-mutation-staging-release.v2":
+    if contract.get("schema_version") != "action-mutation-staging-release.v3":
         errors.append("unsupported schema_version")
     if contract.get("status") != (
-        "PLAN_RUNTIME_INSPECTED_BLOCKED_READ_PERMISSION_APPROVAL"
+        "READ_PERMISSION_APPROVED_AWAITING_HUMAN_APPLICATION"
     ):
-        errors.append("release must remain plan-only and blocked on read permission approval")
+        errors.append("release must await named-human read-permission application")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -221,8 +237,12 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("contract hides the completed AWS read inspection")
     if blockers.get("required_lambda_read_permission_present") is not False:
         errors.append("contract hides the missing Lambda read permission")
-    if blockers.get("iam_change_authorized") is not False:
-        errors.append("contract cannot claim IAM authority")
+    if blockers.get("read_permission_human_approved") is not True:
+        errors.append("contract hides the recorded human read-permission approval")
+    if blockers.get("live_iam_permission_applied") is not False:
+        errors.append("contract cannot claim unverified live IAM application")
+    if blockers.get("agent_iam_change_authorized") is not False:
+        errors.append("contract cannot grant the agent IAM authority")
     if blockers.get("narrow_workflow_implemented") is not True:
         errors.append("implemented plan workflow is not recorded")
 
