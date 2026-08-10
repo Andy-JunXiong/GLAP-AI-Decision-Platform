@@ -1,8 +1,9 @@
 {
   "schema_version": "action-mutation-staging-release.v4",
-  "status": "RELEASE_WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION",
+  "status": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
+  "authority_scope": "NO_STANDING_FUTURE_WRITE_AUTHORITY",
   "authority": {
     "workflow_implementation_authorized": true,
     "read_permission_human_approved": true,
@@ -52,25 +53,31 @@
     "execute_environment": "action-mutation-staging-execute",
     "cloudformation_execution_role_variable": "ACTION_MUTATION_CF_EXECUTION_ROLE_ARN",
     "implemented": true,
-    "executed": false
+    "executed": true
   },
   "runtime_evidence": {
-    "github_actions_run_id": 31298179885,
-    "git_commit": "ed475f3a577c3e736bb639e1c05513e7bb80c490",
-    "observed_on_sydney_date": "2026-08-09",
-    "result": "READ_ONLY_PLAN_PASSED",
+    "github_actions_run_id": 31360187221,
+    "prepare_run_id": 31359941156,
+    "git_commit": "bde092750768163e12e70e9649e3e68485483a71",
+    "observed_on_sydney_date": "2026-08-10",
+    "result": "STAGING_RELEASE_VERIFIED",
     "oidc_session_established": true,
     "repository_contracts_passed": true,
-    "unit_tests_passed": 231,
+    "unit_tests_passed": 237,
     "drift_checks_passed": 15,
-    "aws_write_observed": false,
+    "aws_write_observed": true,
     "aws_inspection_passed": true,
     "cloudformation_ownership_verified": true,
     "stable_lambda_configuration_verified": true,
-    "artifact_upload_observed": false,
-    "change_set_created_or_executed": false,
-    "lambda_code_updated": false,
-    "iam_or_cloudformation_modified": false,
+    "artifact_upload_observed": true,
+    "change_set_created_or_executed": true,
+    "exact_one_resource_change_verified": true,
+    "stack_final_status": "UPDATE_COMPLETE",
+    "lambda_code_updated": true,
+    "lambda_digest_matches_artifact": true,
+    "iam_or_cloudformation_modified": true,
+    "rollback_recovery_exercised": true,
+    "rollback_resource_skip_used": false,
     "production_effect": false
   },
   "read_permission_proposal": "docs/action_mutation_staging_read_permission_proposal.json",
@@ -107,6 +114,7 @@
     "narrow_workflow_implemented": true,
     "prepare_execute_workflow_implemented": true,
     "release_write_authority_approved": false,
+    "one_time_release_completed": true,
     "schema_migration_applied": false
   },
   "rejected_alternatives": [
@@ -120,6 +128,9 @@
     "same_single_resource_guard_required": true,
     "package_rollback_requires_zero_edit_events": true,
     "audit_event_deletion_allowed": false,
-    "schema_column_drop_allowed": false
+    "schema_column_drop_allowed": false,
+    "recovery_exercised": true,
+    "recovery_completed_status": "UPDATE_ROLLBACK_COMPLETE",
+    "resource_skip_used": false
   }
 }

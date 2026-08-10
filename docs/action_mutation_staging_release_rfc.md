@@ -1,11 +1,14 @@
 # RFC: narrow Action mutation Lambda staging release
 
-**Status:** prepare/execute workflow implemented; release writes await separate approval
+**Status:** staging release and rollback recovery verified on 2026-08-10
 
-Commit `3b4dd78` published this implementation to `main`; CI run `31305106451`
-passed. Read-only GitHub inspection found that the two required protected
-environments are not yet configured. No release phase has run and no AWS write
-or GitHub permission change occurred.
+Commit `3b4dd78` published the initial implementation to `main`; subsequent
+hardening commits `7df651f`, `8605868`, and `bde0927` corrected immutable
+checkout validation, CloudFormation execution-role evidence, and completed
+rollback-state handling. The two protected environments and three separated
+roles were configured by named humans without publishing protected values.
+Plan, Prepare, Execute, failed rollback recovery, and a successful retry have
+now all been exercised in staging.
 
 ## Approved decision
 
@@ -21,7 +24,7 @@ their AWS execution. This approval does not authorise an IAM or
 CloudFormation change, artifact upload, change-set creation or execution,
 schema migration, frontend/API deployment, or operational Action mutation.
 
-## Current ownership and blocker
+## Current ownership and verified release
 
 `ActionMutationFunction` belongs to the existing
 `glap-stateful-lifecycle-staging` CloudFormation stack. Its code is selected by
@@ -53,10 +56,25 @@ checks, OIDC assumption, local two-file packaging, and the bounded AWS
 inspection. It verified stable CloudFormation ownership and Lambda
 configuration. Artifact upload, change-set creation or execution, Lambda code
 update, IAM/CloudFormation modification, operational Action mutation, and
-production effect were all absent. This closes only the read-permission blocker;
-release write authority remains unapproved.
+production effect were all absent. This closed the original read-permission
+blocker. Release writes still required separate human decisions and did not
+become implicit authority.
 
-## Proposed design
+On 2026-08-10, CI run `31353483375` and read-only Plan run `31353510147`
+passed for `bde0927`. The first approved execution exposed two additional
+rollback-only gaps: the CloudFormation service role could not resolve every
+exact template role or read the retained previous mutation artifact. The stack
+reached `UPDATE_ROLLBACK_FAILED`. A named human added only the exact missing
+reads and continued rollback without skipping any resource. The stack returned
+to `UPDATE_ROLLBACK_COMPLETE`, and the previous artifact was restored.
+
+Prepare run `31359941156` then created a new available, unexecuted change set
+containing exactly one non-replacing `ActionMutationFunction` property change.
+After a separate Execute approval, run `31360187221` completed with stack
+status `UPDATE_COMPLETE`. The active Lambda code digest matched the reviewed
+content-addressed artifact and the workflow reported no production effect.
+
+## Approved and verified design
 
 Keep the resource in its current stack and use a CloudFormation update change
 set with the stack's previous template. Preserve every previous parameter except
@@ -127,11 +145,11 @@ The execute job uses a separate protected
 `action-mutation-staging-execute` environment and
 `ops/execute_action_mutation_staging_release.ps1`. It revalidates the commit,
 change-set identity and state, exact resource change, artifact path and object
-metadata before execution. The workflow is implemented but has not been run;
-its two GitHub OIDC role variables, dedicated CloudFormation execution-role
-variable, and least-privilege AWS permissions remain a named-human
-configuration and approval task. Only the CloudFormation service role may hold
-the exact Lambda code-update permission; GitHub cannot call that API directly.
+metadata before execution. The workflow has now been run successfully. Its two
+GitHub OIDC role variables and dedicated CloudFormation execution-role variable
+remain protected, environment-scoped configuration. Only the CloudFormation
+service role holds the exact Lambda code-update permission; GitHub cannot call
+that API directly.
 
 The exact review-only action and resource selectors are recorded in
 [`action_mutation_staging_release_access_proposal.json`](action_mutation_staging_release_access_proposal.json),
@@ -169,10 +187,12 @@ forward-fix while preserving the reader and audit contract.
 
 ## Human decisions still required
 
-1. Configure and approve the two protected environments and their separate,
-   least-privilege role variables. The agent may not modify IAM.
-2. Separately authorise schema migration, change-set preparation/execution, API
-   and frontend deployment, role-test user creation, and named-human canary.
+1. Keep each future Prepare and Execute as separate approvals; the successful
+   2026-08-10 release does not pre-authorise another deployment.
+2. Separately authorise schema migration, API and frontend deployment,
+   role-test user creation, and the named-human Action assignment canary.
+3. Production alias movement, scheduling, policy activation, and model
+   promotion remain separate human decisions.
 
 The machine-readable boundary is
 [`action_mutation_staging_release_contract.json`](action_mutation_staging_release_contract.json).

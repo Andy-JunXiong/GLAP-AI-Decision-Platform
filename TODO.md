@@ -4,7 +4,38 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
 Current implementation and release boundaries are recorded in the
-[`7 August development handoff`](docs/development_handoff_2026-08-07.md).
+[`10 August development handoff`](docs/development_handoff_2026-08-10.md).
+
+## 10 August 2026 closeout
+
+- [x] Configure the protected `action-mutation-staging-prepare` and
+  `action-mutation-staging-execute` environments with main-only deployment,
+  independent review, self-review prevention, and no administrator bypass.
+- [x] Configure distinct least-privilege GitHub OIDC roles for Prepare and
+  Execute plus a CloudFormation-only service role. GitHub cannot update Lambda
+  directly, and no role receives production alias, schedule, broad-stack, or
+  IAM-administration authority.
+- [x] Harden the workflow commit and execution-role checks and permit
+  `UPDATE_ROLLBACK_COMPLETE` only as a completed, reusable preflight state.
+  Commits `7df651f`, `8605868`, and `bde0927` passed CI; the final local suite
+  contained 237 tests and all 15 drift checks passed.
+- [x] Exercise the failure-recovery path. Execute run `31357487161` exposed
+  missing exact template-role and retained-artifact reads, reached
+  `UPDATE_ROLLBACK_FAILED`, and was recovered by a named human without skipping
+  a resource. The prior artifact and `UPDATE_ROLLBACK_COMPLETE` state were
+  restored.
+- [x] Complete the separately approved retry. Prepare run `31359941156`
+  produced one available, unexecuted, non-replacing
+  `ActionMutationFunction` change set; Execute run `31360187221` finished at
+  `UPDATE_COMPLETE`, with an active/successful Lambda digest equal to the
+  reviewed artifact and no production effect.
+- [ ] Run the separately authorised named-human staging Action assignment
+  canary only after the additive schema migration, Operations API, private
+  frontend, read-only verification, and four-role gates are complete.
+
+The successful Lambda release does not deploy the additive schema, expose the
+new `EDIT` contract through the Operations API/frontend, execute an operational
+Action mutation, promote production, or enable a schedule.
 
 ## 9 August 2026 closeout
 
@@ -23,14 +54,14 @@ Current implementation and release boundaries are recorded in the
 - [x] Inspect the public GitHub Environment inventory read-only. Only
   `github-pages` and `staging` were present; the environment-variable metadata
   endpoint required authentication, so no variable configuration was inferred.
-- [ ] A named administrator must create and protect
+- [x] A named administrator created and protected
   `action-mutation-staging-prepare` and
-  `action-mutation-staging-execute`, configure the two OIDC roles plus the
+  `action-mutation-staging-execute`, configured the two OIDC roles plus the
   CloudFormation execution role, and set the three environment-scoped role
   variables without publishing their values.
-- [ ] After that configuration, rerun the existing read-only plan. Prepare may
-  run only after a separate explicit approval, and execute requires a second
-  approval after the exact unexecuted change set has been reviewed.
+- [x] After that configuration, rerun the existing read-only plan and complete
+  Prepare and Execute with separate approvals after reviewing the exact
+  unexecuted change set. See the 10 August closeout for run evidence.
 
 No further staging or production work is authorised by this closeout.
 
@@ -110,9 +141,10 @@ No further staging or production work is authorised by this closeout.
   commit-addressed artifact, and the exact one-resource change-set guard.
 - [x] Record a non-executable, account-free least-privilege proposal and
   named-human checklist for the two protected release identities.
-- [ ] Have a named human configure and approve the two least-privilege release
+- [x] Have a named human configure and approve the two least-privilege release
   roles, then separately authorise artifact upload/change-set preparation and
-  execution. Workflow implementation does not authorise either AWS write.
+  execution. The verified result and remaining boundaries are recorded in the
+  10 August closeout.
 
 ## End-of-day handoff -- 6 August 2026
 

@@ -15,7 +15,7 @@ SPEC.loader.exec_module(validator)
 
 
 class ActionMutationStagingReleaseTests(unittest.TestCase):
-    def test_repository_release_contract_is_proposed_and_bounded(self):
+    def test_repository_release_contract_is_verified_and_bounded(self):
         self.assertEqual(validator.validate_contract(validator.load_contract()), [])
 
     def test_read_permission_proposal_is_single_action_and_not_authority(self):
@@ -94,11 +94,11 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
             validator.validate_contract(contract),
         )
 
-    def test_read_only_success_cannot_grant_release_write_authority(self):
+    def test_completed_release_cannot_grant_standing_write_authority(self):
         contract = copy.deepcopy(validator.load_contract())
         contract["current_blockers"]["release_write_authority_approved"] = True
         self.assertIn(
-            "read-only verification cannot grant release write authority",
+            "completed release cannot grant standing future write authority",
             validator.validate_contract(contract),
         )
 

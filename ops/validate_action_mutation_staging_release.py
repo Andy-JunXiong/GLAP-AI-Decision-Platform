@@ -1,4 +1,4 @@
-"""Validate the proposed narrow Action mutation staging release boundary."""
+"""Validate the verified narrow Action mutation staging release boundary."""
 
 from __future__ import annotations
 
@@ -261,13 +261,15 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     if contract.get("schema_version") != "action-mutation-staging-release.v4":
         errors.append("unsupported schema_version")
     if contract.get("status") != (
-        "RELEASE_WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION"
+        "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
     ):
-        errors.append("release must remain gated on separate write authorization")
+        errors.append("verified release and future write-approval boundary must remain visible")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
         errors.append("release evidence must remain synthetic staging only")
+    if contract.get("authority_scope") != "NO_STANDING_FUTURE_WRITE_AUTHORITY":
+        errors.append("completed release cannot create standing future write authority")
     if contract.get("authority") != EXPECTED_AUTHORITY:
         errors.append("release contract expands or omits protected authority")
 
@@ -311,31 +313,37 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "execute_environment": "action-mutation-staging-execute",
         "cloudformation_execution_role_variable": "ACTION_MUTATION_CF_EXECUTION_ROLE_ARN",
         "implemented": True,
-        "executed": False,
+        "executed": True,
     }:
         errors.append("prepare/execute workflow contract is incomplete or expanded")
 
     runtime = contract.get("runtime_evidence", {})
     if runtime != {
-        "github_actions_run_id": 31298179885,
-        "git_commit": "ed475f3a577c3e736bb639e1c05513e7bb80c490",
-        "observed_on_sydney_date": "2026-08-09",
-        "result": "READ_ONLY_PLAN_PASSED",
+        "github_actions_run_id": 31360187221,
+        "prepare_run_id": 31359941156,
+        "git_commit": "bde092750768163e12e70e9649e3e68485483a71",
+        "observed_on_sydney_date": "2026-08-10",
+        "result": "STAGING_RELEASE_VERIFIED",
         "oidc_session_established": True,
         "repository_contracts_passed": True,
-        "unit_tests_passed": 231,
+        "unit_tests_passed": 237,
         "drift_checks_passed": 15,
-        "aws_write_observed": False,
+        "aws_write_observed": True,
         "aws_inspection_passed": True,
         "cloudformation_ownership_verified": True,
         "stable_lambda_configuration_verified": True,
-        "artifact_upload_observed": False,
-        "change_set_created_or_executed": False,
-        "lambda_code_updated": False,
-        "iam_or_cloudformation_modified": False,
+        "artifact_upload_observed": True,
+        "change_set_created_or_executed": True,
+        "exact_one_resource_change_verified": True,
+        "stack_final_status": "UPDATE_COMPLETE",
+        "lambda_code_updated": True,
+        "lambda_digest_matches_artifact": True,
+        "iam_or_cloudformation_modified": True,
+        "rollback_recovery_exercised": True,
+        "rollback_resource_skip_used": False,
         "production_effect": False,
     }:
-        errors.append("runtime evidence is incomplete or overclaims AWS effect")
+        errors.append("runtime release evidence is incomplete or expands production effect")
     proposal_relative_path = contract.get("read_permission_proposal")
     if proposal_relative_path != (
         "docs/action_mutation_staging_read_permission_proposal.json"
@@ -390,7 +398,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     if blockers.get("prepare_execute_workflow_implemented") is not True:
         errors.append("implemented prepare/execute workflow is not recorded")
     if blockers.get("release_write_authority_approved") is not False:
-        errors.append("read-only verification cannot grant release write authority")
+        errors.append("completed release cannot grant standing future write authority")
+    if blockers.get("one_time_release_completed") is not True:
+        errors.append("completed one-time staging release is not recorded")
 
     rollback = contract.get("rollback", {})
     required_rollback = (
@@ -405,6 +415,12 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("rollback cannot delete audit evidence")
     if rollback.get("schema_column_drop_allowed") is not False:
         errors.append("rollback cannot drop assignment columns")
+    if rollback.get("recovery_exercised") is not True:
+        errors.append("verified rollback recovery is not recorded")
+    if rollback.get("recovery_completed_status") != "UPDATE_ROLLBACK_COMPLETE":
+        errors.append("rollback recovery did not return to a completed stable state")
+    if rollback.get("resource_skip_used") is not False:
+        errors.append("rollback recovery cannot claim a skipped resource")
 
     template = (root / "infrastructure" / "stateful-lifecycle-staging.yaml").read_text(
         encoding="utf-8"
@@ -551,8 +567,8 @@ def main() -> int:
             print(f"DRIFT: {error}")
         return 1
     print(
-        "PASS: Action mutation release workflow is bounded and AWS writes remain "
-        "human-gated and unexecuted"
+        "PASS: Action mutation staging release is verified and future AWS writes "
+        "remain separately human-gated"
     )
     return 0
 

@@ -118,12 +118,14 @@ additive schema migration, read-only validation, mutation Lambda, Operations
 API, private frontend, read-only smoke checks, four-role checks, then a
 named-human canary.
 
-The mutation Lambda now has a narrow staging release workflow implemented in
-the repository. Its prepare and execute jobs use separate protected
-environments, but their least-privilege roles are not configured or authorised.
-The existing stateful lifecycle workflow updates a broader stack and must not
-be used as an implicit substitute. No schema migration, Lambda/API deployment,
-frontend publication, or Action mutation is authorised by the rollout plan.
+The mutation Lambda has a narrow staging release workflow implemented and
+verified through separate protected prepare and execute environments. The
+named human configured distinct GitHub OIDC orchestration identities and a
+CloudFormation-only service role; neither GitHub identity can update Lambda
+directly. The existing stateful lifecycle workflow updates a broader stack and
+remains an invalid substitute. This release does not authorise a schema
+migration, API/frontend deployment, operational Action mutation, or production
+change.
 
 The proposed narrow path is documented in
 [`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md).
@@ -138,6 +140,22 @@ single exact-resource read capability for named-human application. The named
 repository owner applied it, and read-only run `31298179885` then passed the AWS
 inspection while verifying stable stack ownership and Lambda configuration. The
 agent did not modify IAM. The later prepare/execute implementation preserves
-separate approvals and exact commit, artifact, and one-resource checks;
-prepare/execute authority remains separately unapproved and neither phase has
-run.
+separate approvals and exact commit, artifact, and one-resource checks.
+The first complete release was verified on 2026-08-10 from commit `bde0927`.
+Read-only Plan run `31353510147` accepted the stable completed-rollback state
+without an AWS write. Prepare run `31359941156` created an available,
+unexecuted change set for exactly one non-replacing
+`ActionMutationFunction` property modification. After a separate approval,
+Execute run `31360187221` completed with stack status `UPDATE_COMPLETE`; the
+deployed Lambda code digest matched the prepared artifact and the workflow
+reported no production effect.
+
+The recovery path was also exercised rather than inferred. An earlier execute
+attempt reached `UPDATE_ROLLBACK_FAILED` after the service role could update the
+candidate but could not resolve every template role or read the retained prior
+artifact during rollback. A named human added only the required exact-resource
+reads and continued rollback without skipping a resource. The stack returned
+to `UPDATE_ROLLBACK_COMPLETE`, the prior artifact was restored, and the new
+prepare/execute pair then succeeded. The release scripts accept
+`UPDATE_ROLLBACK_COMPLETE` only as a reusable preflight state; successful
+execution still requires final `UPDATE_COMPLETE`.

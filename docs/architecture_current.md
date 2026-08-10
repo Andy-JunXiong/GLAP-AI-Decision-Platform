@@ -101,27 +101,29 @@ aggregate-only and read-only, with no private API or Cognito configuration.
 
 The repository additionally implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a
-separate approver. This is repository evidence only: the additive staging
-schema migration in `sql/15_action_assignment_v1.sql` is plan-only and the
-deployed Operations boundary remains the three-operation contract above.
-The rollout package now has fail-closed schema validation, opt-in read-only and
-four-role checks, and an evidence-preserving rollback rule. The narrow release
-workflow is implemented, but deployment remains blocked on separate AWS write
-roles and approval; the full stateful stack is not an approved substitute.
-The current RFC proposes retaining the existing CloudFormation owner and using
-the previous template with only `ActionMutationArtifactKey` changed. Execution
-must fail closed unless the change set contains only a non-replacing
-`ActionMutationFunction` modification. The design and its AWS permission gap
-were reviewed for plan-only implementation. The manual plan workflow now
-packages locally and inspects the current stack/function through read-only AWS
-calls. Its first AWS run established OIDC and passed repository gates, then
-failed closed on the missing `lambda:GetFunctionConfiguration` read capability.
-The repository owner applied only that exact-resource read capability. Follow-up
-run `31298179885` passed the read-only AWS inspection and verified stable
-CloudFormation ownership and Lambda configuration. The agent did not modify IAM.
-The prepare/execute jobs are implemented behind separate protected environments.
-Artifact upload, change-set creation/execution, deployment, and operational
-mutation remain unapproved and unexecuted.
+separate approver. The additive staging schema migration in
+`sql/15_action_assignment_v1.sql` remains plan-only, so the deployed Operations
+boundary still exposes the three-operation contract above even though the
+updated mutation Lambda code is now present in staging.
+
+The mutation Lambda release boundary is deployed and verified. A read-only Plan
+precedes two separately protected GitHub environments: Prepare uploads one
+content-addressed artifact and creates an unexecuted change set; Execute
+revalidates and executes only that exact change set after a new human approval.
+Distinct OIDC identities orchestrate the phases, while a CloudFormation-only
+service role owns the exact Lambda update and rollback reads. Neither GitHub
+identity can call the Lambda update API directly. The guard rejects every
+change set except one non-replacing `ActionMutationFunction` property
+modification and preserves the prior artifact for rollback.
+
+On 2026-08-10, the release path demonstrated both recovery and success. A first
+execution exposed missing exact rollback reads and reached
+`UPDATE_ROLLBACK_FAILED`; a named human corrected only those resource-specific
+permissions and continued rollback without skipping a resource. The stack
+returned to `UPDATE_ROLLBACK_COMPLETE` with the prior artifact restored. A new
+Prepare and separately approved Execute then finished at `UPDATE_COMPLETE`, and
+the active Lambda digest matched the reviewed artifact. This is AWS staging
+delivery evidence, not an operational Action canary or production authority.
 
 This staging deployment does not authorise production expansion: production
 aliases, recurring lifecycle or forecast schedules, automatic policy

@@ -101,6 +101,15 @@ The values are deliberately omitted because they identify environment-specific r
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`
+- the separately deployed Action mutation staging function uses a two-phase
+  GitHub OIDC release boundary: a protected prepare environment may upload one
+  content-addressed artifact and create an unexecuted change set, while a
+  separately protected execute environment may execute only that reviewed
+  change set
+- neither Action mutation GitHub identity can update Lambda directly; a
+  CloudFormation-only service role holds the exact function update capability,
+  exact template-role reads, and both the candidate and retained rollback
+  artifact reads required to finish or recover the one-resource update
 
 The deployed CloudWatch alarms publish both alarm and recovery transitions to
 the existing `glap-pipeline-alerts` SNS topic. Subscriber endpoints are managed
@@ -109,6 +118,16 @@ in AWS and are deliberately not published in this repository.
 ## IAM model
 
 The Lambda execution role needs permission to start and inspect Athena queries, read Glue catalog metadata, and access the relevant S3 data and result locations. The scheduler needs permission to invoke the Lambda function. This repository does not publish account IDs, role ARNs, policies, or bucket names.
+
+The Action mutation staging release boundary was exercised end to end on
+2026-08-10. Separate human approvals guarded change-set preparation and
+execution, the change set contained one non-replacing Lambda property update,
+and the final stack and function both completed successfully. A preceding
+attempt exposed missing rollback-path permissions, reached
+`UPDATE_ROLLBACK_FAILED`, and was recovered by a named human without skipping a
+resource before the successful retry. This is staging delivery and recovery
+evidence only; it grants no production alias, schedule, IAM-administration, or
+operational Action authority.
 
 ## Security and redaction
 

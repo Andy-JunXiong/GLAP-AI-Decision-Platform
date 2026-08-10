@@ -1,11 +1,13 @@
 # Action assignment staging rollout
 
-**Status:** plan-only; release workflow implemented, blocked on AWS write approval
+**Status:** partial staging rollout; mutation Lambda released, remaining steps plan-only
 
 This package prepares the repository implementation of Action `EDIT`, owner,
-due date, and `EDITED` review state for private staging. It does not authorize
-or execute Athena DDL, Lambda/API deployment, frontend publication, user
-creation, or an operational Action mutation.
+due date, and `EDITED` review state for private staging. The Action mutation
+Lambda package was released through the governed staging path on 2026-08-10,
+but this document does not authorize or execute Athena DDL, Operations API
+deployment, frontend publication, user creation, or an operational Action
+mutation.
 
 ## Preflight and release order
 
@@ -19,9 +21,10 @@ creation, or an operational Action mutation.
    the whole stateful stack and remains prohibited. The reviewed previous-
    template, one-resource change-set design is documented in
    [`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md).
-   Its manual prepare and execute phases are implemented with separate protected
-   environments, but the required roles are not configured and no AWS write is
-   approved or executed.
+   This step completed on 2026-08-10 through separately approved Prepare run
+   `31359941156` and Execute run `31360187221`. The stack finished at
+   `UPDATE_COMPLETE`, and the active Lambda digest matched the reviewed
+   artifact. This does not pre-authorise another release.
 6. Run the existing Operations API workflow in `plan`, then separately approve
    its `deploy` action.
 7. Run the existing internal frontend publisher in plan mode, then separately
@@ -32,9 +35,15 @@ creation, or an operational Action mutation.
    and a separate approver approves or rejects it. Retry the same request ID and
    confirm no duplicate audit event.
 
+Step 5 completed before steps 3 and 4. This is bounded because the deployed API
+and frontend do not expose `EDIT`, the additive schema remains unapplied, and no
+Action canary occurred. Do not continue to steps 6-9 until a named human
+authorises the schema migration and all five validation checks return zero.
+
 The agent may prepare and validate these artifacts but may not perform steps
-3, 5-7, or 9. Temporary role-test users in step 8 also require explicit human
-approval because that verifier writes to Cognito before cleaning them up.
+3, 6-7, or 9, or any future release write. Temporary role-test users in step 8
+also require explicit human approval because that verifier writes to Cognito
+before cleaning them up.
 
 ## Rollback decision
 

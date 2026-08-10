@@ -303,7 +303,27 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and schema.get("additive_only") is True
         and schema.get("automatic_workflow_wiring") is False
         and rollout.get("release_paths", {}).get("action_mutation_lambda")
-        == "WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION"
+        == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+        and rollout.get("verified_release_evidence", {}).get("stack_final_status")
+        == "UPDATE_COMPLETE"
+        and rollout.get("verified_release_evidence", {}).get(
+            "lambda_digest_matches_artifact"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "schema_migration_applied"
+        )
+        is False
+        and rollout.get("verified_release_evidence", {}).get(
+            "operational_action_mutation_executed"
+        )
+        is False
+        and rollout.get("verified_release_evidence", {}).get("production_effect")
+        is False
+        and rollout.get("verified_release_evidence", {}).get(
+            "future_release_write_authority_approved"
+        )
+        is False
         and rollout.get("rollback", {}).get(
             "package_rollback_requires_zero_edit_events"
         )
@@ -315,7 +335,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment rollout remains ordered and plan-only; its implemented release workflow is blocked on AWS write authorization.",
+            "Action assignment rollout remains ordered and plan-only after the verified Lambda release; future writes still require approval.",
             "Action assignment rollout hides its blocker or expands deployment, mutation, or scheduling authority.",
             (
                 contract_path,
@@ -353,8 +373,10 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
     access_authority = access.get("authority", {})
     bounded = (
         release.get("status")
-        == "RELEASE_WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION"
+        == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
         and release.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
+        and release.get("authority_scope")
+        == "NO_STANDING_FUTURE_WRITE_AUTHORITY"
         and authority.get("workflow_implementation_authorized") is True
         and authority.get("read_permission_human_approved") is True
         and all(
@@ -384,15 +406,22 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
         and blockers.get("narrow_workflow_implemented") is True
         and blockers.get("prepare_execute_workflow_implemented") is True
         and blockers.get("release_write_authority_approved") is False
-        and runtime.get("result") == "READ_ONLY_PLAN_PASSED"
+        and blockers.get("one_time_release_completed") is True
+        and release.get("release_workflow", {}).get("executed") is True
+        and runtime.get("result") == "STAGING_RELEASE_VERIFIED"
         and runtime.get("aws_inspection_passed") is True
         and runtime.get("cloudformation_ownership_verified") is True
         and runtime.get("stable_lambda_configuration_verified") is True
-        and runtime.get("aws_write_observed") is False
-        and runtime.get("artifact_upload_observed") is False
-        and runtime.get("change_set_created_or_executed") is False
-        and runtime.get("lambda_code_updated") is False
-        and runtime.get("iam_or_cloudformation_modified") is False
+        and runtime.get("aws_write_observed") is True
+        and runtime.get("artifact_upload_observed") is True
+        and runtime.get("change_set_created_or_executed") is True
+        and runtime.get("exact_one_resource_change_verified") is True
+        and runtime.get("stack_final_status") == "UPDATE_COMPLETE"
+        and runtime.get("lambda_code_updated") is True
+        and runtime.get("lambda_digest_matches_artifact") is True
+        and runtime.get("iam_or_cloudformation_modified") is True
+        and runtime.get("rollback_recovery_exercised") is True
+        and runtime.get("rollback_resource_skip_used") is False
         and runtime.get("production_effect") is False
         and release.get("read_permission_proposal") == proposal_path
         and release.get("release_access_proposal") == access_path
@@ -430,7 +459,7 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
             "action_mutation_release_boundary",
             "governance",
             bounded,
-            "The narrow prepare/execute workflow is implemented behind separate approvals; agent IAM and AWS release writes remain prohibited.",
+            "The narrow prepare/execute workflow completed one verified staging release; future writes remain separately approved and agent IAM/AWS release authority remains prohibited.",
             "The mutation release expands authority, hides runtime evidence, or broadens the read-permission proposal.",
             (
                 contract_path,

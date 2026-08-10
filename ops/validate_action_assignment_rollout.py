@@ -79,8 +79,10 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("schema migration must not be automatically wired")
 
     release_paths = contract.get("release_paths", {})
-    if release_paths.get("action_mutation_lambda") != "WORKFLOW_IMPLEMENTED_AWAITING_AWS_WRITE_AUTHORIZATION":
-        errors.append("mutation release write-authority blocker is hidden")
+    if release_paths.get("action_mutation_lambda") != (
+        "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+    ):
+        errors.append("verified mutation release or future approval boundary is hidden")
     if release_paths.get("candidate_design_contract") != (
         "docs/action_mutation_staging_release_contract.json"
     ):
@@ -89,6 +91,20 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("Operations API release must remain manual and plan-first")
     if release_paths.get("internal_frontend") != "EXISTING_MANUAL_PLAN_FIRST_SCRIPT":
         errors.append("internal frontend release must remain manual and plan-first")
+    release_evidence = contract.get("verified_release_evidence", {})
+    if release_evidence != {
+        "observed_on_sydney_date": "2026-08-10",
+        "git_commit": "bde092750768163e12e70e9649e3e68485483a71",
+        "prepare_run_id": 31359941156,
+        "execute_run_id": 31360187221,
+        "stack_final_status": "UPDATE_COMPLETE",
+        "lambda_digest_matches_artifact": True,
+        "schema_migration_applied": False,
+        "operational_action_mutation_executed": False,
+        "production_effect": False,
+        "future_release_write_authority_approved": False,
+    }:
+        errors.append("verified mutation release evidence is incomplete or expands authority")
     if contract.get("role_matrix") != EXPECTED_ROLE_MATRIX:
         errors.append("Action assignment role matrix has changed")
     rollback = contract.get("rollback", {})
