@@ -67,7 +67,7 @@ try {
         throw "Expected exactly one staging stack"
     }
     $stack = $stackResult.Stacks[0]
-    if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE")) {
+    if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE")) {
         throw "Staging stack is not in a stable completed state"
     }
     $artifactParameter = @(

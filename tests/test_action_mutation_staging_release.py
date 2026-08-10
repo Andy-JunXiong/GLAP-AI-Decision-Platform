@@ -143,6 +143,26 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
         )
         self.assertNotIn('test "$REQUESTED_COMMIT" = "$GITHUB_SHA"', workflow)
 
+    def test_release_accepts_completed_rollback_only_as_a_reusable_preflight_state(self):
+        scripts = {
+            name: (ROOT / "ops" / name).read_text(encoding="utf-8")
+            for name in (
+                "plan_action_mutation_staging_release.ps1",
+                "prepare_action_mutation_staging_release.ps1",
+                "execute_action_mutation_staging_release.ps1",
+            )
+        }
+        stable_states = '@("CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE")'
+        for script in scripts.values():
+            self.assertIn(stable_states, script)
+            self.assertNotIn("UPDATE_ROLLBACK_FAILED", script)
+            self.assertNotIn("UPDATE_ROLLBACK_IN_PROGRESS", script)
+            self.assertNotIn("UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", script)
+        self.assertIn(
+            '$newStack.StackStatus -ne "UPDATE_COMPLETE"',
+            scripts["execute_action_mutation_staging_release.ps1"],
+        )
+
     def test_release_scripts_preserve_cloudformation_ownership(self):
         prepare = (
             ROOT / "ops" / "prepare_action_mutation_staging_release.ps1"

@@ -53,7 +53,7 @@ try {
     $artifactSha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
 
     $stack = (Invoke-AwsJson @("cloudformation", "describe-stacks", "--stack-name", $StackName) "Unable to inspect staging stack").Stacks[0]
-    if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE")) { throw "Staging stack is not stable" }
+    if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE")) { throw "Staging stack is not stable" }
     $parameters = @($stack.Parameters)
     $bucket = ($parameters | Where-Object ParameterKey -eq "ArtifactBucket").ParameterValue
     $previousKey = ($parameters | Where-Object ParameterKey -eq "ActionMutationArtifactKey").ParameterValue

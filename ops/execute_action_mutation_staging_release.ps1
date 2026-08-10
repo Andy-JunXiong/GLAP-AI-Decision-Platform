@@ -32,7 +32,7 @@ function Assert-OneMutationChange($Description) {
 if ((git rev-parse HEAD).Trim() -ne $GitCommit -or (git status --porcelain)) { throw "Execute requires the exact clean checked-out commit" }
 $changeSetDescription = "Action mutation $GitCommit; execution-role=$CloudFormationRoleArn"
 $stack = (Invoke-AwsJson @("cloudformation", "describe-stacks", "--stack-name", $StackName) "Unable to inspect staging stack").Stacks[0]
-if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE")) { throw "Staging stack is not stable" }
+if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE")) { throw "Staging stack is not stable" }
 $description = Invoke-AwsJson @("cloudformation", "describe-change-set", "--stack-name", $StackName, "--change-set-name", $ChangeSetName) "Unable to inspect change set"
 # DescribeChangeSet does not return RoleARN. Prepare IAM enforced the role on
 # creation; the exact description carries that reviewed request into Execute.

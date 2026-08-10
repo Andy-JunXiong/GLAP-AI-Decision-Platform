@@ -499,6 +499,16 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("release phases do not validate the actual checked-out commit")
     if "git merge-base --is-ancestor" not in release:
         errors.append("release workflow does not require the requested commit on main")
+    stable_stack_statuses = '@("CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE")'
+    for phase, phase_script in (
+        ("plan", script),
+        ("prepare", prepare),
+        ("execute", execute),
+    ):
+        if stable_stack_statuses not in phase_script:
+            errors.append(f"{phase} phase does not accept only completed reusable stack states")
+    if '$newStack.StackStatus -ne "UPDATE_COMPLETE"' not in execute:
+        errors.append("execute phase does not require a successful final stack update")
     combined_release = (release + "\n" + prepare + "\n" + execute).lower()
     for forbidden in ("update-function-code", "cloudformation deploy", "aws iam "):
         if forbidden in combined_release:
