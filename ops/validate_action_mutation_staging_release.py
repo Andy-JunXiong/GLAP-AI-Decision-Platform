@@ -508,7 +508,10 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "cloudformation create-change-set",
         "--use-previous-template",
         "--role-arn $CloudFormationRoleArn",
+        'execution-role=$CloudFormationRoleArn',
+        "--description $changeSetDescription",
         '"cloudformation", "describe-change-set"',
+        "description -ne $changeSetDescription",
         "cloudformation delete-change-set",
         'logicalresourceid -ne "ActionMutationFunction"',
     )
@@ -521,10 +524,13 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "cloudformation wait stack-update-complete",
         '"lambda", "get-function-configuration"',
         'executionstatus -ne "AVAILABLE"',
-        'rolearn -ne $cloudformationrolearn',
+        'description -ne $changesetdescription',
+        '$newstack.rolearn -ne $cloudformationrolearn',
     )
     if not all(value.lower() in execute.lower() for value in required_execute):
         errors.append("execute phase lacks revalidation or post-update verification")
+    if "$description.rolearn" in prepare.lower() or "$description.rolearn" in execute.lower():
+        errors.append("release scripts rely on a RoleARN field absent from DescribeChangeSet")
     return errors
 
 

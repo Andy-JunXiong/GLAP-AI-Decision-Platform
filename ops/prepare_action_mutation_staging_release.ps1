@@ -59,6 +59,7 @@ try {
     $previousKey = ($parameters | Where-Object ParameterKey -eq "ActionMutationArtifactKey").ParameterValue
     if (-not $bucket -or -not $previousKey) { throw "Required existing artifact parameters are unavailable" }
     $artifactKey = "action-mutation/$GitCommit/glap-action-mutation-$artifactSha256.zip"
+    $changeSetDescription = "Action mutation $GitCommit; execution-role=$CloudFormationRoleArn"
 
     & aws s3api put-object --bucket $bucket --key $artifactKey --body $archivePath --metadata "git-commit=$GitCommit,sha256=$artifactSha256" @awsScope --output json | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Artifact upload failed" }
@@ -71,18 +72,22 @@ try {
             $parameterArguments += "ParameterKey=$($parameter.ParameterKey),UsePreviousValue=true"
         }
     }
-    & aws cloudformation create-change-set --stack-name $StackName --change-set-name $ChangeSetName --change-set-type UPDATE --use-previous-template --role-arn $CloudFormationRoleArn --capabilities CAPABILITY_NAMED_IAM --parameters @parameterArguments --description "Action mutation $GitCommit" @awsScope --output json | Out-Null
+    & aws cloudformation create-change-set --stack-name $StackName --change-set-name $ChangeSetName --change-set-type UPDATE --use-previous-template --role-arn $CloudFormationRoleArn --capabilities CAPABILITY_NAMED_IAM --parameters @parameterArguments --description $changeSetDescription @awsScope --output json | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Unable to create the unexecuted change set" }
     $changeSetCreated = $true
     & aws cloudformation wait change-set-create-complete --stack-name $StackName --change-set-name $ChangeSetName @awsScope
     if ($LASTEXITCODE -ne 0) { throw "Change set did not become ready" }
     $description = Invoke-AwsJson @("cloudformation", "describe-change-set", "--stack-name", $StackName, "--change-set-name", $ChangeSetName) "Unable to inspect change set"
-    if ($description.RoleARN -ne $CloudFormationRoleArn) { throw "Change set does not use the reviewed CloudFormation execution role" }
+    # DescribeChangeSet does not return RoleARN. The Prepare role's
+    # cloudformation:RoleArn IAM condition is the authoritative role gate; the
+    # returned description binds the reviewed request across release phases.
+    if ($description.Description -ne $changeSetDescription) { throw "Change set metadata does not match the reviewed execution-role request" }
     Assert-OneMutationChange $description
 
     Write-Host "Prepared an unexecuted, one-resource Action mutation change set"
     Write-Host "  Git commit: $GitCommit"
     Write-Host "  Artifact SHA256: $artifactSha256"
+    Write-Host "  Execution-role request bound to reviewed metadata: True"
     Write-Host "  Previous artifact retained for rollback: True"
     Write-Host "  Change set executed: False"
     Write-Host "  Production effect: False"

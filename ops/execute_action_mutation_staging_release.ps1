@@ -30,10 +30,13 @@ function Assert-OneMutationChange($Description) {
 }
 
 if ((git rev-parse HEAD).Trim() -ne $GitCommit -or (git status --porcelain)) { throw "Execute requires the exact clean checked-out commit" }
+$changeSetDescription = "Action mutation $GitCommit; execution-role=$CloudFormationRoleArn"
 $stack = (Invoke-AwsJson @("cloudformation", "describe-stacks", "--stack-name", $StackName) "Unable to inspect staging stack").Stacks[0]
 if ($stack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE")) { throw "Staging stack is not stable" }
 $description = Invoke-AwsJson @("cloudformation", "describe-change-set", "--stack-name", $StackName, "--change-set-name", $ChangeSetName) "Unable to inspect change set"
-if ($description.Status -ne "CREATE_COMPLETE" -or $description.ExecutionStatus -ne "AVAILABLE" -or $description.Description -ne "Action mutation $GitCommit" -or $description.RoleARN -ne $CloudFormationRoleArn) { throw "Change set identity, role, or state changed" }
+# DescribeChangeSet does not return RoleARN. Prepare IAM enforced the role on
+# creation; the exact description carries that reviewed request into Execute.
+if ($description.Status -ne "CREATE_COMPLETE" -or $description.ExecutionStatus -ne "AVAILABLE" -or $description.Description -ne $changeSetDescription) { throw "Change set identity, execution-role request, or state changed" }
 Assert-OneMutationChange $description
 $artifactKey = @($description.Parameters | Where-Object ParameterKey -eq "ActionMutationArtifactKey").ParameterValue
 $artifactBucket = @($stack.Parameters | Where-Object ParameterKey -eq "ArtifactBucket").ParameterValue
@@ -50,11 +53,12 @@ if ($LASTEXITCODE -ne 0) { throw "Stack update did not complete successfully" }
 
 $newStack = (Invoke-AwsJson @("cloudformation", "describe-stacks", "--stack-name", $StackName) "Unable to verify updated stack").Stacks[0]
 $newConfiguration = Invoke-AwsJson @("lambda", "get-function-configuration", "--function-name", $FunctionName) "Unable to verify updated Lambda"
-if ($newStack.StackStatus -ne "UPDATE_COMPLETE" -or $newConfiguration.State -ne "Active" -or $newConfiguration.LastUpdateStatus -ne "Successful" -or $newConfiguration.CodeSha256 -eq $oldConfiguration.CodeSha256) {
+if ($newStack.StackStatus -ne "UPDATE_COMPLETE" -or $newStack.RoleARN -ne $CloudFormationRoleArn -or $newConfiguration.State -ne "Active" -or $newConfiguration.LastUpdateStatus -ne "Successful" -or $newConfiguration.CodeSha256 -eq $oldConfiguration.CodeSha256) {
     throw "Post-update Lambda verification failed"
 }
 Write-Host "Executed and verified the approved Action mutation change set"
 Write-Host "  Git commit: $GitCommit"
 Write-Host "  Lambda code digest changed: True"
+Write-Host "  Stack execution role verified: True"
 Write-Host "  Stack status: UPDATE_COMPLETE"
 Write-Host "  Production effect: False"
