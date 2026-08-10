@@ -137,6 +137,11 @@ class ActionMutationStagingReleaseTests(unittest.TestCase):
         self.assertIn("AWS_ACTION_MUTATION_PREPARE_ROLE_ARN", workflow)
         self.assertIn("AWS_ACTION_MUTATION_EXECUTE_ROLE_ARN", workflow)
         self.assertEqual(workflow.count("ACTION_MUTATION_CF_EXECUTION_ROLE_ARN"), 2)
+        self.assertEqual(
+            workflow.count('test "$(git rev-parse HEAD)" = "$REQUESTED_COMMIT"'),
+            2,
+        )
+        self.assertNotIn('test "$REQUESTED_COMMIT" = "$GITHUB_SHA"', workflow)
 
     def test_release_scripts_preserve_cloudformation_ownership(self):
         prepare = (

@@ -494,6 +494,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("release phases do not use separate role variables")
     if release.count("ACTION_MUTATION_CF_EXECUTION_ROLE_ARN") != 2:
         errors.append("release phases do not pin the same CloudFormation execution role")
+    checkout_commit_check = 'test "$(git rev-parse HEAD)" = "$REQUESTED_COMMIT"'
+    if release.count(checkout_commit_check) != 2 or 'test "$REQUESTED_COMMIT" = "$GITHUB_SHA"' in release:
+        errors.append("release phases do not validate the actual checked-out commit")
     if "git merge-base --is-ancestor" not in release:
         errors.append("release workflow does not require the requested commit on main")
     combined_release = (release + "\n" + prepare + "\n" + execute).lower()
