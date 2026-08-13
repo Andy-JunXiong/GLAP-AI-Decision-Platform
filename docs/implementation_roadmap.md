@@ -283,7 +283,8 @@ Implemented private-staging views:
 - Decision Queue and review history;
 - Action Board with current status and governed assign/edit/approve/reject/complete controls
   verified in private staging across schema, API, frontend, runtime, and the
-  four-role matrix; the separate named-human canary remains pending;
+  four-role matrix; the named operator `EDIT` is recorded, while response-fix
+  release, stable retry, and the separate approver decision remain pending;
 - Outcome Review with expected-versus-observed values;
 - Forecast and Forecast Accuracy;
 - Pipeline Health and runbook drill-down.
@@ -349,9 +350,11 @@ track.
 5. Completed design: classification, retention/deletion, SLO, recovery and
    Iceberg maintenance boundaries are documented. Enforcement, recovery drills,
    and load/security testing remain before any production expansion.
-6. Prepared, not deployed: the Action assignment rollout now has an ordered
-   schema validation, runtime/role smoke checks, named-human canary, and bounded
-   rollback contract. A narrow existing-stack, previous-template change-set RFC
+6. Partially verified in staging: the Action assignment rollout completed
+   schema validation and runtime/role smoke checks, then recorded one named-
+   operator `EDIT`. A response-only serialization fix is pushed but not
+   deployed; stable retry and separate approval remain. A narrow existing-
+   stack, previous-template change-set RFC
    now limits the candidate release to `ActionMutationFunction`. Its manual,
    read-only plan workflow is implemented and its first run safely identified
    the missing `lambda:GetFunctionConfiguration` permission after OIDC and all

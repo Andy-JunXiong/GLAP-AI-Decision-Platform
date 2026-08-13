@@ -105,8 +105,10 @@ separate approver. A named human applied the additive staging schema migration
 on 2026-08-13, and all five read-only validation checks returned zero. The
 Operations API and private frontend were then released through separately
 approved staging-only paths. Assignment-specific runtime and four-role checks
-passed, and all temporary test users were removed. The separate two-human
-Action canary remains pending.
+passed, and all temporary test users were removed. The named-human canary is
+partially complete: one operator `EDIT` is persisted and resolves to `EDITED`;
+a response serialization fix is pushed but not deployed, and stable retry plus
+the separate approver decision remain pending.
 
 The mutation Lambda release boundary is deployed and verified. A read-only Plan
 precedes two separately protected GitHub environments: Prepare uploads one

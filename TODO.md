@@ -28,12 +28,22 @@ Current implementation and release boundaries are recorded in the
 - [x] Pass the Action assignment runtime verifier and complete the separately
   approved temporary-user four-role matrix. All role boundaries passed, all
   test users were removed, and independent reconciliation found zero remaining.
-- [ ] Have a named signed-in operator perform `EDIT`, retry the same request ID,
-  then have a different named approver approve or reject the Action.
+- [x] Have a named signed-in operator perform `EDIT`. Read-only reconciliation
+  confirmed one valid event, one request ID, one Action, and current `EDITED`.
+- [x] Diagnose the post-write HTTP 503 as response-only Python `date` JSON
+  serialization, push fix commit `763a817`, and pass 240 local tests plus all 15
+  drift checks. The fix is not deployed.
+- [ ] Commit and push the synchronized evidence, wait for CI, then release that
+  exact clean `main` commit containing `763a817` through separately approved
+  narrow Prepare and Execute phases; do not update the whole lifecycle stack.
+- [ ] Retry the original request ID after the fix release and confirm the audit
+  row count remains one, then have a different named approver approve or reject
+  the Action.
 
-The rollout has not yet created a real `EDIT` event or completed the two-human
-canary. It did not mutate a production table, publish to Pages, enable a
-schedule, or activate a policy/model.
+The rollout has created one real staging `EDIT` event but has not completed the
+stable retry or separate approver half of the canary. It did not mutate a
+production table, publish to Pages, enable a schedule, or activate a
+policy/model.
 
 ## 10 August 2026 closeout
 
@@ -58,9 +68,9 @@ schedule, or activate a policy/model.
   `ActionMutationFunction` change set; Execute run `31360187221` finished at
   `UPDATE_COMPLETE`, with an active/successful Lambda digest equal to the
   reviewed artifact and no production effect.
-- [ ] Run the separately authorised named-human staging Action assignment
-  canary only after the additive schema migration, Operations API, private
-  frontend, read-only verification, and four-role gates are complete.
+- [ ] Complete the separately authorised named-human staging Action assignment
+  canary after the response-fix release, stable retry, and separate approver
+  decision. The operator `EDIT` is already recorded and must not be duplicated.
 
 The successful Lambda release does not deploy the additive schema, expose the
 new `EDIT` contract through the Operations API/frontend, execute an operational

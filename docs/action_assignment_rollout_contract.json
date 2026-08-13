@@ -1,6 +1,6 @@
 {
   "schema_version": "action-assignment-rollout.v1",
-  "status": "APPLICATIONS_VERIFIED_BLOCKED_NAMED_HUMAN_CANARY",
+  "status": "CANARY_PARTIAL_BLOCKED_RESPONSE_FIX_RELEASE",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
@@ -35,6 +35,7 @@
     "schema_plan": "LOCAL_RENDER_ONLY_NO_AWS_EXECUTION",
     "schema_migration": "COMPLETED_NAMED_HUMAN_REVIEWED_STAGING_ONLY",
     "action_mutation_lambda": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL",
+    "response_serialization_fix": "COMMIT_763A817_PUSHED_NOT_DEPLOYED",
     "candidate_design_contract": "docs/action_mutation_staging_release_contract.json",
     "operations_api": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL",
     "internal_frontend": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
@@ -62,7 +63,21 @@
     "four_role_verification_passed": true,
     "temporary_role_users_removed": 4,
     "temporary_role_users_remaining": 0,
-    "operational_action_mutation_executed": false,
+    "operational_action_mutation_executed": true,
+    "canary_edit_observed_on_sydney_date": "2026-08-13",
+    "canary_edit_event_count": 1,
+    "canary_edit_distinct_request_id_count": 1,
+    "canary_edit_distinct_action_count": 1,
+    "canary_edit_valid_assignment_count": 1,
+    "canary_edit_current_edited_count": 1,
+    "canary_edit_request_id_row_count": 1,
+    "canary_edit_http_status": 503,
+    "canary_edit_failure_category": "DATE_RESPONSE_SERIALIZATION",
+    "response_serialization_fix_git_commit": "763a817d578b0d50ca555d53f2609f0c1192b9c1",
+    "response_serialization_fix_pushed_to_main": true,
+    "response_serialization_fix_deployed": false,
+    "operator_global_sign_out_completed": true,
+    "operator_group_membership_operator_only": true,
     "production_effect": false,
     "future_release_write_authority_approved": false
   },
@@ -84,6 +99,10 @@
     "named_signed_operator_required": true,
     "named_signed_approver_required": true,
     "stable_request_id_retry_required": true,
+    "operator_edit_completed": true,
+    "stable_request_id_retry_completed": false,
+    "named_approver_decision_completed": false,
+    "current_blocker": "RESPONSE_SERIALIZATION_FIX_NOT_DEPLOYED",
     "expected_states": ["PROPOSED", "EDITED", "APPROVED", "REJECTED"]
   }
 }

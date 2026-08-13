@@ -1,15 +1,17 @@
 # Action assignment staging rollout
 
-**Status:** application rollout verified; named-human Action canary pending
+**Status:** canary partially complete; response fix release, stable retry, and
+separate approver decision pending
 
-This package prepares the repository implementation of Action `EDIT`, owner,
+This package governs the repository implementation of Action `EDIT`, owner,
 due date, and `EDITED` review state for private staging. The Action mutation
 Lambda package was released through the governed staging path on 2026-08-10.
 The additive schema migration was separately reviewed and applied by a named
 human on 2026-08-13. The Operations API and private frontend were then released
 through their separately approved plan-first paths. This document does not
 authorize another deployment, persistent user creation, or an operational
-Action mutation.
+Action mutation. One separately authorised named-human canary `EDIT` has since
+been recorded; it does not create standing authority for another mutation.
 
 ## Preflight and release order
 
@@ -56,14 +58,32 @@ Action mutation.
    rerun.
 9. Two named signed-in humans perform the canary: an operator records `EDIT`
    and a separate approver approves or rejects it. Retry the same request ID and
-   confirm no duplicate audit event.
+   confirm no duplicate audit event. The operator phase started on 2026-08-13:
+   one valid `EDIT` event was appended and the current Action resolved to
+   `EDITED`. The API returned 503 only after the write because the mutation
+   response contained a Python `date` that Lambda could not JSON-serialize.
+   Read-only reconciliation found one event, one Action, one request ID, valid
+   assignment fields, and one row for that request ID.
+10. Release the response-only serialization fix through the same narrow,
+    separately approved mutation-Lambda Prepare/Execute path. Implementation
+    commit `763a817` is pushed to `main`, passes 240 local tests, and is not
+    deployed. Prepare must target the later clean, pushed `main` commit that
+    contains both `763a817` and this synchronized evidence, not the earlier
+    stale-document snapshot. Do not use the whole lifecycle stack or a direct
+    Lambda update.
+11. After the fix is deployed and the prior operator token has expired, the
+    same named operator retries the original request ID and confirms the audit
+    row count remains one. A different named approver may then approve or reject
+    the `EDITED` Action.
 
-Steps 3-8 are complete. The deployed private API and frontend now expose the
-assignment contract. No real Action mutation or canary occurred. Step 9 retains
-its separate two-human boundary.
+Steps 3-8 and the first write in step 9 are complete. The operator session used
+during diagnosis was globally signed out, and the identity was independently
+confirmed as operator-only. Steps 10-11 remain blocked on separate release and
+human authority. No retry, approver decision, production mutation, Pages
+publication, or schedule activation occurred.
 
 The agent may prepare and validate these artifacts but may not perform steps
-3, 6-7, or 9, or any future release write. Temporary role-test users in step 8
+3, 6-7, 9, or 11, or any future release write. Temporary role-test users in step 8
 also require explicit human approval because that verifier writes to Cognito
 before cleaning them up.
 
@@ -71,6 +91,9 @@ before cleaning them up.
 
 Before package rollback, use aggregate-only read queries to count `EDIT` audit
 events and current `EDITED` Actions.
+
+The 2026-08-13 reconciliation found nonzero `EDIT`/`EDITED` evidence, so the
+zero-event package rollback path is no longer available for this rollout.
 
 - If both counts are zero, previous application packages may be restored while
   retaining the additive columns and migration evidence. Re-run the old role

@@ -297,7 +297,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
     schema = rollout.get("schema", {})
     bounded = (
         rollout.get("status")
-        == "APPLICATIONS_VERIFIED_BLOCKED_NAMED_HUMAN_CANARY"
+        == "CANARY_PARTIAL_BLOCKED_RESPONSE_FIX_RELEASE"
         and rollout.get("business_timezone") == "Australia/Sydney"
         and rollout.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and all(authority.get(field) is False for field in protected_authority)
@@ -307,6 +307,8 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and schema.get("post_migration_validation_passed") is True
         and rollout.get("release_paths", {}).get("action_mutation_lambda")
         == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+        and rollout.get("release_paths", {}).get("response_serialization_fix")
+        == "COMMIT_763A817_PUSHED_NOT_DEPLOYED"
         and rollout.get("release_paths", {}).get("operations_api")
         == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
         and rollout.get("release_paths", {}).get("internal_frontend")
@@ -356,7 +358,31 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and rollout.get("verified_release_evidence", {}).get(
             "operational_action_mutation_executed"
         )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "canary_edit_event_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "canary_edit_request_id_row_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "canary_edit_current_edited_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "response_serialization_fix_deployed"
+        )
         is False
+        and rollout.get("verified_release_evidence", {}).get(
+            "operator_global_sign_out_completed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "operator_group_membership_operator_only"
+        )
+        is True
         and rollout.get("verified_release_evidence", {}).get("production_effect")
         is False
         and rollout.get("verified_release_evidence", {}).get(
@@ -368,13 +394,16 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         )
         is True
         and rollout.get("canary", {}).get("agent_execution_allowed") is False
+        and rollout.get("canary", {}).get("operator_edit_completed") is True
+        and rollout.get("canary", {}).get("stable_request_id_retry_completed") is False
+        and rollout.get("canary", {}).get("named_approver_decision_completed") is False
     )
     return [
         _result(
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment schema, Lambda, API, frontend, runtime, and role matrix are verified in staging; the named-human canary remains separately blocked.",
+            "Action assignment operator EDIT is recorded; the response-fix release, stable retry, and separate approver decision remain blocked.",
             "Action assignment rollout hides its blocker or expands deployment, mutation, or scheduling authority.",
             (
                 contract_path,

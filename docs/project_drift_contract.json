@@ -44,7 +44,7 @@
     {
       "id": "action_edit_owner_due_date",
       "state": "PARTIAL",
-      "boundary": "staging schema, Lambda, API, frontend, runtime, and four-role matrix verified; named-human canary pending",
+      "boundary": "staging operator EDIT recorded; response fix release, stable retry, and separate approver decision pending",
       "evidence_files": [
         "lambda/glap_action_mutation.py",
         "lambda/glap_operations_api.py",

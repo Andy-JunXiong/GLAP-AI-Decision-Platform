@@ -33,6 +33,20 @@ they were identified exactly, removed, and reconciled to zero before a
 successful 205-second rerun. That rerun also removed its four users, and an
 independent final check confirmed zero temporary role-check users.
 
+The named-human canary then recorded one valid staging `EDIT`. The audit table
+contained exactly one event for one request ID and one Action, and the current
+view resolved that Action to `EDITED` with valid assignment fields. The browser
+received HTTP 503 after the successful write because the mutation Lambda tried
+to return a Python `date` object. Safe logs classified this as a Lambda response
+marshal failure; both Lambdas remained active and successfully configured.
+
+Commit `763a817` converts response dates to ISO strings and adds a Lambda-level
+JSON serialization regression test. It is pushed to `main`, passed 240 Python
+tests and all 15 drift checks locally, and is not deployed. The operator session
+used during diagnosis was globally signed out, and read-only reconciliation
+confirmed that identity now belongs only to the `operator` group. No token or
+private identifier is retained in repository evidence.
+
 ## AWS profile visibility finding
 
 The existing user-level `codex-readonly` profile was present and valid. The
@@ -46,13 +60,19 @@ the repository.
 
 The staging schema, Action mutation Lambda, Operations API, and private
 frontend now support `EDIT`, named owner, due date, and `EDITED`. Runtime and
-four-role gates passed. No real `EDIT` event, Action canary, production
-mutation, alias movement, schedule activation, Pages publication, or
-policy/model promotion occurred today.
+four-role gates passed. The operator half of the Action canary wrote one real
+staging `EDIT` and left the Action at `EDITED`; the response-fix release, stable
+request-ID retry, and separate approver decision remain incomplete. No
+production mutation, alias movement, schedule activation, Pages publication,
+or policy/model promotion occurred today.
 
 ## Next authorised decision
 
-The only remaining Action assignment rollout step is the two-human canary. A
-named signed-in operator must record `EDIT` and retry the same request ID; a
-different named signed-in approver must then approve or reject it. The agent
-cannot perform either human decision.
+The next decision is whether to commit and push this synchronized evidence,
+wait for CI, and approve a narrow mutation-Lambda response-fix Prepare run for
+that exact new `main` commit, which contains implementation commit `763a817`.
+After reviewing its exact one-resource change set, Execute requires separate
+approval. After deployment and token-expiry containment, the same named
+operator must retry the original request ID; a different named approver must
+then approve or reject the `EDITED` Action. The agent cannot perform the
+release or either human decision.

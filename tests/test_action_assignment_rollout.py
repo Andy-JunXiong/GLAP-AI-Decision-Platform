@@ -64,6 +64,20 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
             validator.validate_contract(contract),
         )
 
+    def test_partial_canary_cannot_hide_edit_or_claim_completion(self):
+        contract = copy.deepcopy(validator.load_contract())
+        contract["canary"]["operator_edit_completed"] = False
+        contract["canary"]["named_approver_decision_completed"] = True
+        errors = validator.validate_contract(contract)
+        self.assertIn(
+            "canary must retain the completed operator EDIT evidence",
+            errors,
+        )
+        self.assertIn(
+            "separate approver decision must remain pending until verified",
+            errors,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

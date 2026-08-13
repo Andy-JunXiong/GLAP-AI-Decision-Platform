@@ -1,4 +1,4 @@
-"""Validate the partially released Action assignment staging rollout package."""
+"""Validate the partially completed Action assignment staging canary package."""
 
 from __future__ import annotations
 
@@ -49,10 +49,8 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     if contract.get("schema_version") != "action-assignment-rollout.v1":
         errors.append("unsupported schema_version")
-    if contract.get("status") != (
-        "APPLICATIONS_VERIFIED_BLOCKED_NAMED_HUMAN_CANARY"
-    ):
-        errors.append("rollout must expose the named-human canary blocker")
+    if contract.get("status") != "CANARY_PARTIAL_BLOCKED_RESPONSE_FIX_RELEASE":
+        errors.append("rollout must expose the partial canary release blocker")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -95,6 +93,10 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
     ):
         errors.append("verified mutation release or future approval boundary is hidden")
+    if release_paths.get("response_serialization_fix") != (
+        "COMMIT_763A817_PUSHED_NOT_DEPLOYED"
+    ):
+        errors.append("response fix must remain pushed but not deployed")
     if release_paths.get("candidate_design_contract") != (
         "docs/action_mutation_staging_release_contract.json"
     ):
@@ -131,7 +133,21 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "four_role_verification_passed": True,
         "temporary_role_users_removed": 4,
         "temporary_role_users_remaining": 0,
-        "operational_action_mutation_executed": False,
+        "operational_action_mutation_executed": True,
+        "canary_edit_observed_on_sydney_date": "2026-08-13",
+        "canary_edit_event_count": 1,
+        "canary_edit_distinct_request_id_count": 1,
+        "canary_edit_distinct_action_count": 1,
+        "canary_edit_valid_assignment_count": 1,
+        "canary_edit_current_edited_count": 1,
+        "canary_edit_request_id_row_count": 1,
+        "canary_edit_http_status": 503,
+        "canary_edit_failure_category": "DATE_RESPONSE_SERIALIZATION",
+        "response_serialization_fix_git_commit": "763a817d578b0d50ca555d53f2609f0c1192b9c1",
+        "response_serialization_fix_pushed_to_main": True,
+        "response_serialization_fix_deployed": False,
+        "operator_global_sign_out_completed": True,
+        "operator_group_membership_operator_only": True,
         "production_effect": False,
         "future_release_write_authority_approved": False,
     }:
@@ -158,6 +174,14 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         )
     ):
         errors.append("canary must retain named-human separation and stable retries")
+    if canary.get("operator_edit_completed") is not True:
+        errors.append("canary must retain the completed operator EDIT evidence")
+    if canary.get("stable_request_id_retry_completed") is not False:
+        errors.append("stable request-ID retry must remain pending until verified")
+    if canary.get("named_approver_decision_completed") is not False:
+        errors.append("separate approver decision must remain pending until verified")
+    if canary.get("current_blocker") != "RESPONSE_SERIALIZATION_FIX_NOT_DEPLOYED":
+        errors.append("canary must expose the undeployed response-fix blocker")
 
     role_script = (root / "ops" / "verify_operations_roles_staging.ps1").read_text(
         encoding="utf-8"
@@ -186,7 +210,7 @@ def main() -> int:
         for error in errors:
             print(f"DRIFT: {error}")
         return 1
-    print("PASS: Action assignment applications are verified; named-human canary remains blocked")
+    print("PASS: operator EDIT is recorded; response-fix release, retry, and approver remain blocked")
     return 0
 
 

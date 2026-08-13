@@ -111,8 +111,12 @@ authorised approver. This extension is implemented and locally verified in the
 repository. A named human applied `sql/15_action_assignment_v1.sql` to isolated
 staging on 2026-08-13; all five post-migration checks returned zero. The API and
 private frontend were subsequently released through separately approved
-staging-only paths. Assignment runtime and four-role checks passed; no real
-Action mutation occurred.
+staging-only paths. Assignment runtime and four-role checks passed. A named
+operator subsequently recorded one real staging `EDIT`; the Action resolved to
+`EDITED`, but the HTTP response was 503 because the mutation Lambda returned a
+non-JSON-serializable Python `date`. Commit `763a817` fixes only the response
+boundary and is pushed but not deployed. Stable retry and separate approval
+remain pending.
 
 The ordered release, validation, role-check, canary, and evidence-preserving
 rollback boundary is defined in
@@ -332,3 +336,11 @@ permission without approval permission, approver approval permission without
 `EDIT`, and administrator access to all four operations. It targeted an
 unguessable missing Action ID, appended no real audit event, and removed all
 four temporary users. The named-human Action canary remains separate.
+
+The named-human canary began later on `2026-08-13`. Aggregate reconciliation
+confirmed exactly one valid `EDIT`, one request ID, one affected Action, and one
+current `EDITED` match. The failed response did not add a duplicate. The
+operator session was globally signed out during containment, and the identity
+was reconciled to the operator group only. No access token or private Action
+identifier is retained in repository evidence. Do not resume the canary until
+the narrow response-fix release is separately approved and deployed.

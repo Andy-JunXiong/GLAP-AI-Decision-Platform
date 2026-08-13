@@ -155,9 +155,61 @@ for GitHub credentials or tokens.
 Before committing:
 
 1. inspect `git status -sb` and the diff;
-2. confirm that all staged paths belong to the approved task;
-3. run the applicable validation and drift gates;
-4. stage only the approved paths and create a terse, scoped commit.
+2. run the Documentation and Fact Synchronization Gate below;
+3. confirm that all staged paths belong to the approved task;
+4. run the applicable validation and drift gates;
+5. stage only the approved paths and create a terse, scoped commit.
+
+### Documentation and Fact Synchronization Gate
+
+Every explicit `commit`, `push`, or `commit and push` request automatically
+triggers a documentation-impact audit. Passing tests is not sufficient when
+the repository's written or machine-readable state is stale.
+
+Before committing:
+
+1. Compare the approved diff and any external runtime evidence produced since
+   the previous commit with the Task -> Context Router and repository sources
+   of truth.
+2. Treat these as documentation-impacting by default: API/schema/RBAC or user-
+   journey changes; deployment, rollback, incident, security, or runtime
+   findings; changed implementation status, blocker, authority, or next step;
+   new workflow/run IDs or verification totals; and any temporal/evidence-
+   classification change.
+3. Update all affected human-readable sources and their machine-readable
+   contracts in the same commit as the implementation when practical. Keep
+   `TODO.md`, the current dated handoff, rollout/runbook/API documentation,
+   architecture/roadmap statements, drift contracts, validators, and tests
+   mutually consistent where they are affected. Do not touch unrelated docs.
+4. Record facts at their exact maturity: implemented, committed, pushed,
+   deployed, runtime-verified, or human-approved are distinct states. Preserve
+   staging versus production, synthetic versus operational evidence, Sydney
+   dates, remaining blockers, and explicit authority boundaries.
+5. Never place credentials, tokens, raw identity claims, personal contact
+   details, private origins, entity identifiers, ARNs, S3 paths, or other
+   protected values into documentation or commit messages. Use bounded counts,
+   safe timestamps, statuses, and commit/workflow identifiers only.
+6. If the change has no documentation impact, state that conclusion in the
+   commit handoff. A code-only commit is allowed only when the audit finds no
+   affected claim, or when the user explicitly authorizes an urgent exception;
+   an urgent exception must record the temporary divergence and blocks release
+   or deployment until documentation is reconciled.
+
+Before pushing:
+
+1. Re-run the documentation-impact audit across every unpushed commit using
+   `origin/<branch>..HEAD`, not only the latest commit.
+2. Reconcile external events that happened after the commits, including manual
+   AWS actions, runtime canaries, failures, recovery, identity cleanup, and
+   newly discovered blockers. If any tracked claim is stale, stop the push and
+   create a documentation-sync commit first.
+3. Inspect the pushed paths against `.github/workflows/` triggers and state
+   whether the push starts CI, staging deployment, production work, or Pages.
+   Obtain separate authority for any external write; otherwise use a non-
+   deploying branch as required below.
+4. After push, report the exact remote commit, documentation-sync result,
+   triggered workflows, and what remains uncommitted, undeployed, unverified,
+   or human-owned.
 
 For push, use `git push` to the current repository only. Do not create a pull
 request unless the user asks for one. If pushing the current branch would

@@ -34,6 +34,13 @@ class PreCommitGateTests(unittest.TestCase):
         self.assertIn("git config --local glap.pythonPath $pythonPath", installer)
         self.assertNotIn("--global", installer)
 
+    def test_agent_guidance_requires_documentation_sync_before_commit_and_push(self):
+        guidance = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("### Documentation and Fact Synchronization Gate", guidance)
+        self.assertIn("documentation-impact audit", guidance)
+        self.assertIn("origin/<branch>..HEAD", guidance)
+        self.assertIn("If any tracked claim is stale, stop the push", guidance)
+
 
 if __name__ == "__main__":
     unittest.main()
