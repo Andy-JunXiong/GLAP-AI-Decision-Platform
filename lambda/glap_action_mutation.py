@@ -67,6 +67,11 @@ def _literal(value: Any) -> str:
     return "'" + str(value).replace("'", "''") + "'"
 
 
+def _json_date(value: Any) -> Any:
+    """Return an ISO date for Lambda responses while preserving other scalars."""
+    return value.isoformat() if isinstance(value, date) else value
+
+
 def build_current_action_query(action_id: str, scope_id: str) -> str:
     return f"""SELECT action_id, status, action_owner, action_due_date,
 approved_by, approved_at, completed_at
@@ -233,7 +238,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             "action_id": action_id, "event_id": row.get("event_id"),
             "action_status": row.get("new_status"),
             "action_owner": row.get("action_owner"),
-            "action_due_date": row.get("action_due_date"), **temporal,
+            "action_due_date": _json_date(row.get("action_due_date")), **temporal,
         }
     actions = _run_query(client, build_current_action_query(action_id, scope_id))
     if len(actions) != 1:
@@ -265,6 +270,6 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         "previous_status": mutation["previous_status"],
         "action_status": mutation["new_status"],
         "action_owner": mutation["action_owner"],
-        "action_due_date": mutation["action_due_date"],
+        "action_due_date": _json_date(mutation["action_due_date"]),
         "dry_run": bool(event.get("dry_run", False)), **temporal,
     }

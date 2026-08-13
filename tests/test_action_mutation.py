@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import importlib.util
+import json
 import os
 from pathlib import Path
 import sys
@@ -137,6 +138,27 @@ class ActionMutationTests(unittest.TestCase):
         ):
             with self.assertRaises(mutation.ActionConflictError):
                 mutation.lambda_handler(handler_event, None)
+
+    def test_edit_handler_response_is_json_serializable(self):
+        handler_event = event("EDIT")
+        handler_event.update({
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+        })
+        current = [{
+            "action_id": "abc123def456", "status": "PROPOSED",
+            "approved_by": None, "approved_at": None, "completed_at": None,
+            "action_owner": None, "action_due_date": None,
+        }]
+        confirmed = [{"event_id": "event-001"}]
+        fake_boto3 = types.SimpleNamespace(client=lambda *_args, **_kwargs: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(
+            mutation, "_run_query", side_effect=[[], current, [], confirmed]
+        ):
+            result = mutation.lambda_handler(handler_event, None)
+
+        self.assertEqual(result["action_due_date"], "2026-08-09")
+        self.assertEqual(json.loads(json.dumps(result))["action_due_date"], "2026-08-09")
 
 
 if __name__ == "__main__":
