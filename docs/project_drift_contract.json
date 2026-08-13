@@ -44,12 +44,14 @@
     {
       "id": "action_edit_owner_due_date",
       "state": "PARTIAL",
-      "boundary": "repository implementation with plan-only staging schema migration; not deployed",
+      "boundary": "staging schema, Lambda, API, frontend, runtime, and four-role matrix verified; named-human canary pending",
       "evidence_files": [
         "lambda/glap_action_mutation.py",
         "lambda/glap_operations_api.py",
         "sql/15_action_assignment_v1.sql",
         "sql/16_action_assignment_validation.sql",
+        "ops/plan_action_assignment_schema.ps1",
+        "docs/development_handoff_2026-08-13.md",
         "docs/action_assignment_rollout_contract.json",
         "docs/action_assignment_staging_rollout.md",
         "docs/action_mutation_staging_release_contract.json",

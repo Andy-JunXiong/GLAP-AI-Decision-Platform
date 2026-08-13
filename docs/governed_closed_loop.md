@@ -2,7 +2,7 @@
 
 **Business-date boundary:** Australia/Sydney
 **Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06;
-Action assignment/edit is repository-verified with an unapplied staging migration
+Action assignment application chain verified in staging; two-human canary pending
 
 The governed closed loop connects lifecycle evidence without allowing synthetic
 learning to change either the generator or an effective policy automatically:
@@ -43,8 +43,10 @@ state without erasing its history.
 The repository extension uses `PROPOSED -> EDITED` to record a named owner and
 due date without approving the Action. `EDITED` then requires a separate
 approver to approve or reject it. Assignment is carried forward into later
-audit events, while the source proposal remains unchanged. The additive
-staging schema migration is plan-only and is not deployed evidence.
+audit events, while the source proposal remains unchanged. The additive staging
+schema migration was applied by a named human on 2026-08-13 and passed all five
+read-only checks with zero failures. No `EDIT` event or operational Action
+canary was executed by that migration.
 
 Outcomes remain `PENDING` until their observation lag expires. Once due, the
 result is reproducible from stable entity/version identifiers and depends on

@@ -108,19 +108,20 @@ audit event and moves the Action to `EDITED`; it
 does not approve it. The owner must be a named human and the due date cannot
 precede the operational date. `EDITED` may then be approved or rejected by an
 authorised approver. This extension is implemented and locally verified in the
-repository, but `sql/15_action_assignment_v1.sql` is a plan-only staging
-migration and has not been applied to AWS.
+repository. A named human applied `sql/15_action_assignment_v1.sql` to isolated
+staging on 2026-08-13; all five post-migration checks returned zero. The API and
+private frontend were subsequently released through separately approved
+staging-only paths. Assignment runtime and four-role checks passed; no real
+Action mutation occurred.
 
 The ordered release, validation, role-check, canary, and evidence-preserving
 rollback boundary is defined in
 [`action_assignment_staging_rollout.md`](action_assignment_staging_rollout.md).
-Rollout remains blocked until a narrow, reviewed staging release path exists
-for the Action mutation Lambda; the whole stateful stack must not be updated as
-an implicit substitute.
-The proposed narrow CloudFormation change-set design is recorded in
+The narrow Action mutation Lambda release path completed on 2026-08-10; the
+whole stateful stack must not be updated as an implicit substitute. Its
+CloudFormation change-set design is recorded in
 [`action_mutation_staging_release_rfc.md`](action_mutation_staging_release_rfc.md)
-and its read-only plan stage is implemented. AWS write phases remain
-unapproved and unimplemented.
+and future release writes still require separate approval.
 
 ## Reliability and recovery
 
@@ -241,10 +242,11 @@ Alert leads into Decision Queue through the shared `alert_fingerprint`, and
 Action Board can assign/edit, approve, reject, or complete an Action after an administrator
 creates a user and assigns the appropriate group. Outcome Review then links the
 completed Action to its latest governed Outcome and separates pending rows from
-mature actual-calendar evidence. The
-The deployed AWS boundary still reflects the earlier approve/reject/complete
-schema until the additive staging migration and code release receive explicit
-human approval. The browser obtains its short-lived access token through Cognito and keeps it only
+mature actual-calendar evidence. The deployed private API and frontend now
+support the assignment contract. The assignment-specific runtime verifier and
+four-role allow/deny matrix passed on 2026-08-13, and independent cleanup
+reconciliation found zero temporary role-check users.
+The browser obtains its short-lived access token through Cognito and keeps it only
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
 
@@ -324,3 +326,9 @@ in plan mode and then with `-Apply`. The script suppresses email delivery,
 targets an unguessable missing Action ID, keeps passwords and tokens in process,
 prints only HTTP statuses and boolean boundaries, and deletes all four temporary
 users in a `finally` block.
+
+The `2026-08-13` assignment run confirmed viewer denial, operator `EDIT`
+permission without approval permission, approver approval permission without
+`EDIT`, and administrator access to all four operations. It targeted an
+unguessable missing Action ID, appended no real audit event, and removed all
+four temporary users. The named-human Action canary remains separate.

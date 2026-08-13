@@ -296,13 +296,20 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
     )
     schema = rollout.get("schema", {})
     bounded = (
-        rollout.get("status") == "PLAN_ONLY_BLOCKED_AWS_WRITE_AUTHORIZATION"
+        rollout.get("status")
+        == "APPLICATIONS_VERIFIED_BLOCKED_NAMED_HUMAN_CANARY"
         and rollout.get("business_timezone") == "Australia/Sydney"
         and rollout.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and all(authority.get(field) is False for field in protected_authority)
         and schema.get("additive_only") is True
         and schema.get("automatic_workflow_wiring") is False
+        and schema.get("migration_applied") is True
+        and schema.get("post_migration_validation_passed") is True
         and rollout.get("release_paths", {}).get("action_mutation_lambda")
+        == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+        and rollout.get("release_paths", {}).get("operations_api")
+        == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+        and rollout.get("release_paths", {}).get("internal_frontend")
         == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
         and rollout.get("verified_release_evidence", {}).get("stack_final_status")
         == "UPDATE_COMPLETE"
@@ -313,7 +320,39 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and rollout.get("verified_release_evidence", {}).get(
             "schema_migration_applied"
         )
-        is False
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "schema_validation_check_count"
+        )
+        == 5
+        and rollout.get("verified_release_evidence", {}).get(
+            "schema_validation_failure_count"
+        )
+        == 0
+        and rollout.get("verified_release_evidence", {}).get(
+            "operations_api_stack_final_status"
+        )
+        == "UPDATE_COMPLETE"
+        and rollout.get("verified_release_evidence", {}).get(
+            "operations_api_artifact_matches_commit"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "internal_frontend_deployment_status"
+        )
+        == "SUCCEED"
+        and rollout.get("verified_release_evidence", {}).get(
+            "assignment_runtime_verification_passed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "four_role_verification_passed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "temporary_role_users_remaining"
+        )
+        == 0
         and rollout.get("verified_release_evidence", {}).get(
             "operational_action_mutation_executed"
         )
@@ -335,7 +374,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment rollout remains ordered and plan-only after the verified Lambda release; future writes still require approval.",
+            "Action assignment schema, Lambda, API, frontend, runtime, and role matrix are verified in staging; the named-human canary remains separately blocked.",
             "Action assignment rollout hides its blocker or expands deployment, mutation, or scheduling authority.",
             (
                 contract_path,

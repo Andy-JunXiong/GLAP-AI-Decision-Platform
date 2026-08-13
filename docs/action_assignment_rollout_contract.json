@@ -1,6 +1,6 @@
 {
   "schema_version": "action-assignment-rollout.v1",
-  "status": "PLAN_ONLY_BLOCKED_AWS_WRITE_AUTHORIZATION",
+  "status": "APPLICATIONS_VERIFIED_BLOCKED_NAMED_HUMAN_CANARY",
   "business_timezone": "Australia/Sydney",
   "evidence_boundary": "SYNTHETIC_STAGING_ONLY",
   "authority": {
@@ -27,13 +27,17 @@
     "migration_statement_count": 2,
     "validation_statement_count": 1,
     "additive_only": true,
-    "automatic_workflow_wiring": false
+    "automatic_workflow_wiring": false,
+    "migration_applied": true,
+    "post_migration_validation_passed": true
   },
   "release_paths": {
+    "schema_plan": "LOCAL_RENDER_ONLY_NO_AWS_EXECUTION",
+    "schema_migration": "COMPLETED_NAMED_HUMAN_REVIEWED_STAGING_ONLY",
     "action_mutation_lambda": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL",
     "candidate_design_contract": "docs/action_mutation_staging_release_contract.json",
-    "operations_api": "EXISTING_MANUAL_PLAN_FIRST_WORKFLOW",
-    "internal_frontend": "EXISTING_MANUAL_PLAN_FIRST_SCRIPT"
+    "operations_api": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL",
+    "internal_frontend": "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
   },
   "verified_release_evidence": {
     "observed_on_sydney_date": "2026-08-10",
@@ -42,7 +46,22 @@
     "execute_run_id": 31360187221,
     "stack_final_status": "UPDATE_COMPLETE",
     "lambda_digest_matches_artifact": true,
-    "schema_migration_applied": false,
+    "schema_migration_applied": true,
+    "schema_migration_observed_on_sydney_date": "2026-08-13",
+    "schema_validation_query_execution_id": "858a5024-1e08-487b-8dd4-b01a0302acca",
+    "schema_validation_check_count": 5,
+    "schema_validation_failure_count": 0,
+    "operations_api_plan_run_id": 31680467442,
+    "operations_api_deploy_run_id": 31680885483,
+    "operations_api_git_commit": "fb7a3a6f14eb634c34c91d2512d15bce1473c0ca",
+    "operations_api_stack_final_status": "UPDATE_COMPLETE",
+    "operations_api_artifact_matches_commit": true,
+    "internal_frontend_deployment_status": "SUCCEED",
+    "internal_frontend_deployed_at": "2026-08-13T18:18:15.521000+10:00",
+    "assignment_runtime_verification_passed": true,
+    "four_role_verification_passed": true,
+    "temporary_role_users_removed": 4,
+    "temporary_role_users_remaining": 0,
     "operational_action_mutation_executed": false,
     "production_effect": false,
     "future_release_write_authority_approved": false

@@ -15,7 +15,7 @@ SPEC.loader.exec_module(validator)
 
 
 class ActionAssignmentRolloutTests(unittest.TestCase):
-    def test_repository_rollout_contract_is_valid_and_plan_only(self):
+    def test_repository_rollout_contract_is_valid_and_approval_bounded(self):
         self.assertEqual(validator.validate_contract(validator.load_contract()), [])
 
     def test_authority_expansion_fails_closed(self):
@@ -39,6 +39,28 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
         contract["rollback"]["delete_audit_events_allowed"] = True
         self.assertIn(
             "rollback cannot delete or rewrite governed evidence",
+            validator.validate_contract(contract),
+        )
+
+    def test_schema_plan_is_render_only_and_has_no_aws_execution_path(self):
+        script = (
+            ROOT / "ops" / "plan_action_assignment_schema.ps1"
+        ).read_text(encoding="utf-8")
+        lower = script.lower()
+        self.assertIn("[switch]$ShowSql", script)
+        self.assertIn("Mode: local render only", script)
+        self.assertIn("Migration statements: 2", script)
+        self.assertIn("Validation statements: 1", script)
+        self.assertNotIn("[switch]$Apply", script)
+        self.assertNotIn("start-query-execution", lower)
+        self.assertNotIn("cloudformation deploy", lower)
+        self.assertNotIn("deploy_stateful_lifecycle", lower)
+
+    def test_schema_plan_path_cannot_be_changed_to_an_executor(self):
+        contract = copy.deepcopy(validator.load_contract())
+        contract["release_paths"]["schema_plan"] = "AUTOMATIC_APPLY"
+        self.assertIn(
+            "schema migration planning must remain local and non-executing",
             validator.validate_contract(contract),
         )
 

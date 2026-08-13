@@ -4,7 +4,36 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
 Current implementation and release boundaries are recorded in the
-[`10 August development handoff`](docs/development_handoff_2026-08-10.md).
+[`13 August development handoff`](docs/development_handoff_2026-08-13.md).
+
+## 13 August 2026 checkpoint
+
+- [x] Add a deterministic local Action assignment schema plan with no AWS or
+  Athena execution path; pass 239 Python tests and all 15 drift checks.
+- [x] Resolve the `codex-readonly` visibility issue as a sandbox boundary. The
+  existing Windows user-level profile remained present and usable; no
+  credentials were copied into the repository.
+- [x] Have a named human save the current definitions privately and apply the
+  two additive staging migration statements. Both Athena executions completed
+  successfully against `simulated_iceberg_m` only.
+- [x] Run the read-only post-migration validation. Query
+  `858a5024-1e08-487b-8dd4-b01a0302acca` returned all five checks with zero
+  failures, and Glue exposed both assignment columns on the audit table and
+  current-state view.
+- [x] Run Operations API plan `31680467442`, then separately approved deploy
+  `31680885483` for commit `fb7a3a6`. The stack reached `UPDATE_COMPLETE`, the
+  Lambda was active/successful, and the commit-addressed artifact matched.
+- [x] Run and separately approve the private frontend publisher. The latest
+  Amplify job reported `SUCCEED`; Public Pages and production were not targeted.
+- [x] Pass the Action assignment runtime verifier and complete the separately
+  approved temporary-user four-role matrix. All role boundaries passed, all
+  test users were removed, and independent reconciliation found zero remaining.
+- [ ] Have a named signed-in operator perform `EDIT`, retry the same request ID,
+  then have a different named approver approve or reject the Action.
+
+The rollout has not yet created a real `EDIT` event or completed the two-human
+canary. It did not mutate a production table, publish to Pages, enable a
+schedule, or activate a policy/model.
 
 ## 10 August 2026 closeout
 

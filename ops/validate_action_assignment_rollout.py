@@ -1,4 +1,4 @@
-"""Validate the plan-only Action assignment staging rollout package."""
+"""Validate the partially released Action assignment staging rollout package."""
 
 from __future__ import annotations
 
@@ -49,8 +49,10 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     if contract.get("schema_version") != "action-assignment-rollout.v1":
         errors.append("unsupported schema_version")
-    if contract.get("status") != "PLAN_ONLY_BLOCKED_AWS_WRITE_AUTHORIZATION":
-        errors.append("rollout must remain plan-only with the release-path blocker visible")
+    if contract.get("status") != (
+        "APPLICATIONS_VERIFIED_BLOCKED_NAMED_HUMAN_CANARY"
+    ):
+        errors.append("rollout must expose the named-human canary blocker")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -77,8 +79,18 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("schema migration must remain additive-only")
     if schema.get("automatic_workflow_wiring") is not False:
         errors.append("schema migration must not be automatically wired")
+    if schema.get("migration_applied") is not True:
+        errors.append("verified staging schema migration evidence is hidden")
+    if schema.get("post_migration_validation_passed") is not True:
+        errors.append("post-migration validation evidence is hidden")
 
     release_paths = contract.get("release_paths", {})
+    if release_paths.get("schema_plan") != "LOCAL_RENDER_ONLY_NO_AWS_EXECUTION":
+        errors.append("schema migration planning must remain local and non-executing")
+    if release_paths.get("schema_migration") != (
+        "COMPLETED_NAMED_HUMAN_REVIEWED_STAGING_ONLY"
+    ):
+        errors.append("completed named-human schema migration evidence is hidden")
     if release_paths.get("action_mutation_lambda") != (
         "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
     ):
@@ -87,10 +99,14 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "docs/action_mutation_staging_release_contract.json"
     ):
         errors.append("candidate mutation release design is not connected")
-    if release_paths.get("operations_api") != "EXISTING_MANUAL_PLAN_FIRST_WORKFLOW":
-        errors.append("Operations API release must remain manual and plan-first")
-    if release_paths.get("internal_frontend") != "EXISTING_MANUAL_PLAN_FIRST_SCRIPT":
-        errors.append("internal frontend release must remain manual and plan-first")
+    if release_paths.get("operations_api") != (
+        "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+    ):
+        errors.append("verified Operations API release or future approval boundary is hidden")
+    if release_paths.get("internal_frontend") != (
+        "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
+    ):
+        errors.append("verified frontend release or future approval boundary is hidden")
     release_evidence = contract.get("verified_release_evidence", {})
     if release_evidence != {
         "observed_on_sydney_date": "2026-08-10",
@@ -99,7 +115,22 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "execute_run_id": 31360187221,
         "stack_final_status": "UPDATE_COMPLETE",
         "lambda_digest_matches_artifact": True,
-        "schema_migration_applied": False,
+        "schema_migration_applied": True,
+        "schema_migration_observed_on_sydney_date": "2026-08-13",
+        "schema_validation_query_execution_id": "858a5024-1e08-487b-8dd4-b01a0302acca",
+        "schema_validation_check_count": 5,
+        "schema_validation_failure_count": 0,
+        "operations_api_plan_run_id": 31680467442,
+        "operations_api_deploy_run_id": 31680885483,
+        "operations_api_git_commit": "fb7a3a6f14eb634c34c91d2512d15bce1473c0ca",
+        "operations_api_stack_final_status": "UPDATE_COMPLETE",
+        "operations_api_artifact_matches_commit": True,
+        "internal_frontend_deployment_status": "SUCCEED",
+        "internal_frontend_deployed_at": "2026-08-13T18:18:15.521000+10:00",
+        "assignment_runtime_verification_passed": True,
+        "four_role_verification_passed": True,
+        "temporary_role_users_removed": 4,
+        "temporary_role_users_remaining": 0,
         "operational_action_mutation_executed": False,
         "production_effect": False,
         "future_release_write_authority_approved": False,
@@ -134,10 +165,18 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     runtime_script = (root / "ops" / "verify_operations_staging.ps1").read_text(
         encoding="utf-8"
     )
+    schema_plan = (root / "ops" / "plan_action_assignment_schema.ps1").read_text(
+        encoding="utf-8"
+    )
     if "RequireActionAssignment" not in role_script or 'Action-Status "operator" "EDIT"' not in role_script:
         errors.append("four-role verifier lacks the opt-in EDIT contract")
     if "RequireActionAssignment" not in runtime_script or "Assign & edit" not in runtime_script:
         errors.append("runtime verifier lacks the opt-in assignment fingerprint")
+    schema_plan_lower = schema_plan.lower()
+    if "[switch]$apply" in schema_plan_lower or "start-query-execution" in schema_plan_lower:
+        errors.append("schema plan must not expose an Athena execution path")
+    if "migration statements: 2" not in schema_plan_lower or "validation statements: 1" not in schema_plan_lower:
+        errors.append("schema plan does not preserve reviewed statement counts")
     return errors
 
 
@@ -147,7 +186,7 @@ def main() -> int:
         for error in errors:
             print(f"DRIFT: {error}")
         return 1
-    print("PASS: Action assignment rollout is ordered, plan-only, and rollback bounded")
+    print("PASS: Action assignment applications are verified; named-human canary remains blocked")
     return 0
 
 

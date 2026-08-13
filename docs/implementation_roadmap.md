@@ -183,7 +183,9 @@ Implemented private-staging capabilities:
 Action edit events, an assigned owner, and an Action due date are implemented
 and locally verified as an authenticated v1 repository extension. The source
 Action stays immutable and edit moves it to `EDITED` for separate approval.
-The additive staging schema migration remains plan-only and is not deployed.
+The additive staging schema migration was applied by a named human on
+2026-08-13 and passed all five read-only checks. Operations API and private
+frontend releases remain separately approval gated.
 
 Acceptance criteria:
 
@@ -280,7 +282,8 @@ Implemented private-staging views:
 - Today's Operations and Risk Hotspots;
 - Decision Queue and review history;
 - Action Board with current status and governed assign/edit/approve/reject/complete controls
-  in the repository; the assignment schema migration is not deployed;
+  verified in private staging across schema, API, frontend, runtime, and the
+  four-role matrix; the separate named-human canary remains pending;
 - Outcome Review with expected-versus-observed values;
 - Forecast and Forecast Accuracy;
 - Pipeline Health and runbook drill-down.

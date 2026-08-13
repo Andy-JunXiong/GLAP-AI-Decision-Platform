@@ -99,12 +99,14 @@ They support the governed Decision Queue, Action Board, `APPROVE` / `REJECT` /
 Accuracy, and authorised Network Drill-down. Public GitHub Pages remains
 aggregate-only and read-only, with no private API or Cognito configuration.
 
-The repository additionally implements an append-only `EDIT` event for a named
+The repository implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a
-separate approver. The additive staging schema migration in
-`sql/15_action_assignment_v1.sql` remains plan-only, so the deployed Operations
-boundary still exposes the three-operation contract above even though the
-updated mutation Lambda code is now present in staging.
+separate approver. A named human applied the additive staging schema migration
+on 2026-08-13, and all five read-only validation checks returned zero. The
+Operations API and private frontend were then released through separately
+approved staging-only paths. Assignment-specific runtime and four-role checks
+passed, and all temporary test users were removed. The separate two-human
+Action canary remains pending.
 
 The mutation Lambda release boundary is deployed and verified. A read-only Plan
 precedes two separately protected GitHub environments: Prepare uploads one
