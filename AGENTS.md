@@ -42,9 +42,43 @@ These five are repository-wide canonical sources:
 |---|---|
 | Current architecture & trust boundaries | `docs/architecture_current.md` |
 | Infrastructure boundary & runtime flow | `INFRASTRUCTURE.md` |
-| Current implementation priorities | `TODO.md` |
-| Implementation roadmap & delivery sequence | `docs/implementation_roadmap.md` |
+| Long-term direction & capability gates | `DEVELOPMENT_PLAN.md` |
+| Current reality, Active Slice & Next Up | `CURRENT_DEVELOPMENT_STATUS.md` |
 | Temporal truthfulness & evidence boundary | `docs/temporal_truthfulness.md` |
+
+## Documentation Operating Model
+
+Keep direction, current truth, history, and rules separate:
+
+| Layer | Source | Answers | Update trigger |
+|---|---|---|---|
+| Rules | `AGENTS.md` | Authority, invariants, workflow, validation, communication | A governing rule changes |
+| Direction | `DEVELOPMENT_PLAN.md` | Where GLAP is going and which durable gates control progression | Strategy or priority changes |
+| Current truth | `CURRENT_DEVELOPMENT_STATUS.md` | What is true now, pending validation, Active Slice, blockers, Next Up | Every formal closeout |
+| History | `docs/archive/status/` | What completed, what was validated, and what remained on a date | Session closeout and weekly archive |
+
+`DEVELOPMENT_PLAN.md` must not accumulate daily checkpoints, workflow IDs, or
+completed-task logs. `CURRENT_DEVELOPMENT_STATUS.md` retains only the current
+week, recent seven-day context, and active carry-over. Archived files are never
+current authority and must not be read by default when planning a new slice.
+
+At formal closeout:
+
+1. update `CURRENT_DEVELOPMENT_STATUS.md` for current reality, validation state,
+   blockers, and the next executable slice;
+2. append session evidence to the current monthly file under
+   `docs/archive/status/daily-logs/`;
+3. add a feature-level `CHANGELOG.md` entry only for a genuinely completed
+   capability;
+4. update `DEVELOPMENT_PLAN.md` only when durable direction, ordering, or an
+   entry gate changed.
+
+The phrases `今天先到这里`, `收尾`, `update status`, and equivalent explicit
+closeout requests authorize these repository-local status and archive updates.
+They do not authorize deployment, publication, operational mutation, or a
+strategic plan change. On the first active development session on or after
+Monday, check whether the previous Monday–Sunday window should be archived;
+this is a session-time check, not autonomous background work.
 
 **Reference-implementation history (must not override current architecture):**
 - `docs/GLAP_Technical_Implementation.md` — original full-stack engineering;
@@ -54,8 +88,10 @@ These five are repository-wide canonical sources:
   journey; describes earlier architecture phases.
 - `docs/decision_flywheel_evidence.md` — self-labelled placeholder using v1
   tables; current closed loop: `docs/governed_closed_loop.md`.
-- `docs/development_handoff_2026-08-05.md` and `2026-08-06.md` — superseded
-  by the 7 August 2026 handoff.
+- `docs/archive/status/legacy/` — frozen snapshots of the former mixed-purpose
+  TODO and implementation roadmap; these must not override active sources.
+- `docs/archive/status/handoffs/` — preserved dated handoffs; use only for
+  historical evidence explicitly routed from the current status or archive.
 
 ## Task → Context Router
 
@@ -63,16 +99,19 @@ Before making changes, read only what your task requires. Do not scan the
 whole repository.
 
 **If changing shipment lifecycle / generators / stateful data:**
-→ `docs/shipment_lifecycle_design.md`, `docs/architecture_current.md` (isolated staging boundary section), `TODO.md`
+→ `docs/shipment_lifecycle_design.md`, `docs/architecture_current.md` (isolated staging boundary section), `CURRENT_DEVELOPMENT_STATUS.md`
 
 **If changing Operations API / authenticated actor surfaces / RBAC:**
 → `docs/operations_api_v1.md`, `docs/governed_closed_loop.md`, `docs/architecture_current.md` (authenticated operations boundary section)
 
 **If changing Decision / Action / Outcome / Learning / governed closed loop:**
-→ `docs/governed_closed_loop.md`, `docs/operations_api_v1.md` (mutation endpoints), `TODO.md`
+→ `docs/governed_closed_loop.md`, `docs/operations_api_v1.md` (mutation endpoints), `CURRENT_DEVELOPMENT_STATUS.md`
 
 **If changing forecasting / model evidence / backtests / label readiness:**
-→ `docs/multimodal_forecast_feature_contract.md`, `docs/temporal_truthfulness.md`, `TODO.md` (P3 section)
+→ `docs/multimodal_forecast_feature_contract.md`, `docs/temporal_truthfulness.md`, `DEVELOPMENT_PLAN.md` (P3), `CURRENT_DEVELOPMENT_STATUS.md`
+
+**If changing Evaluation Architecture / Decision Quality / Historical Replay:**
+→ `docs/evaluation_architecture.md`, `docs/historical_replay_lab.md`, `docs/temporal_truthfulness.md`, `DEVELOPMENT_PLAN.md` (P3), `CURRENT_DEVELOPMENT_STATUS.md`
 
 **If changing AWS infrastructure / CloudFormation / deployment / IAM:**
 → `INFRASTRUCTURE.md`, `docs/deployment_workflow.md`, `docs/architecture_current.md`
@@ -87,7 +126,7 @@ whole repository.
 → `docs/ops_snapshot.md` (published contract), `docs/multimodal_forecast_feature_contract.md` (feature views), `docs/shipment_lifecycle_design.md` (lifecycle tables), `sql/` directory for existing DDL
 
 **If changing frontend / operator cockpit / public Pages:**
-→ `docs/operations_api_v1.md`, `docs/ops_snapshot.md` (public boundary), `docs/development_handoff_2026-08-07.md` (cockpit status)
+→ `docs/operations_api_v1.md`, `docs/ops_snapshot.md` (public boundary), `CURRENT_DEVELOPMENT_STATUS.md`
 
 **If changing governance / evidence boundaries / temporal rules:**
 → `docs/temporal_truthfulness.md`, `docs/ops_snapshot.md` (evidence classes), `docs/governed_closed_loop.md` (calendar gate)
@@ -178,9 +217,10 @@ Before committing:
    classification change.
 3. Update all affected human-readable sources and their machine-readable
    contracts in the same commit as the implementation when practical. Keep
-   `TODO.md`, the current dated handoff, rollout/runbook/API documentation,
-   architecture/roadmap statements, drift contracts, validators, and tests
-   mutually consistent where they are affected. Do not touch unrelated docs.
+   `CURRENT_DEVELOPMENT_STATUS.md`, `DEVELOPMENT_PLAN.md` when strategy changed,
+   the current archive ledger, rollout/runbook/API documentation, architecture
+   statements, drift contracts, validators, and tests mutually consistent
+   where they are affected. Do not touch unrelated docs.
 4. Record facts at their exact maturity: implemented, committed, pushed,
    deployed, runtime-verified, or human-approved are distinct states. Preserve
    staging versus production, synthetic versus operational evidence, Sydney
@@ -231,10 +271,12 @@ and `commit and push`, use this closeout sequence:
    untracked paths. Separate approved deliverables from unrelated user files;
    never include unrelated paths merely because they are present.
 2. Run the Documentation and Fact Synchronization Gate across the whole
-   approved change. At minimum, check the routed sources of truth, `TODO.md`,
-   the current dated handoff, architecture and roadmap claims, temporal and
-   evidence boundaries, schemas, machine-readable drift contracts, validators,
-   and test totals when they are affected.
+   approved change. At minimum, check the routed sources of truth,
+   `CURRENT_DEVELOPMENT_STATUS.md`, the current monthly daily log,
+   `CHANGELOG.md` for completed features, `DEVELOPMENT_PLAN.md` only when
+   direction changed, architecture claims, temporal and evidence boundaries,
+   schemas, machine-readable drift contracts, validators, and affected test
+   totals.
 3. Preserve maturity precisely. Documents may state implemented and locally
    verified facts before the commit; the final user handoff must separately
    identify the commit, remote push result, CI state, and anything still

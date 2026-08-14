@@ -66,9 +66,9 @@ schedules, other functions, and production remain excluded.
 
 Repository validation passed 236 tests and all 15 drift checks before commit.
 The account-free access proposal and checklist are in
-[`action_mutation_staging_release_access_proposal.json`](action_mutation_staging_release_access_proposal.json)
+[`action_mutation_staging_release_access_proposal.json`](../../../action_mutation_staging_release_access_proposal.json)
 and
-[`action_mutation_staging_release_access.md`](action_mutation_staging_release_access.md).
+[`action_mutation_staging_release_access.md`](../../../action_mutation_staging_release_access.md).
 They are review artifacts, not executable IAM or release authority.
 
 Read-only GitHub inspection found only the existing `github-pages` and

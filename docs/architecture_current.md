@@ -183,5 +183,5 @@ The private staging boundary retains success-gated orchestration and
 data-quality controls. Future simulations remain isolated engineering evidence
 and do not establish operational performance, outcome maturity, model
 readiness, promotion, or production reporting. See the
-[implementation roadmap](implementation_roadmap.md) for remaining production
+[development plan](../DEVELOPMENT_PLAN.md) for remaining production
 readiness dependencies.

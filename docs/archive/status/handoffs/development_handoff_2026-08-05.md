@@ -4,7 +4,7 @@
 > Sydney execution date in this handoff is future-dated synthetic scenario
 > evidence. It validates staging mechanics only and is not real history,
 > observed operational evidence, or real forecast performance. See the
-> [temporal truthfulness contract](temporal_truthfulness.md).
+> [temporal truthfulness contract](../../../temporal_truthfulness.md).
 
 ## End-of-day state
 

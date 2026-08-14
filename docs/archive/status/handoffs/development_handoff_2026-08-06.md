@@ -267,6 +267,6 @@ schedule, or production alias.
   record, recurring lifecycle/forecast schedule, or automatic policy change.
 
 The governing contracts are the
-[`temporal truthfulness contract`](temporal_truthfulness.md), the
-[`OPS snapshot contract`](ops_snapshot_contract.md), and the
-[`implementation roadmap`](implementation_roadmap.md).
+[`temporal truthfulness contract`](../../../temporal_truthfulness.md), the
+[`OPS snapshot contract`](../../../ops_snapshot.md), and the
+[`implementation roadmap snapshot`](../legacy/implementation_roadmap_through_2026-08-14.md).

@@ -184,6 +184,6 @@ This contract remains read-only and aggregate-only. Decision review, Action
 updates, and Outcome reads are now implemented behind the separate authenticated
 staging Operations API; they have not been added to the GitHub Pages role.
 Production expansion still requires the cost, recovery, security, access, and
-evidence gates in the [implementation roadmap](implementation_roadmap.md). See
+evidence gates in the [development plan](../DEVELOPMENT_PLAN.md). See
 the approved [stateful shipment lifecycle design](shipment_lifecycle_design.md)
 for the isolated staging boundary.

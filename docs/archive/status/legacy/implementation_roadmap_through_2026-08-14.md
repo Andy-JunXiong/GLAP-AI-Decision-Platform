@@ -20,7 +20,7 @@ same shipment will remain active across logical dates. Port-to-port uses one
 immutable ETD and ETA and records ATD/ATA only when observed; Origin gate-in,
 destination discharge and final delivery use separate target/actual milestones.
 Active updates stop after delivery. See the
-[stateful shipment lifecycle design](shipment_lifecycle_design.md) for the
+[stateful shipment lifecycle design](../../../shipment_lifecycle_design.md) for the
 agreed field semantics, Shanghai--Sydney baseline, journey-level delay model,
 governance boundary and acceptance criteria.
 
@@ -84,9 +84,9 @@ supervised training remains blocked.
 No production alias, recurring lifecycle or forecast schedule, current-v2
 write, public entity-level artifact, or automatic policy promotion was added.
 The full evidence trail and next actions are recorded in
-[`development_handoff_2026-08-06.md`](development_handoff_2026-08-06.md).
+[`development_handoff_2026-08-06.md`](../handoffs/development_handoff_2026-08-06.md).
 The operational/simulation boundary is defined in
-[`temporal_truthfulness.md`](temporal_truthfulness.md).
+[`temporal_truthfulness.md`](../../../temporal_truthfulness.md).
 
 ## Historical public evidence checkpoint -- 6 August 2026
 
@@ -392,7 +392,7 @@ track.
    treat unit-test review objects as expert evidence.
 2. Completed: document grain, owner, source, freshness, and reconciliation
    rules for each remaining internal-only analytics view in
-   [`internal_analytics_governance.md`](internal_analytics_governance.md).
+   [`internal_analytics_governance.md`](../../../internal_analytics_governance.md).
 3. Completed design: define fail-closed Athena workgroup budgets, baseline-first
    query-cost alarms, and per-view incremental refresh rules. Applying AWS
    controls remains a separately approved infrastructure action.
@@ -453,4 +453,4 @@ One controlled Action reached `COMPLETED` and produced one `PENDING` Outcome due
 `2026-08-09`. It is not observed evidence as of `2026-08-07`. Recurring
 execution, production aliases, public entity publication, policy activation,
 and model promotion remain outside the approved boundary. See
-[`development_handoff_2026-08-07.md`](development_handoff_2026-08-07.md).
+[`development_handoff_2026-08-07.md`](../handoffs/development_handoff_2026-08-07.md).

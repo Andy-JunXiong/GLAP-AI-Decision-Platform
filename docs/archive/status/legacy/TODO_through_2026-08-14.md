@@ -1,10 +1,10 @@
 # GLAP Project TODO
 
 Implementation details, dependencies, and acceptance criteria are maintained in
-[`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
+[`implementation roadmap snapshot`](implementation_roadmap_through_2026-08-14.md).
 
 Current implementation and release boundaries are recorded in the
-[`14 August development handoff`](docs/development_handoff_2026-08-14.md).
+[`14 August development handoff`](../handoffs/development_handoff_2026-08-14.md).
 
 ## 14 August 2026 evaluation checkpoint
 
@@ -339,9 +339,9 @@ No further staging or production work is authorised by this closeout.
   the remaining `missing_provider_coverage` lifecycle check.
 
 Detailed evidence and next actions are in the
-[`7 August development handoff`](docs/development_handoff_2026-08-07.md).
+[`7 August development handoff`](../handoffs/development_handoff_2026-08-07.md).
 The governing date boundary is in the
-[`temporal truthfulness contract`](docs/temporal_truthfulness.md).
+[`temporal truthfulness contract`](../../../temporal_truthfulness.md).
 
 ### Next working session
 
@@ -457,7 +457,7 @@ The governing date boundary is in the
 - [x] Separate simulation calibration from decision policy and require human
   approval before a learned policy version becomes effective.
 - [x] Record the phased design and acceptance criteria in
-  [`docs/shipment_lifecycle_design.md`](docs/shipment_lifecycle_design.md).
+  [`shipment lifecycle design`](../../../shipment_lifecycle_design.md).
 
 ## Next product slice — Stateful shipment lifecycle
 

@@ -5,8 +5,8 @@
   "canonical_sources": [
     "docs/architecture_current.md",
     "INFRASTRUCTURE.md",
-    "TODO.md",
-    "docs/implementation_roadmap.md",
+    "DEVELOPMENT_PLAN.md",
+    "CURRENT_DEVELOPMENT_STATUS.md",
     "docs/temporal_truthfulness.md"
   ],
   "capabilities": [
@@ -51,7 +51,7 @@
         "sql/15_action_assignment_v1.sql",
         "sql/16_action_assignment_validation.sql",
         "ops/plan_action_assignment_schema.ps1",
-        "docs/development_handoff_2026-08-13.md",
+        "docs/archive/status/handoffs/development_handoff_2026-08-13.md",
         "docs/action_assignment_rollout_contract.json",
         "docs/action_assignment_staging_rollout.md",
         "docs/action_mutation_staging_release_contract.json",
@@ -66,8 +66,8 @@
         "ops/plan_action_mutation_staging_release.ps1",
         "ops/prepare_action_mutation_staging_release.ps1",
         "ops/execute_action_mutation_staging_release.ps1",
-        "docs/implementation_roadmap.md",
-        "TODO.md"
+        "DEVELOPMENT_PLAN.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
       ]
     },
     {
@@ -152,8 +152,23 @@
         "docs/incremental_refresh_contract.md",
         "docs/data_governance_operations.md",
         "docs/actual_calendar_evidence_runbook.md",
-        "docs/implementation_roadmap.md",
+        "DEVELOPMENT_PLAN.md",
         "docs/internal_analytics_governance.md"
+      ]
+    },
+    {
+      "id": "documentation_operating_model",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "rules, durable direction, current truth, and archived history have separate repository-local authorities",
+      "evidence_files": [
+        "AGENTS.md",
+        "DEVELOPMENT_PLAN.md",
+        "CURRENT_DEVELOPMENT_STATUS.md",
+        "docs/archive/status/README.md",
+        "docs/archive/status/CHANGELOG.md",
+        "docs/archive/status/daily-logs/2026-08.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py"
       ]
     },
     {

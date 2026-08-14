@@ -32,17 +32,52 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 'if operation not in {"APPROVE", "REJECT", "COMPLETE"}:\n    pass\n',
                 encoding="utf-8",
             )
-            (root / "docs" / "implementation_roadmap.md").write_text(
+            (root / "DEVELOPMENT_PLAN.md").write_text(
                 "approve/edit/reject/complete\n", encoding="utf-8"
             )
-            (root / "TODO.md").write_text(
-                "- [x] Add a governed Action edit event\n"
-                "- [x] Extend authenticated Actions with an owner and due date\n",
+            (root / "CURRENT_DEVELOPMENT_STATUS.md").write_text(
+                "Action assignment canary\n"
+                "Operator `EDIT` recorded\n"
+                "response fix release, stable retry, and separate approver decision remain\n",
                 encoding="utf-8",
             )
             results = AUDIT.check_action_contract(root, contract)
         operation = next(item for item in results if item.check_id == "action_operations")
         self.assertEqual(operation.status, "DRIFT")
+
+    def test_legacy_mixed_purpose_document_is_detected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = {
+                "AGENTS.md": (
+                    "## Documentation Operating Model\n"
+                    "DEVELOPMENT_PLAN.md CURRENT_DEVELOPMENT_STATUS.md "
+                    "docs/archive/status/\n"
+                ),
+                "DEVELOPMENT_PLAN.md": (
+                    "## Product thesis\n## Delivery order\n## P3\n"
+                ),
+                "CURRENT_DEVELOPMENT_STATUS.md": (
+                    "## Current product reality\n## Active slice\n"
+                    "## Pending validation\n## Next Up\n"
+                    "### Codex-run validation\n"
+                    "### User-reported validation\n### Incomplete\n"
+                ),
+                "docs/archive/status/README.md": (
+                    "This archive is not current authority.\n"
+                ),
+                "docs/archive/status/CHANGELOG.md": "# Changelog\n",
+                "docs/archive/status/daily-logs/2026-08.md": "# Daily log\n",
+            }
+            for relative_path, content in paths.items():
+                path = root / relative_path
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            passing = AUDIT.check_documentation_operating_model(root)[0]
+            self.assertEqual(passing.status, "PASS")
+            (root / "TODO.md").write_text("mixed authority\n", encoding="utf-8")
+            drifting = AUDIT.check_documentation_operating_model(root)[0]
+        self.assertEqual(drifting.status, "DRIFT")
 
     def test_recurring_staging_trigger_is_detected(self):
         with tempfile.TemporaryDirectory() as directory:

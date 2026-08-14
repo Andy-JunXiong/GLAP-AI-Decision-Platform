@@ -242,13 +242,84 @@ def _extract_action_operations(source: str) -> set[str]:
     return set(re.findall(r'\"([A-Z_]+)\"', match.group(1)))
 
 
+def check_documentation_operating_model(root: Path) -> list[CheckResult]:
+    agents_path = "AGENTS.md"
+    plan_path = "DEVELOPMENT_PLAN.md"
+    status_path = "CURRENT_DEVELOPMENT_STATUS.md"
+    archive_path = "docs/archive/status/README.md"
+    changelog_path = "docs/archive/status/CHANGELOG.md"
+    daily_log_path = "docs/archive/status/daily-logs/2026-08.md"
+    active_paths = (
+        agents_path,
+        plan_path,
+        status_path,
+        archive_path,
+        changelog_path,
+        daily_log_path,
+    )
+    present = all((root / path).is_file() for path in active_paths)
+    if present:
+        agents = (root / agents_path).read_text(encoding="utf-8")
+        plan = (root / plan_path).read_text(encoding="utf-8")
+        status = (root / status_path).read_text(encoding="utf-8")
+        archive = (root / archive_path).read_text(encoding="utf-8")
+        role_markers = all(
+            marker in agents
+            for marker in (
+                "## Documentation Operating Model",
+                "DEVELOPMENT_PLAN.md",
+                "CURRENT_DEVELOPMENT_STATUS.md",
+                "docs/archive/status/",
+            )
+        )
+        plan_markers = all(
+            marker in plan
+            for marker in ("## Product thesis", "## Delivery order", "## P3")
+        )
+        status_markers = all(
+            marker in status
+            for marker in (
+                "## Current product reality",
+                "## Active slice",
+                "## Pending validation",
+                "## Next Up",
+                "### Codex-run validation",
+                "### User-reported validation",
+                "### Incomplete",
+            )
+        )
+        archive_bounded = "is not current authority." in archive
+    else:
+        role_markers = plan_markers = status_markers = archive_bounded = False
+    legacy_active = (root / "TODO.md").exists() or (
+        root / "docs/implementation_roadmap.md"
+    ).exists()
+    active_handoffs = bool(list((root / "docs").glob("development_handoff_*.md")))
+    return [
+        _result(
+            "documentation_operating_model",
+            "documentation",
+            present
+            and role_markers
+            and plan_markers
+            and status_markers
+            and archive_bounded
+            and not legacy_active
+            and not active_handoffs,
+            "Rules, direction, current truth, and archived history remain separate.",
+            "Documentation roles are incomplete, ambiguous, or legacy mixed-purpose files remain active.",
+            active_paths,
+        )
+    ]
+
+
 def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckResult]:
     mutation_path = "lambda/glap_action_mutation.py"
-    roadmap_path = "docs/implementation_roadmap.md"
-    todo_path = "TODO.md"
+    plan_path = "DEVELOPMENT_PLAN.md"
+    status_path = "CURRENT_DEVELOPMENT_STATUS.md"
     mutation = (root / mutation_path).read_text(encoding="utf-8")
-    roadmap = (root / roadmap_path).read_text(encoding="utf-8")
-    todo = (root / todo_path).read_text(encoding="utf-8")
+    plan = (root / plan_path).read_text(encoding="utf-8")
+    status = (root / status_path).read_text(encoding="utf-8")
     actual = _extract_action_operations(mutation)
     expected = set(contract.get("action_contract", {}).get("implemented_operations", []))
     not_implemented = set(contract.get("action_contract", {}).get("not_implemented", []))
@@ -256,10 +327,14 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
     fields_implemented = required_fields == {"owner", "due_date"} and all(
         token in mutation for token in ("action_owner", "action_due_date")
     )
-    roadmap_current = "approve/edit/reject/complete" in roadmap
-    todo_current = bool(
-        re.search(r"(?m)^- \[x\] Add a governed Action edit event", todo)
-        and re.search(r"(?m)^- \[x\] Extend authenticated Actions with an owner and due date", todo)
+    plan_current = "approve/edit/reject/complete" in plan
+    status_current = all(
+        marker in status
+        for marker in (
+            "Action assignment canary",
+            "Operator `EDIT` recorded",
+            "response fix release, stable retry, and separate approver decision remain",
+        )
     )
     return [
         _result(
@@ -274,10 +349,10 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
         _result(
             "action_documentation",
             "documentation",
-            roadmap_current and todo_current,
-            "Roadmap and TODO match the repository Action edit/assignment implementation.",
-            "Roadmap or TODO differs from the repository Action edit/assignment implementation.",
-            (roadmap_path, todo_path),
+            plan_current and status_current,
+            "Development plan and current status match the Action edit/assignment implementation.",
+            "Development plan or current status differs from the Action edit/assignment implementation.",
+            (plan_path, status_path),
         ),
     ]
 
@@ -601,6 +676,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_manual_staging_boundary(root))
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_audit_automation(root))
+    checks.extend(check_documentation_operating_model(root))
     checks.extend(check_action_contract(root, contract))
     checks.extend(check_action_assignment_rollout(root))
     checks.extend(check_action_mutation_release(root))
