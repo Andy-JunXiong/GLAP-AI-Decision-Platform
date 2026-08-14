@@ -1,0 +1,219 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "gotthard-road-tunnel-closure-2023-v1",
+  "title": "Switzerland road-network disruption during the September 2023 Gotthard tunnel closure",
+  "scenario_profile": {
+    "disruption_type": "ROAD_TUNNEL_INFRASTRUCTURE_FAILURE",
+    "region": "EUROPE",
+    "transport_mode": "ROAD",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "Europe/Zurich",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.admin.ch", "www.news.admin.ch"]
+  },
+  "sources": [
+    {
+      "source_id": "FEDRO_GOTTHARD_CLOSURE_2023_09_11",
+      "publisher": "Swiss Federal Roads Office",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.news.admin.ch/de/nsb?id=97678",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-09-11T23:59:59+02:00",
+      "latest_content_date": "2023-09-11",
+      "available_at": "2023-09-12T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:10:00+10:00",
+      "revision_label": "FEDERAL_NEWS_SERVICE_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "GOTTHARD_TUNNEL_CLOSED_UNTIL_FURTHER_NOTICE",
+          "fact_type": "ROAD_TUNNEL_CLOSURE",
+          "summary": "The Swiss Federal Roads Office reported that the Gotthard road tunnel had been closed since 10 September because of ceiling damage; the cause and exact extent were unknown and the tunnel would remain closed until further notice.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "STRATEGIC_ROAD_LINK_CLOSED", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "811fecc10cfd8e81a547b9257e4979de3b699f900280daa92e40c13025deaf16"
+    },
+    {
+      "source_id": "FEDRO_GOTTHARD_DAMAGED_CEILING_REMOVED_2023_09_12",
+      "publisher": "Swiss Federal Roads Office",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.admin.ch/de/nsb?id=97707",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-09-12T23:59:59+02:00",
+      "latest_content_date": "2023-09-12",
+      "available_at": "2023-09-13T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:10:00+10:00",
+      "revision_label": "FEDERAL_COUNCIL_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "GOTTHARD_DAMAGED_CEILING_SECTION_REMOVED",
+          "fact_type": "ROAD_TUNNEL_REPAIR_PROGRESS",
+          "summary": "After safety work, crews removed the damaged intermediate ceiling section overnight; the stated target remained reopening the tunnel by the end of that week.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "ROAD_TUNNEL_REPAIR_IN_PROGRESS", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "bbe862d069418fe56816e95f3f9cc099f752d564b844022fac09b617adcf6345"
+    },
+    {
+      "source_id": "FEDRO_GOTTHARD_REOPENING_DECISION_PENDING_2023_09_14",
+      "publisher": "Swiss Federal Roads Office",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.admin.ch/de/nsb?id=97735",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-09-14T23:59:59+02:00",
+      "latest_content_date": "2023-09-14",
+      "available_at": "2023-09-15T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:10:00+10:00",
+      "revision_label": "FEDERAL_COUNCIL_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "GOTTHARD_REOPENING_TIME_STILL_PENDING",
+          "fact_type": "ROAD_TUNNEL_CLOSURE_CONTINUES",
+          "summary": "The tunnel remained closed while specialists worked on reopening it, and the Federal Roads Office said the reopening time would be communicated the following day.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "STRATEGIC_ROAD_LINK_STILL_CLOSED", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "b92d397b5ba96faf9f959f37055bac11df62e800b4cf57265ce16fe674464b20"
+    },
+    {
+      "source_id": "FEDRO_GOTTHARD_REOPENING_2023_09_15",
+      "publisher": "Swiss Federal Roads Office",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.admin.ch/de/nsb?id=97750",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-09-15T23:59:59+02:00",
+      "latest_content_date": "2023-09-15",
+      "available_at": "2023-09-16T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:10:00+10:00",
+      "revision_label": "FEDERAL_COUNCIL_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "GOTTHARD_TUNNEL_REOPENED_TO_TRAFFIC",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "The Federal Roads Office announced that the Gotthard road tunnel would be available to traffic again from 20:00 on 15 September after the damaged intermediate ceiling had required closure.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "ROAD_TUNNEL_RECOVERY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "90dee6bbffbf0948de14135648f43e5ca25e06bc76ae26d71e1e1733a7dbaba8"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2023-09-11T23:00:00+02:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_EU_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 6,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2023-09-12T00:00:00+02:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_EU_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 6,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2023-09-15T00:00:00+02:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_EU_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 3,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": false
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_OFFICIAL_CLOSURE_SOURCE_AVAILABLE",
+      "cutoff_at": "2023-09-11T23:00:00+02:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "FEDRO_GOTTHARD_CLOSURE_2023_09_11",
+        "FEDRO_GOTTHARD_DAMAGED_CEILING_REMOVED_2023_09_12",
+        "FEDRO_GOTTHARD_REOPENING_DECISION_PENDING_2023_09_14",
+        "FEDRO_GOTTHARD_REOPENING_2023_09_15"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_CLOSURE_CONFIRMED_UNTIL_FURTHER_NOTICE",
+      "cutoff_at": "2023-09-12T00:00:00+02:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["FEDRO_GOTTHARD_CLOSURE_2023_09_11"],
+      "expected_hidden_source_ids": [
+        "FEDRO_GOTTHARD_DAMAGED_CEILING_REMOVED_2023_09_12",
+        "FEDRO_GOTTHARD_REOPENING_DECISION_PENDING_2023_09_14",
+        "FEDRO_GOTTHARD_REOPENING_2023_09_15"
+      ],
+      "expected_a303_decision_change": true
+    },
+    {
+      "cutoff_id": "T2_REPAIR_CONTINUES_REOPENING_TIME_PENDING",
+      "cutoff_at": "2023-09-15T00:00:00+02:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "FEDRO_GOTTHARD_CLOSURE_2023_09_11",
+        "FEDRO_GOTTHARD_DAMAGED_CEILING_REMOVED_2023_09_12",
+        "FEDRO_GOTTHARD_REOPENING_DECISION_PENDING_2023_09_14"
+      ],
+      "expected_hidden_source_ids": ["FEDRO_GOTTHARD_REOPENING_2023_09_15"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_TUNNEL_REOPENED_TO_TRAFFIC",
+      "source_id": "FEDRO_GOTTHARD_REOPENING_2023_09_15",
+      "available_at": "2023-09-16T00:00:00+02:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "DATE_ONLY_CONSERVATIVE_SOURCE_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION",
+      "ROAD_MODE_AND_EUROPE_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

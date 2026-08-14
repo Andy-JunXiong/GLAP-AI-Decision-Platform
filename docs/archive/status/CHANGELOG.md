@@ -11,9 +11,18 @@ preserved handoffs.
   Effect layers.
 - Added versioned Decision Quality rubric, blinded package, review submission,
   and fail-closed aggregation mechanics. No expert result was claimed.
-- Expanded Historical Replay to five frozen events and 15 decision cutoffs,
-  covering AIR/OCEAN/RAIL and HIGH/MEDIUM evidence while retaining an explicit
-  `NOT_MET` benchmark gate.
+- Expanded Historical Replay to ten frozen events and 30 decision cutoffs,
+  adding ROAD/Europe coverage through the 2023 Gotthard tunnel closure and
+  North Africa/vessel-grounding coverage through the 2021 Ever Given event,
+  Oceania/extreme-weather-road coverage through Cyclone Gabrielle, and
+  Southeast Asia/container-port-congestion coverage through Singapore, and
+  South America/flood-damaged-highway coverage through Rio Grande do Sul. The
+  structural scenario gate now passes, while absent independent reviews retain
+  an explicit `NOT_MET` benchmark gate.
+- Added a content-addressed Historical Replay review freeze and deterministic
+  30-package blinded handoff with a separately held owner key. Post-decision
+  reveals and capability identity are excluded from reviewer packages; no
+  expert review or quality result was claimed.
 - Established Documentation Architecture v1, separating repository rules,
   long-term direction, current truth, and archived history.
 

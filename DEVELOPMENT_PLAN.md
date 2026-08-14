@@ -129,9 +129,10 @@ Durable capabilities:
 - simple forecast baselines and governed label-readiness gates;
 - learning proposals that cannot self-activate.
 
-Near-term gate: expand the five-event Historical Replay pilot to at least ten
-frozen scenarios, then collect at least three genuinely independent blinded
-reviews per variant. Unit-test review objects are not expert evidence.
+Near-term gate: use the content-addressed ten-event Historical Replay and rubric
+freeze to collect at least three genuinely independent blinded reviews per
+variant. The 30-cutoff handoff is implemented; unit-test review objects are not
+expert evidence.
 
 Model gate: supervised training remains blocked until every relevant provider
 has sufficient `OPERATIONAL` / `ACTUAL_CALENDAR` closed labels and a candidate

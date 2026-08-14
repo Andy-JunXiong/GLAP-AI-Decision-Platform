@@ -103,19 +103,23 @@
     {
       "id": "decision_quality_review",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "local blinded-review mechanics only; no expert reviews or decision-quality result",
+      "boundary": "local blinded-review mechanics plus content-addressed ten-scenario, 30-cutoff handoff; no expert reviews or decision-quality result",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
+        "ops/build_historical_replay_review_bundle.py",
         "tests/test_decision_quality_evaluation.py",
+        "tests/test_historical_replay_review_bundle.py",
+        "tests/fixtures/historical_replay/review_freeze_v1.json",
         "docs/decision_quality_evaluation.md",
         "docs/decision_quality_rubric_v1.json",
-        "docs/decision_quality_review_v1.schema.json"
+        "docs/decision_quality_review_v1.schema.json",
+        "docs/historical_replay_review_freeze_v1.schema.json"
       ]
     },
     {
       "id": "historical_replay_corpus",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "five-event AIR/OCEAN/RAIL local hybrid pilot with HIGH/MEDIUM coverage; authoritative public facts plus controlled synthetic enterprise state; benchmark gate not met",
+      "boundary": "ten-event AIR/OCEAN/RAIL/ROAD local hybrid corpus with HIGH/MEDIUM coverage; structural gates met; authoritative public facts plus controlled synthetic enterprise state; independent-review benchmark gate not met",
       "evidence_files": [
         "ops/run_historical_replay.py",
         "ops/run_historical_replay_corpus.py",
@@ -126,10 +130,17 @@
         "tests/fixtures/historical_replay/red_sea_security_2023_v1.json",
         "tests/fixtures/historical_replay/faa_notam_outage_2023_v1.json",
         "tests/fixtures/historical_replay/us_rail_labor_risk_2022_v1.json",
+        "tests/fixtures/historical_replay/gotthard_road_tunnel_closure_2023_v1.json",
+        "tests/fixtures/historical_replay/suez_ever_given_grounding_2021_v1.json",
+        "tests/fixtures/historical_replay/new_zealand_cyclone_gabrielle_roads_2023_v1.json",
+        "tests/fixtures/historical_replay/singapore_port_congestion_2024_v1.json",
+        "tests/fixtures/historical_replay/rio_grande_do_sul_flood_highways_2024_v1.json",
         "tests/fixtures/historical_replay/corpus_v1.json",
+        "tests/fixtures/historical_replay/review_freeze_v1.json",
         "docs/historical_replay_lab.md",
         "docs/historical_replay_scenario_v1.schema.json",
         "docs/historical_replay_corpus_v1.schema.json",
+        "docs/historical_replay_review_freeze_v1.schema.json",
         "docs/temporal_truthfulness.md"
       ]
     },

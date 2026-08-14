@@ -33,6 +33,41 @@ key retains the option-to-variant mapping. Possession of the key and review of
 an option are conflicting roles; this process boundary is supported by a
 reviewer attestation and must be enforced by the human study owner.
 
+## Frozen Historical Replay handoff
+
+The ten-event Historical Replay corpus has a separate, content-addressed freeze
+at
+[`review_freeze_v1.json`](../tests/fixtures/historical_replay/review_freeze_v1.json).
+Its machine-readable contract is
+[`historical_replay_review_freeze_v1.schema.json`](historical_replay_review_freeze_v1.schema.json).
+The freeze binds the exact corpus manifest, ordered scenario membership, every
+scenario body, and the v1 rubric by SHA-256 digest. Any change fails closed
+before a package can be built.
+
+[`build_historical_replay_review_bundle.py`](../ops/build_historical_replay_review_bundle.py)
+turns the frozen 10-scenario, 30-cutoff corpus into two deterministic outputs:
+
+- one reviewer-safe bundle containing all 30 blinded packages, including the
+  no-delta controls;
+- one study-owner-only key bundle containing option and evidence mappings.
+
+Post-decision reveal sources are excluded from every review package. The public
+bundle contains no A303, baseline/challenger, rule-trace, attribution, or blind-
+key identity. The two outputs must be stored and distributed separately.
+
+```bash
+python ops/build_historical_replay_review_bundle.py \
+  --freeze tests/fixtures/historical_replay/review_freeze_v1.json \
+  --corpus-manifest tests/fixtures/historical_replay/corpus_v1.json \
+  --bundle-output artifacts/historical-replay-review-bundle.json \
+  --key-output artifacts/historical-replay-review-key-study-owner-only.json
+```
+
+The repository deliberately does not include generated review submissions or
+a generated owner key bundle. Building the handoff proves deterministic input
+integrity and blinding mechanics only; it does not prove reviewer independence
+or produce a Decision Quality result.
+
 ## Rubric
 
 The machine-readable rubric is
@@ -84,11 +119,12 @@ missing; they cannot be replaced by an expert score or treated as zero.
 
 ## Current evidence boundary
 
-The A303 fixture is controlled synthetic engineering evidence. The repository
-contains no submitted expert reviews, so its Decision Quality layer remains
-`NOT_EVALUATED`. Unit tests exercise scoring mechanics with in-memory test
-reviews; those tests are not expert evidence and are never written to the
-scenario corpus.
+The A303 fixture is controlled synthetic engineering evidence. The frozen
+Historical Replay bundle is hybrid replay evidence with controlled synthetic
+enterprise state. Neither contains submitted expert reviews, so Decision
+Quality remains `NOT_EVALUATED`. Unit tests exercise packaging and scoring
+mechanics with in-memory test reviews; those tests are not expert evidence and
+are never written to the scenario corpus.
 
 Use the tooling only after first producing an evaluation report:
 

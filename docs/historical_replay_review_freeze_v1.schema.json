@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/schemas/historical-replay-review-freeze-v1.schema.json",
+  "title": "GLAP Historical Replay Review Freeze v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "freeze_id",
+    "frozen_at",
+    "corpus_id",
+    "corpus_manifest_digest",
+    "rubric_version",
+    "rubric_digest",
+    "review_scope",
+    "scenario_count",
+    "cutoff_count",
+    "scenarios",
+    "authority",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "historical-replay-review-freeze.v1"},
+    "freeze_id": {"type": "string", "minLength": 1},
+    "frozen_at": {"type": "string", "format": "date-time"},
+    "corpus_id": {"type": "string", "minLength": 1},
+    "corpus_manifest_digest": {"$ref": "#/$defs/sha256"},
+    "rubric_version": {"const": "decision-quality-rubric.v1"},
+    "rubric_digest": {"$ref": "#/$defs/sha256"},
+    "review_scope": {"const": "ALL_FROZEN_CUTOFFS"},
+    "scenario_count": {"const": 10},
+    "cutoff_count": {"const": 30},
+    "scenarios": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {"$ref": "#/$defs/scenario"}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "network_access_allowed", "operational_writes_allowed", "production_effect"],
+      "properties": {
+        "profile": {"const": "EVALUATION_NO_MUTATION"},
+        "network_access_allowed": {"const": false},
+        "operational_writes_allowed": {"const": false},
+        "production_effect": {"const": false}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supports", "does_not_support"],
+      "properties": {
+        "supports": {
+          "const": ["FROZEN_CORPUS_AND_RUBRIC_INPUTS", "DETERMINISTIC_BLINDED_REVIEW_HANDOFF"]
+        },
+        "does_not_support": {
+          "const": ["INDEPENDENT_REVIEW_COMPLETION", "DECISION_QUALITY_RESULT", "BUSINESS_OUTCOME_EFFECT", "PRODUCTION_READINESS"]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenario_id", "file", "scenario_digest"],
+      "properties": {
+        "scenario_id": {"type": "string", "minLength": 1},
+        "file": {"type": "string", "pattern": "^[A-Za-z0-9_]+\\.json$"},
+        "scenario_digest": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -161,9 +161,11 @@ remains unchanged.
 
 The experiment evaluates only System Correctness and Capability Attribution.
 The Decision Quality rubric, blinded package, independent-review contract, and
-aggregation gate are implemented, but no expert reviews have been collected;
-Decision Quality therefore remains `NOT_EVALUATED`. Business Outcome Effect
-also remains `NOT_EVALUATED` until an eligible outcome method is attached. See
+aggregation gate are implemented. The ten-event corpus and rubric are now
+content-addressed, and deterministic blinded packages cover all 30 cutoffs,
+but no expert reviews have been collected; Decision Quality therefore remains
+`NOT_EVALUATED`. Business Outcome Effect also remains `NOT_EVALUATED` until an
+eligible outcome method is attached. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
 
 Run it locally with:
@@ -175,13 +177,12 @@ python ops/evaluate_decision_capabilities.py \
 
 ## Next increments
 
-1. Expand the five-event historical corpus to the frozen benchmark gate: at
-   least 10 scenarios, four disruption types, three regions, two transport
-   modes, and two severity bands. Structural coverage now passes across
-   AIR/OCEAN/RAIL and HIGH/MEDIUM, but five events are not a benchmark.
-2. Collect no fewer than three independent blinded reviews per variant only
-   after scenario and rubric versions are frozen; do not manufacture repository
-   labels.
+1. Collect no fewer than three genuinely independent blinded reviews per
+   variant from the now-frozen 10-scenario, 30-cutoff handoff; do not
+   manufacture repository labels.
+2. Aggregate only integrity-valid submissions after the study owner confirms
+   reviewer independence and blind-key separation. Structural coverage and a
+   frozen handoff alone do not create an eligible benchmark.
 3. Add External Evidence and Decision Memory ablations.
 4. Add a governed Agent Runtime adapter and compare hosts using identical
    tools, evidence, budgets, and authority.

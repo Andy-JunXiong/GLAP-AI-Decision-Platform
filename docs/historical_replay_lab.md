@@ -1,4 +1,4 @@
-# Historical Replay Lab v0.4
+# Historical Replay Lab v0.9
 
 **Scenario contract:** `historical-replay-scenario.v1`
 **Corpus contract:** `historical-replay-corpus.v1`
@@ -17,8 +17,8 @@ assumptions as company records.
 `execution_mode`. Its rows cannot enter operational views, default backtests,
 label readiness, production reporting, or policy/model promotion evidence.
 
-The corpus now contains five events, five disruption types, three regions,
-three transport modes (OCEAN, AIR, and RAIL), and two severity bands (HIGH and
+The corpus now contains ten events, ten disruption types, eight regions,
+four transport modes (OCEAN, AIR, RAIL, and ROAD), and two severity bands (HIGH and
 MEDIUM). It proves cross-mode and no-delta-control mechanics while remaining
 below the representative logistics benchmark threshold.
 
@@ -31,9 +31,14 @@ below the representative logistics benchmark threshold.
 | 2023–2024 Red Sea attacks | Maritime security | Middle East | No delta at T0; attributed delta at T1 and T2 |
 | 2023 FAA NOTAM outage | Air-traffic system outage | North America | No delta before or during LOW/MEDIUM signals; attributed delta after the nationwide ground stop |
 | 2022 U.S. rail labor dispute | Labor-disruption risk | North America | MEDIUM evidence at T1 and T2; no A303 delta at any cutoff |
+| 2023 Gotthard road-tunnel closure | Road-tunnel infrastructure failure | Europe | No delta before the dated closure source is conservatively available; attributed delta at T1 and T2; reopening remains reveal-only |
+| 2021 Ever Given grounding | Canal vessel grounding | North Africa | No delta before the dated response source is conservatively available; attributed delta at T1 and T2; refloating and restored traffic remain reveal-only |
+| 2023 Cyclone Gabrielle | Extreme-weather road-network disruption | Oceania | No delta before the first exact-timestamp NZTA notice; attributed delta after Coromandel closures at T1 and Northland isolation at T2; partial reopening remains reveal-only |
+| 2024 Singapore port congestion | Container-port congestion | Southeast Asia | No delta before the first MPA source is conservatively available; attributed delta after the two-to-three-day berth delay at T1 and during sustained capacity demand at T2; reduced wait time remains reveal-only |
+| 2024 Rio Grande do Sul floods | Flood-damaged highway network | South America | No delta before the first exact-timestamp recovery bulletin; attributed delta after 40 full closures at T1 and while extensive restrictions continued at T2; the first BR-470 reopening remains reveal-only |
 
-Across the corpus there are 15 decision cutoffs: six with an attributed A303
-decision change and nine with no delta. These are scenario-level attribution
+Across the corpus there are 30 decision cutoffs: sixteen with an attributed
+A303 decision change and fourteen with no delta. These are scenario-level attribution
 counts, not wins, quality scores, or business effects.
 
 ## Authoritative source sets
@@ -96,6 +101,75 @@ hypothetical worst case. The emergency-board and recommendation records are
 MEDIUM decision evidence; no nationwide stoppage is observed within the frozen
 decision window. The later tentative agreement is resolution reveal only.
 Every cutoff therefore remains a no-delta control.
+
+### Gotthard road-tunnel closure
+
+- [FEDRO closure notice of 11 September 2023](https://www.news.admin.ch/de/nsb?id=97678)
+- [FEDRO damaged-ceiling removal update of 12 September 2023](https://www.admin.ch/de/nsb?id=97707)
+- [FEDRO reopening-decision update of 14 September 2023](https://www.admin.ch/de/nsb?id=97735)
+- [FEDRO reopening notice of 15 September 2023](https://www.admin.ch/de/nsb?id=97750)
+
+The first three dated notices freeze the continued closure and repair state at
+successive cutoffs. The fourth states that the tunnel would reopen at 20:00 on
+15 September and is isolated as a recovery reveal. Because the official pages
+show dates rather than signed publication timestamps, each source becomes
+eligible only at local midnight on the next day. This scenario adds ROAD and
+Europe coverage without backdating the reopening fact.
+
+### Ever Given grounding
+
+- [SCA refloating-effort update of 26 March 2021](https://www.suezcanal.gov.eg/English/MediaCenter/News/Pages/navigation-26-03-2021.aspx)
+- [SCA successful-refloating update of 29 March 2021](https://www.suezcanal.gov.eg/English/MediaCenter/News/Pages/nav_29-03-2021.aspx)
+- [SCA restored-navigation update of 31 March 2021](https://www.suezcanal.gov.eg/English/MediaCenter/News/Pages/31-3-2021.aspx)
+
+The first dated notice provides the decision-time HIGH grounding signal. The
+final cutoff occurs during 29 March but, under the conservative date-only
+policy, cannot see that day's refloating notice. Refloating and subsequent
+full-capacity navigation are therefore isolated as factual recovery reveals.
+This scenario adds North Africa and vessel-grounding coverage without treating
+the recovery as information available earlier that day.
+
+### Cyclone Gabrielle road-network disruption
+
+- [NZTA Coromandel highway closures at 10:39 on 13 February 2023](https://nzta.govt.nz/media-releases/coromandel-highways-compromised-by-cyclone-gabrielle)
+- [NZTA Northland network update at 19:44 on 14 February 2023](https://nzta.govt.nz/media-releases/northland-network-update)
+- [NZTA Northland reopening update at 12:36 on 15 February 2023](https://nzta.govt.nz/media-releases/northland-network-begins-to-re-open)
+
+The first two exact-timestamp notices freeze high-severity highway closures and
+regional road-network isolation at successive decision cutoffs. The following
+day's partial reopening update is isolated as a factual recovery reveal and
+cannot influence those earlier recommendations. This scenario adds Oceania and
+extreme-weather road-network coverage without inferring publication times.
+
+### Singapore container-port congestion
+
+- [MPA extended container-berth waiting-time statement of 30 May 2024](https://www.mpa.gov.sg/media-centre/details/in-response-to-media-queries-on--vessels--extended-waiting-times-for-berths-in-the-port-of-singapore)
+- [MPA strong container-capacity demand statement of 8 June 2024](https://www.mpa.gov.sg/media-centre/details/continued-strong-growth-in-container-volumes)
+- [MPA reduced berth-wait update of 4 September 2024](https://www.mpa.gov.sg/media-centre/details/mpa-to-permit-night-movement-of-line-towed-container-barges-at-pasir-panjang-terminal)
+
+The first dated statement supplies the HIGH congestion signal through its
+two-to-three-day average wait when immediate berthing was unavailable. The
+second confirms that container-capacity demand remained strong; the first HIGH
+signal remains visible at that cutoff. The later statement reports a reduction
+to less than one day and is isolated as a factual recovery reveal. Because the
+pages expose dates rather than signed timestamps, each source becomes eligible
+only at local midnight on the following day. This scenario adds Southeast Asia
+and container-port-congestion coverage.
+
+### Rio Grande do Sul flood-damaged highways
+
+- [Brazil Ministry of Transport highway bulletin updated at 20:06 on 17 May 2024](https://www.gov.br/transportes/pt-br/assuntos/noticias/2024/05/boletim-de-recuperacao-de-rodovias-federais-17-05-2024)
+- [Brazil Ministry of Transport highway bulletin published at 18:57 on 24 May 2024](https://www.gov.br/transportes/pt-br/assuntos/noticias/2024/05/boletim-de-recuperacao-de-rodovias-federais-24-05-2024)
+- [DNIT first BR-470 segment reopening at 18:15 on 22 June 2024](https://www.gov.br/dnit/pt-br/assuntos/noticias/dnit-libera-primeiro-segmento-bloqueado-da-br-470-rs-em-veranopolis)
+
+The first exact-timestamp bulletin reports 40 fully closed federal-highway
+sections and supplies the initial HIGH signal. The second reports that 11
+sections remained fully closed and 23 remained partially closed, preserving
+the HIGH disruption state at the final cutoff. DNIT's later reopening of the
+first blocked BR-470 segment is isolated as a factual recovery reveal. The
+first page's current-revision availability uses its displayed 20:06 update
+time, not its earlier 20:01 publication time. This scenario adds South America
+and flood-damaged-highway coverage.
 
 ## Conservative availability policy
 
@@ -160,18 +234,34 @@ python ops/run_historical_replay_corpus.py \
 
 The manifest requires at least 10 scenarios, four disruption types, three
 regions, two transport modes, two severity bands, and three independent
-blinded reviews per variant. The current pilot passes every structural coverage
-requirement except scenario count. It has no independent reviews, so the runner
-still returns `eligible=false` and `status=NOT_MET`.
+blinded reviews per variant. The current corpus passes every structural coverage
+requirement, including scenario count. It has no independent reviews, so the
+runner still returns `eligible=false` and `status=NOT_MET`.
 
 Decision Quality and Business Outcome Effect remain `NOT_EVALUATED`.
 Historical reveals do not identify the counterfactual result of an unchosen
 action.
 
+## Frozen blinded-review handoff
+
+The v0.9 corpus, all ten ordered scenario documents, and the Decision Quality
+v1 rubric are now content-addressed by
+[`review_freeze_v1.json`](../tests/fixtures/historical_replay/review_freeze_v1.json).
+The local
+[`build_historical_replay_review_bundle.py`](../ops/build_historical_replay_review_bundle.py)
+runner validates every digest and then deterministically creates one blinded
+package for each of the 30 cutoffs. It creates the reviewer-safe bundle and the
+study-owner-only blind-key bundle separately, and it excludes every reveal-only
+source from decision evidence.
+
+This completes the repository-side freeze and handoff preparation. It does not
+complete independent review: no human submissions are stored, no reviewer
+independence is asserted by the code, and benchmark status remains `NOT_MET`.
+
 Before calling the corpus a benchmark:
 
-- add at least five more scenarios, preferably including road coverage and
-  another geography;
+- preserve the frozen scenario membership and rubric digests throughout review
+  collection;
 - freeze controlled enterprise-state generation separately from decision
   policy;
 - collect genuinely independent blinded reviews;

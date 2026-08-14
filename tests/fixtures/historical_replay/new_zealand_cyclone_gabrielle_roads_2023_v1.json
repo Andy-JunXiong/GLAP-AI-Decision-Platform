@@ -1,0 +1,194 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "new-zealand-cyclone-gabrielle-roads-2023-v1",
+  "title": "New Zealand road-network disruption during Cyclone Gabrielle in February 2023",
+  "scenario_profile": {
+    "disruption_type": "EXTREME_WEATHER_ROAD_NETWORK",
+    "region": "OCEANIA",
+    "transport_mode": "ROAD",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "Pacific/Auckland",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "EXACT_SOURCE_TIMESTAMP",
+    "full_source_content_stored": false,
+    "allowed_domains": ["nzta.govt.nz"]
+  },
+  "sources": [
+    {
+      "source_id": "NZTA_COROMANDEL_HIGHWAY_CLOSURES_2023_02_13_1039",
+      "publisher": "New Zealand Transport Agency Waka Kotahi",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://nzta.govt.nz/media-releases/coromandel-highways-compromised-by-cyclone-gabrielle",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-02-13T10:39:00+13:00",
+      "latest_content_date": "2023-02-13",
+      "available_at": "2023-02-13T10:39:00+13:00",
+      "retrieved_at": "2026-08-14T21:29:07+10:00",
+      "revision_label": "NZTA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "CYCLONE_GABRIELLE_COROMANDEL_HIGHWAY_CLOSURES",
+          "fact_type": "EXTREME_WEATHER_ROAD_NETWORK",
+          "summary": "New Zealand Transport Agency Waka Kotahi reported that Cyclone Gabrielle's wind and rain had left State Highway 25 blocked by fallen trees, flooding, and debris, with some sections fully closed and State Highway 25A closed over its full length.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "EXTREME_WEATHER_ROAD_CLOSURES", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "c99bbbb807cb2ea806212db1dce7ae5b0cd87ad433acef568420345e88ac6db3"
+    },
+    {
+      "source_id": "NZTA_NORTHLAND_NETWORK_ISOLATED_2023_02_14_1944",
+      "publisher": "New Zealand Transport Agency Waka Kotahi",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://nzta.govt.nz/media-releases/northland-network-update",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-02-14T19:44:00+13:00",
+      "latest_content_date": "2023-02-14",
+      "available_at": "2023-02-14T19:44:00+13:00",
+      "retrieved_at": "2026-08-14T21:29:07+10:00",
+      "revision_label": "NZTA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "CYCLONE_GABRIELLE_NORTHLAND_NETWORK_ISOLATED",
+          "fact_type": "EXTREME_WEATHER_ROAD_NETWORK",
+          "summary": "New Zealand Transport Agency Waka Kotahi reported that Northland was largely isolated by multiple State Highway 1 slips and flooding on State Highways 16 and 14, with further closures on State Highways 15 and 12 and no heavy-vehicle detour available that night around the Brynderwyn-to-Waipu closure.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "REGIONAL_ROAD_NETWORK_ISOLATION", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "647829be913afc8d5554ee518e65ba9b9a45caa2cda41ffbada2344ebceec578"
+    },
+    {
+      "source_id": "NZTA_NORTHLAND_NETWORK_REOPENING_2023_02_15_1236",
+      "publisher": "New Zealand Transport Agency Waka Kotahi",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://nzta.govt.nz/media-releases/northland-network-begins-to-re-open",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-02-15T12:36:00+13:00",
+      "latest_content_date": "2023-02-15",
+      "available_at": "2023-02-15T12:36:00+13:00",
+      "retrieved_at": "2026-08-14T21:29:07+10:00",
+      "revision_label": "NZTA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "CYCLONE_GABRIELLE_NORTHLAND_PARTIAL_REOPENING",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "New Zealand Transport Agency Waka Kotahi reported that several Northland state highways had reopened while State Highway 1 between Brynderwyn and Waipu remained closed.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "ROAD_NETWORK_PARTIAL_RECOVERY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "fbe687e27fe5cccec4e22f1ec35c9fd38e447e9bfe5ebcd536225e413b53dea8"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2023-02-13T10:38:00+13:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_NZ_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 6,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2023-02-13T10:40:00+13:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_NZ_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 4,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2023-02-14T19:45:00+13:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_NZ_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 3,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": false
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_FIRST_NZTA_CYCLONE_SOURCE_AVAILABLE",
+      "cutoff_at": "2023-02-13T10:38:00+13:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "NZTA_COROMANDEL_HIGHWAY_CLOSURES_2023_02_13_1039",
+        "NZTA_NORTHLAND_NETWORK_ISOLATED_2023_02_14_1944",
+        "NZTA_NORTHLAND_NETWORK_REOPENING_2023_02_15_1236"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_COROMANDEL_HIGHWAY_CLOSURES_CONFIRMED",
+      "cutoff_at": "2023-02-13T10:40:00+13:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["NZTA_COROMANDEL_HIGHWAY_CLOSURES_2023_02_13_1039"],
+      "expected_hidden_source_ids": [
+        "NZTA_NORTHLAND_NETWORK_ISOLATED_2023_02_14_1944",
+        "NZTA_NORTHLAND_NETWORK_REOPENING_2023_02_15_1236"
+      ],
+      "expected_a303_decision_change": true
+    },
+    {
+      "cutoff_id": "T2_NORTHLAND_NETWORK_ISOLATION_CONFIRMED",
+      "cutoff_at": "2023-02-14T19:45:00+13:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "NZTA_COROMANDEL_HIGHWAY_CLOSURES_2023_02_13_1039",
+        "NZTA_NORTHLAND_NETWORK_ISOLATED_2023_02_14_1944"
+      ],
+      "expected_hidden_source_ids": ["NZTA_NORTHLAND_NETWORK_REOPENING_2023_02_15_1236"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_NORTHLAND_NETWORK_PARTIAL_REOPENING",
+      "source_id": "NZTA_NORTHLAND_NETWORK_REOPENING_2023_02_15_1236",
+      "available_at": "2023-02-15T12:36:00+13:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "EXACT_SOURCE_TIMESTAMP_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION",
+      "OCEANIA_AND_EXTREME_WEATHER_ROAD_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

@@ -41,10 +41,10 @@ and keeps human approval, execution evidence and outcomes traceable.
 
 > **14 August 2026 evaluation checkpoint:** a local, read-only Evaluation
 > Architecture now separates System Correctness, Capability Attribution,
-> Decision Quality, and Business Outcome Effect. Its five-event Historical
-> Replay pilot covers AIR/OCEAN/RAIL and HIGH/MEDIUM evidence with 15 frozen
-> decision cutoffs. Structural coverage checks pass, but the corpus is not a
-> benchmark and contains no independent expert Decision Quality result.
+> Decision Quality, and Business Outcome Effect. Its ten-event Historical
+> Replay corpus covers AIR/OCEAN/RAIL/ROAD and HIGH/MEDIUM evidence with 30 frozen
+> decision cutoffs. Structural coverage checks pass, but the corpus is not an
+> eligible benchmark and contains no independent expert Decision Quality result.
 
 ## Explore the interactive product story
 
@@ -139,7 +139,7 @@ its source metrics.
 | Authenticated Operations | Private staging cockpit with Cognito roles, governed Action mutations, Outcome Review, Pipeline Health, Forecast Accuracy and authorised Network drill-down |
 | Drift prevention | Staged-snapshot pre-commit gate plus independent CI architecture/capability audit |
 | Decision evaluation | Versioned local A303 ON/OFF ablation with read-only System Correctness and Capability Attribution checks |
-| Historical Replay | Five-event hybrid pilot with authoritative public facts, controlled synthetic enterprise state, 15 frozen cutoffs and an explicit `NOT_MET` benchmark gate |
+| Historical Replay | Ten-event hybrid corpus with 30 frozen cutoffs, integrity-bound blinded-review handoff, and an explicit `NOT_MET` gate until independent reviews exist |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is

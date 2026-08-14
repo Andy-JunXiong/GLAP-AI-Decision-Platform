@@ -1,0 +1,201 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "suez-ever-given-grounding-2021-v1",
+  "title": "Suez Canal disruption during the March 2021 Ever Given grounding",
+  "scenario_profile": {
+    "disruption_type": "CANAL_VESSEL_GROUNDING",
+    "region": "NORTH_AFRICA",
+    "transport_mode": "OCEAN",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "Africa/Cairo",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.suezcanal.gov.eg"]
+  },
+  "sources": [
+    {
+      "source_id": "SCA_EVER_GIVEN_REFLOATING_EFFORTS_2021_03_26",
+      "publisher": "Suez Canal Authority",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.suezcanal.gov.eg/English/MediaCenter/News/Pages/navigation-26-03-2021.aspx",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2021-03-26T23:59:59+02:00",
+      "latest_content_date": "2021-03-26",
+      "available_at": "2021-03-27T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:22:00+10:00",
+      "revision_label": "SCA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "SUEZ_GROUNDED_VESSEL_REFLOATING_EFFORTS_ONGOING",
+          "fact_type": "CANAL_VESSEL_GROUNDING",
+          "summary": "The Suez Canal Authority said efforts to dislodge the grounded container ship were ongoing, welcomed assistance, and aimed to restore regular global maritime traffic through the canal as soon as possible.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CANAL_GROUNDING_RESPONSE_ACTIVE", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "891f779d84a1373fd003d7df362cd0898c3302878208a0137f2517df918e8853"
+    },
+    {
+      "source_id": "SCA_EVER_GIVEN_REFLOATED_2021_03_29",
+      "publisher": "Suez Canal Authority",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.suezcanal.gov.eg/English/MediaCenter/News/Pages/nav_29-03-2021.aspx",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2021-03-29T23:59:59+02:00",
+      "latest_content_date": "2021-03-29",
+      "available_at": "2021-03-30T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:22:00+10:00",
+      "revision_label": "SCA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "EVER_GIVEN_SUCCESSFULLY_REFLOATED",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "The Suez Canal Authority announced that the Ever Given had been successfully refloated and that navigation would resume after the vessel's direction was fully restored and it moved to the Bitter Lakes for inspection.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CANAL_GROUNDING_RECOVERY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "868d286a134b145480e1ea3f63186d078d6e0ef14441a3eabe60461a8b364869"
+    },
+    {
+      "source_id": "SCA_SUEZ_BOTH_DIRECTIONS_FULL_CAPACITY_2021_03_31",
+      "publisher": "Suez Canal Authority",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.suezcanal.gov.eg/English/MediaCenter/News/Pages/31-3-2021.aspx",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2021-03-31T23:59:59+02:00",
+      "latest_content_date": "2021-03-31",
+      "available_at": "2021-04-01T00:00:00+02:00",
+      "retrieved_at": "2026-08-14T21:22:00+10:00",
+      "revision_label": "SCA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "SUEZ_NAVIGATION_RESTORED_BOTH_DIRECTIONS",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "The Suez Canal Authority reported that navigation had resumed in both directions and that the canal was operating at full capacity around the clock.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CANAL_TRAFFIC_FULL_CAPACITY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "ef2dcf01eafa066713ec041cb8a46239a1ec2418fcde15605185e59297c94e40"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2021-03-26T23:00:00+02:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_NORTH_AFRICA_OCEAN_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 7,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2021-03-27T00:00:00+02:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_NORTH_AFRICA_OCEAN_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 5,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2021-03-29T12:00:00+02:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_NORTH_AFRICA_OCEAN_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 3,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": false
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_OFFICIAL_GROUNDING_SOURCE_AVAILABLE",
+      "cutoff_at": "2021-03-26T23:00:00+02:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "SCA_EVER_GIVEN_REFLOATING_EFFORTS_2021_03_26",
+        "SCA_EVER_GIVEN_REFLOATED_2021_03_29",
+        "SCA_SUEZ_BOTH_DIRECTIONS_FULL_CAPACITY_2021_03_31"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_GROUNDING_RESPONSE_ACTIVE",
+      "cutoff_at": "2021-03-27T00:00:00+02:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["SCA_EVER_GIVEN_REFLOATING_EFFORTS_2021_03_26"],
+      "expected_hidden_source_ids": [
+        "SCA_EVER_GIVEN_REFLOATED_2021_03_29",
+        "SCA_SUEZ_BOTH_DIRECTIONS_FULL_CAPACITY_2021_03_31"
+      ],
+      "expected_a303_decision_change": true
+    },
+    {
+      "cutoff_id": "T2_REFLOATING_ANNOUNCEMENT_NOT_YET_CONSERVATIVELY_AVAILABLE",
+      "cutoff_at": "2021-03-29T12:00:00+02:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": ["SCA_EVER_GIVEN_REFLOATING_EFFORTS_2021_03_26"],
+      "expected_hidden_source_ids": [
+        "SCA_EVER_GIVEN_REFLOATED_2021_03_29",
+        "SCA_SUEZ_BOTH_DIRECTIONS_FULL_CAPACITY_2021_03_31"
+      ],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_EVER_GIVEN_REFLOATED",
+      "source_id": "SCA_EVER_GIVEN_REFLOATED_2021_03_29",
+      "available_at": "2021-03-30T00:00:00+02:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    },
+    {
+      "reveal_id": "R2_BOTH_DIRECTIONS_FULL_CAPACITY",
+      "source_id": "SCA_SUEZ_BOTH_DIRECTIONS_FULL_CAPACITY_2021_03_31",
+      "available_at": "2021-04-01T00:00:00+02:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "DATE_ONLY_CONSERVATIVE_SOURCE_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION",
+      "NORTH_AFRICA_AND_VESSEL_GROUNDING_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

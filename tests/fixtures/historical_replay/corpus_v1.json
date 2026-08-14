@@ -1,11 +1,11 @@
 {
   "schema_version": "historical-replay-corpus.v1",
-  "corpus_id": "glap-historical-replay-pilot-v0-4",
+  "corpus_id": "glap-historical-replay-pilot-v0-9",
   "status": "PILOT_NOT_BENCHMARK",
   "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
   "selection_policy": {
     "policy_version": "historical-replay-selection.v1",
-    "frozen_at": "2026-08-14T20:00:00+10:00",
+    "frozen_at": "2026-08-14T21:47:12+10:00",
     "inclusion_criteria": [
       "AUTHORITATIVE_PUBLIC_SOURCES_WITH_EXPLICIT_PUBLICATION_DATES",
       "AT_LEAST_THREE_FROZEN_DECISION_CUTOFFS",
@@ -49,6 +49,26 @@
     {
       "scenario_id": "us-rail-labor-risk-2022-v1",
       "file": "us_rail_labor_risk_2022_v1.json"
+    },
+    {
+      "scenario_id": "gotthard-road-tunnel-closure-2023-v1",
+      "file": "gotthard_road_tunnel_closure_2023_v1.json"
+    },
+    {
+      "scenario_id": "suez-ever-given-grounding-2021-v1",
+      "file": "suez_ever_given_grounding_2021_v1.json"
+    },
+    {
+      "scenario_id": "new-zealand-cyclone-gabrielle-roads-2023-v1",
+      "file": "new_zealand_cyclone_gabrielle_roads_2023_v1.json"
+    },
+    {
+      "scenario_id": "singapore-port-congestion-2024-v1",
+      "file": "singapore_port_congestion_2024_v1.json"
+    },
+    {
+      "scenario_id": "rio-grande-do-sul-flood-highways-2024-v1",
+      "file": "rio_grande_do_sul_flood_highways_2024_v1.json"
     }
   ],
   "authority": {

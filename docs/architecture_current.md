@@ -33,15 +33,24 @@ are implemented, but no expert reviews exist and no quality result is claimed. S
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
 
-Historical Replay v0.4 adds a local five-scenario hybrid corpus covering the
-Baltimore, Panama Canal, Red Sea, FAA NOTAM, and U.S. rail-labor events. A
-version-frozen manifest runs 15 historical cutoffs across OCEAN, AIR, and RAIL,
-preserves scenario-level attribution, and validates HIGH and MEDIUM severity
-bands. Structural coverage gates now pass; the benchmark remains blocked by
-scenario count and absent independent reviews. Public facts remain paraphrased
+Historical Replay v0.9 adds a local ten-scenario hybrid corpus covering the
+Baltimore, Panama Canal, Red Sea, FAA NOTAM, U.S. rail-labor, Gotthard road-
+tunnel, Ever Given grounding, Cyclone Gabrielle road-network, and Singapore
+container-port congestion events plus the Rio Grande do Sul flood-damaged
+highway network. A version-frozen manifest runs 30 historical cutoffs across
+OCEAN, AIR, RAIL, and ROAD, preserves scenario-level
+attribution, and validates HIGH and MEDIUM severity bands. Structural coverage
+gates, including scenario count, now pass; benchmark eligibility remains blocked
+by absent independent reviews. Public facts remain paraphrased
 and digested; enterprise state remains aggregate controlled synthetic. The
 corpus is evaluation-only and cannot enter operational views, readiness
 evidence, or production reporting.
+
+A content-addressed review freeze now binds the exact corpus manifest, ten
+scenario bodies, and Decision Quality rubric. A deterministic local builder
+produces 30 reviewer-safe packages and a separately held study-owner key while
+excluding post-decision reveals. This is review-handoff infrastructure only:
+no human reviews or Decision Quality result exist.
 
 ## AWS runtime and delivery architecture
 

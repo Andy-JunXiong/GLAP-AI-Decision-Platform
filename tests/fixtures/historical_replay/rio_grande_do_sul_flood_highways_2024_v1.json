@@ -1,0 +1,194 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "rio-grande-do-sul-flood-highways-2024-v1",
+  "title": "Rio Grande do Sul federal-highway disruption during the May 2024 floods",
+  "scenario_profile": {
+    "disruption_type": "FLOOD_DAMAGED_HIGHWAY_NETWORK",
+    "region": "SOUTH_AMERICA",
+    "transport_mode": "ROAD",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "America/Sao_Paulo",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "EXACT_SOURCE_TIMESTAMP",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.gov.br"]
+  },
+  "sources": [
+    {
+      "source_id": "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_17_2006",
+      "publisher": "Brazil Ministry of Transport",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.gov.br/transportes/pt-br/assuntos/noticias/2024/05/boletim-de-recuperacao-de-rodovias-federais-17-05-2024",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2024-05-17T20:06:00-03:00",
+      "latest_content_date": "2024-05-17",
+      "available_at": "2024-05-17T20:06:00-03:00",
+      "retrieved_at": "2026-08-14T21:47:12+10:00",
+      "revision_label": "BRAZIL_MT_REVISION_UPDATED_2024_05_17_2006_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "RS_FLOODS_FORTY_TOTAL_HIGHWAY_CLOSURES",
+          "fact_type": "FLOOD_DAMAGED_HIGHWAY_NETWORK",
+          "summary": "Brazil's Ministry of Transport reported 40 fully closed sections across six federal highways in Rio Grande do Sul, nine partially closed sections, and five sections restricted to emergency vehicles.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "FLOOD_HIGHWAY_NETWORK_CLOSURES", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "da472a56931526ec0295f8b5cc6a536f76d5e5889a5eb8f3094e51a217e81100"
+    },
+    {
+      "source_id": "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_24_1857",
+      "publisher": "Brazil Ministry of Transport",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.gov.br/transportes/pt-br/assuntos/noticias/2024/05/boletim-de-recuperacao-de-rodovias-federais-24-05-2024",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2024-05-24T18:57:00-03:00",
+      "latest_content_date": "2024-05-24",
+      "available_at": "2024-05-24T18:57:00-03:00",
+      "retrieved_at": "2026-08-14T21:47:12+10:00",
+      "revision_label": "BRAZIL_MT_PUBLISHED_REVISION_2024_05_24_1857_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "RS_FLOODS_HIGHWAY_RESTRICTIONS_REMAIN_EXTENSIVE",
+          "fact_type": "FLOOD_DAMAGED_HIGHWAY_NETWORK",
+          "summary": "Brazil's Ministry of Transport reported that 11 sections across three federal highways remained fully closed and 23 sections across seven highways remained partially closed, while 19 sections were still under work for reopening.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "EXTENSIVE_HIGHWAY_RESTRICTIONS", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "3bc420fc6c6265ac87c03ea604c6e6845dd970ec486605e0e937d3164b5a00cd"
+    },
+    {
+      "source_id": "BRAZIL_DNIT_BR470_FIRST_SEGMENT_REOPENED_2024_06_22_1815",
+      "publisher": "Brazil National Department of Transport Infrastructure",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.gov.br/dnit/pt-br/assuntos/noticias/dnit-libera-primeiro-segmento-bloqueado-da-br-470-rs-em-veranopolis",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2024-06-22T18:15:00-03:00",
+      "latest_content_date": "2024-06-22",
+      "available_at": "2024-06-22T18:15:00-03:00",
+      "retrieved_at": "2026-08-14T21:47:12+10:00",
+      "revision_label": "BRAZIL_DNIT_PUBLISHED_REVISION_2024_06_22_1815_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "BR470_FIRST_BLOCKED_SEGMENT_REOPENED",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "Brazil's National Department of Transport Infrastructure reported that the first segment of the blocked BR-470 corridor between Veranopolis and Bento Goncalves had reopened, restoring access to the Veranopolis industrial district while further recovery work continued.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "FLOOD_HIGHWAY_PARTIAL_RECOVERY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "34233f390977a7b06efe225000a364143c2d0a9b38858ab55f3c06e73d4e2f53"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2024-05-17T20:05:00-03:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_SOUTH_AMERICA_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 8,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2024-05-17T20:06:00-03:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_SOUTH_AMERICA_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 5,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2024-05-24T18:57:00-03:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_SOUTH_AMERICA_ROAD_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 3,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": false
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_FIRST_FLOOD_HIGHWAY_BULLETIN_AVAILABLE",
+      "cutoff_at": "2024-05-17T20:05:00-03:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_17_2006",
+        "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_24_1857",
+        "BRAZIL_DNIT_BR470_FIRST_SEGMENT_REOPENED_2024_06_22_1815"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_FORTY_TOTAL_HIGHWAY_CLOSURES_CONFIRMED",
+      "cutoff_at": "2024-05-17T20:06:00-03:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_17_2006"],
+      "expected_hidden_source_ids": [
+        "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_24_1857",
+        "BRAZIL_DNIT_BR470_FIRST_SEGMENT_REOPENED_2024_06_22_1815"
+      ],
+      "expected_a303_decision_change": true
+    },
+    {
+      "cutoff_id": "T2_EXTENSIVE_HIGHWAY_RESTRICTIONS_CONTINUE",
+      "cutoff_at": "2024-05-24T18:57:00-03:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_17_2006",
+        "BRAZIL_MT_RS_HIGHWAY_BULLETIN_2024_05_24_1857"
+      ],
+      "expected_hidden_source_ids": ["BRAZIL_DNIT_BR470_FIRST_SEGMENT_REOPENED_2024_06_22_1815"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_BR470_FIRST_BLOCKED_SEGMENT_REOPENED",
+      "source_id": "BRAZIL_DNIT_BR470_FIRST_SEGMENT_REOPENED_2024_06_22_1815",
+      "available_at": "2024-06-22T18:15:00-03:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "EXACT_SOURCE_TIMESTAMP_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION",
+      "SOUTH_AMERICA_AND_FLOOD_HIGHWAY_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

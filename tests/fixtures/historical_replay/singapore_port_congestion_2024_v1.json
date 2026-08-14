@@ -1,0 +1,194 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "singapore-port-congestion-2024-v1",
+  "title": "Singapore container-port congestion during May and June 2024",
+  "scenario_profile": {
+    "disruption_type": "CONTAINER_PORT_CONGESTION",
+    "region": "SOUTHEAST_ASIA",
+    "transport_mode": "OCEAN",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "Asia/Singapore",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.mpa.gov.sg"]
+  },
+  "sources": [
+    {
+      "source_id": "MPA_CONTAINER_BERTH_WAIT_2024_05_30",
+      "publisher": "Maritime and Port Authority of Singapore",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.mpa.gov.sg/media-centre/details/in-response-to-media-queries-on--vessels--extended-waiting-times-for-berths-in-the-port-of-singapore",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2024-05-30T23:59:59+08:00",
+      "latest_content_date": "2024-05-30",
+      "available_at": "2024-05-31T00:00:00+08:00",
+      "retrieved_at": "2026-08-14T21:39:22+10:00",
+      "revision_label": "MPA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "SINGAPORE_CONTAINER_BERTH_WAIT_TWO_TO_THREE_DAYS",
+          "fact_type": "CONTAINER_PORT_CONGESTION",
+          "summary": "The Maritime and Port Authority of Singapore reported that off-schedule arrivals and increased container volumes had lengthened container-berth waits, with average waits of about two to three days when vessels could not be berthed on arrival.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CONTAINER_PORT_BERTH_DELAY", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "cb16186088a5bbfc72f9629a7e3f073007d25a4553a1da96ca935951022fe70e"
+    },
+    {
+      "source_id": "MPA_CONTAINER_CAPACITY_DEMAND_2024_06_08",
+      "publisher": "Maritime and Port Authority of Singapore",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.mpa.gov.sg/media-centre/details/continued-strong-growth-in-container-volumes",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2024-06-08T23:59:59+08:00",
+      "latest_content_date": "2024-06-08",
+      "available_at": "2024-06-09T00:00:00+08:00",
+      "retrieved_at": "2026-08-14T21:39:22+10:00",
+      "revision_label": "MPA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "SINGAPORE_CONTAINER_CAPACITY_DEMAND_REMAINS_STRONG",
+          "fact_type": "CONTAINER_PORT_CONGESTION",
+          "summary": "The Maritime and Port Authority of Singapore reported 16.90 million TEUs handled in the first five months of 2024, 7.7 percent above the same period in 2023, and stated that demand for capacity remained strong.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "PORT_CAPACITY_DEMAND_ELEVATED", "severity": "MEDIUM"}
+        }
+      ],
+      "content_digest": "308f27ba26f5063d500e7ea577631fd3cdf95b83d80acc00e1298ef3d9a0f42e"
+    },
+    {
+      "source_id": "MPA_CONTAINER_BERTH_WAIT_REDUCED_2024_09_04",
+      "publisher": "Maritime and Port Authority of Singapore",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.mpa.gov.sg/media-centre/details/mpa-to-permit-night-movement-of-line-towed-container-barges-at-pasir-panjang-terminal",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2024-09-04T23:59:59+08:00",
+      "latest_content_date": "2024-09-04",
+      "available_at": "2024-09-05T00:00:00+08:00",
+      "retrieved_at": "2026-08-14T21:39:22+10:00",
+      "revision_label": "MPA_CURRENT_REVISION_RETRIEVED_2026_08_14",
+      "extracted_facts": [
+        {
+          "fact_id": "SINGAPORE_CONTAINER_BERTH_WAIT_BELOW_ONE_DAY",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "The Maritime and Port Authority of Singapore reported that average container-berth wait time had been reduced to less than one day in July 2024 following added berths, reactivated capacity, increased manpower, and scheduling measures.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CONTAINER_PORT_CONGESTION_RECOVERY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "8afa82cf8a5cc88c1df065336e0a27a28577b0e11af47f5a3ab4e3e99e53661a"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2024-05-30T23:00:00+08:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_SOUTHEAST_ASIA_OCEAN_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 7,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2024-05-31T00:00:00+08:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_SOUTHEAST_ASIA_OCEAN_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 5,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2024-06-09T00:00:00+08:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_SOUTHEAST_ASIA_OCEAN_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 4,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": false
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_MPA_BERTH_WAIT_SOURCE_AVAILABLE",
+      "cutoff_at": "2024-05-30T23:00:00+08:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "MPA_CONTAINER_BERTH_WAIT_2024_05_30",
+        "MPA_CONTAINER_CAPACITY_DEMAND_2024_06_08",
+        "MPA_CONTAINER_BERTH_WAIT_REDUCED_2024_09_04"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_CONTAINER_BERTH_DELAY_CONFIRMED",
+      "cutoff_at": "2024-05-31T00:00:00+08:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["MPA_CONTAINER_BERTH_WAIT_2024_05_30"],
+      "expected_hidden_source_ids": [
+        "MPA_CONTAINER_CAPACITY_DEMAND_2024_06_08",
+        "MPA_CONTAINER_BERTH_WAIT_REDUCED_2024_09_04"
+      ],
+      "expected_a303_decision_change": true
+    },
+    {
+      "cutoff_id": "T2_STRONG_CAPACITY_DEMAND_CONTINUES",
+      "cutoff_at": "2024-06-09T00:00:00+08:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "MPA_CONTAINER_BERTH_WAIT_2024_05_30",
+        "MPA_CONTAINER_CAPACITY_DEMAND_2024_06_08"
+      ],
+      "expected_hidden_source_ids": ["MPA_CONTAINER_BERTH_WAIT_REDUCED_2024_09_04"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_CONTAINER_BERTH_WAIT_BELOW_ONE_DAY",
+      "source_id": "MPA_CONTAINER_BERTH_WAIT_REDUCED_2024_09_04",
+      "available_at": "2024-09-05T00:00:00+08:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "DATE_ONLY_CONSERVATIVE_SOURCE_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION",
+      "SOUTHEAST_ASIA_AND_CONTAINER_PORT_CONGESTION_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

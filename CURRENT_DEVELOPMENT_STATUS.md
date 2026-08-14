@@ -21,87 +21,85 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
-| Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Five-event AIR/OCEAN/RAIL hybrid pilot; not a benchmark |
-| Decision Quality review mechanics | `IMPLEMENTED_VERIFIED` | Blinded-review mechanics only; no independent expert result |
+| Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
+| Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Ten scenarios and rubric content-addressed; 30 blinded packages; no independent expert result |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
-## Active slice — Historical Replay ROAD expansion
+## Active slice — Independent blinded-review collection
 
-**Status:** `NEXT_UP_NOT_STARTED`
+**Status:** `READY_FOR_HUMAN_COORDINATION`
 
 **Goal**
 
-Add the sixth frozen Historical Replay scenario using a ROAD disruption in a
-new geography, with authoritative public sources and controlled synthetic
-enterprise state.
+Distribute the frozen reviewer-safe packages without the blind keys, collect
+genuine independent submissions, and preserve reviewer/key-holder separation.
 
 **Non-goals**
 
-- claiming a representative benchmark;
-- collecting or fabricating expert reviews;
+- changing the frozen corpus, scenarios, or rubric during review collection;
+- fabricating or automatically generating expert reviews;
 - evaluating Business Outcome Effect;
 - calling AWS, deploying, scheduling, or mutating an operational Action;
 - adding External Evidence, Decision Memory, or an Investigation Agent variant.
 
 **Objects / schema**
 
-- one `historical-replay-scenario.v1` fixture;
-- the version-frozen `historical-replay-corpus.v1` manifest;
-- deterministic corpus report and benchmark coverage summary.
+- the frozen reviewer-safe 30-package bundle;
+- the separate study-owner-only blind-key bundle;
+- `decision-quality-review.v1` submissions created only by independent humans.
 
 **Files / modules**
 
-- `tests/fixtures/historical_replay/`;
-- `ops/run_historical_replay.py` only if a governed validation gap is found;
-- `ops/run_historical_replay_corpus.py` only if corpus-level logic changes;
-- replay tests and directly affected documentation.
+- generated reviewer-safe bundle distributed outside the repository;
+- owner-only blind keys retained outside reviewer access;
+- validated, pseudonymous review submissions returned for aggregation.
 
 **Business rules**
 
-- every decision cutoff sees only evidence available at that time;
-- date-only sources use the conservative next-day availability policy;
-- reveal-only facts cannot affect a decision or declared scenario severity;
-- enterprise state is aggregate and `CONTROLLED_SYNTHETIC`;
-- the expected attribution pattern must be declared before the replay result;
+- frozen digests must remain unchanged throughout collection;
+- reviewers receive packages and rubric, never blind keys;
+- repository-generated test objects are never counted as expert evidence;
+- every accepted submission must satisfy independence, conflict, digest, and
+  completeness gates;
 - no operational mutation authority exists.
 
 **Automated validation**
 
-- source-domain, fact-digest, availability, cutoff, reveal, severity, and
-  no-mutation tests;
-- deterministic single-scenario and corpus replay;
-- full Python suite and project drift audit.
+- fail-closed package, rubric, submission, and blind-key digest validation;
+- duplicate-reviewer and attestation checks;
+- de-identified aggregation only after the minimum-review gate is met.
 
 **Manual validation**
 
-- confirm the official source supports each paraphrased fact;
-- confirm the event adds ROAD and new-geography coverage without post-event
-  leakage.
+- recruit genuinely independent domain reviewers;
+- have the human study owner verify conflicts and key separation;
+- keep reviewer identity details out of repository artifacts.
 
 **Definition of done**
 
-- the sixth scenario is version-frozen and reproducible;
-- all cutoffs and reveal boundaries pass;
-- corpus counts update honestly while benchmark status remains governed by its
-  declared requirements;
-- current status, archive ledger, schemas, tests, and drift contract agree.
+- each evaluated package has at least three valid independent reviews;
+- the study owner confirms no reviewer accessed the blind keys;
+- aggregation retains pseudonymous evidence and claims only Decision Quality;
+- benchmark eligibility changes only through a separately implemented,
+  evidence-backed integration of completed review results.
 
 **Stop conditions**
 
-- no authoritative source with defensible historical availability;
-- insufficient evidence to assign severity at the final decision cutoff;
-- source licensing or provenance cannot be represented safely;
+- a frozen digest changes;
+- reviewer identity or independence cannot be verified;
+- a reviewer has blind-key access or a conflict of interest;
 - the change would require AWS or operational mutation authority.
 
 **Next slice after completion**
 
-Add the seventh frozen scenario, prioritizing another missing geography or
-disruption mode. Independent blinded reviews begin only after the scenario gate
-is frozen at ten or more scenarios.
+After sufficient valid submissions exist, implement the corpus-level review
+result integration without changing frozen inputs or inferring Business Outcome
+Effect. Collection itself requires human participation and cannot be completed
+by repository automation alone.
 
 ## Pending validation
 
@@ -119,8 +117,8 @@ done.
 
 ## Incomplete or blocked
 
-- Historical Replay: five scenarios exist; at least five more are required for
-  the declared scenario-count gate.
+- Historical Replay: ten scenarios meet the declared structural gate; the
+  independent-review gate remains unmet.
 - Decision Quality: no independent expert reviews exist.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
@@ -137,8 +135,16 @@ done.
   Attribution, Decision Quality, and Business Outcome Effect.
 - Decision Quality rubric, blind package, review schema, and fail-closed local
   aggregation mechanics were implemented without creating expert evidence.
-- Historical Replay expanded to five frozen events, 15 cutoffs, AIR/OCEAN/RAIL,
-  HIGH/MEDIUM, six attributed changes, and nine no-delta controls.
+- Historical Replay expanded to ten frozen events, 30 cutoffs,
+  AIR/OCEAN/RAIL/ROAD, HIGH/MEDIUM, sixteen attributed changes, and fourteen
+  no-delta controls. The latest additions cover Europe, North Africa, Oceania,
+  Southeast Asia, and South America across tunnel failure, vessel grounding,
+  extreme weather, port congestion, and flood-damaged highways. Every recovery
+  fact remains reveal-only.
+- Historical Replay review inputs are now frozen by manifest, scenario, and
+  rubric digests. The deterministic handoff covers all 30 cutoffs, excludes
+  post-decision reveals and capability identity, and retains the blind keys for
+  a human study owner only. No independent review has been created.
 - Documentation Architecture v1 separated rules, direction, current truth, and
   historical evidence and added a fail-closed drift check against legacy mixed
   authority. Local post-migration validation is complete.
@@ -147,30 +153,38 @@ done.
 
 ### Codex-run validation
 
-- Repository-wide post-migration validation: 282 Python tests passed.
-- Project drift audit: 16 checks passed with zero drift, including the new
-  documentation operating-model boundary.
-- Changed Markdown link validation passed across all 17 affected Markdown
+- Repository-wide validation after the review-freeze handoff: 293 Python
+  tests passed, including 29 focused Historical Replay tests and 14 focused
+  Decision Quality/review-handoff tests.
+- Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
+  attributed changes, fourteen no-delta controls, all structural gates met,
+  and `NOT_MET` status because independent reviews are absent.
+- Project drift audit: 16 checks passed with zero drift.
+- Relative-link validation passed for 64 links across nine changed Markdown
   files.
 
 ### User-reported validation
 
-- No user-reported validation was added by this documentation migration.
+- No user-reported validation was added by this replay expansion.
 
 ### Pending validation
 
-- No documentation-migration validation remains. Product/runtime items remain
-  listed in the main Pending validation section above.
+- No repository-side freeze or package-generation validation remains.
+  Independent human review and product/runtime items remain listed above.
 
 ### Incomplete
 
-- No ROAD replay implementation has started.
+- All independent blinded reviews still remain before the declared benchmark
+  gate can be met.
 
 ## Next Up
 
-1. Implement the sixth ROAD/new-geography Historical Replay scenario.
-2. Continue scenario expansion until the frozen ten-scenario gate is met.
-3. Collect independent blinded reviews only after the corpus and rubric freeze.
+1. Coordinate independent human reviewers and collect at least three valid
+   reviews per variant.
+2. Keep the public review bundle separate from the owner-only blind keys while
+   the human study owner verifies reviewer independence.
+3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
+   until those reviews pass the governed checks.
 
 ## Current-week history
 
