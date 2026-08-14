@@ -1,0 +1,193 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "red-sea-security-2023-v1",
+  "title": "Commercial-shipping security disruption and rerouting in the Red Sea",
+  "scenario_profile": {
+    "disruption_type": "MARITIME_SECURITY_THREAT",
+    "region": "MIDDLE_EAST",
+    "transport_mode": "OCEAN",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "UTC",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.imo.org"]
+  },
+  "sources": [
+    {
+      "source_id": "IMO_RED_SEA_STATEMENT_2023_12_19",
+      "publisher": "International Maritime Organization",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.imo.org/en/mediacentre/secretarygeneral/pages/red-sea-statement-19-december-2023.aspx",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-12-19T23:59:59+00:00",
+      "latest_content_date": "2023-12-19",
+      "available_at": "2023-12-20T00:00:00+00:00",
+      "retrieved_at": "2026-08-14T20:00:00+10:00",
+      "revision_label": "IMO_STATEMENT_DATED_2023_12_19",
+      "extracted_facts": [
+        {
+          "fact_id": "IMO_ATTACKS_AND_COMMERCIAL_REROUTING",
+          "fact_type": "MARITIME_SECURITY_DISRUPTION",
+          "summary": "IMO condemned attacks against international shipping and reported that several global operators were rerouting commercial shipping in response to the threat.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "ROUTE_SECURITY_THREAT", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "b8e76611ff3ed73d6b8ed7771ac4007e942b3668171e95a774a1ea5210709d1f"
+    },
+    {
+      "source_id": "IMO_RED_SEA_UPDATE_2024_01_04",
+      "publisher": "International Maritime Organization",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.imo.org/en/mediacentre/pages/whatsnew-2023.aspx",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2024-01-04T23:59:59+00:00",
+      "latest_content_date": "2024-01-04",
+      "available_at": "2024-01-05T00:00:00+00:00",
+      "retrieved_at": "2026-08-14T20:00:00+10:00",
+      "revision_label": "IMO_UPDATE_DATED_2024_01_04",
+      "extracted_facts": [
+        {
+          "fact_id": "IMO_EIGHTEEN_OPERATORS_REROUTED",
+          "fact_type": "REROUTING_SCALE",
+          "summary": "IMO reported that at least 18 shipping companies had chosen routes around South Africa, adding about ten days to voyages and affecting trade and freight rates.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "EXTENDED_ROUTE_DISRUPTION", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "f2b162afc47abfbcad60ce85ba9c4eea8606d8ffcf8561f72e5bff68204389d9"
+    },
+    {
+      "source_id": "IMO_MSC_RESOLUTION_2024_05_24",
+      "publisher": "International Maritime Organization",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.imo.org/en/mediacentre/pressbriefings/pages/imo-msc-resolution-red-sea.aspx",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2024-05-24T23:59:59+00:00",
+      "latest_content_date": "2024-05-24",
+      "available_at": "2024-05-25T00:00:00+00:00",
+      "retrieved_at": "2026-08-14T20:00:00+10:00",
+      "revision_label": "IMO_MSC_RESOLUTION_REPORT_DATED_2024_05_24",
+      "extracted_facts": [
+        {
+          "fact_id": "IMO_MSC_RECORDED_CONTINUING_DISRUPTION",
+          "fact_type": "POST_DECISION_SECURITY_REVEAL",
+          "summary": "IMO reported continuing attacks and major disruption to regional and global trade, while urging operators to assess the unpredictable risk when planning transits.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CONTINUING_ROUTE_SECURITY_RISK", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "a22c9bc3ed57a2b62af14f30601092b301ba00cd0700df3fc46deae48ac1a489"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2023-12-19T00:00:00+00:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_RED_SEA_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 12,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2023-12-20T00:00:00+00:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_RED_SEA_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 11,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2024-01-05T00:00:00+00:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_RED_SEA_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 7,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_OFFICIAL_STATEMENT",
+      "cutoff_at": "2023-12-19T00:00:00+00:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "IMO_RED_SEA_STATEMENT_2023_12_19",
+        "IMO_RED_SEA_UPDATE_2024_01_04",
+        "IMO_MSC_RESOLUTION_2024_05_24"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_ATTACKS_AND_REROUTING",
+      "cutoff_at": "2023-12-20T00:00:00+00:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["IMO_RED_SEA_STATEMENT_2023_12_19"],
+      "expected_hidden_source_ids": [
+        "IMO_RED_SEA_UPDATE_2024_01_04",
+        "IMO_MSC_RESOLUTION_2024_05_24"
+      ],
+      "expected_a303_decision_change": true
+    },
+    {
+      "cutoff_id": "T2_REROUTING_SCALE_CONFIRMED",
+      "cutoff_at": "2024-01-05T00:00:00+00:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "IMO_RED_SEA_STATEMENT_2023_12_19",
+        "IMO_RED_SEA_UPDATE_2024_01_04"
+      ],
+      "expected_hidden_source_ids": ["IMO_MSC_RESOLUTION_2024_05_24"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_CONTINUING_SECURITY_DISRUPTION",
+      "source_id": "IMO_MSC_RESOLUTION_2024_05_24",
+      "available_at": "2024-05-25T00:00:00+00:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "HISTORICAL_SOURCE_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

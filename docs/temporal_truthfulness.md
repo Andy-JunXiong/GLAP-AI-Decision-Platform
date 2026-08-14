@@ -54,6 +54,36 @@ must always be queried with one `temporal_scope_id`.
   date. A later cutoff requires the explicit future-simulation mode and remains
   scenario evidence.
 
+## Historical evaluation replay
+
+`HYBRID_HISTORICAL_REPLAY` is a local evaluation evidence class, not a third
+lifecycle execution mode. Every replay cutoff must be on or before the current
+Sydney date. Public historical facts retain event, publication, conservative
+availability, retrieval, and revision metadata; controlled enterprise state is
+labelled synthetic and kept separate.
+
+An official source with a signed or declared exact timestamp may use
+`EXACT_TIMESTAMP`, in which case publication and availability must be
+identical. Date-only sources remain subject to conservative next-day
+availability. Corpus authors cannot shift either timestamp class to make
+evidence visible earlier.
+
+A historical scenario's declared severity is derived from the strongest fact
+actually visible by its final decision cutoff. Reveal-only outcomes and
+hypothetical worst cases cannot be used to inflate the decision-time severity
+or manufacture a capability delta.
+
+Multi-scenario replay membership is frozen in a selection manifest before
+aggregation. Every member still passes its own cutoff, source-revision, and
+reveal-isolation checks. Corpus totals cannot convert hybrid replay into
+operational evidence or hide a scenario-level temporal failure.
+
+Historical replay artifacts never enter operational default views, OPS
+exports, label readiness, policy/model promotion evidence, or production
+tables. Post-cutoff factual reveals remain isolated from decision inputs. They
+can score what actually happened, but cannot establish the counterfactual
+business effect of an action that was not taken.
+
 ## Existing September--October 2026 runs
 
 Runs already executed through `2026-10-05` are retained for auditability. As of

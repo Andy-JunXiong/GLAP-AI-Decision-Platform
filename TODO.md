@@ -4,7 +4,51 @@ Implementation details, dependencies, and acceptance criteria are maintained in
 [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md).
 
 Current implementation and release boundaries are recorded in the
-[`13 August development handoff`](docs/development_handoff_2026-08-13.md).
+[`14 August development handoff`](docs/development_handoff_2026-08-14.md).
+
+## 14 August 2026 evaluation checkpoint
+
+- [x] Define Evaluation Harness as a cross-cutting evidence architecture rather
+  than an operational pipeline stage or one agent-framework integration.
+- [x] Freeze the machine-readable `evaluation-experiment.v1` contract with
+  paired variants, point-in-time evidence fields, fixed authority and seed,
+  four evaluation layers, and explicit claim boundaries.
+- [x] Add a deterministic local A303 ON/OFF experiment that excludes
+  post-cutoff evidence, changes no operational state, and attributes the
+  resulting `MONITOR` / `RISK_MITIGATION` delta only to the declared rule flag.
+- [x] Keep Decision Quality and Business Outcome Effect explicitly
+  `NOT_EVALUATED`; the synthetic fixture proves harness mechanics rather than
+  deployed A303 behavior, real logistics performance, or production readiness.
+- [x] Freeze a governed five-dimension Decision Quality rubric, blinded package
+  and separate-key contract, three-reviewer interpretation gate, and
+  pseudonymous review-submission schema.
+- [x] Implement local package generation and review aggregation that fail
+  closed on conflict, blind-key access, duplicate reviewers, package drift,
+  incomplete dimensions, or invalid scores. No expert reviews were created.
+- [x] Add the first source-revision-aware Historical Replay pilot using four
+  authoritative USACE/NTSB source records, three conservative historical
+  cutoffs, aggregate controlled synthetic enterprise state, and two isolated
+  post-cutoff reveals.
+- [x] Validate source domains, extracted-fact digests, conservative next-day
+  availability, Sydney historical bounds, cutoff visibility, reveal isolation,
+  no-mutation authority, and the expected A303 attribution pattern.
+- [x] Expand the pilot to three frozen scenarios: Baltimore infrastructure
+  failure, Panama drought capacity restriction, and Red Sea maritime security.
+  Add a version-frozen corpus manifest, scenario profiles, nine-cutoff summary,
+  path/membership validation, and an explicit benchmark gate.
+- [x] Add the first AIR-mode replay using four minute-stamped FAA ATCSCC
+  advisories. Keep the LOW/MEDIUM outage evidence below the A303 threshold,
+  admit the nationwide ground stop only after its exact timestamp, and isolate
+  the later stable-system update as reveal-only.
+- [x] Add the first RAIL and MEDIUM-severity replay using official GovInfo,
+  National Mediation Board, and Department of Labor records. Require declared
+  scenario severity to equal final-cutoff evidence and preserve no A303 delta
+  across all three cutoffs.
+- [ ] Reach the benchmark gate: at least 10 scenarios, four disruption types,
+  three regions, two transport modes, at least two severity bands, and at least
+  three genuinely independent blinded reviews per variant. Structural coverage
+  now passes with five HIGH/MEDIUM AIR/OCEAN/RAIL scenarios, but scenario count
+  and real reviews remain below gate; unit-test objects are not expert evidence.
 
 ## 13 August 2026 checkpoint
 

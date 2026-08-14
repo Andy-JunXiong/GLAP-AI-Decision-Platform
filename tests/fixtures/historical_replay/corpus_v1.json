@@ -1,0 +1,73 @@
+{
+  "schema_version": "historical-replay-corpus.v1",
+  "corpus_id": "glap-historical-replay-pilot-v0-4",
+  "status": "PILOT_NOT_BENCHMARK",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "selection_policy": {
+    "policy_version": "historical-replay-selection.v1",
+    "frozen_at": "2026-08-14T20:00:00+10:00",
+    "inclusion_criteria": [
+      "AUTHORITATIVE_PUBLIC_SOURCES_WITH_EXPLICIT_PUBLICATION_DATES",
+      "AT_LEAST_THREE_FROZEN_DECISION_CUTOFFS",
+      "AT_LEAST_ONE_POST_DECISION_FACTUAL_REVEAL",
+      "CONTROLLED_SYNTHETIC_ENTERPRISE_STATE_ONLY",
+      "DETERMINISTIC_A303_PAIRED_COMPARISON"
+    ],
+    "exclusion_criteria": [
+      "SOURCE_AVAILABILITY_CANNOT_BE_BOUNDED",
+      "REAL_ENTERPRISE_OR_ENTITY_LEVEL_DATA_REQUIRED",
+      "FUTURE_DATED_RELATIVE_TO_SYDNEY",
+      "OUTCOME_REVEAL_CANNOT_BE_ISOLATED",
+      "OPERATIONAL_MUTATION_REQUIRED"
+    ]
+  },
+  "benchmark_gate": {
+    "minimum_scenarios": 10,
+    "minimum_disruption_types": 4,
+    "minimum_regions": 3,
+    "minimum_transport_modes": 2,
+    "minimum_severity_bands": 2,
+    "required_reviews_per_variant": 3
+  },
+  "scenarios": [
+    {
+      "scenario_id": "baltimore-key-bridge-2024-v1",
+      "file": "baltimore_key_bridge_2024_v1.json"
+    },
+    {
+      "scenario_id": "panama-canal-drought-2023-v1",
+      "file": "panama_canal_drought_2023_v1.json"
+    },
+    {
+      "scenario_id": "red-sea-security-2023-v1",
+      "file": "red_sea_security_2023_v1.json"
+    },
+    {
+      "scenario_id": "faa-notam-outage-2023-v1",
+      "file": "faa_notam_outage_2023_v1.json"
+    },
+    {
+      "scenario_id": "us-rail-labor-risk-2022-v1",
+      "file": "us_rail_labor_risk_2022_v1.json"
+    }
+  ],
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "MULTI_SCENARIO_REPLAY_SYSTEM_CORRECTNESS",
+      "CROSS_SCENARIO_A303_CAPABILITY_ATTRIBUTION",
+      "CORPUS_COVERAGE_GAP_REPORTING"
+    ],
+    "does_not_support": [
+      "REPRESENTATIVE_LOGISTICS_BENCHMARK",
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

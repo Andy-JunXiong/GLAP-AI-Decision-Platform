@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/historical-replay-scenario.v1.schema.json",
+  "title": "GLAP historical replay scenario v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "scenario_id",
+    "title",
+    "scenario_profile",
+    "event_timezone",
+    "glap_business_timezone",
+    "evidence_classification",
+    "source_policy",
+    "sources",
+    "controlled_internal_state",
+    "cutoffs",
+    "reveal_timeline",
+    "evaluation",
+    "authority",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "historical-replay-scenario.v1"},
+    "scenario_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "title": {"type": "string", "minLength": 1},
+    "scenario_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disruption_type", "region", "transport_mode", "severity_band"],
+      "properties": {
+        "disruption_type": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+        "region": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+        "transport_mode": {"enum": ["OCEAN", "AIR", "RAIL", "ROAD", "MULTIMODAL"]},
+        "severity_band": {"enum": ["LOW", "MEDIUM", "HIGH"]}
+      }
+    },
+    "event_timezone": {"type": "string", "minLength": 1},
+    "glap_business_timezone": {"const": "Australia/Sydney"},
+    "evidence_classification": {"const": "HYBRID_HISTORICAL_REPLAY"},
+    "source_policy": {
+      "type": "object",
+      "required": ["availability_rule", "full_source_content_stored", "allowed_domains"],
+      "properties": {
+        "availability_rule": {"enum": ["DATE_ONLY_CONSERVATIVE_NEXT_DAY", "EXACT_SOURCE_TIMESTAMP"]},
+        "full_source_content_stored": {"const": false},
+        "allowed_domains": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "sources": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/source"}},
+    "controlled_internal_state": {"$ref": "#/$defs/internalState"},
+    "cutoffs": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/cutoff"}},
+    "reveal_timeline": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reveal"}},
+    "evaluation": {
+      "type": "object",
+      "required": ["rule_contract_version", "baseline_variant", "challenger_variant"],
+      "properties": {
+        "rule_contract_version": {"const": "A303.v1"},
+        "baseline_variant": {"const": "A303_OFF_VERSIONED_MONITORING_SOP"},
+        "challenger_variant": {"const": "A303_ON"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "required": ["profile", "network_access_allowed", "operational_writes_allowed", "production_effect"],
+      "properties": {
+        "profile": {"const": "EVALUATION_NO_MUTATION"},
+        "network_access_allowed": {"const": false},
+        "operational_writes_allowed": {"const": false},
+        "production_effect": {"const": false}
+      }
+    },
+    "claim_boundary": {"type": "object"}
+  },
+  "$defs": {
+    "timestamp": {"type": "string", "format": "date-time"},
+    "fact": {
+      "type": "object",
+      "required": ["fact_id", "fact_type", "summary", "fact_provenance", "decision_signal"],
+      "properties": {
+        "fact_id": {"type": "string", "minLength": 1},
+        "fact_type": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 500},
+        "fact_provenance": {"const": "HISTORICAL_PUBLIC"},
+        "decision_signal": {
+          "type": "object",
+          "required": ["signal_type", "severity"],
+          "properties": {
+            "signal_type": {"type": "string"},
+            "severity": {"enum": ["LOW", "MEDIUM", "HIGH"]}
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "source_id", "publisher", "source_type", "url", "publication_precision",
+        "published_at", "latest_content_date", "available_at", "retrieved_at",
+        "revision_label", "extracted_facts", "content_digest"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "publisher": {"type": "string", "minLength": 1},
+        "source_type": {"const": "AUTHORITATIVE_PUBLIC_SOURCE"},
+        "url": {"type": "string", "format": "uri"},
+        "publication_precision": {"enum": ["DATE_ONLY_CONSERVATIVE_NEXT_DAY", "EXACT_TIMESTAMP"]},
+        "published_at": {"$ref": "#/$defs/timestamp"},
+        "latest_content_date": {"type": "string", "format": "date"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "retrieved_at": {"$ref": "#/$defs/timestamp"},
+        "revision_label": {"type": "string", "minLength": 1},
+        "extracted_facts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/fact"}},
+        "content_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "required": [
+        "snapshot_id", "as_of_at", "provenance", "shipment_scope", "exposed_to_disruption_node",
+        "inventory_cover_days", "sla_criticality", "alternate_capacity_available"
+      ],
+      "properties": {
+        "snapshot_id": {"type": "string"},
+        "as_of_at": {"$ref": "#/$defs/timestamp"},
+        "provenance": {"const": "CONTROLLED_SYNTHETIC"},
+        "shipment_scope": {"type": "string"},
+        "exposed_to_disruption_node": {"type": "boolean"},
+        "inventory_cover_days": {"type": "integer", "minimum": 0},
+        "sla_criticality": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+        "alternate_capacity_available": {"type": "boolean"}
+      }
+    },
+    "internalState": {
+      "type": "object",
+      "required": ["state_contract_version", "provenance", "contains_real_enterprise_data", "snapshots"],
+      "properties": {
+        "state_contract_version": {"type": "string"},
+        "provenance": {"const": "CONTROLLED_SYNTHETIC"},
+        "contains_real_enterprise_data": {"const": false},
+        "snapshots": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/snapshot"}}
+      }
+    },
+    "cutoff": {
+      "type": "object",
+      "required": ["cutoff_id", "cutoff_at", "state_snapshot_id", "expected_visible_source_ids", "expected_hidden_source_ids", "expected_a303_decision_change"],
+      "properties": {
+        "cutoff_id": {"type": "string"},
+        "cutoff_at": {"$ref": "#/$defs/timestamp"},
+        "state_snapshot_id": {"type": "string"},
+        "expected_visible_source_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "expected_hidden_source_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "expected_a303_decision_change": {"type": "boolean"}
+      }
+    },
+    "reveal": {
+      "type": "object",
+      "required": ["reveal_id", "source_id", "available_at", "outcome_evidence_class", "decision_input_allowed"],
+      "properties": {
+        "reveal_id": {"type": "string"},
+        "source_id": {"type": "string"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "outcome_evidence_class": {"const": "OBSERVED_FACTUAL"},
+        "decision_input_allowed": {"const": false}
+      }
+    }
+  }
+}

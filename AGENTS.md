@@ -222,6 +222,42 @@ If `git push` itself fails authentication, report that concrete failure and
 stop. Do not switch to GitHub CLI authentication, request secrets, or treat an
 unrelated `gh` session as the repository's Git credential source.
 
+### End-of-Day Documentation, Commit, and Push Procedure
+
+When the user explicitly asks to finish for the day, update related documents,
+and `commit and push`, use this closeout sequence:
+
+1. Inventory the complete worktree with `git status -sb`, tracked diffs, and
+   untracked paths. Separate approved deliverables from unrelated user files;
+   never include unrelated paths merely because they are present.
+2. Run the Documentation and Fact Synchronization Gate across the whole
+   approved change. At minimum, check the routed sources of truth, `TODO.md`,
+   the current dated handoff, architecture and roadmap claims, temporal and
+   evidence boundaries, schemas, machine-readable drift contracts, validators,
+   and test totals when they are affected.
+3. Preserve maturity precisely. Documents may state implemented and locally
+   verified facts before the commit; the final user handoff must separately
+   identify the commit, remote push result, CI state, and anything still
+   undeployed, runtime-unverified, or human-owned.
+4. Run the applicable validation suite, project drift audit, focused scenario
+   or contract runners, stale-claim searches, and `git diff --check`. Resolve
+   every failure or document a user-authorized exception before staging.
+5. Compare the exact paths to `.github/workflows/` push triggers. A direct
+   `main` push is allowed only when the user explicitly requested it and the
+   changed paths do not start an unauthorized deployment or Pages publication;
+   otherwise use a non-deploying feature branch and report why.
+6. Stage approved paths explicitly, inspect `git diff --cached` and
+   `git status -sb`, and scan the staged change for credentials, private
+   identifiers, or unsupported operational claims. Then create one terse,
+   scoped commit unless a documentation-sync follow-up is genuinely required.
+7. Before pushing, audit every unpushed commit with `origin/<branch>..HEAD`,
+   re-check workflow triggers, and verify the local branch and intended remote.
+   Push with ordinary `git push` through the repository's existing credential
+   path; do not create a pull request unless requested.
+8. After pushing, verify that `HEAD` equals `origin/<branch>`, inspect the
+   triggered workflow state when available, and report the exact commit plus
+   all remaining uncommitted, undeployed, unverified, or human-authorized work.
+
 ## Validation
 
 Route your change to the right validation. All commands verified from CI/CD

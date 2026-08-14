@@ -15,6 +15,34 @@ flowchart LR
     OUTCOME --> LEARN
 ```
 
+## Cross-cutting evaluation boundary
+
+The repository now includes a local, deterministic, read-only Evaluation
+Harness v0.1. It wraps the decision flow for paired capability-ablation
+experiments; it is not another operational pipeline stage and has no AWS,
+network, Action-mutation, approval, Outcome-write, production, or scheduling
+authority.
+
+The first controlled synthetic experiment holds the scenario, point-in-time
+evidence, policy version, authority profile, and seed fixed while toggling the
+versioned `A303_HIGH_RISK_ROUTE` rule contract. It evaluates System Correctness
+and Capability Attribution only. It does not verify the deployed A303 runtime,
+score Decision Quality, measure Business Outcome Effect, or establish
+production readiness. A local Decision Quality rubric and blinded-review gate
+are implemented, but no expert reviews exist and no quality result is claimed. See
+[`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
+evidence boundaries.
+
+Historical Replay v0.4 adds a local five-scenario hybrid corpus covering the
+Baltimore, Panama Canal, Red Sea, FAA NOTAM, and U.S. rail-labor events. A
+version-frozen manifest runs 15 historical cutoffs across OCEAN, AIR, and RAIL,
+preserves scenario-level attribution, and validates HIGH and MEDIUM severity
+bands. Structural coverage gates now pass; the benchmark remains blocked by
+scenario count and absent independent reviews. Public facts remain paraphrased
+and digested; enterprise state remains aggregate controlled synthetic. The
+corpus is evaluation-only and cannot enter operational views, readiness
+evidence, or production reporting.
+
 ## AWS runtime and delivery architecture
 
 ```mermaid

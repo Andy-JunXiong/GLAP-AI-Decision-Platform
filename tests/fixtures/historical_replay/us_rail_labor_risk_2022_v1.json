@@ -1,0 +1,193 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "us-rail-labor-risk-2022-v1",
+  "title": "United States freight-rail labor dispute resolved without an observed nationwide stoppage",
+  "scenario_profile": {
+    "disruption_type": "RAIL_LABOR_DISPUTE",
+    "region": "NORTH_AMERICA",
+    "transport_mode": "RAIL",
+    "severity_band": "MEDIUM"
+  },
+  "event_timezone": "America/New_York",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.govinfo.gov", "nmb.gov", "www.dol.gov"]
+  },
+  "sources": [
+    {
+      "source_id": "GOVINFO_RAIL_EMERGENCY_BOARD_2022_07_15",
+      "publisher": "U.S. Government Publishing Office / Office of the Federal Register",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.govinfo.gov/app/details/DCPD-202200629",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2022-07-15T23:59:59-04:00",
+      "latest_content_date": "2022-07-15",
+      "available_at": "2022-07-16T00:00:00-04:00",
+      "retrieved_at": "2026-08-14T22:00:00+10:00",
+      "revision_label": "EXECUTIVE_ORDER_14077_DATED_2022_07_15",
+      "extracted_facts": [
+        {
+          "fact_id": "RAIL_DISPUTE_EMERGENCY_BOARD_CREATED",
+          "fact_type": "LABOR_DISPUTE_GOVERNANCE",
+          "summary": "An emergency board was established after the unresolved railroad labor dispute was judged capable of substantially interrupting interstate transportation service.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "RAIL_LABOR_DISPUTE_RISK", "severity": "MEDIUM"}
+        }
+      ],
+      "content_digest": "64a9f90e6ee351e3a04862b6b3bb840cb4261d9aa25cbf7eecd4373c9eb4a68b"
+    },
+    {
+      "source_id": "NMB_PEB_250_REPORT_2022_08_16",
+      "publisher": "National Mediation Board Presidential Emergency Board No. 250",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://nmb.gov/NMB_Application/wp-content/uploads/2022/08/PEB-250-Report-and-Recommendations.pdf",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2022-08-16T23:59:59-04:00",
+      "latest_content_date": "2022-08-16",
+      "available_at": "2022-08-17T00:00:00-04:00",
+      "retrieved_at": "2026-08-14T22:00:00+10:00",
+      "revision_label": "PEB_250_REPORT_DATED_2022_08_16",
+      "extracted_facts": [
+        {
+          "fact_id": "RAIL_EMERGENCY_BOARD_RECOMMENDATIONS_SUBMITTED",
+          "fact_type": "MEDIATION_PROGRESS",
+          "summary": "Presidential Emergency Board No. 250 submitted findings and recommendations intended to support an equitable negotiated resolution of the rail labor dispute.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "RAIL_DISPUTE_MEDIATION", "severity": "MEDIUM"}
+        }
+      ],
+      "content_digest": "853d11a070970bf3d56344cb8d80ea2471e38166c84aa22263c77796319b4299"
+    },
+    {
+      "source_id": "DOL_TENTATIVE_RAIL_AGREEMENT_2022_09_15",
+      "publisher": "U.S. Department of Labor",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.dol.gov/newsroom/releases/osec/osec20220915",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2022-09-15T23:59:59-04:00",
+      "latest_content_date": "2022-09-15",
+      "available_at": "2022-09-16T00:00:00-04:00",
+      "retrieved_at": "2026-08-14T22:00:00+10:00",
+      "revision_label": "DOL_RELEASE_22_1889_NAT_DATED_2022_09_15",
+      "extracted_facts": [
+        {
+          "fact_id": "RAIL_TENTATIVE_AGREEMENT_REACHED",
+          "fact_type": "POST_DECISION_RESOLUTION_REVEAL",
+          "summary": "The Department of Labor reported that rail companies and union negotiators reached a tentative agreement after extended negotiations, avoiding the anticipated disruption.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "RAIL_DISPUTE_RESOLUTION", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "c44bdb95c5c1bdd7f37703f863651c771812fee4de3ea9c99a792ee87739b5c2"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2022-07-15T00:00:00-04:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_US_RAIL_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 20,
+        "sla_criticality": "MEDIUM",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2022-07-16T00:00:00-04:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_US_RAIL_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 19,
+        "sla_criticality": "MEDIUM",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2022-08-17T00:00:00-04:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_US_RAIL_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 17,
+        "sla_criticality": "MEDIUM",
+        "alternate_capacity_available": true
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_EMERGENCY_BOARD",
+      "cutoff_at": "2022-07-15T00:00:00-04:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "GOVINFO_RAIL_EMERGENCY_BOARD_2022_07_15",
+        "NMB_PEB_250_REPORT_2022_08_16",
+        "DOL_TENTATIVE_RAIL_AGREEMENT_2022_09_15"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_MEDIUM_DISPUTE_GOVERNANCE",
+      "cutoff_at": "2022-07-16T00:00:00-04:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["GOVINFO_RAIL_EMERGENCY_BOARD_2022_07_15"],
+      "expected_hidden_source_ids": [
+        "NMB_PEB_250_REPORT_2022_08_16",
+        "DOL_TENTATIVE_RAIL_AGREEMENT_2022_09_15"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T2_MEDIUM_RECOMMENDATIONS_AVAILABLE",
+      "cutoff_at": "2022-08-17T00:00:00-04:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "GOVINFO_RAIL_EMERGENCY_BOARD_2022_07_15",
+        "NMB_PEB_250_REPORT_2022_08_16"
+      ],
+      "expected_hidden_source_ids": ["DOL_TENTATIVE_RAIL_AGREEMENT_2022_09_15"],
+      "expected_a303_decision_change": false
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_TENTATIVE_AGREEMENT",
+      "source_id": "DOL_TENTATIVE_RAIL_AGREEMENT_2022_09_15",
+      "available_at": "2022-09-16T00:00:00-04:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "MEDIUM_SEVERITY_NO_DELTA_CONTROL",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "CROSS_MODE_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

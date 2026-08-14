@@ -1,0 +1,83 @@
+{
+  "schema_version": "evaluation-experiment.v1",
+  "experiment_id": "a303-ablation-v1",
+  "purpose": "CAPABILITY_ATTRIBUTION",
+  "business_timezone": "Australia/Sydney",
+  "execution_boundary": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "scenario": {
+    "scenario_id": "controlled-high-risk-route-2025-03-07",
+    "scenario_mode": "CONTROLLED_SYNTHETIC_REPLAY",
+    "cutoff_at": "2025-03-07T09:00:00+11:00",
+    "evidence_classification": "SYNTHETIC_ENGINEERING_ONLY",
+    "operational_state": {
+      "as_of_at": "2025-03-07T09:00:00+11:00",
+      "route_risk_level": "HIGH",
+      "shipment_scope": "CONTROLLED_COHORT_01",
+      "state_provenance": "CONTROLLED_SYNTHETIC"
+    },
+    "evidence": [
+      {
+        "evidence_id": "signal-a303-high-v1",
+        "evidence_type": "OPERATIONAL_SIGNAL",
+        "event_time": "2025-03-07T07:30:00+11:00",
+        "published_at": "2025-03-07T07:35:00+11:00",
+        "available_at": "2025-03-07T07:40:00+11:00",
+        "ingested_at": "2025-03-07T07:42:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "facts": {
+          "signal_type": "A303_HIGH_RISK_ROUTE",
+          "severity": "HIGH"
+        }
+      },
+      {
+        "evidence_id": "post-cutoff-recovery-v1",
+        "evidence_type": "EXTERNAL_EVENT",
+        "event_time": "2025-03-07T10:00:00+11:00",
+        "published_at": "2025-03-07T10:10:00+11:00",
+        "available_at": "2025-03-07T10:15:00+11:00",
+        "ingested_at": "2025-03-07T10:20:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "facts": {
+          "signal_type": "PORT_RECOVERY_CONFIRMED",
+          "severity": "LOW"
+        }
+      }
+    ]
+  },
+  "fixed_context": {
+    "policy_version": "decision-policy-evaluation-v1",
+    "rule_contract_version": "A303.v1",
+    "authority_profile": "EVALUATION_NO_MUTATION",
+    "random_seed": 303
+  },
+  "variants": [
+    {
+      "variant_id": "baseline-a303-off",
+      "role": "BASELINE",
+      "capabilities": {"A303_HIGH_RISK_ROUTE": false}
+    },
+    {
+      "variant_id": "glap-a303-on",
+      "role": "CHALLENGER",
+      "capabilities": {"A303_HIGH_RISK_ROUTE": true}
+    }
+  ],
+  "hypothesis": {
+    "changed_capability": "A303_HIGH_RISK_ROUTE",
+    "expected_decision_change": true,
+    "primary_comparison_fields": ["recommendation", "priority", "human_review_required"]
+  },
+  "evaluation_layers": {
+    "system_correctness": "EVALUATE",
+    "capability_attribution": "EVALUATE",
+    "decision_quality": "NOT_EVALUATED",
+    "business_outcome_effect": "NOT_EVALUATED"
+  }
+}

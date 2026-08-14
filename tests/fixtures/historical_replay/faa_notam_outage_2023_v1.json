@@ -1,0 +1,221 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "faa-notam-outage-2023-v1",
+  "title": "United States air-traffic disruption during the January 2023 NOTAM outage",
+  "scenario_profile": {
+    "disruption_type": "AIR_TRAFFIC_SYSTEM_OUTAGE",
+    "region": "NORTH_AMERICA",
+    "transport_mode": "AIR",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "UTC",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "EXACT_SOURCE_TIMESTAMP",
+    "full_source_content_stored": false,
+    "allowed_domains": ["www.fly.faa.gov"]
+  },
+  "sources": [
+    {
+      "source_id": "FAA_NOTAM_HOTLINE_2023_01_11_0047Z",
+      "publisher": "Federal Aviation Administration Air Traffic Control System Command Center",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.fly.faa.gov/adv/adv_otherdis?adv_date=01112023&advn=4&facId=DCC&title=NOTAM+OUTAGE+HOTLINE_FYI&titleDate=01%2F11%2F23",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-01-11T00:47:00+00:00",
+      "latest_content_date": "2023-01-11",
+      "available_at": "2023-01-11T00:47:00+00:00",
+      "retrieved_at": "2026-08-14T21:00:00+10:00",
+      "revision_label": "ATCSCC_ADVISORY_004_SIGNATURE_2023_01_11_0047Z",
+      "extracted_facts": [
+        {
+          "fact_id": "FAA_NOTAM_OUTAGE_HOTLINE_ACTIVATED",
+          "fact_type": "OPERATIONAL_COORDINATION",
+          "summary": "The FAA command center activated an operational hotline for facilities, international counterparts, and customers in response to the NOTAM equipment outage.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "AIR_SYSTEM_DEGRADATION", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "ed710dfe47095a74f8a4aac211e80550b5c41bdc75a3f9137177d393aeb7fd43"
+    },
+    {
+      "source_id": "FAA_NOTAM_FAILURE_2023_01_11_0120Z",
+      "publisher": "Federal Aviation Administration Air Traffic Control System Command Center",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.fly.faa.gov/adv/adv_otherdis?adv_date=01112023&advn=6&facId=DCC&title=NOTAM+SYSTEM+EQUIPMENT+OUTAGE_FYI&titleDate=01%2F11%2F23",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-01-11T01:20:00+00:00",
+      "latest_content_date": "2023-01-11",
+      "available_at": "2023-01-11T01:20:00+00:00",
+      "retrieved_at": "2026-08-14T21:00:00+10:00",
+      "revision_label": "ATCSCC_ADVISORY_006_SIGNATURE_2023_01_11_0120Z",
+      "extracted_facts": [
+        {
+          "fact_id": "FAA_NOTAM_PROCESSING_FAILED_NO_RESTORE_ESTIMATE",
+          "fact_type": "AIR_TRAFFIC_SYSTEM_OUTAGE",
+          "summary": "The FAA command center reported that the United States NOTAM system had failed, new notices were not being processed, and no restoration estimate was available.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "AIR_SYSTEM_OUTAGE", "severity": "MEDIUM"}
+        }
+      ],
+      "content_digest": "4c46c4cb8e288fc84487908c859f9d0e603a8ec798cdc610962e08d3ab79202b"
+    },
+    {
+      "source_id": "FAA_NATIONWIDE_GROUND_STOP_2023_01_11_1221Z",
+      "publisher": "Federal Aviation Administration Air Traffic Control System Command Center",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.fly.faa.gov/adv/adv_otherdis?adv_date=01112023&advn=28&facId=DCC&title=NATIONWIDE+GROUND+STOP&titleDate=01%2F11%2F23",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-01-11T12:21:00+00:00",
+      "latest_content_date": "2023-01-11",
+      "available_at": "2023-01-11T12:21:00+00:00",
+      "retrieved_at": "2026-08-14T21:00:00+10:00",
+      "revision_label": "ATCSCC_ADVISORY_028_SIGNATURE_2023_01_11_1221Z",
+      "extracted_facts": [
+        {
+          "fact_id": "FAA_ALL_DESTINATIONS_GROUND_STOP",
+          "fact_type": "NATIONWIDE_DEPARTURE_RESTRICTION",
+          "summary": "The FAA command center issued a nationwide ground stop covering all flights and destinations, except military and medical-evacuation flights, because the NOTAM system was down.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "NATIONWIDE_AIR_CAPACITY_STOP", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "5c4ede5136bb96853c458a6f868887d6faff65d1a553a6b33953ce796314d183"
+    },
+    {
+      "source_id": "FAA_NOTAM_STABLE_2023_01_11_2043Z",
+      "publisher": "Federal Aviation Administration Air Traffic Control System Command Center",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://www.fly.faa.gov/adv/adv_otherdis?adv_date=01112023&advn=87&facId=DCC&title=OPERATIONS+PLAN&titleDate=01%2F11%2F23",
+      "publication_precision": "EXACT_TIMESTAMP",
+      "published_at": "2023-01-11T20:43:00+00:00",
+      "latest_content_date": "2023-01-11",
+      "available_at": "2023-01-11T20:43:00+00:00",
+      "retrieved_at": "2026-08-14T21:00:00+10:00",
+      "revision_label": "ATCSCC_ADVISORY_087_SIGNATURE_2023_01_11_2043Z",
+      "extracted_facts": [
+        {
+          "fact_id": "FAA_NOTAM_SYSTEM_REPORTED_STABLE",
+          "fact_type": "POST_DECISION_RECOVERY_REVEAL",
+          "summary": "The later FAA operations plan reported that the United States NOTAM system remained stable.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "AIR_SYSTEM_RECOVERY", "severity": "LOW"}
+        }
+      ],
+      "content_digest": "e14c271746ae7bec2444a2b79ca846bb3202af575a95a960ca5062754eb14a0b"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2023-01-11T00:46:00+00:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_US_AIR_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 5,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2023-01-11T01:21:00+00:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_US_AIR_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 5,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2023-01-11T12:22:00+00:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_US_AIR_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 4,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_OUTAGE_ADVISORY",
+      "cutoff_at": "2023-01-11T00:46:00+00:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "FAA_NOTAM_HOTLINE_2023_01_11_0047Z",
+        "FAA_NOTAM_FAILURE_2023_01_11_0120Z",
+        "FAA_NATIONWIDE_GROUND_STOP_2023_01_11_1221Z",
+        "FAA_NOTAM_STABLE_2023_01_11_2043Z"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_OUTAGE_WITHOUT_GROUND_STOP",
+      "cutoff_at": "2023-01-11T01:21:00+00:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": [
+        "FAA_NOTAM_HOTLINE_2023_01_11_0047Z",
+        "FAA_NOTAM_FAILURE_2023_01_11_0120Z"
+      ],
+      "expected_hidden_source_ids": [
+        "FAA_NATIONWIDE_GROUND_STOP_2023_01_11_1221Z",
+        "FAA_NOTAM_STABLE_2023_01_11_2043Z"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T2_NATIONWIDE_GROUND_STOP",
+      "cutoff_at": "2023-01-11T12:22:00+00:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "FAA_NOTAM_HOTLINE_2023_01_11_0047Z",
+        "FAA_NOTAM_FAILURE_2023_01_11_0120Z",
+        "FAA_NATIONWIDE_GROUND_STOP_2023_01_11_1221Z"
+      ],
+      "expected_hidden_source_ids": ["FAA_NOTAM_STABLE_2023_01_11_2043Z"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_NOTAM_SYSTEM_STABLE",
+      "source_id": "FAA_NOTAM_STABLE_2023_01_11_2043Z",
+      "available_at": "2023-01-11T20:43:00+00:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "EXACT_TIMESTAMP_SOURCE_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION",
+      "CROSS_MODE_CORPUS_COVERAGE"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

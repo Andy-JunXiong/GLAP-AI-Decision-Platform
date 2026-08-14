@@ -1,7 +1,7 @@
 {
   "schema_version": "project-drift-contract.v1",
   "business_timezone": "Australia/Sydney",
-  "baseline_date": "2026-08-09",
+  "baseline_date": "2026-08-14",
   "canonical_sources": [
     "docs/architecture_current.md",
     "INFRASTRUCTURE.md",
@@ -86,6 +86,51 @@
       "evidence_files": [
         "ops/backtest_multimodal_forecast.py",
         "docs/multimodal_forecast_feature_contract.md"
+      ]
+    },
+    {
+      "id": "decision_evaluation_harness",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local read-only synthetic engineering evaluation; system correctness and capability attribution only",
+      "evidence_files": [
+        "ops/evaluate_decision_capabilities.py",
+        "tests/test_decision_evaluation.py",
+        "tests/fixtures/evaluation/a303_high_risk_route_v1.json",
+        "docs/evaluation_architecture.md",
+        "docs/evaluation_experiment_v1.schema.json"
+      ]
+    },
+    {
+      "id": "decision_quality_review",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local blinded-review mechanics only; no expert reviews or decision-quality result",
+      "evidence_files": [
+        "ops/evaluate_decision_quality.py",
+        "tests/test_decision_quality_evaluation.py",
+        "docs/decision_quality_evaluation.md",
+        "docs/decision_quality_rubric_v1.json",
+        "docs/decision_quality_review_v1.schema.json"
+      ]
+    },
+    {
+      "id": "historical_replay_corpus",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "five-event AIR/OCEAN/RAIL local hybrid pilot with HIGH/MEDIUM coverage; authoritative public facts plus controlled synthetic enterprise state; benchmark gate not met",
+      "evidence_files": [
+        "ops/run_historical_replay.py",
+        "ops/run_historical_replay_corpus.py",
+        "tests/test_historical_replay.py",
+        "tests/test_historical_replay_corpus.py",
+        "tests/fixtures/historical_replay/baltimore_key_bridge_2024_v1.json",
+        "tests/fixtures/historical_replay/panama_canal_drought_2023_v1.json",
+        "tests/fixtures/historical_replay/red_sea_security_2023_v1.json",
+        "tests/fixtures/historical_replay/faa_notam_outage_2023_v1.json",
+        "tests/fixtures/historical_replay/us_rail_labor_risk_2022_v1.json",
+        "tests/fixtures/historical_replay/corpus_v1.json",
+        "docs/historical_replay_lab.md",
+        "docs/historical_replay_scenario_v1.schema.json",
+        "docs/historical_replay_corpus_v1.schema.json",
+        "docs/temporal_truthfulness.md"
       ]
     },
     {

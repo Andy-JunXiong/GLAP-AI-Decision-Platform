@@ -1,0 +1,200 @@
+{
+  "schema_version": "historical-replay-scenario.v1",
+  "scenario_id": "panama-canal-drought-2023-v1",
+  "title": "Panama Canal transit-capacity restrictions during the 2023 drought",
+  "scenario_profile": {
+    "disruption_type": "DROUGHT_CAPACITY_RESTRICTION",
+    "region": "CENTRAL_AMERICA",
+    "transport_mode": "OCEAN",
+    "severity_band": "HIGH"
+  },
+  "event_timezone": "America/Panama",
+  "glap_business_timezone": "Australia/Sydney",
+  "evidence_classification": "HYBRID_HISTORICAL_REPLAY",
+  "source_policy": {
+    "availability_rule": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+    "full_source_content_stored": false,
+    "allowed_domains": ["pancanal.com"]
+  },
+  "sources": [
+    {
+      "source_id": "ACP_BOOKING_CONDITION_2023_10_25",
+      "publisher": "Panama Canal Authority",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://pancanal.com/wp-content/uploads/2023/01/ADV47-2023.pdf",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-10-25T23:59:59-05:00",
+      "latest_content_date": "2023-10-25",
+      "available_at": "2023-10-26T00:00:00-05:00",
+      "retrieved_at": "2026-08-14T20:00:00+10:00",
+      "revision_label": "ADVISORY_A_47_2023_DATED_2023_10_25",
+      "extracted_facts": [
+        {
+          "fact_id": "ACP_CONDITION_5_TRANSITION",
+          "fact_type": "CAPACITY_CONTROL_CHANGE",
+          "summary": "The Panama Canal Authority extended one booking condition and scheduled a transition to a new condition for Panamax lock reservations.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "BOOKING_CAPACITY_CONSTRAINT", "severity": "MEDIUM"}
+        }
+      ],
+      "content_digest": "a45c0b3f96d4759534122a602e82c3053a1c05eb3ccf64aab00fc3535cad4746"
+    },
+    {
+      "source_id": "ACP_DROUGHT_TRANSIT_REDUCTION_2023_10_30",
+      "publisher": "Panama Canal Authority",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://pancanal.com/wp-content/uploads/2023/01/ADV48-2023-Reduction-in-Transits-Due-to-the-Ongoing-Deficit-in-Precipitation-in-the-Canal-Watershed.pdf",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-10-30T23:59:59-05:00",
+      "latest_content_date": "2023-10-30",
+      "available_at": "2023-10-31T00:00:00-05:00",
+      "retrieved_at": "2026-08-14T20:00:00+10:00",
+      "revision_label": "ADVISORY_A_48_2023_DATED_2023_10_30",
+      "extracted_facts": [
+        {
+          "fact_id": "ACP_RECORD_LOW_OCTOBER_RAINFALL",
+          "fact_type": "DROUGHT_SEVERITY",
+          "summary": "The authority reported unprecedented Gatun Lake levels for that time of year and October rainfall 41 percent below the recorded norm.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "DROUGHT_CAPACITY_RISK", "severity": "HIGH"}
+        },
+        {
+          "fact_id": "ACP_PROGRESSIVE_SLOT_REDUCTION",
+          "fact_type": "TRANSIT_CAPACITY_REDUCTION",
+          "summary": "The authority announced progressive booking-slot reductions from November 2023 through February 2024, reaching 18 slots per day until further notice.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "ROUTE_CAPACITY_REDUCTION", "severity": "HIGH"}
+        }
+      ],
+      "content_digest": "edee156ca8c5ca801a59ad8c92bdfa89f0335ab0a20ee1a85b30cceb4807d5a9"
+    },
+    {
+      "source_id": "ACP_TRANSIT_INCREASE_2023_12_15",
+      "publisher": "Panama Canal Authority",
+      "source_type": "AUTHORITATIVE_PUBLIC_SOURCE",
+      "url": "https://pancanal.com/wp-content/uploads/2023/01/ADV54-2023-Increase-in-the-Number-of-Booking-Slots-in-the-Panamax-and-Neopanamax-Locks-and-Other-Modifications-to-the-Transit-Reservation-System.pdf",
+      "publication_precision": "DATE_ONLY_CONSERVATIVE_NEXT_DAY",
+      "published_at": "2023-12-15T23:59:59-05:00",
+      "latest_content_date": "2023-12-15",
+      "available_at": "2023-12-16T00:00:00-05:00",
+      "retrieved_at": "2026-08-14T20:00:00+10:00",
+      "revision_label": "ADVISORY_A_54_2023_DATED_2023_12_15",
+      "extracted_facts": [
+        {
+          "fact_id": "ACP_BOOKING_SLOTS_INCREASED_TO_24",
+          "fact_type": "CAPACITY_RECOVERY",
+          "summary": "Based on projected Gatun Lake levels, the authority increased the planned booking distribution to a total of 24 daily slots from mid-January 2024.",
+          "fact_provenance": "HISTORICAL_PUBLIC",
+          "decision_signal": {"signal_type": "CAPACITY_RECOVERY", "severity": "MEDIUM"}
+        }
+      ],
+      "content_digest": "2ab23f97f7c7afbae05c590cc6248690f6c1b4a84c365bb28c2569a239086e0c"
+    }
+  ],
+  "controlled_internal_state": {
+    "state_contract_version": "controlled-enterprise-state.v1",
+    "provenance": "CONTROLLED_SYNTHETIC",
+    "contains_real_enterprise_data": false,
+    "snapshots": [
+      {
+        "snapshot_id": "STATE_T0",
+        "as_of_at": "2023-10-25T00:00:00-05:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_PANAMA_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 16,
+        "sla_criticality": "MEDIUM",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T1",
+        "as_of_at": "2023-10-26T00:00:00-05:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_PANAMA_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 15,
+        "sla_criticality": "MEDIUM",
+        "alternate_capacity_available": true
+      },
+      {
+        "snapshot_id": "STATE_T2",
+        "as_of_at": "2023-10-31T00:00:00-05:00",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "shipment_scope": "AGGREGATE_COHORT_PANAMA_01",
+        "exposed_to_disruption_node": true,
+        "inventory_cover_days": 10,
+        "sla_criticality": "HIGH",
+        "alternate_capacity_available": true
+      }
+    ]
+  },
+  "cutoffs": [
+    {
+      "cutoff_id": "T0_BEFORE_BOOKING_CHANGE",
+      "cutoff_at": "2023-10-25T00:00:00-05:00",
+      "state_snapshot_id": "STATE_T0",
+      "expected_visible_source_ids": [],
+      "expected_hidden_source_ids": [
+        "ACP_BOOKING_CONDITION_2023_10_25",
+        "ACP_DROUGHT_TRANSIT_REDUCTION_2023_10_30",
+        "ACP_TRANSIT_INCREASE_2023_12_15"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T1_MEDIUM_CAPACITY_SIGNAL",
+      "cutoff_at": "2023-10-26T00:00:00-05:00",
+      "state_snapshot_id": "STATE_T1",
+      "expected_visible_source_ids": ["ACP_BOOKING_CONDITION_2023_10_25"],
+      "expected_hidden_source_ids": [
+        "ACP_DROUGHT_TRANSIT_REDUCTION_2023_10_30",
+        "ACP_TRANSIT_INCREASE_2023_12_15"
+      ],
+      "expected_a303_decision_change": false
+    },
+    {
+      "cutoff_id": "T2_HIGH_DROUGHT_CAPACITY_RISK",
+      "cutoff_at": "2023-10-31T00:00:00-05:00",
+      "state_snapshot_id": "STATE_T2",
+      "expected_visible_source_ids": [
+        "ACP_BOOKING_CONDITION_2023_10_25",
+        "ACP_DROUGHT_TRANSIT_REDUCTION_2023_10_30"
+      ],
+      "expected_hidden_source_ids": ["ACP_TRANSIT_INCREASE_2023_12_15"],
+      "expected_a303_decision_change": true
+    }
+  ],
+  "reveal_timeline": [
+    {
+      "reveal_id": "R1_CAPACITY_PLAN_IMPROVES",
+      "source_id": "ACP_TRANSIT_INCREASE_2023_12_15",
+      "available_at": "2023-12-16T00:00:00-05:00",
+      "outcome_evidence_class": "OBSERVED_FACTUAL",
+      "decision_input_allowed": false
+    }
+  ],
+  "evaluation": {
+    "rule_contract_version": "A303.v1",
+    "baseline_variant": "A303_OFF_VERSIONED_MONITORING_SOP",
+    "challenger_variant": "A303_ON"
+  },
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "HISTORICAL_SOURCE_CUTOFF_MECHANICS",
+      "HYBRID_REPLAY_SYSTEM_CORRECTNESS",
+      "A303_CAPABILITY_ATTRIBUTION"
+    ],
+    "does_not_support": [
+      "DECISION_QUALITY_IMPROVEMENT",
+      "COUNTERFACTUAL_BUSINESS_OUTCOME",
+      "REAL_ENTERPRISE_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

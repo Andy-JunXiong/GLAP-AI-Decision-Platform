@@ -39,6 +39,13 @@ and keeps human approval, execution evidence and outcomes traceable.
 > shipment labels remain insufficient, so model and production readiness are
 > still blocked.
 
+> **14 August 2026 evaluation checkpoint:** a local, read-only Evaluation
+> Architecture now separates System Correctness, Capability Attribution,
+> Decision Quality, and Business Outcome Effect. Its five-event Historical
+> Replay pilot covers AIR/OCEAN/RAIL and HIGH/MEDIUM evidence with 15 frozen
+> decision cutoffs. Structural coverage checks pass, but the corpus is not a
+> benchmark and contains no independent expert Decision Quality result.
+
 ## Explore the interactive product story
 
 The most complete product walkthrough is a self-contained browser demo:
@@ -131,6 +138,8 @@ its source metrics.
 | Forecast validation | Private AWS backtest retained recent-level for Maersk; DHL/KN remain partial-history and supervised labels remain blocked |
 | Authenticated Operations | Private staging cockpit with Cognito roles, governed Action mutations, Outcome Review, Pipeline Health, Forecast Accuracy and authorised Network drill-down |
 | Drift prevention | Staged-snapshot pre-commit gate plus independent CI architecture/capability audit |
+| Decision evaluation | Versioned local A303 ON/OFF ablation with read-only System Correctness and Capability Attribution checks |
+| Historical Replay | Five-event hybrid pilot with authoritative public facts, controlled synthetic enterprise state, 15 frozen cutoffs and an explicit `NOT_MET` benchmark gate |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is
@@ -181,6 +190,9 @@ flowchart TB
 
 - [Port disruption case study](docs/case_study_port_disruption.md)
 - [Current AWS architecture](docs/architecture_current.md)
+- [Evaluation Architecture](docs/evaluation_architecture.md)
+- [Decision Quality review contract](docs/decision_quality_evaluation.md)
+- [Historical Replay Lab](docs/historical_replay_lab.md)
 - [Versioned deployment workflow](docs/deployment_workflow.md)
 - [Technical implementation](docs/GLAP_Technical_Implementation.md)
 - [Decision flywheel evidence](docs/decision_flywheel_evidence.md)
@@ -191,6 +203,7 @@ flowchart TB
 - [Multimodal operations, feature and label views](sql/09_multimodal_ops_analytics.sql)
 - [Multimodal forecast feature contract](docs/multimodal_forecast_feature_contract.md)
 - [Implementation roadmap and acceptance criteria](docs/implementation_roadmap.md)
+- [14 August 2026 evaluation handoff](docs/development_handoff_2026-08-14.md)
 - [7 August 2026 development handoff and 9 August follow-up](docs/development_handoff_2026-08-07.md)
 - [Prioritized project TODO](TODO.md)
 - [Three-minute product demo script](docs/demo_walkthrough.md)

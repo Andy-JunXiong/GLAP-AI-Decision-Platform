@@ -109,6 +109,54 @@ The calendar still governs learning readiness. Future simulations can exercise
 mechanics, but only actual-calendar outcomes accumulated over time may support
 operational backtests, supervised training, or production-readiness claims.
 
+## Evaluation Architecture checkpoint -- 14 August 2026
+
+The repository now treats evaluation as a cross-cutting architecture rather
+than a vendor-specific Harness integration or an operational pipeline stage.
+The versioned `evaluation-experiment.v1` contract freezes the scenario cutoff,
+point-in-time evidence, operational state, policy/rule versions, authority
+profile, seed, variants, hypotheses, and claim boundaries.
+
+The first local A303 ablation holds every declared input fixed and toggles only
+`A303_HIGH_RISK_ROUTE`. It deterministically compares `MONITOR` with
+`RISK_MITIGATION`, excludes evidence available after the cutoff, records both
+decision traces, and exposes no operational mutation path. This establishes
+local System Correctness and Capability Attribution mechanics only.
+
+The repository does not contain the deployed A303 implementation, so this is a
+test of the versioned `A303.v1` rule contract rather than deployed-runtime
+verification. The controlled fixture is synthetic engineering evidence. It
+does not establish Decision Quality, Business Outcome Effect, real logistics
+performance, or production readiness. Those layers remain explicitly
+`NOT_EVALUATED`.
+
+The governed decision-quality rubric and blinded expert-review contract are now
+implemented locally, alongside a source-revision-aware historical replay
+corpus. Review packages remove
+capability and variant identity, the blind key stays separate, and aggregation
+fails closed below three independent reviewers or on conflict, key access,
+package drift, or incomplete scores. No expert reviews have been collected, so
+Decision Quality remains `NOT_EVALUATED`. External Evidence, Decision Memory,
+Investigation Agent, and agent-host comparisons should reuse the same
+experiment contract instead of introducing a framework-specific architecture.
+
+Historical Replay v0.4 is implemented locally as a five-event pilot. It adds a
+MEDIUM U.S. rail-labor no-delta control to the Baltimore, Panama Canal, Red Sea,
+and minute-stamped FAA scenarios. A version-frozen selection manifest now runs
+15 cutoffs across three regions, five disruption types, AIR/OCEAN/RAIL modes,
+and HIGH/MEDIUM severity bands. It records six A303-attributed changes plus nine
+no-delta controls. Exact official timestamps are admitted without delay;
+date-only sources retain conservative next-day availability. Extracted facts
+remain paraphrased and SHA-256-digested, while enterprise state remains
+aggregate controlled synthetic.
+
+The corpus runner still fails the benchmark gate explicitly: five scenarios
+are below the required ten and no independent reviews exist. Disruption-type,
+regional, transport-mode, and severity-band coverage now meet their minimum
+counts. This validates cross-mode replay mechanics and honest coverage
+reporting, not a representative benchmark, Decision Quality result,
+counterfactual business effect, or production readiness.
+
 ## Delivery sequence
 
 ```mermaid
@@ -337,20 +385,25 @@ states, and staging deployment path are implemented and verified. Work now
 splits into an unblocked governance/cost track and a calendar-gated evidence
 track.
 
-1. Completed: document grain, owner, source, freshness, and reconciliation
+1. Evaluation v0.1, Decision Quality review mechanics, and a five-scenario
+   Historical Replay corpus are complete locally. Add at least five scenarios,
+   preferably including road and another geography, before collecting no
+   fewer than three genuinely independent blinded reviews per variant; do not
+   treat unit-test review objects as expert evidence.
+2. Completed: document grain, owner, source, freshness, and reconciliation
    rules for each remaining internal-only analytics view in
    [`internal_analytics_governance.md`](internal_analytics_governance.md).
-2. Completed design: define fail-closed Athena workgroup budgets, baseline-first
+3. Completed design: define fail-closed Athena workgroup budgets, baseline-first
    query-cost alarms, and per-view incremental refresh rules. Applying AWS
    controls remains a separately approved infrastructure action.
-3. Ready for manual execution: use the actual-calendar evidence runbook for an
+4. Ready for manual execution: use the actual-calendar evidence runbook for an
    eligible Sydney date, without rewriting history or enabling a schedule.
-4. Continue accumulating eligible Outcomes and DHL/KN coverage before repeating
+5. Continue accumulating eligible Outcomes and DHL/KN coverage before repeating
    operational forecast/model-readiness decisions; thresholds remain unchanged.
-5. Completed design: classification, retention/deletion, SLO, recovery and
+6. Completed design: classification, retention/deletion, SLO, recovery and
    Iceberg maintenance boundaries are documented. Enforcement, recovery drills,
    and load/security testing remain before any production expansion.
-6. Partially verified in staging: the Action assignment rollout completed
+7. Partially verified in staging: the Action assignment rollout completed
    schema validation and runtime/role smoke checks, then recorded one named-
    operator `EDIT`. A response-only serialization fix is pushed but not
    deployed; stable retry and separate approval remain. A narrow existing-
