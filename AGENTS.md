@@ -290,7 +290,9 @@ After completing any meaningful development deliverable, explain it to the user
 in plain, non-technical language. Do not finish with only a list of changed
 files, implementation details, tests, or workflow results.
 
-For each completed deliverable, the final handoff must answer all four questions:
+For every completed feature, the final handoff must answer all six questions.
+This applies after each feature-sized development slice, not only at the end of
+a release or multi-feature session:
 
 1. **What is it?** Describe what was built or changed and what a user or operator
    can now do. Start with everyday language; add technical terms only when they
@@ -298,14 +300,20 @@ For each completed deliverable, the final handoff must answer all four questions
 2. **What previous capability does it connect to?** Name the upstream feature,
    data, workflow, or decision that supplies its inputs or made this work
    possible. Explain the connection, not just the component name.
-3. **What next capability does it connect to?** Name the downstream consumer or
-   the next logical product capability this work enables. If nothing is
-   connected yet, state that boundary and what must happen before it can be
-   connected.
-4. **How does it help the overall project?** Explain the concrete project-level
-   benefit, such as improving the operator journey, data continuity,
-   reliability, auditability, delivery speed, decision quality, cost control, or
-   risk reduction.
+3. **What is the short-term benefit?** State the immediate user, operator, or
+   engineering improvement that is available now, using a concrete effect
+   rather than a generic value claim.
+4. **What is the long-term benefit?** Explain the durable platform, product,
+   evidence, governance, cost, or risk advantage this feature creates if the
+   roadmap continues.
+5. **What feature should be developed next?** Name one concrete next feature and
+   its purpose. Distinguish a recommendation from approved or implemented work;
+   if the next feature requires a human choice or new authority, state that
+   boundary explicitly.
+6. **How do the two features connect?** Explain exactly how the completed
+   feature's outputs, contracts, evidence, or workflow become inputs or
+   prerequisites for the next feature. Do not merely say that one follows the
+   other.
 
 Use the user's language and this compact structure unless the user asks for
 another format:
@@ -313,15 +321,18 @@ another format:
 ```text
 Completed: <plain-language explanation of what it is>
 Upstream connection: <the previous capability and how this uses it>
-Downstream connection: <the next capability or the explicit boundary>
-Project value: <the concrete benefit to the overall project>
+Short-term benefit: <the concrete value available now>
+Long-term benefit: <the durable project or platform advantage>
+Next feature: <one concrete feature to develop next and its purpose>
+Feature connection: <how this feature enables or supplies the next one>
 Verification: <tests, quality gates, deployment, or runtime evidence>
 ```
 
 When several deliverables are completed together, give each meaningful
-deliverable its own four-part explanation or use a table with the same four
+deliverable its own six-part explanation or use a table with the same six
 relationships. Clearly distinguish what is already implemented and verified
-from what is only enabled, recommended, or planned next.
+from what is only enabled, recommended, or planned next. Do not collapse
+short-term and long-term benefits into one generic project-value statement.
 
 ## Temporal Truthfulness
 
