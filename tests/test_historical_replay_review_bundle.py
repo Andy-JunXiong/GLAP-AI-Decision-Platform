@@ -7,9 +7,10 @@ import unittest
 
 ROOT = Path(__file__).parents[1]
 FIXTURE_DIR = ROOT / "tests" / "fixtures" / "historical_replay"
-FREEZE_PATH = FIXTURE_DIR / "review_freeze_v1.json"
+FREEZE_PATH = FIXTURE_DIR / "review_freeze_v3.json"
 CORPUS_PATH = FIXTURE_DIR / "corpus_v1.json"
 RUBRIC_PATH = ROOT / "docs" / "decision_quality_rubric_v1.json"
+OPTION_CONTRACT_PATH = ROOT / "docs" / "decision_option_contract_v3.json"
 
 
 def load_module(name, relative_path):
@@ -30,14 +31,15 @@ def inputs():
     freeze = json.loads(FREEZE_PATH.read_text(encoding="utf-8"))
     corpus = json.loads(CORPUS_PATH.read_text(encoding="utf-8"))
     rubric = json.loads(RUBRIC_PATH.read_text(encoding="utf-8"))
-    return freeze, corpus, rubric
+    option_contract = json.loads(OPTION_CONTRACT_PATH.read_text(encoding="utf-8"))
+    return freeze, corpus, rubric, option_contract
 
 
 class HistoricalReplayReviewBundleTests(unittest.TestCase):
     def test_freeze_binds_ten_scenarios_and_thirty_cutoffs(self):
-        freeze, corpus, rubric = inputs()
+        freeze, corpus, rubric, option_contract = inputs()
         report, scenarios = review_bundle.validate_freeze(
-            freeze, corpus, FIXTURE_DIR, rubric
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
         )
         self.assertEqual(report["summary"]["scenario_count"], 10)
         self.assertEqual(report["summary"]["cutoff_count"], 30)
@@ -48,12 +50,12 @@ class HistoricalReplayReviewBundleTests(unittest.TestCase):
         )
 
     def test_bundle_is_deterministic_complete_and_immutable(self):
-        freeze, corpus, rubric = inputs()
+        freeze, corpus, rubric, option_contract = inputs()
         bundle, keys = review_bundle.build_review_bundle(
-            freeze, corpus, FIXTURE_DIR, rubric
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
         )
         second_bundle, second_keys = review_bundle.build_review_bundle(
-            freeze, corpus, FIXTURE_DIR, rubric
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
         )
         self.assertEqual(bundle, second_bundle)
         self.assertEqual(keys, second_keys)
@@ -73,9 +75,9 @@ class HistoricalReplayReviewBundleTests(unittest.TestCase):
             self.assertEqual(key["package_digest"], package["package_digest"])
 
     def test_public_bundle_does_not_expose_variant_or_key_identity(self):
-        freeze, corpus, rubric = inputs()
+        freeze, corpus, rubric, option_contract = inputs()
         bundle, keys = review_bundle.build_review_bundle(
-            freeze, corpus, FIXTURE_DIR, rubric
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
         )
         public_text = json.dumps(bundle, sort_keys=True)
         for prohibited in (
@@ -94,9 +96,9 @@ class HistoricalReplayReviewBundleTests(unittest.TestCase):
         self.assertIn('"mapping"', private_text)
 
     def test_post_decision_reveal_sources_never_enter_review_evidence(self):
-        freeze, corpus, rubric = inputs()
+        freeze, corpus, rubric, option_contract = inputs()
         _, keys = review_bundle.build_review_bundle(
-            freeze, corpus, FIXTURE_DIR, rubric
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
         )
         reveal_source_ids = set()
         for entry in corpus["scenarios"]:
@@ -112,19 +114,19 @@ class HistoricalReplayReviewBundleTests(unittest.TestCase):
         self.assertTrue(reveal_source_ids.isdisjoint(mapped_source_ids))
 
     def test_changed_rubric_or_scenario_fails_closed(self):
-        freeze, corpus, rubric = inputs()
+        freeze, corpus, rubric, option_contract = inputs()
         changed_rubric = copy.deepcopy(rubric)
         changed_rubric["dimensions"][0]["question"] += " changed"
         with self.assertRaisesRegex(
             review_bundle.HistoricalReviewContractError, "rubric digest mismatch"
         ):
-            review_bundle.validate_freeze(freeze, corpus, FIXTURE_DIR, changed_rubric)
+            review_bundle.validate_freeze(freeze, corpus, FIXTURE_DIR, changed_rubric, option_contract)
         changed_freeze = copy.deepcopy(freeze)
         changed_freeze["scenarios"][0]["scenario_digest"] = "0" * 64
         with self.assertRaisesRegex(
             review_bundle.HistoricalReviewContractError, "scenario digest mismatch"
         ):
-            review_bundle.validate_freeze(changed_freeze, corpus, FIXTURE_DIR, rubric)
+            review_bundle.validate_freeze(changed_freeze, corpus, FIXTURE_DIR, rubric, option_contract)
 
         changed_claim = copy.deepcopy(freeze)
         changed_claim["claim_boundary"]["does_not_support"].remove(
@@ -134,12 +136,20 @@ class HistoricalReplayReviewBundleTests(unittest.TestCase):
             review_bundle.HistoricalReviewContractError,
             "excluded claims differ",
         ):
-            review_bundle.validate_freeze(changed_claim, corpus, FIXTURE_DIR, rubric)
+            review_bundle.validate_freeze(changed_claim, corpus, FIXTURE_DIR, rubric, option_contract)
+
+        changed_contract = copy.deepcopy(option_contract)
+        changed_contract["purpose"] += " changed"
+        with self.assertRaisesRegex(
+            review_bundle.HistoricalReviewContractError,
+            "decision option contract digest mismatch",
+        ):
+            review_bundle.validate_freeze(freeze, corpus, FIXTURE_DIR, rubric, changed_contract)
 
     def test_each_package_is_compatible_with_pending_quality_scoring(self):
-        freeze, corpus, rubric = inputs()
+        freeze, corpus, rubric, option_contract = inputs()
         bundle, keys = review_bundle.build_review_bundle(
-            freeze, corpus, FIXTURE_DIR, rubric
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
         )
         pairs = set()
         for package, key in zip(bundle["packages"], keys["keys"]):
@@ -150,6 +160,73 @@ class HistoricalReplayReviewBundleTests(unittest.TestCase):
             scenario = package["scenario"]
             pairs.add((scenario["scenario_id"], scenario["cutoff_id"]))
         self.assertEqual(len(pairs), 30)
+
+    def test_every_blinded_option_has_story_complete_v3_content_and_valid_citations(self):
+        freeze, corpus, rubric, option_contract = inputs()
+        bundle, _ = review_bundle.build_review_bundle(
+            freeze, corpus, FIXTURE_DIR, rubric, option_contract
+        )
+        rich_payloads = set()
+        for package in bundle["packages"]:
+            brief = package["scenario"]["brief"]
+            self.assertEqual(
+                set(brief),
+                {
+                    "story_summary", "decision_pressure", "difficulty_points",
+                    "downstream_risks", "decision_question", "fact_boundary",
+                },
+            )
+            self.assertGreaterEqual(len(brief["difficulty_points"]), 3)
+            self.assertGreaterEqual(len(brief["downstream_risks"]), 2)
+            visible_sources = {
+                evidence["evidence_id"]: {fact["fact_id"] for fact in evidence["facts"]}
+                for evidence in package["scenario"]["visible_evidence"]
+            }
+            for option in package["options"]:
+                content = option["content"]
+                self.assertEqual(content["contract_version"], "decision-option-contract.v3")
+                self.assertEqual(
+                    set(content),
+                    {
+                        "contract_version", "decision_basis", "risk_assessment",
+                        "problem_response", "action_plan", "solution_horizons",
+                        "intended_benefits", "tradeoffs_and_uncertainty", "authority_boundary",
+                    },
+                )
+                self.assertEqual(len(content["action_plan"]["steps"]), 3)
+                self.assertGreaterEqual(len(content["problem_response"]["difficulty_points"]), 3)
+                self.assertGreaterEqual(len(content["problem_response"]["impact_pathways"]), 2)
+                self.assertEqual(set(content["solution_horizons"]), {"immediate", "short_term", "long_term"})
+                for horizon in content["solution_horizons"].values():
+                    self.assertGreaterEqual(len(horizon["steps"]), 2)
+                for horizon in content["intended_benefits"].values():
+                    self.assertGreaterEqual(len(horizon), 2)
+                    self.assertTrue(all(item["claim_status"] == "EXPECTED_NOT_OBSERVED" for item in horizon))
+                self.assertGreaterEqual(len(content["tradeoffs_and_uncertainty"]), 3)
+                self.assertTrue(content["authority_boundary"]["proposal_only"])
+                self.assertIn(
+                    "BOOK_CAPACITY",
+                    content["authority_boundary"]["prohibited_actions"],
+                )
+                self.assertIn(
+                    "CLAIM_BUSINESS_OUTCOME",
+                    content["authority_boundary"]["prohibited_actions"],
+                )
+                for citation in content["decision_basis"]["evidence_citations"]:
+                    self.assertIn(citation["evidence_id"], visible_sources)
+                    self.assertTrue(
+                        set(citation["fact_ids"]) <= visible_sources[citation["evidence_id"]]
+                    )
+                rich_payloads.add(json.dumps(content, sort_keys=True))
+
+            if not visible_sources:
+                for option in package["options"]:
+                    self.assertEqual(
+                        option["content"]["decision_basis"]["evidence_citations"],
+                        [],
+                    )
+
+        self.assertGreater(len(rich_payloads), 20)
 
 
 if __name__ == "__main__":

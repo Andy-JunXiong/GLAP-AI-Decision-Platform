@@ -2,7 +2,8 @@
 
 **Rubric:** `decision-quality-rubric.v1`
 **Review submission:** `decision-quality-review.v1`
-**Current status:** implemented locally; no expert reviews collected
+**Option content:** `decision-option-contract.v3`
+**Current status:** v3 released on public Sites v6; no eligible expert reviews collected
 
 ## Purpose
 
@@ -33,16 +34,25 @@ key retains the option-to-variant mapping. Possession of the key and review of
 an option are conflicting roles; this process boundary is supported by a
 reviewer attestation and must be enforced by the human study owner.
 
-## Frozen Historical Replay handoff
+## Frozen Historical Replay handoff v3
 
-The ten-event Historical Replay corpus has a separate, content-addressed freeze
-at
-[`review_freeze_v1.json`](../tests/fixtures/historical_replay/review_freeze_v1.json).
+The ten-event Historical Replay corpus has a separate, content-addressed v3 freeze at
+[`review_freeze_v3.json`](../tests/fixtures/historical_replay/review_freeze_v3.json).
 Its machine-readable contract is
-[`historical_replay_review_freeze_v1.schema.json`](historical_replay_review_freeze_v1.schema.json).
+[`historical_replay_review_freeze_v3.schema.json`](historical_replay_review_freeze_v3.schema.json).
 The freeze binds the exact corpus manifest, ordered scenario membership, every
-scenario body, and the v1 rubric by SHA-256 digest. Any change fails closed
-before a package can be built.
+scenario body, the v1 rubric, and
+[`decision_option_contract_v3.json`](decision_option_contract_v3.json) by
+SHA-256 digest. Any change fails closed before a package can be built.
+
+Each package now explains the point-in-time story, decision pressure,
+difficulties, conditional downstream risks, decision question, and fact
+boundary. Each blinded option identifies the problem it addresses, cited
+evidence, risk, immediate/short-term/long-term solution paths, expected benefits
+with measurement signals, trade-offs, and explicit authority boundaries. Every
+benefit is labelled `EXPECTED_NOT_OBSERVED`. This content is generated
+deterministically from only cutoff-eligible replay inputs and grants no
+execution authority.
 
 [`build_historical_replay_review_bundle.py`](../ops/build_historical_replay_review_bundle.py)
 turns the frozen 10-scenario, 30-cutoff corpus into two deterministic outputs:
@@ -57,8 +67,9 @@ key identity. The two outputs must be stored and distributed separately.
 
 ```bash
 python ops/build_historical_replay_review_bundle.py \
-  --freeze tests/fixtures/historical_replay/review_freeze_v1.json \
+  --freeze tests/fixtures/historical_replay/review_freeze_v3.json \
   --corpus-manifest tests/fixtures/historical_replay/corpus_v1.json \
+  --decision-option-contract docs/decision_option_contract_v3.json \
   --bundle-output artifacts/historical-replay-review-bundle.json \
   --key-output artifacts/historical-replay-review-key-study-owner-only.json
 ```
@@ -67,6 +78,17 @@ The repository deliberately does not include generated review submissions or
 a generated owner key bundle. Building the handoff proves deterministic input
 integrity and blinding mechanics only; it does not prove reviewer independence
 or produce a Decision Quality result.
+
+### Superseded v1 and v2 collection boundary
+
+The v1 handoff exposed only a recommendation, priority, human-review flag, and
+one of two generic rationale sentences. V2 added evidence, risk, bounded steps,
+trade-offs, and authority, but user review found that it still lacked a usable
+problem story, difficulty and impact chain, targeted solution horizons, and
+measurable short- and long-term expected benefits. Collection against both
+handoffs is paused. Preserved v1 and v2 drafts remain under their original
+bundle identities for audit continuity, but they are ineligible as Decision
+Quality evidence and must not be migrated into or aggregated with v3.
 
 ## Rubric
 
@@ -119,10 +141,14 @@ missing; they cannot be replaced by an expert score or treated as zero.
 
 ## Current evidence boundary
 
-The A303 fixture is controlled synthetic engineering evidence. The frozen
+The A303 fixture is controlled synthetic engineering evidence. The frozen v3
 Historical Replay bundle is hybrid replay evidence with controlled synthetic
-enterprise state. Neither contains submitted expert reviews, so Decision
-Quality remains `NOT_EVALUATED`. Unit tests exercise packaging and scoring
+enterprise state. The public reviewer site serves the v3 bundle after explicit
+human release approval and a successful dedicated-account login and bilingual
+canary.
+Neither preserved v1/v2 draft progress nor unit-test reviews are eligible
+expert evidence, so Decision Quality remains
+`NOT_EVALUATED`. Unit tests exercise packaging and scoring
 mechanics with in-memory test reviews; those tests are not expert evidence and
 are never written to the scenario corpus.
 

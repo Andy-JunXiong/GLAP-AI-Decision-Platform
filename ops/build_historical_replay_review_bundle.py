@@ -30,12 +30,15 @@ _QUALITY = _load_module(
     Path(__file__).with_name("evaluate_decision_quality.py"),
 )
 
-FREEZE_VERSION = "historical-replay-review-freeze.v1"
-BUNDLE_VERSION = "historical-replay-review-bundle.v1"
-KEY_BUNDLE_VERSION = "historical-replay-review-key-bundle.v1"
+FREEZE_VERSION = "historical-replay-review-freeze.v3"
+BUNDLE_VERSION = "historical-replay-review-bundle.v3"
+KEY_BUNDLE_VERSION = "historical-replay-review-key-bundle.v3"
+PACKAGE_VERSION = "decision-review-package.v3"
+KEY_VERSION = "decision-review-blind-key.v3"
+OPTION_CONTRACT_VERSION = "decision-option-contract.v3"
 REVIEW_SCOPE = "ALL_FROZEN_CUTOFFS"
 FREEZE_SUPPORTS = [
-    "FROZEN_CORPUS_AND_RUBRIC_INPUTS",
+    "FROZEN_CORPUS_RUBRIC_AND_OPTION_CONTRACT_INPUTS",
     "DETERMINISTIC_BLINDED_REVIEW_HANDOFF",
 ]
 FREEZE_DOES_NOT_SUPPORT = [
@@ -82,6 +85,7 @@ def validate_freeze(
     corpus_manifest: dict[str, Any],
     scenario_directory: Path,
     rubric: dict[str, Any],
+    decision_option_contract: dict[str, Any],
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Validate that the freeze binds the exact corpus, scenarios, and rubric."""
 
@@ -90,6 +94,7 @@ def validate_freeze(
         {
             "schema_version", "freeze_id", "frozen_at", "corpus_id",
             "corpus_manifest_digest", "rubric_version", "rubric_digest",
+            "decision_option_contract_version", "decision_option_contract_digest",
             "review_scope", "scenario_count", "cutoff_count", "scenarios",
             "authority", "claim_boundary",
         },
@@ -107,6 +112,18 @@ def validate_freeze(
     _QUALITY.validate_rubric(rubric)
     _require(freeze.get("rubric_version") == rubric.get("schema_version"), "freeze rubric version mismatch")
     _require(freeze.get("rubric_digest") == canonical_digest(rubric), "frozen rubric digest mismatch")
+    _require(
+        decision_option_contract.get("schema_version") == OPTION_CONTRACT_VERSION,
+        "unsupported decision option contract",
+    )
+    _require(
+        freeze.get("decision_option_contract_version") == OPTION_CONTRACT_VERSION,
+        "freeze decision option contract version mismatch",
+    )
+    _require(
+        freeze.get("decision_option_contract_digest") == canonical_digest(decision_option_contract),
+        "frozen decision option contract digest mismatch",
+    )
 
     frozen_entries = freeze.get("scenarios")
     _require(isinstance(frozen_entries, list) and bool(frozen_entries), "frozen scenarios are required")
@@ -159,6 +176,109 @@ def _review_rationale(decision: dict[str, Any]) -> str:
     if decision["recommendation"] == "RISK_MITIGATION":
         return "Propose bounded risk mitigation for human review using only the supplied cutoff evidence."
     return "Continue monitoring and re-check at the next governed review point."
+
+
+def _blinded_decision_content(
+    decision: dict[str, Any],
+    evidence_mapping: dict[str, Any],
+) -> dict[str, Any]:
+    content = decision.get("decision_content")
+    _require(isinstance(content, dict), "decision content is required")
+    _exact_keys(
+        content,
+        {
+            "contract_version", "decision_basis", "risk_assessment", "action_plan",
+            "problem_response", "solution_horizons", "intended_benefits",
+            "tradeoffs_and_uncertainty", "authority_boundary",
+        },
+        "decision content",
+    )
+    _require(content.get("contract_version") == OPTION_CONTRACT_VERSION, "decision content contract mismatch")
+    source_to_blind = {
+        mapped["source_id"]: (blind_source_id, mapped["fact_mapping"])
+        for blind_source_id, mapped in evidence_mapping.items()
+    }
+    basis = content["decision_basis"]
+    citations: list[dict[str, Any]] = []
+    for citation in basis["evidence_citations"]:
+        source_id = citation["source_id"]
+        _require(source_id in source_to_blind, "decision cites evidence outside the cutoff")
+        blind_source_id, fact_mapping = source_to_blind[source_id]
+        _require(set(citation["fact_ids"]) <= set(fact_mapping.values()), "decision cites an unknown fact")
+        reverse_facts = {source_fact: blind_fact for blind_fact, source_fact in fact_mapping.items()}
+        citations.append({
+            "evidence_id": blind_source_id,
+            "fact_ids": [reverse_facts[fact_id] for fact_id in citation["fact_ids"]],
+            "why_relevant": citation["why_relevant"],
+        })
+    return {
+        "contract_version": content["contract_version"],
+        "decision_basis": {**basis, "evidence_citations": citations},
+        "problem_response": content["problem_response"],
+        "risk_assessment": content["risk_assessment"],
+        "action_plan": content["action_plan"],
+        "solution_horizons": content["solution_horizons"],
+        "intended_benefits": content["intended_benefits"],
+        "tradeoffs_and_uncertainty": content["tradeoffs_and_uncertainty"],
+        "authority_boundary": content["authority_boundary"],
+    }
+
+
+def _scenario_brief(
+    scenario: dict[str, Any],
+    cutoff: dict[str, Any],
+    snapshot: dict[str, Any],
+    visible_evidence: list[dict[str, Any]],
+) -> dict[str, Any]:
+    facts = [fact for evidence in visible_evidence for fact in evidence["facts"]]
+    mode = scenario["scenario_profile"]["transport_mode"].replace("_", " ").lower()
+    disruption = scenario["scenario_profile"]["disruption_type"].replace("_", " ").lower()
+    if facts:
+        fact_summary = "; ".join(fact["summary"] for fact in facts[:2])
+        story_summary = (
+            f"At this point in the historical story, {len(visible_evidence)} cutoff-eligible authoritative "
+            f"source(s) report: {fact_summary}"
+        )
+    else:
+        story_summary = (
+            "This is a pre-confirmation control point. The heading identifies the complete historical case, "
+            "but no authoritative event fact is eligible by this cutoff; the decision begins from controlled "
+            "synthetic business exposure only."
+        )
+    decision_pressure = (
+        f"The anonymous synthetic {mode} cohort is "
+        f"{'exposed' if snapshot['exposed_to_disruption_node'] else 'not exposed'} to the relevant node, "
+        f"has {snapshot['inventory_cover_days']} days of inventory cover, "
+        f"{snapshot['sla_criticality']} SLA criticality, and alternate capacity "
+        f"{'recorded but not yet validated' if snapshot['alternate_capacity_available'] else 'not recorded'}."
+    )
+    difficulty_points = [
+        "Separate cutoff-visible facts from the later-known complete historical story.",
+        (
+            f"Balance a {snapshot['inventory_cover_days']}-day synthetic inventory buffer and "
+            f"{snapshot['sla_criticality']} SLA criticality against incomplete cost, lead-time, and feasibility data."
+        ),
+        "Compare speed and resilience against the risk of premature action, while preserving named-human authority.",
+    ]
+    downstream_risks = [
+        (
+            f"If the {disruption} reaches the synthetic cohort, delay may consume the inventory buffer and put service commitments at risk."
+        ),
+        "If the dependency remains unresolved, backlog, premium-cost, customer-service, and network-resilience pressure may compound over time.",
+    ]
+    return {
+        "story_summary": story_summary,
+        "decision_pressure": decision_pressure,
+        "difficulty_points": difficulty_points,
+        "downstream_risks": downstream_risks,
+        "decision_question": (
+            "Which option responds most credibly to the point-in-time problem across immediate, short-term, and long-term horizons while keeping benefits hypothetical and execution human-governed?"
+        ),
+        "fact_boundary": (
+            f"Use only the {len(visible_evidence)} source(s) and {len(facts)} fact(s) visible at {cutoff['cutoff_at']}; "
+            "later recovery and outcome facts are excluded."
+        ),
+    }
 
 
 def _build_package(
@@ -228,6 +348,7 @@ def _build_package(
             "priority": decision["priority"],
             "human_review_required": decision["human_review_required"],
             "rationale": _review_rationale(decision),
+            "content": _blinded_decision_content(decision, evidence_mapping),
             "status": "EVALUATION_PROPOSAL_ONLY",
         })
         mapping[option_id] = {
@@ -238,7 +359,7 @@ def _build_package(
 
     snapshot = snapshots_by_id[cutoff["state_snapshot_id"]]
     package_payload = {
-        "schema_version": _QUALITY.PACKAGE_VERSION,
+        "schema_version": PACKAGE_VERSION,
         "review_id": review_id,
         "rubric_version": rubric["schema_version"],
         "scenario": {
@@ -258,6 +379,7 @@ def _build_package(
                 "sla_criticality": snapshot["sla_criticality"],
                 "alternate_capacity_available": snapshot["alternate_capacity_available"],
             },
+            "brief": _scenario_brief(scenario, cutoff, snapshot, visible_evidence),
             "visible_evidence": visible_evidence,
         },
         "decision_policy": {
@@ -281,7 +403,7 @@ def _build_package(
     package_digest = canonical_digest(package_payload)
     package = {**package_payload, "package_digest": package_digest}
     blind_key = {
-        "schema_version": _QUALITY.KEY_VERSION,
+        "schema_version": KEY_VERSION,
         "review_id": review_id,
         "package_digest": package_digest,
         "mapping": mapping,
@@ -296,11 +418,12 @@ def build_review_bundle(
     corpus_manifest: dict[str, Any],
     scenario_directory: Path,
     rubric: dict[str, Any],
+    decision_option_contract: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Build a reviewer-safe package bundle and a separately held key bundle."""
 
     corpus_report, scenarios = validate_freeze(
-        freeze, corpus_manifest, scenario_directory, rubric
+        freeze, corpus_manifest, scenario_directory, rubric, decision_option_contract
     )
     packages: list[dict[str, Any]] = []
     keys: list[dict[str, Any]] = []
@@ -324,7 +447,7 @@ def build_review_bundle(
     bundle_id = hashlib.sha256(
         (
             f"{freeze['freeze_id']}|{freeze['corpus_manifest_digest']}|"
-            f"{freeze['rubric_digest']}"
+            f"{freeze['rubric_digest']}|{freeze['decision_option_contract_digest']}"
         ).encode("utf-8")
     ).hexdigest()[:24]
     bundle_payload = {
@@ -335,6 +458,8 @@ def build_review_bundle(
         "corpus_manifest_digest": freeze["corpus_manifest_digest"],
         "rubric_version": freeze["rubric_version"],
         "rubric_digest": freeze["rubric_digest"],
+        "decision_option_contract_version": freeze["decision_option_contract_version"],
+        "decision_option_contract_digest": freeze["decision_option_contract_digest"],
         "review_scope": REVIEW_SCOPE,
         "package_count": len(packages),
         "packages": packages,
@@ -343,6 +468,7 @@ def build_review_bundle(
             "supports": [
                 "FROZEN_CORPUS_REVIEW_HANDOFF",
                 "DETERMINISTIC_BLINDED_PACKAGE_GENERATION",
+                "STORY_COMPLETE_RUBRIC_ASSESSABLE_OPTION_CONTENT_V3",
             ],
             "does_not_support": [
                 "INDEPENDENT_REVIEW_COMPLETION",
@@ -378,6 +504,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--freeze", type=Path, required=True)
     parser.add_argument("--corpus-manifest", type=Path, required=True)
     parser.add_argument("--rubric", type=Path, default=_ROOT / "docs" / "decision_quality_rubric_v1.json")
+    parser.add_argument(
+        "--decision-option-contract",
+        type=Path,
+        default=_ROOT / "docs" / "decision_option_contract_v3.json",
+    )
     parser.add_argument("--bundle-output", type=Path, required=True)
     parser.add_argument("--key-output", type=Path, required=True)
     return parser.parse_args()
@@ -390,6 +521,7 @@ def main() -> int:
         _load(args.corpus_manifest),
         args.corpus_manifest.parent,
         _load(args.rubric),
+        _load(args.decision_option_contract),
     )
     _write(bundle, args.bundle_output)
     _write(key_bundle, args.key_output)

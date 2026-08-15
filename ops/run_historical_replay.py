@@ -16,6 +16,119 @@ SCHEMA_VERSION = "historical-replay-scenario.v1"
 REPORT_VERSION = "historical-replay-report.v1"
 SEVERITY_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 
+_DISRUPTION_PLAYBOOKS = {
+    "INFRASTRUCTURE_FAILURE": {
+        "focus": "gateway access, alternative ports, and inland handoffs",
+        "short": [
+            "Compare alternative gateway and inland-handoff paths for the exposed shipment window.",
+            "Document capacity, lead-time, customs, drayage, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain a dual-gateway contingency playbook with owners, triggers, and expiry dates.",
+            "Review concentration at critical infrastructure nodes during governed resilience planning.",
+        ],
+    },
+    "DROUGHT_CAPACITY_RESTRICTION": {
+        "focus": "canal booking slots, vessel schedules, and alternative sailing paths",
+        "short": [
+            "Compare protected booking windows with alternative sailing paths for the exposed shipment window.",
+            "Document transit-time, fuel, capacity, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain seasonal canal-capacity triggers and pre-approved comparison criteria.",
+            "Review route concentration and inventory buffers before recurring low-water periods.",
+        ],
+    },
+    "MARITIME_SECURITY_THREAT": {
+        "focus": "security exposure, sailing-route alternatives, insurance, and transit time",
+        "short": [
+            "Compare the current route with security-screened alternatives for the exposed shipment window.",
+            "Document insurance, lead-time, capacity, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain route-security triggers and a governed alternative-route playbook.",
+            "Review network concentration and inventory policy for prolonged security disruption.",
+        ],
+    },
+    "AIR_TRAFFIC_SYSTEM_OUTAGE": {
+        "focus": "flight availability, airport alternatives, and priority-shipment recovery",
+        "short": [
+            "Compare later flights, nearby airports, and bounded ground-transfer options for priority shipments.",
+            "Document capacity, handling, lead-time, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain a critical-airfreight recovery playbook with airport and carrier alternatives.",
+            "Review which service commitments require pre-defined outage contingencies.",
+        ],
+    },
+    "RAIL_LABOR_DISPUTE": {
+        "focus": "rail-service continuity, intermodal terminals, and road-capacity alternatives",
+        "short": [
+            "Compare rail continuity scenarios with bounded intermodal or road alternatives.",
+            "Document terminal, capacity, lead-time, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain labor-disruption triggers and a governed intermodal contingency plan.",
+            "Review modal concentration and inventory policy for critical rail-dependent flows.",
+        ],
+    },
+    "ROAD_TUNNEL_INFRASTRUCTURE_FAILURE": {
+        "focus": "corridor closure, safe detours, and rail or road alternatives",
+        "short": [
+            "Compare safe detours and feasible modal alternatives for the exposed shipment window.",
+            "Document distance, capacity, lead-time, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain corridor-failure triggers and alternative-route readiness checks.",
+            "Review single-corridor dependency in governed network-resilience planning.",
+        ],
+    },
+    "CANAL_VESSEL_GROUNDING": {
+        "focus": "canal access, queue exposure, transshipment, and alternative sea routes",
+        "short": [
+            "Compare waiting, transshipment, and alternative sea-route scenarios for the exposed shipment window.",
+            "Document capacity, lead-time, handling, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain canal-blockage triggers and a governed route-contingency playbook.",
+            "Review route concentration and buffer policy for canal-dependent flows.",
+        ],
+    },
+    "EXTREME_WEATHER_ROAD_NETWORK": {
+        "focus": "road safety, network closures, safe detours, and modal alternatives",
+        "short": [
+            "Compare only authority-confirmed safe corridors and feasible modal alternatives.",
+            "Document access, capacity, lead-time, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain weather-triggered corridor controls and verified detour playbooks.",
+            "Review geographic concentration and buffer policy for weather-exposed flows.",
+        ],
+    },
+    "CONTAINER_PORT_CONGESTION": {
+        "focus": "berth delay, terminal capacity, sailing schedules, and alternative gateways",
+        "short": [
+            "Compare terminal, sailing, and alternative-gateway options for the exposed shipment window.",
+            "Document berth, capacity, lead-time, drayage, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain congestion triggers and a multi-gateway contingency playbook.",
+            "Review port concentration and peak-period inventory policy.",
+        ],
+    },
+    "FLOOD_DAMAGED_HIGHWAY_NETWORK": {
+        "focus": "road closures, safe access, staging points, and modal alternatives",
+        "short": [
+            "Compare authority-confirmed safe routes, staging points, and modal alternatives.",
+            "Document access, capacity, lead-time, and cost gaps for named human review.",
+        ],
+        "long": [
+            "Maintain flood-triggered corridor controls and verified recovery playbooks.",
+            "Review geographic concentration and resilient staging options for exposed flows.",
+        ],
+    },
+}
+
 
 class ReplayContractError(ValueError):
     """Raised when a corpus violates evidence, time, or authority boundaries."""
@@ -315,15 +428,357 @@ def _risk_from_snapshot(snapshot: dict[str, Any], visible_sources: list[dict[str
     }
 
 
-def _decision(variant_id: str, enabled: bool, risk: dict[str, Any]) -> dict[str, Any]:
+def _decision_content(
+    recommendation: str,
+    risk: dict[str, Any],
+    snapshot: dict[str, Any],
+    visible_sources: list[dict[str, Any]],
+    scenario_profile: dict[str, Any],
+) -> dict[str, Any]:
+    visible_facts = [
+        (source, fact)
+        for source in visible_sources
+        for fact in source["extracted_facts"]
+    ]
+    strongest_visible_severity = (
+        max((fact["decision_signal"]["severity"] for _, fact in visible_facts), key=SEVERITY_ORDER.get)
+        if visible_facts else "NONE"
+    )
+    evidence_citations = [
+        {
+            "source_id": source["source_id"],
+            "fact_ids": [fact["fact_id"] for fact in source["extracted_facts"]],
+            "why_relevant": (
+                "Cutoff-eligible facts from this source establish "
+                f"{max((fact['decision_signal']['severity'] for fact in source['extracted_facts']), key=SEVERITY_ORDER.get)} "
+                "disruption or recovery evidence for this decision."
+            ),
+        }
+        for source in visible_sources
+    ]
+    high_route_risk = risk["signal_type"] == "A303_HIGH_RISK_ROUTE"
+    if not visible_facts:
+        basis_summary = (
+            "No authoritative disruption evidence is cutoff-eligible, so the option cannot confirm a material route risk."
+        )
+        risk_statement = "Material disruption risk is unconfirmed at this cutoff because no public evidence is yet eligible."
+    elif high_route_risk and recommendation == "RISK_MITIGATION":
+        basis_summary = (
+            "Cutoff-eligible HIGH disruption evidence and controlled shipment exposure support a bounded mitigation proposal."
+        )
+        risk_statement = "A HIGH route-risk condition is present because HIGH evidence coincides with controlled exposure."
+    elif high_route_risk:
+        basis_summary = (
+            "The option retains monitoring even though cutoff-eligible HIGH disruption evidence coincides with controlled exposure."
+        )
+        risk_statement = "A HIGH route-risk condition is present, but this option does not propose mitigation at this cutoff."
+    else:
+        basis_summary = (
+            "Visible evidence does not establish the frozen policy's HIGH route-risk condition, so the option retains monitoring."
+        )
+        risk_statement = "The visible signal remains below the HIGH route-risk threshold at this cutoff."
+
+    exposure_statement = (
+        f"Controlled cohort {snapshot['shipment_scope']} is "
+        f"{'exposed' if snapshot['exposed_to_disruption_node'] else 'not exposed'} to the disruption node, "
+        f"with {snapshot['inventory_cover_days']} days of inventory cover, "
+        f"{snapshot['sla_criticality']} SLA criticality, and alternate capacity "
+        f"{'recorded as available' if snapshot['alternate_capacity_available'] else 'not recorded as available'}."
+    )
+    common_uncertainties = [
+        "Enterprise exposure, inventory, SLA, and capacity fields are controlled synthetic state rather than real company records.",
+        (
+            f"Only {len(visible_sources)} authoritative source(s) were cutoff-eligible; later recovery or outcome evidence is excluded."
+        ),
+        (
+            "Alternate capacity is recorded, but cost, lead time, and feasibility are not evaluated."
+            if snapshot["alternate_capacity_available"]
+            else "No alternate capacity is recorded, so mitigation feasibility remains unresolved."
+        ),
+    ]
+    mode = scenario_profile["transport_mode"]
+    disruption_type = scenario_profile["disruption_type"].replace("_", " ").lower()
+    playbook = _DISRUPTION_PLAYBOOKS.get(
+        scenario_profile["disruption_type"],
+        {
+            "focus": f"{mode.lower()} continuity, capacity, and route alternatives",
+            "short": [
+                "Compare feasible continuity options for the exposed shipment window.",
+                "Document capacity, lead-time, service, and cost gaps for named human review.",
+            ],
+            "long": [
+                "Maintain a governed contingency playbook with owners, triggers, and expiry dates.",
+                "Review network concentration and buffer policy during resilience planning.",
+            ],
+        },
+    )
+    difficulty_points = [
+        (
+            f"The decision has only {len(visible_sources)} cutoff-eligible authoritative source(s); "
+            "later facts and outcomes cannot be used."
+        ),
+        (
+            f"The synthetic cohort has {snapshot['inventory_cover_days']} days of inventory cover and "
+            f"{snapshot['sla_criticality']} SLA criticality, creating time pressure without proving an outcome."
+        ),
+        (
+            "Recorded alternate capacity still lacks cost, lead-time, and feasibility validation."
+            if snapshot["alternate_capacity_available"]
+            else "No alternate capacity is recorded, so feasibility is unresolved."
+        ),
+        "Any high-impact response must remain a proposal until a named human approves it.",
+    ]
+    impact_pathways = [
+        (
+            f"If the {disruption_type} reaches the synthetic cohort, service delay may consume the "
+            f"{snapshot['inventory_cover_days']}-day inventory buffer and put {snapshot['sla_criticality']} SLA commitments at risk."
+        ),
+        (
+            f"If dependency on {playbook['focus']} remains unresolved, backlog, premium-cost, and network-resilience pressure may compound over time."
+        ),
+    ]
+    if recommendation == "RISK_MITIGATION":
+        action_objective = (
+            f"Prepare a bounded, non-executing mitigation proposal for {snapshot['shipment_scope']} in response to the {disruption_type}."
+        )
+        capacity_step = (
+            "Compare the recorded alternate capacity with current exposure, inventory cover, and SLA criticality; document cost and lead-time gaps."
+            if snapshot["alternate_capacity_available"]
+            else "Identify and validate feasible alternate capacity before any mitigation proposal can be considered executable."
+        )
+        steps = [
+            {
+                "sequence": 1,
+                "instruction": "Prepare a proposal that cites only the cutoff-eligible evidence listed in the decision basis.",
+                "timing": "CURRENT_GOVERNED_REVIEW",
+                "owner_boundary": "ANALYST_PREPARES_HUMAN_REVIEWS",
+            },
+            {
+                "sequence": 2,
+                "instruction": capacity_step,
+                "timing": "BEFORE_HUMAN_APPROVAL",
+                "owner_boundary": "ANALYST_PREPARES_HUMAN_REVIEWS",
+            },
+            {
+                "sequence": 3,
+                "instruction": "Submit the bounded proposal for named human approval; do not book capacity, reroute, or commit spend.",
+                "timing": "BEFORE_ANY_OPERATIONAL_CHANGE",
+                "owner_boundary": "NAMED_HUMAN_APPROVAL_REQUIRED",
+            },
+        ]
+        tradeoffs = [
+            (
+                "Mitigation may reduce exposure if approved, but capacity, cost, and service trade-offs are not quantified."
+                if snapshot["alternate_capacity_available"]
+                else "Mitigation is proposed without recorded alternate capacity, so feasibility must be established by a human."
+            ),
+            "Earlier intervention may protect SLA or inventory cover, but no business outcome effect is estimated or claimed.",
+        ]
+        review_trigger = "Human approval decision, new cutoff-eligible evidence, recovery evidence, or a change in exposure or capacity."
+        primary_problem = (
+            f"Confirmed HIGH disruption evidence overlaps with synthetic shipment exposure, while the feasibility of {playbook['focus']} is not yet validated."
+        )
+        solution_horizons = {
+            "immediate": {
+                "horizon": "NOW_TO_24_HOURS",
+                "objective": "Create an approval-ready mitigation decision packet without executing an operational change.",
+                "steps": [
+                    "Identify the exposed shipment window, SLA-critical scope, and remaining inventory buffer.",
+                    "Bind every proposed response to the listed cutoff-eligible facts and state assumptions.",
+                    "Name the human decision owner and the latest safe review time.",
+                ],
+            },
+            "short_term": {
+                "horizon": "TWO_TO_SEVEN_DAYS",
+                "objective": f"Validate bounded alternatives across {playbook['focus']} for a named human decision.",
+                "steps": playbook["short"],
+            },
+            "long_term": {
+                "horizon": "THIRTY_TO_NINETY_DAYS",
+                "objective": "Reduce repeat decision latency and concentration risk without pre-authorising execution.",
+                "steps": playbook["long"],
+            },
+        }
+        intended_benefits = {
+            "short_term": [
+                {
+                    "benefit": "Shorten the time from confirmed high risk to a complete named-human decision.",
+                    "measurement_signal": "Elapsed time from qualifying HIGH evidence to an approval-ready proposal.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+                {
+                    "benefit": "Preserve feasible route or capacity choices before the synthetic inventory buffer erodes.",
+                    "measurement_signal": "Share of SLA-critical scope with compared capacity, lead time, service, and cost.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+            ],
+            "long_term": [
+                {
+                    "benefit": f"Strengthen resilience across {playbook['focus']} through a reusable governed playbook.",
+                    "measurement_signal": "Number of validated alternatives with an owner, trigger, evidence source, and review date.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+                {
+                    "benefit": "Make future disruption decisions faster, more consistent, and easier to audit.",
+                    "measurement_signal": "Percentage of future reviews using the approved trigger and decision-packet template.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+            ],
+        }
+    else:
+        action_objective = (
+            f"Continue governed monitoring of the {mode} {disruption_type} without making an operational change."
+        )
+        steps = [
+            {
+                "sequence": 1,
+                "instruction": "At the next governed review point, refresh only newly cutoff-eligible authoritative evidence.",
+                "timing": "NEXT_GOVERNED_REVIEW",
+                "owner_boundary": "ANALYST_MONITORS_HUMAN_REVIEWS",
+            },
+            {
+                "sequence": 2,
+                "instruction": (
+                    f"Re-check exposure for {snapshot['shipment_scope']}, inventory cover, SLA criticality, and alternate capacity."
+                ),
+                "timing": "NEXT_GOVERNED_REVIEW",
+                "owner_boundary": "ANALYST_MONITORS_HUMAN_REVIEWS",
+            },
+            {
+                "sequence": 3,
+                "instruction": "If HIGH disruption evidence and controlled exposure coincide, return a bounded mitigation proposal for named human review.",
+                "timing": "ONLY_IF_TRIGGERED",
+                "owner_boundary": "NAMED_HUMAN_APPROVAL_REQUIRED",
+            },
+        ]
+        tradeoffs = [
+            (
+                "Monitoring avoids premature operational change but leaves the confirmed HIGH exposure unmitigated until the next review."
+                if high_route_risk
+                else "Monitoring avoids acting on insufficient evidence but may delay response if conditions worsen before the next review."
+            ),
+            "No cost, delay, service, or business outcome effect is estimated or claimed.",
+        ]
+        review_trigger = "New HIGH cutoff-eligible evidence, exposure change, lower inventory cover, higher SLA criticality, or capacity change."
+        primary_problem = (
+            "Authoritative evidence is not yet sufficient to justify a disruption response, while the synthetic exposure still requires an explicit watch and escalation path."
+            if not visible_facts
+            else f"The option must decide whether the current evidence justifies action on {playbook['focus']} without overreacting or losing time."
+        )
+        solution_horizons = {
+            "immediate": {
+                "horizon": "NOW_TO_24_HOURS",
+                "objective": "Create a disciplined evidence watch and verify the synthetic exposure without changing operations.",
+                "steps": [
+                    "Confirm the next governed evidence review time and the authoritative sources to refresh.",
+                    "Reconcile the exposed scope, inventory buffer, SLA criticality, and alternate-capacity record.",
+                    "Document the exact HIGH-evidence and exposure trigger that would escalate the case.",
+                ],
+            },
+            "short_term": {
+                "horizon": "TWO_TO_SEVEN_DAYS",
+                "objective": f"Keep a comparison-ready contingency view of {playbook['focus']} without booking or rerouting.",
+                "steps": [
+                    f"Maintain a current list of decision inputs for {playbook['focus']} and flag missing feasibility data.",
+                    "Prepare a bounded decision-packet template so a named human can act quickly if the trigger is met.",
+                ],
+            },
+            "long_term": {
+                "horizon": "THIRTY_TO_NINETY_DAYS",
+                "objective": "Improve evidence discipline and contingency readiness without converting monitoring into standing execution authority.",
+                "steps": playbook["long"],
+            },
+        }
+        intended_benefits = {
+            "short_term": [
+                {
+                    "benefit": "Avoid unsupported operational change while preserving a clear path to human escalation.",
+                    "measurement_signal": "Time from new qualifying evidence to the next governed review.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+                {
+                    "benefit": "Improve decision readiness by making exposure and feasibility gaps explicit.",
+                    "measurement_signal": "Completeness of exposure, inventory, SLA, capacity, and trigger fields at review time.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+            ],
+            "long_term": [
+                {
+                    "benefit": "Build repeatable evidence-watch and escalation discipline for similar disruptions.",
+                    "measurement_signal": "Percentage of reviews with traceable evidence, a named owner, and an explicit trigger.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+                {
+                    "benefit": f"Maintain reusable contingency readiness across {playbook['focus']} without premature commitment.",
+                    "measurement_signal": "Number of current alternatives with known data gaps, owners, and review dates.",
+                    "claim_status": "EXPECTED_NOT_OBSERVED",
+                },
+            ],
+        }
+
+    return {
+        "contract_version": "decision-option-contract.v3",
+        "decision_basis": {
+            "summary": basis_summary,
+            "evidence_citations": evidence_citations,
+            "strongest_visible_severity": strongest_visible_severity,
+        },
+        "risk_assessment": {
+            "risk_level": "HIGH" if high_route_risk else "LOW",
+            "risk_statement": risk_statement,
+            "exposure_statement": exposure_statement,
+        },
+        "problem_response": {
+            "primary_problem": primary_problem,
+            "difficulty_points": difficulty_points,
+            "impact_pathways": impact_pathways,
+        },
+        "action_plan": {
+            "objective": action_objective,
+            "steps": steps,
+            "review_trigger": review_trigger,
+        },
+        "solution_horizons": solution_horizons,
+        "intended_benefits": intended_benefits,
+        "tradeoffs_and_uncertainty": [*tradeoffs, *common_uncertainties],
+        "authority_boundary": {
+            "proposal_only": True,
+            "human_approval_required": recommendation == "RISK_MITIGATION",
+            "permitted_actions": [
+                "ANALYZE_CUTOFF_EVIDENCE",
+                "PREPARE_BOUNDED_PROPOSAL",
+                "REQUEST_HUMAN_REVIEW",
+            ],
+            "prohibited_actions": [
+                "BOOK_CAPACITY",
+                "REROUTE_SHIPMENT",
+                "COMMIT_SPEND",
+                "CLAIM_BUSINESS_OUTCOME",
+            ],
+        },
+    }
+
+
+def _decision(
+    variant_id: str,
+    enabled: bool,
+    risk: dict[str, Any],
+    snapshot: dict[str, Any],
+    visible_sources: list[dict[str, Any]],
+    scenario_profile: dict[str, Any],
+) -> dict[str, Any]:
     fired = enabled and risk["signal_type"] == "A303_HIGH_RISK_ROUTE"
+    recommendation = "RISK_MITIGATION" if fired else "MONITOR"
     return {
         "variant_id": variant_id,
         "a303_enabled": enabled,
-        "recommendation": "RISK_MITIGATION" if fired else "MONITOR",
+        "recommendation": recommendation,
         "priority": "HIGH" if fired else "MEDIUM",
         "human_review_required": fired,
         "rule_fired": fired,
+        "decision_content": _decision_content(
+            recommendation, risk, snapshot, visible_sources, scenario_profile
+        ),
         "status": "EVALUATION_PROPOSAL_ONLY",
         "operational_mutations": [],
     }
@@ -342,8 +797,12 @@ def run_replay(corpus: dict[str, Any]) -> dict[str, Any]:
         visible_sources = _visible_sources(corpus, cutoff_at)
         snapshot = snapshots_by_id[cutoff["state_snapshot_id"]]
         risk = _risk_from_snapshot(snapshot, visible_sources)
-        baseline = _decision("baseline-a303-off", False, risk)
-        challenger = _decision("glap-a303-on", True, risk)
+        baseline = _decision(
+            "baseline-a303-off", False, risk, snapshot, visible_sources, corpus["scenario_profile"]
+        )
+        challenger = _decision(
+            "glap-a303-on", True, risk, snapshot, visible_sources, corpus["scenario_profile"]
+        )
         changed = any(
             baseline[field] != challenger[field]
             for field in ("recommendation", "priority", "human_review_required")

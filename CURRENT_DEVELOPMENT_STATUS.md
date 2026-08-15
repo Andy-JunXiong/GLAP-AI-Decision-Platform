@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-14`
+**Sydney as-of date:** `2026-08-15`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -22,25 +22,28 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Ten scenarios and rubric content-addressed; 30 blinded packages; no independent expert result |
+| Decision Quality review handoff | `PUBLIC_RELEASED_PENDING_EXPERT_REVIEW` | public Sites v6 serves the story-complete v3 bundle; v1/v2 drafts are ineligible; no independent expert result |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
-## Active slice — Independent blinded-review collection
+## Active slice — Decision Quality v3 story-complete handoff
 
-**Status:** `READY_FOR_HUMAN_COORDINATION`
+**Status:** `PUBLIC_RELEASED_PENDING_EXPERT_REVIEW`
 
 **Goal**
 
-Distribute the frozen reviewer-safe packages without the blind keys, collect
-genuine independent submissions, and preserve reviewer/key-holder separation.
+Replace the rule-explanation-heavy v2 handoff with a v3 review experience that
+presents a point-in-time problem story, difficulty and impact chain, targeted
+immediate/short-term/long-term solutions, and measurable expected benefits.
+Preserve v1/v2 drafts under their original bundle identities without treating
+them as evidence.
 
 **Non-goals**
 
-- changing the frozen corpus, scenarios, or rubric during review collection;
+- changing the frozen corpus, scenarios, or rubric;
 - fabricating or automatically generating expert reviews;
 - evaluating Business Outcome Effect;
 - calling AWS, deploying, scheduling, or mutating an operational Action;
@@ -48,20 +51,27 @@ genuine independent submissions, and preserve reviewer/key-holder separation.
 
 **Objects / schema**
 
-- the frozen reviewer-safe 30-package bundle;
+- `decision-option-contract.v3`;
+- `historical-replay-review-freeze.v3`;
+- the frozen reviewer-safe v3 30-package bundle;
 - the separate study-owner-only blind-key bundle;
+- bundle-scoped review sessions that retain but isolate v1/v2 drafts;
 - `decision-quality-review.v1` submissions created only by independent humans.
 
 **Files / modules**
 
-- generated reviewer-safe bundle distributed outside the repository;
+- deterministic v3 story, solution, expected-benefit, and reviewer-safe package generator;
+- bilingual reviewer site with complete option sections;
+- D1 migration from user-only sessions to `(user_id, bundle_id)` sessions;
 - owner-only blind keys retained outside reviewer access;
-- validated, pseudonymous review submissions returned for aggregation.
+- the public review site behind a dedicated reviewer account, with no ChatGPT
+  account dependency.
 
 **Business rules**
 
-- frozen digests must remain unchanged throughout collection;
+- scenario, rubric, and v3 option-contract digests must remain unchanged;
 - reviewers receive packages and rubric, never blind keys;
+- v1/v2 draft answers remain stored but are never loaded into or counted toward v3;
 - repository-generated test objects are never counted as expert evidence;
 - every accepted submission must satisfy independence, conflict, digest, and
   completeness gates;
@@ -69,37 +79,50 @@ genuine independent submissions, and preserve reviewer/key-holder separation.
 
 **Automated validation**
 
-- fail-closed package, rubric, submission, and blind-key digest validation;
+- fail-closed package, rubric, option-contract, submission, and blind-key
+  digest validation;
+- citations may reference only evidence and facts visible in the same cutoff;
+- every package has a cutoff-safe story, difficulties, conditional impact
+  pathways, and decision question;
+- every option has three solution horizons, expected benefits with measurement
+  signals, trade-offs, uncertainty, and a proposal-only authority boundary;
 - duplicate-reviewer and attestation checks;
 - de-identified aggregation only after the minimum-review gate is met.
 
 **Manual validation**
 
-- recruit genuinely independent domain reviewers;
+- the public Sites v6 canary verified dedicated-account login, bilingual
+  switching, and the v3 30-package bundle identity;
+- new-session creation and save/resume remain for the independent reviewer
+  because the agent did not make the reviewer's personal attestations;
 - have the human study owner verify conflicts and key separation;
 - keep reviewer identity details out of repository artifacts.
 
 **Definition of done**
 
-- each evaluated package has at least three valid independent reviews;
-- the study owner confirms no reviewer accessed the blind keys;
-- aggregation retains pseudonymous evidence and claims only Decision Quality;
-- benchmark eligibility changes only through a separately implemented,
-  evidence-backed integration of completed review results.
+- v3 generation, citation integrity, story, solution, benefit, schema, site
+  build, and bundle-isolation gates pass;
+- public Sites v6 serves v3 after explicit release approval, and v2 remains
+  superseded;
+- the hosted canary confirms dedicated-account login and the v3 bundle while
+  v1/v2 drafts remain preserved under different bundle identities;
+- Decision Quality remains `NOT_EVALUATED` until eligible v3 reviews are later
+  collected and aggregated.
 
 **Stop conditions**
 
-- a frozen digest changes;
+- a frozen v3 digest changes;
 - reviewer identity or independence cannot be verified;
 - a reviewer has blind-key access or a conflict of interest;
+- reviewer access would expose the owner-only blind key or merge v1/v2 answers
+  into v3;
 - the change would require AWS or operational mutation authority.
 
 **Next slice after completion**
 
-After sufficient valid submissions exist, implement the corpus-level review
-result integration without changing frozen inputs or inferring Business Outcome
-Effect. Collection itself requires human participation and cannot be completed
-by repository automation alone.
+Resume independent collection using only v3. Once sufficient valid submissions exist,
+implement corpus-level result integration without changing frozen inputs or
+inferring Business Outcome Effect.
 
 ## Pending validation
 
@@ -108,8 +131,10 @@ by repository automation alone.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Collect genuinely independent Decision Quality reviews only after scenario
-  and rubric versions are frozen.
+- Have the independent reviewer create the v3 session, verify save/resume, and
+  complete only personally true attestations.
+- Collect genuinely independent Decision Quality reviews only from the v3
+  scenario, rubric, and option-contract freeze.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -119,7 +144,9 @@ done.
 
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
-- Decision Quality: no independent expert reviews exist.
+- Decision Quality: v1/v2 collection is paused and preserved drafts are
+  ineligible; public Sites v6 serves v3, but no eligible independent expert
+  reviews exist.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient.
@@ -145,6 +172,26 @@ done.
   rubric digests. The deterministic handoff covers all 30 cutoffs, excludes
   post-decision reveals and capability identity, and retains the blind keys for
   a human study owner only. No independent review has been created.
+- Decision Quality v2 adds a frozen option-content contract. Every option now
+  includes visible-evidence citations, explicit risk and exposure reasoning,
+  three bounded action steps, a review trigger, trade-offs, uncertainty, and a
+  proposal-only authority boundary. The reviewer site is bilingual and keeps
+  v1 sessions isolated by bundle ID.
+- Sites v5 was released publicly after explicit human approval. A hosted canary
+  verified dedicated-account login, fresh v2 session creation, full option
+  content, and refresh/resume behavior. The migrated database retained separate
+  v1 and v2 draft sessions and contained zero review answers after the canary.
+- The invited reviewer was notified that v2 collection is ready and should
+  restart from Case 1 using the existing corrected dedicated credentials. This
+  notification creates no expert evidence and does not change Decision Quality
+  from `NOT_EVALUATED`.
+- User review found that v2 still presented rule mechanics rather than a usable
+  decision story and solution. V3 now adds a cutoff-safe story, decision
+  pressure, difficulties, conditional downstream risks, a targeted problem
+  response, 0–24 hour / 2–7 day / 30–90 day solution paths, and short- and
+  long-term expected benefits with measurement signals. V1/v2 remain
+  preserved but ineligible. Sites v6 now serves v3 publicly after explicit
+  human approval; the invited reviewer was told to restart from Case 1.
 - Documentation Architecture v1 separated rules, direction, current truth, and
   historical evidence and added a fail-closed drift check against legacy mixed
   authority. Local post-migration validation is complete.
@@ -153,9 +200,14 @@ done.
 
 ### Codex-run validation
 
-- Repository-wide validation after the review-freeze handoff: 293 Python
-  tests passed, including 29 focused Historical Replay tests and 14 focused
-  Decision Quality/review-handoff tests.
+- Repository-wide validation after the v3 story-complete handoff: 295 Python
+  tests passed, including story, solution-horizon, expected-benefit,
+  point-in-time citation, and blinding checks.
+- Reviewer site validation passed lint, production build, and seven contract
+  tests. The new v3 bundle contains 30 packages, keeps fourteen identical
+  controls, and remains absent from unauthenticated client assets. The public
+  v6 canary verified dedicated-account login, Chinese/English switching, and
+  the v3 bundle marker. No personal reviewer attestation or answer was created.
 - Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
   attributed changes, fourteen no-delta controls, all structural gates met,
   and `NOT_MET` status because independent reviews are absent.
@@ -165,12 +217,17 @@ done.
 
 ### User-reported validation
 
-- No user-reported validation was added by this replay expansion.
+- The user explicitly approved Sites v5 publication, restoration of public
+  access, and the reviewer restart notification.
+- The user then rejected v2 as too vague and specified that each case must
+  include a story, difficulties, downstream impacts, targeted solutions, and
+  short- and long-term expected benefits.
+- The user explicitly approved public Sites v6. The hosted login and bilingual
+  canary passed, and the reviewer restart notification was sent after success.
 
 ### Pending validation
 
-- No repository-side freeze or package-generation validation remains.
-  Independent human review and product/runtime items remain listed above.
+- Independent human review and product/runtime items remain listed above.
 
 ### Incomplete
 
@@ -179,12 +236,12 @@ done.
 
 ## Next Up
 
-1. Coordinate independent human reviewers and collect at least three valid
-   reviews per variant.
-2. Keep the public review bundle separate from the owner-only blind keys while
-   the human study owner verifies reviewer independence.
+1. Let the independent reviewer make the personal attestations, create the new
+   bundle-scoped v3 session, and verify save/resume from Case 1.
+2. Collect only integrity-valid v3 reviews; preserved v1/v2 drafts remain
+   ineligible and isolated.
 3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
-   until those reviews pass the governed checks.
+   until at least three eligible reviews per variant pass governed checks.
 
 ## Current-week history
 

@@ -1,0 +1,60 @@
+{
+  "schema_version": "decision-option-contract.v2",
+  "purpose": "Make each blinded option independently reviewable against the Decision Quality rubric without adding post-cutoff evidence or execution authority.",
+  "evidence_boundary": "POINT_IN_TIME_CUTOFF_ELIGIBLE_ONLY",
+  "required_sections": [
+    "decision_basis",
+    "risk_assessment",
+    "action_plan",
+    "tradeoffs_and_uncertainty",
+    "authority_boundary"
+  ],
+  "decision_basis": {
+    "requires_plain_language_summary": true,
+    "requires_blinded_evidence_citations": true,
+    "citations_must_reference_visible_facts_only": true,
+    "requires_strongest_visible_severity": true
+  },
+  "risk_assessment": {
+    "requires_material_risk_statement": true,
+    "requires_controlled_exposure_statement": true,
+    "requires_inventory_sla_and_capacity_context": true
+  },
+  "action_plan": {
+    "minimum_steps": 3,
+    "requires_objective": true,
+    "requires_timing_and_owner_boundary": true,
+    "requires_review_trigger": true,
+    "operational_execution_allowed": false
+  },
+  "tradeoffs_and_uncertainty": {
+    "minimum_items": 2,
+    "must_disclose_synthetic_enterprise_state": true,
+    "must_not_claim_business_outcome": true
+  },
+  "authority_boundary": {
+    "proposal_only": true,
+    "permitted_actions": [
+      "ANALYZE_CUTOFF_EVIDENCE",
+      "PREPARE_BOUNDED_PROPOSAL",
+      "REQUEST_HUMAN_REVIEW"
+    ],
+    "prohibited_actions": [
+      "BOOK_CAPACITY",
+      "REROUTE_SHIPMENT",
+      "COMMIT_SPEND",
+      "CLAIM_BUSINESS_OUTCOME"
+    ]
+  },
+  "claim_boundary": {
+    "supports": [
+      "RUBRIC_ASSESSABLE_DECISION_CONTENT",
+      "DETERMINISTIC_REVIEW_PACKAGE_GENERATION"
+    ],
+    "does_not_support": [
+      "INDEPENDENT_REVIEW_COMPLETION",
+      "BUSINESS_OUTCOME_EFFECT",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

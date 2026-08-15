@@ -245,23 +245,36 @@ action.
 ## Frozen blinded-review handoff
 
 The v0.9 corpus, all ten ordered scenario documents, and the Decision Quality
-v1 rubric are now content-addressed by
-[`review_freeze_v1.json`](../tests/fixtures/historical_replay/review_freeze_v1.json).
+v1 rubric are content-addressed together with the v3 decision-option content
+contract by
+[`review_freeze_v3.json`](../tests/fixtures/historical_replay/review_freeze_v3.json).
 The local
 [`build_historical_replay_review_bundle.py`](../ops/build_historical_replay_review_bundle.py)
 runner validates every digest and then deterministically creates one blinded
 package for each of the 30 cutoffs. It creates the reviewer-safe bundle and the
 study-owner-only blind-key bundle separately, and it excludes every reveal-only
-source from decision evidence.
+source from decision evidence. Every case contains a point-in-time story,
+decision pressure, difficulties, conditional downstream risks, and a fact
+boundary. Every option contains cited reasoning, a targeted problem response,
+immediate/short-term/long-term solution paths, expected benefits with
+measurement signals, trade-offs, and an explicit proposal-only authority
+boundary.
 
-This completes the repository-side freeze and handoff preparation. It does not
-complete independent review: no human submissions are stored, no reviewer
-independence is asserted by the code, and benchmark status remains `NOT_MET`.
+The v1 package format is superseded because its two generic rationale templates
+did not make all five rubric dimensions assessable. V2 remains superseded
+because its richer rule explanation still did not present a complete problem
+story or solution-and-benefit chain. Preserved v1/v2 drafts are non-evidence
+and cannot be combined with v3. The v3 repository-side freeze and handoff are
+released through public Sites v6 after explicit human approval and a hosted
+dedicated-account login and bilingual canary. This does not
+complete independent review: no eligible human submissions are stored, no
+reviewer independence is asserted by the code, and benchmark status remains
+`NOT_MET`.
 
 Before calling the corpus a benchmark:
 
-- preserve the frozen scenario membership and rubric digests throughout review
-  collection;
+- preserve the frozen scenario, rubric, and v3 option-contract digests
+  throughout review collection;
 - freeze controlled enterprise-state generation separately from decision
   policy;
 - collect genuinely independent blinded reviews;

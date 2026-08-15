@@ -120,6 +120,44 @@ class HistoricalReplayTests(unittest.TestCase):
         self.assertEqual(first["evaluation_layers"]["decision_quality"]["status"], "NOT_EVALUATED")
         self.assertEqual(first["evaluation_layers"]["business_outcome_effect"]["status"], "NOT_EVALUATED")
 
+    def test_every_decision_has_rubric_assessable_bounded_content(self):
+        report = replay.run_replay(corpus())
+        for cutoff in report["cutoff_results"]:
+            visible_source_ids = set(cutoff["visible_source_ids"])
+            for decision in cutoff["variants"]:
+                content = decision["decision_content"]
+                self.assertEqual(content["contract_version"], "decision-option-contract.v3")
+                self.assertEqual(len(content["action_plan"]["steps"]), 3)
+                self.assertGreaterEqual(len(content["tradeoffs_and_uncertainty"]), 2)
+                self.assertGreaterEqual(len(content["problem_response"]["difficulty_points"]), 3)
+                self.assertEqual(set(content["solution_horizons"]), {"immediate", "short_term", "long_term"})
+                self.assertTrue(all(
+                    item["claim_status"] == "EXPECTED_NOT_OBSERVED"
+                    for horizon in content["intended_benefits"].values()
+                    for item in horizon
+                ))
+                self.assertTrue(content["authority_boundary"]["proposal_only"])
+                self.assertEqual(decision["operational_mutations"], [])
+                cited_source_ids = {
+                    citation["source_id"]
+                    for citation in content["decision_basis"]["evidence_citations"]
+                }
+                self.assertTrue(cited_source_ids <= visible_source_ids)
+                self.assertIn(
+                    "CLAIM_BUSINESS_OUTCOME",
+                    content["authority_boundary"]["prohibited_actions"],
+                )
+
+        for decision in report["cutoff_results"][0]["variants"]:
+            self.assertEqual(
+                decision["decision_content"]["decision_basis"]["evidence_citations"],
+                [],
+            )
+            self.assertIn(
+                "No authoritative disruption evidence",
+                decision["decision_content"]["decision_basis"]["summary"],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

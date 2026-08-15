@@ -1,0 +1,92 @@
+{
+  "schema_version": "decision-option-contract.v3",
+  "purpose": "Make each blinded option reviewable as a complete decision story: the point-in-time problem, its difficulties and impact pathways, a targeted solution across time horizons, and explicitly hypothetical benefits.",
+  "evidence_boundary": "POINT_IN_TIME_CUTOFF_ELIGIBLE_ONLY",
+  "required_package_context": [
+    "story_summary",
+    "decision_pressure",
+    "difficulty_points",
+    "downstream_risks",
+    "decision_question",
+    "fact_boundary"
+  ],
+  "required_option_sections": [
+    "decision_basis",
+    "problem_response",
+    "risk_assessment",
+    "action_plan",
+    "solution_horizons",
+    "intended_benefits",
+    "tradeoffs_and_uncertainty",
+    "authority_boundary"
+  ],
+  "decision_basis": {
+    "requires_plain_language_summary": true,
+    "requires_blinded_evidence_citations": true,
+    "citations_must_reference_visible_facts_only": true,
+    "requires_strongest_visible_severity": true
+  },
+  "problem_response": {
+    "requires_primary_problem": true,
+    "minimum_difficulty_points": 3,
+    "minimum_impact_pathways": 2,
+    "impact_language_must_be_conditional": true
+  },
+  "risk_assessment": {
+    "requires_material_risk_statement": true,
+    "requires_controlled_exposure_statement": true,
+    "requires_inventory_sla_and_capacity_context": true
+  },
+  "action_plan": {
+    "minimum_steps": 3,
+    "requires_objective": true,
+    "requires_timing_and_owner_boundary": true,
+    "requires_review_trigger": true,
+    "operational_execution_allowed": false
+  },
+  "solution_horizons": {
+    "required": ["immediate", "short_term", "long_term"],
+    "minimum_steps_per_horizon": 2,
+    "requires_horizon_and_objective": true,
+    "long_term_must_preserve_human_governance": true
+  },
+  "intended_benefits": {
+    "required": ["short_term", "long_term"],
+    "minimum_items_per_horizon": 2,
+    "requires_measurement_signal": true,
+    "required_claim_status": "EXPECTED_NOT_OBSERVED",
+    "must_not_claim_business_outcome": true
+  },
+  "tradeoffs_and_uncertainty": {
+    "minimum_items": 3,
+    "must_disclose_synthetic_enterprise_state": true,
+    "must_disclose_unquantified_cost_or_feasibility": true,
+    "must_not_claim_business_outcome": true
+  },
+  "authority_boundary": {
+    "proposal_only": true,
+    "permitted_actions": [
+      "ANALYZE_CUTOFF_EVIDENCE",
+      "PREPARE_BOUNDED_PROPOSAL",
+      "REQUEST_HUMAN_REVIEW"
+    ],
+    "prohibited_actions": [
+      "BOOK_CAPACITY",
+      "REROUTE_SHIPMENT",
+      "COMMIT_SPEND",
+      "CLAIM_BUSINESS_OUTCOME"
+    ]
+  },
+  "claim_boundary": {
+    "supports": [
+      "STORY_COMPLETE_RUBRIC_ASSESSABLE_DECISION_CONTENT",
+      "DETERMINISTIC_REVIEW_PACKAGE_GENERATION"
+    ],
+    "does_not_support": [
+      "INDEPENDENT_REVIEW_COMPLETION",
+      "OBSERVED_BENEFIT",
+      "BUSINESS_OUTCOME_EFFECT",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

@@ -160,10 +160,14 @@ rule path. Current governed staging code for `SLA_BREACH` and `COST_ANOMALY`
 remains unchanged.
 
 The experiment evaluates only System Correctness and Capability Attribution.
-The Decision Quality rubric, blinded package, independent-review contract, and
-aggregation gate are implemented. The ten-event corpus and rubric are now
-content-addressed, and deterministic blinded packages cover all 30 cutoffs,
-but no expert reviews have been collected; Decision Quality therefore remains
+The Decision Quality rubric, v3 option-content contract, blinded package,
+independent-review contract, and aggregation gate are implemented. The
+ten-event corpus, rubric, and option contract are content-addressed, and
+deterministic blinded packages cover all 30 cutoffs. V1 and v2 collection is
+paused and preserved draft progress is ineligible. Public Sites v6 serves the
+story-complete v3 bundle after explicit human approval and a hosted login and
+bilingual canary. No eligible expert reviews have been
+collected, so Decision Quality therefore remains
 `NOT_EVALUATED`. Business Outcome Effect also remains `NOT_EVALUATED` until an
 eligible outcome method is attached. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
@@ -178,8 +182,9 @@ python ops/evaluate_decision_capabilities.py \
 ## Next increments
 
 1. Collect no fewer than three genuinely independent blinded reviews per
-   variant from the now-frozen 10-scenario, 30-cutoff handoff; do not
-   manufacture repository labels.
+   variant from the publicly released v3 frozen handoff; the
+   10-scenario, 30-cutoff inputs remain unchanged; do not manufacture
+   repository labels or count preserved v1/v2 progress.
 2. Aggregate only integrity-valid submissions after the study owner confirms
    reviewer independence and blind-key separation. Structural coverage and a
    frozen handoff alone do not create an eligible benchmark.

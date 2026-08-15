@@ -1,0 +1,36 @@
+{
+  "schema_version": "historical-replay-review-freeze.v3",
+  "freeze_id": "glap-historical-replay-review-freeze-v3",
+  "frozen_at": "2026-08-15T22:45:00+10:00",
+  "corpus_id": "glap-historical-replay-pilot-v0-9",
+  "corpus_manifest_digest": "6fb852a19ecaa52d3ab4483badb695323934d2d5f1ba4e9faef423faeacaa83d",
+  "rubric_version": "decision-quality-rubric.v1",
+  "rubric_digest": "926f8fd1cddf3fd925437bafb59f9c519ffd9f9b2d55da394c347cc554aa9530",
+  "decision_option_contract_version": "decision-option-contract.v3",
+  "decision_option_contract_digest": "f318f6874acbf251dffdffaff7658c60598259704aaae4dff5d470ad7d3d62b9",
+  "review_scope": "ALL_FROZEN_CUTOFFS",
+  "scenario_count": 10,
+  "cutoff_count": 30,
+  "scenarios": [
+    {"scenario_id": "baltimore-key-bridge-2024-v1", "file": "baltimore_key_bridge_2024_v1.json", "scenario_digest": "bd94a5a6b1415d58a7a39a42bac6be61e1892e2f8f83814d0ef4dded70143101"},
+    {"scenario_id": "panama-canal-drought-2023-v1", "file": "panama_canal_drought_2023_v1.json", "scenario_digest": "cd99325b4cf9ac8b64227f23854edb766a2d798c7ce0ee6938fafca00e725e69"},
+    {"scenario_id": "red-sea-security-2023-v1", "file": "red_sea_security_2023_v1.json", "scenario_digest": "61a84341744b04007a73435bd8a64f4b83f88d2fc885f124c7c0e766b74931eb"},
+    {"scenario_id": "faa-notam-outage-2023-v1", "file": "faa_notam_outage_2023_v1.json", "scenario_digest": "dfef24658d448b4b219ba8e2888885375c57a82c59ee6c06ce652f9e37e9c06d"},
+    {"scenario_id": "us-rail-labor-risk-2022-v1", "file": "us_rail_labor_risk_2022_v1.json", "scenario_digest": "b47e429ce6ce2768f240d5932758939fda897cbbfe42d0157d2a5d940bb44a20"},
+    {"scenario_id": "gotthard-road-tunnel-closure-2023-v1", "file": "gotthard_road_tunnel_closure_2023_v1.json", "scenario_digest": "e518b4654c9d1562b685f06e03600fc538508f36ad7a679158e7c5a903027632"},
+    {"scenario_id": "suez-ever-given-grounding-2021-v1", "file": "suez_ever_given_grounding_2021_v1.json", "scenario_digest": "3c4d6375b88f9e8116883ef2db2338e6525cb604b2c00ef59107ad578f2b4fe3"},
+    {"scenario_id": "new-zealand-cyclone-gabrielle-roads-2023-v1", "file": "new_zealand_cyclone_gabrielle_roads_2023_v1.json", "scenario_digest": "1fd5daedef93bfc8eeba27313908add97d6167da84b7e4e34f6e2b00927f1c21"},
+    {"scenario_id": "singapore-port-congestion-2024-v1", "file": "singapore_port_congestion_2024_v1.json", "scenario_digest": "f19b2b4719571e61d713ccea06de07f15288c49095a8ec141b1c1112457eec2e"},
+    {"scenario_id": "rio-grande-do-sul-flood-highways-2024-v1", "file": "rio_grande_do_sul_flood_highways_2024_v1.json", "scenario_digest": "f470ec7eeb6964afb2b9d3ed2628ec8d58512759a622e98121e75d34ca0a4af9"}
+  ],
+  "authority": {
+    "profile": "EVALUATION_NO_MUTATION",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": ["FROZEN_CORPUS_RUBRIC_AND_OPTION_CONTRACT_INPUTS", "DETERMINISTIC_BLINDED_REVIEW_HANDOFF"],
+    "does_not_support": ["INDEPENDENT_REVIEW_COMPLETION", "DECISION_QUALITY_RESULT", "BUSINESS_OUTCOME_EFFECT", "PRODUCTION_READINESS"]
+  }
+}

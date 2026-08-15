@@ -14,6 +14,11 @@ from typing import Any
 RUBRIC_VERSION = "decision-quality-rubric.v1"
 PACKAGE_VERSION = "decision-review-package.v1"
 KEY_VERSION = "decision-review-blind-key.v1"
+PACKAGE_KEY_VERSIONS = {
+    PACKAGE_VERSION: KEY_VERSION,
+    "decision-review-package.v2": "decision-review-blind-key.v2",
+    "decision-review-package.v3": "decision-review-blind-key.v3",
+}
 REVIEW_VERSION = "decision-quality-review.v1"
 SUMMARY_VERSION = "decision-quality-summary.v1"
 
@@ -252,10 +257,14 @@ def score_reviews(
     """Aggregate blinded reviews, then expose only de-identified results."""
 
     validate_rubric(rubric)
-    _require(package.get("schema_version") == PACKAGE_VERSION, "unsupported review package")
+    package_version = package.get("schema_version")
+    _require(package_version in PACKAGE_KEY_VERSIONS, "unsupported review package")
     _require(package.get("rubric_version") == rubric.get("schema_version"), "package rubric mismatch")
     _require(package.get("package_digest") == _canonical_digest(_package_payload(package)), "review package was modified")
-    _require(blind_key.get("schema_version") == KEY_VERSION, "unsupported blind key")
+    _require(
+        blind_key.get("schema_version") == PACKAGE_KEY_VERSIONS[package_version],
+        "unsupported blind key",
+    )
     _require(blind_key.get("review_id") == package.get("review_id"), "blind key review mismatch")
     _require(blind_key.get("package_digest") == package.get("package_digest"), "blind key package mismatch")
     option_ids = {item["option_id"] for item in package.get("options", [])}
