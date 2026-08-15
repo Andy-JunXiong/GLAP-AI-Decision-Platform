@@ -93,8 +93,10 @@ them as evidence.
 
 - the public Sites v6 canary verified dedicated-account login, bilingual
   switching, and the v3 30-package bundle identity;
-- new-session creation and save/resume remain for the independent reviewer
-  because the agent did not make the reviewer's personal attestations;
+- the hosted database contains a distinct v3 `DRAFT` session at Case 1 and
+  zero review-answer rows; v1/v2 drafts remain under their own bundle IDs;
+- answer save/resume remains for the independent reviewer because the agent
+  did not make the reviewer's personal attestations or submit a score;
 - have the human study owner verify conflicts and key separation;
 - keep reviewer identity details out of repository artifacts.
 
@@ -105,7 +107,8 @@ them as evidence.
 - public Sites v6 serves v3 after explicit release approval, and v2 remains
   superseded;
 - the hosted canary confirms dedicated-account login and the v3 bundle while
-  v1/v2 drafts remain preserved under different bundle identities;
+  a fresh v3 `DRAFT` remains at Case 1 and v1/v2 drafts stay preserved under
+  different bundle identities;
 - Decision Quality remains `NOT_EVALUATED` until eligible v3 reviews are later
   collected and aggregated.
 
@@ -207,7 +210,9 @@ done.
   tests. The new v3 bundle contains 30 packages, keeps fourteen identical
   controls, and remains absent from unauthenticated client assets. The public
   v6 canary verified dedicated-account login, Chinese/English switching, and
-  the v3 bundle marker. No personal reviewer attestation or answer was created.
+  the v3 bundle marker. A database read confirmed a distinct v3 `DRAFT` at
+  Case 1 and zero answer rows; no personal reviewer attestation or score was
+  created by the agent.
 - Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
   attributed changes, fourteen no-delta controls, all structural gates met,
   and `NOT_MET` status because independent reviews are absent.
@@ -236,8 +241,8 @@ done.
 
 ## Next Up
 
-1. Let the independent reviewer make the personal attestations, create the new
-   bundle-scoped v3 session, and verify save/resume from Case 1.
+1. Let the independent reviewer make the personal attestations and verify
+   answer save/resume from the existing Case 1 v3 draft.
 2. Collect only integrity-valid v3 reviews; preserved v1/v2 drafts remain
    ineligible and isolated.
 3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
