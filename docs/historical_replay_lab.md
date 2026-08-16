@@ -265,8 +265,12 @@ did not make all five rubric dimensions assessable. V2 remains superseded
 because its richer rule explanation still did not present a complete problem
 story or solution-and-benefit chain. Preserved v1/v2 drafts are non-evidence
 and cannot be combined with v3. The v3 repository-side freeze and handoff are
-released through public Sites v6 after explicit human approval and a hosted
-dedicated-account login and bilingual canary. This does not
+released through the formal review flow on public Sites v7 after explicit human
+approval. The same release also exposes a separate five-case, 15-moment Human
+Evaluation experience preview. That preview maps each displayed moment to the
+frozen reviewer-safe package, hides all future result semantics until sequential
+unlock, makes earlier judgments read-only, and stores answers only in the
+current browser without calling the formal review API. This does not
 complete independent review: no eligible human submissions are stored, no
 reviewer independence is asserted by the code, and benchmark status remains
 `NOT_MET`.

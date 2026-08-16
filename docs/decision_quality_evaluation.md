@@ -3,7 +3,8 @@
 **Rubric:** `decision-quality-rubric.v1`
 **Review submission:** `decision-quality-review.v1`
 **Option content:** `decision-option-contract.v3`
-**Current status:** v3 released on public Sites v6; no eligible expert reviews collected
+**Current status:** formal v3 review and a separate non-submitting experience
+preview released on public Sites v7; no eligible expert reviews collected
 
 ## Purpose
 
@@ -143,9 +144,11 @@ missing; they cannot be replaced by an expert score or treated as zero.
 
 The A303 fixture is controlled synthetic engineering evidence. The frozen v3
 Historical Replay bundle is hybrid replay evidence with controlled synthetic
-enterprise state. The public reviewer site serves the v3 bundle after explicit
-human release approval and a successful dedicated-account login and bilingual
-canary.
+enterprise state. The public reviewer site serves the formal v3 bundle after
+explicit human release approval. Sites v7 also exposes a separate five-case,
+15-moment Human Evaluation experience preview. Preview answers remain in the
+current browser, never call the formal review API, and are not
+`decision-quality-review.v1` submissions.
 Neither preserved v1/v2 draft progress nor unit-test reviews are eligible
 expert evidence, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring

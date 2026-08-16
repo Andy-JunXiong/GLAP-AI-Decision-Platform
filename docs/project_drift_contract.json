@@ -103,13 +103,15 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v6 serves the story-complete v3 blinded-review site and content-addressed ten-scenario, 30-cutoff option handoff; dedicated reviewer account required; v1/v2 drafts ineligible; no expert reviews or decision-quality result",
+      "boundary": "public Sites v7 serves the story-complete formal v3 blinded-review site plus a separate browser-only five-case, 15-moment Human Evaluation preview; preview answers never enter the formal review API; v1/v2 drafts ineligible; no expert reviews or decision-quality result",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
         "tests/test_decision_quality_evaluation.py",
         "tests/test_historical_replay_review_bundle.py",
         "tests/fixtures/historical_replay/review_freeze_v3.json",
+        "blinded-review-survey/app/pilot/human-evaluation/page.tsx",
+        "blinded-review-survey/tests/baltimore-pilot.test.mjs",
         "docs/decision_quality_evaluation.md",
         "docs/decision_quality_rubric_v1.json",
         "docs/decision_option_contract_v3.json",

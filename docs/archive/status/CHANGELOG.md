@@ -4,6 +4,16 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-16
+
+- Added and publicly released a browser-only Human Evaluation experience for
+  five selected Historical Replay cases and 15 sequential decision moments.
+  The presentation uses operational stories and executable trade-offs, hides
+  future result semantics until sequential unlock, locks earlier judgments,
+  and preserves exact reviewer-safe package mappings including seven declared
+  identical controls. It does not call the formal review API or create expert
+  evidence.
+
 ## 2026-08-14
 
 - Added a governed, local Evaluation Architecture with separate System
