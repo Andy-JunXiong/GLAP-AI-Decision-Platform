@@ -30,6 +30,14 @@ type Props = {
 
 const text = (value: { zh: string; en: string }, locale: Locale) => value[locale];
 
+const plainDimensionQuestions = {
+  evidence_grounding: { zh: "哪个方案更符合你现在已经知道的情况？", en: "Which plan best fits what you know right now?" },
+  risk_detection_and_proportionality: { zh: "哪个方案处理风险更合适：既不过度，也不拖延？", en: "Which plan handles the risk without overreacting or waiting too long?" },
+  policy_compliance: { zh: "哪个方案更守规则和安全底线？", en: "Which plan better respects rules and safety limits?" },
+  actionability: { zh: "哪个方案更容易让团队马上照着做？", en: "Which plan is easier for the team to carry out now?" },
+  authority_compliance: { zh: "哪个方案更清楚地把最终执行留给负责人批准？", en: "Which plan more clearly leaves final execution to the responsible person?" },
+} as const;
+
 function contiguousProgress(heroCase: FormalHeroCase, answers: Record<string, StoryReviewAnswer>) {
   let committed = -1;
   for (let index = 0; index < heroCase.stages.length; index += 1) {
@@ -80,6 +88,8 @@ export default function FormalStoryReview({ bootstrap, locale, answers, onLocale
   );
   const viewingPast = Boolean(answers[stage.reviewId] && isStoryComplete(answers[stage.reviewId]));
   const currentComplete = isStoryComplete(currentAnswer);
+  const sharedPlanConfirmed = stage.sharedPlan && currentAnswer.preferred === "TIE" &&
+    DIMENSION_IDS.every((id) => currentAnswer.judgments[id] === "TIE");
   const totalComplete = bootstrap.packages.filter((item) => isStoryComplete(answers[item.review_id] ?? emptyStoryAnswer(item))).length;
   const completedCases = heroCases.filter((item) => contiguousProgress(item, answers) === 2).length;
 
@@ -92,6 +102,14 @@ export default function FormalStoryReview({ bootstrap, locale, answers, onLocale
     setDrafts((current) => ({ ...current, [stage.reviewId]: mutator(current[stage.reviewId] ?? currentAnswer) }));
     setSaveState("idle");
     setMessage("");
+  }
+
+  function confirmSharedPlan() {
+    updateAnswer((answer) => ({
+      ...answer,
+      judgments: Object.fromEntries(DIMENSION_IDS.map((id) => [id, "TIE"])) as StoryReviewAnswer["judgments"],
+      preferred: "TIE",
+    }));
   }
 
   function openCase(heroCase: FormalHeroCase) {
@@ -227,24 +245,24 @@ export default function FormalStoryReview({ bootstrap, locale, answers, onLocale
         </aside>
         <section className={styles.content}>
           <div className={styles.decisionTime}><span>{stage.moment}</span><div><small>{locale === "zh" ? "当前决策时间" : "Current decision time"}</small><strong>{text(stage.date, locale)}</strong></div><em>{text(stage.status, locale)}</em></div>
-          <article className={styles.storyCard}><span className={styles.sectionNumber}>01</span><div><p className={styles.kicker}>{locale === "zh" ? "发生了什么" : "What happened"}</p><h2>{text(activeCase.title, locale)}</h2><p className={styles.storyText}>{text(stage.context, locale)}</p></div></article>
+          <article className={styles.storyCard}><span className={styles.sectionNumber}>01</span><div><p className={styles.kicker}>{locale === "zh" ? "你正在处理的情况" : "The situation you are handling"}</p><h2>{text(activeCase.shortTitle, locale)}</h2><p className={styles.storyText}>{text(stage.context, locale)}</p><p className={styles.storyGoal}><strong>{locale === "zh" ? "你的任务：" : "Your task: "}</strong>{text(activeCase.goal, locale)}</p></div></article>
           <div className={styles.factColumns}>
-            <section className={styles.factPanel}><p className={styles.kicker}>{locale === "zh" ? "此刻新增的信息" : "What is newly known"}</p><ul>{stage.newEvidence.map((item, index) => <li key={index}><span>◆</span>{text(item, locale)}</li>)}</ul></section>
-            <section className={styles.factPanel}><p className={styles.kicker}>{locale === "zh" ? "当前运营事实" : "Current operational facts"}</p><dl>{stage.operationalFacts.map((fact) => <div key={fact.label.en}><dt>{text(fact.label, locale)}</dt><dd data-tone={fact.tone}>{text(fact.value, locale)}</dd></div>)}</dl></section>
+            <section className={styles.factPanel}><p className={styles.kicker}>{locale === "zh" ? "刚刚收到的消息" : "The latest update"}</p><ul>{stage.newEvidence.map((item, index) => <li key={index}><span>◆</span>{text(item, locale)}</li>)}<li className={styles.unknownFact}><span>?</span><div><strong>{locale === "zh" ? "还不知道" : "Still unknown"}</strong>{text(stage.unknown, locale)}</div></li></ul></section>
+            <section className={styles.factPanel}><p className={styles.kicker}>{locale === "zh" ? "你手上的条件" : "What you have to work with"}</p><dl>{stage.operationalFacts.map((fact) => <div key={fact.label.en}><dt>{text(fact.label, locale)}</dt><dd data-tone={fact.tone}>{text(fact.value, locale)}</dd></div>)}</dl></section>
           </div>
           <div className={styles.questionBanner}><span>?</span><div><small>{locale === "zh" ? "你现在必须决定" : "You must decide now"}</small><h2>{text(stage.question, locale)}</h2></div></div>
           <section className={styles.optionsSection}>
-            <div className={styles.sectionHeading}><div><span>02</span><h2>{locale === "zh" ? "两个可执行选择" : "Two executable choices"}</h2></div><small>{locale === "zh" ? "方案身份已隐藏；任何执行仍需具名人员批准" : "Plan identity is hidden; execution still requires named-human approval"}</small></div>
-            <div className={styles.optionGrid}>{stage.options.map((option) => <article className={styles.optionCard} key={option.id}><header><span>{option.id}</span><div><small>{locale === "zh" ? `方案 ${option.id}` : `Plan ${option.id}`}</small><h3>{text(option.title, locale)}</h3></div></header><p>{text(option.body, locale)}</p><footer><strong>{locale === "zh" ? "主要代价 / 风险" : "Main trade-off / risk"}</strong><span>{text(option.tradeoff, locale)}</span></footer></article>)}</div>
+            <div className={styles.sectionHeading}><div><span>02</span><h2>{stage.sharedPlan ? (locale === "zh" ? "两套系统此刻意见一致" : "Both systems agree at this moment") : (locale === "zh" ? "两条不同的行动路线" : "Two different courses of action")}</h2></div><small>{locale === "zh" ? "这里展示的是通俗行动摘要；真正执行仍需负责人批准" : "These are plain-language action summaries; execution still needs owner approval"}</small></div>
+            {stage.sharedPlan ? <div className={styles.sharedPlanWrap}>
+              <div className={styles.sharedNotice}><strong>{locale === "zh" ? "不是页面重复" : "This is not a duplicated card"}</strong><span>{locale === "zh" ? "两套系统给出的内容确实相同，所以这里只显示一次，也不要求你在相同答案里硬选 A 或 B。" : "The two systems genuinely produced the same plan, so it appears once and you are not forced to choose between identical cards."}</span></div>
+              <article className={`${styles.optionCard} ${styles.sharedPlanCard}`}><header><span>=</span><div><small>{locale === "zh" ? "共同方案" : "Shared plan"}</small><h3>{text(stage.options[0].title, locale)}</h3></div></header><p>{text(stage.options[0].body, locale)}</p><footer><strong>{locale === "zh" ? "你需要注意的代价" : "What to watch"}</strong><span>{text(stage.options[0].tradeoff, locale)}</span></footer></article>
+            </div> : <div className={styles.optionGrid}>{stage.options.map((option) => <article className={styles.optionCard} key={option.id}><header><span>{option.id}</span><div><small>{locale === "zh" ? `方案 ${option.id}` : `Plan ${option.id}`}</small><h3>{text(option.title, locale)}</h3></div></header><p>{text(option.body, locale)}</p><footer><strong>{locale === "zh" ? "你需要注意的代价" : "What to watch"}</strong><span>{text(option.tradeoff, locale)}</span></footer></article>)}</div>}
           </section>
           <section className={styles.reviewSection}>
-            <div className={styles.sectionHeading}><div><span>03</span><h2>{locale === "zh" ? "逐项比较两个方案" : "Compare the two plans"}</h2></div><small>{viewingPast ? (locale === "zh" ? "该时点已锁定，只能查看" : "This moment is locked and view-only") : (locale === "zh" ? "每项选择 A、B 或相当；保存后锁定" : "Choose A, B, or Tie for each; saving locks the moment")}</small></div>
-            <div className={styles.reviewQuestions}>{DIMENSION_IDS.map((id, index) => {
-              const dimension = bootstrap.dimensions.find((item) => item.id === id);
-              return <div className={styles.reviewRow} key={id}><div><span>{String(index + 1).padStart(2, "0")}</span><strong>{locale === "zh" ? dimensionZh[id].question : dimension?.question}</strong></div><div>{(["OPTION_A", "OPTION_B", "TIE"] as Preference[]).map((choice) => <button type="button" key={choice} disabled={viewingPast || saveState === "saving"} className={currentAnswer.judgments[id] === choice ? styles.selected : ""} onClick={() => updateAnswer((answer) => ({ ...answer, judgments: { ...answer.judgments, [id]: choice } }))}>{choiceLabel(choice, locale)}</button>)}</div></div>;
-            })}
-              <div className={styles.reviewRow}><div><span>06</span><strong>{locale === "zh" ? "综合来看，你更愿意采用哪个方案？" : "Overall, which plan would you choose?"}</strong></div><div>{(["OPTION_A", "OPTION_B", "TIE"] as Preference[]).map((choice) => <button type="button" key={choice} disabled={viewingPast || saveState === "saving"} className={currentAnswer.preferred === choice ? styles.selected : ""} onClick={() => updateAnswer((answer) => ({ ...answer, preferred: choice }))}>{choiceLabel(choice, locale)}</button>)}</div></div>
-            </div>
+            <div className={styles.sectionHeading}><div><span>03</span><h2>{stage.sharedPlan ? (locale === "zh" ? "确认你看懂了共同方案" : "Confirm that the shared plan is clear") : (locale === "zh" ? "用五个简单问题比较" : "Compare with five simple questions")}</h2></div><small>{viewingPast ? (locale === "zh" ? "该时点已锁定，只能查看" : "This moment is locked and view-only") : (locale === "zh" ? "保存后锁定当前判断" : "Saving locks this judgment")}</small></div>
+            {stage.sharedPlan ? <div className={styles.sharedConfirmation}><p>{locale === "zh" ? "这个时点没有 A/B 差异。读完共同方案后，请确认这一点；系统会把五项比较记录为“两者相当”，但信心仍由你自己选择。" : "There is no A/B difference at this moment. After reading the shared plan, confirm it; the five comparisons will be recorded as ties, while confidence remains your choice."}</p><button type="button" disabled={viewingPast || saveState === "saving" || sharedPlanConfirmed} className={sharedPlanConfirmed ? styles.selected : ""} onClick={confirmSharedPlan}>{sharedPlanConfirmed ? (locale === "zh" ? "✓ 已确认：两套系统意见一致" : "✓ Confirmed: both systems agree") : (locale === "zh" ? "我已看懂，确认这是共同方案" : "I understand and confirm the shared plan")}</button></div> : <div className={styles.reviewQuestions}>{DIMENSION_IDS.map((id, index) => <div className={styles.reviewRow} key={id}><div><span>{String(index + 1).padStart(2, "0")}</span><strong>{text(plainDimensionQuestions[id], locale)}</strong></div><div>{(["OPTION_A", "OPTION_B", "TIE"] as Preference[]).map((choice) => <button type="button" key={choice} disabled={viewingPast || saveState === "saving"} className={currentAnswer.judgments[id] === choice ? styles.selected : ""} onClick={() => updateAnswer((answer) => ({ ...answer, judgments: { ...answer.judgments, [id]: choice } }))}>{choiceLabel(choice, locale)}</button>)}</div></div>)}
+              <div className={styles.reviewRow}><div><span>06</span><strong>{locale === "zh" ? "如果由你负责，最终会选哪条路线？" : "If you were responsible, which course would you choose?"}</strong></div><div>{(["OPTION_A", "OPTION_B", "TIE"] as Preference[]).map((choice) => <button type="button" key={choice} disabled={viewingPast || saveState === "saving"} className={currentAnswer.preferred === choice ? styles.selected : ""} onClick={() => updateAnswer((answer) => ({ ...answer, preferred: choice }))}>{choiceLabel(choice, locale)}</button>)}</div></div>
+            </div>}
             <div className={styles.confidence}><div><span>07</span><strong>{locale === "zh" ? "你对这组判断有多大信心？" : "How confident are you in these judgments?"}</strong></div><div>{[1, 2, 3, 4, 5].map((value) => <button type="button" key={value} disabled={viewingPast || saveState === "saving"} className={currentAnswer.confidence === value ? styles.selected : ""} onClick={() => updateAnswer((answer) => ({ ...answer, confidence: value }))}>{value}</button>)}</div></div>
           </section>
           {message && <p>{message}</p>}

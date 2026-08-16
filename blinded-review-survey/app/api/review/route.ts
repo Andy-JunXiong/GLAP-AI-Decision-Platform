@@ -10,7 +10,7 @@ import { attachStoryProfiles } from "@/lib/server-story-profiles";
 export const dynamic = "force-dynamic";
 
 type D1Row = Record<string, unknown>;
-const COLLECTION_VERSION = "human-evaluation-story.v1";
+const COLLECTION_VERSION = "human-evaluation-story.v2";
 const REVIEW_SCHEMA_VERSION = "decision-quality-comparative-review.v1";
 
 function jsonError(message: string, status = 400) {

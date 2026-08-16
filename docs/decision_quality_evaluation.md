@@ -154,15 +154,17 @@ missing; they cannot be replaced by an expert score or treated as zero.
 
 The A303 fixture is controlled synthetic engineering evidence. The frozen v3
 Historical Replay bundle is hybrid replay evidence with controlled synthetic
-enterprise state. Public Sites v8's numeric questionnaire is paused after user
-review rejected the interaction, and Ming has been told not to start it. The
-corrected local candidate preserves the preview's story hub, progressive
-T0/T1/T2 reveal, anonymous plans, and A/B/Tie interaction while expanding to all
-ten cases and 30 packages. It stores comparative judgments under a new isolated
-collection version aligned with
-`decision-quality-comparative-review.v1`; preview-local answers and the old v8
-numeric session are never migrated. A new public release and canary require
-separate human approval.
+enterprise state. Public Sites v9 is paused after user inspection found its
+technical story copy and duplicate-looking identical A/B controls unusable;
+Ming received that link before the rejection and must not use it. The new local
+story v2 candidate presents ten plain-language, three-moment stories. Distinct
+source plans remain anonymous A/B choices, while true identical controls appear
+once as a shared plan requiring explicit confirmation. It stores comparative
+judgments under isolated collection `human-evaluation-story.v2`, aligned with
+`decision-quality-comparative-review.v1`; preview-local answers, questionnaire
+drafts, and story-v1 records are never migrated. The user has authorized the
+commit, exact-source public release, canary, and replacement reviewer
+notification sequence; Ming is notified only after canary success.
 Neither preserved v1/v2 draft progress nor unit-test reviews are eligible
 expert evidence, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring

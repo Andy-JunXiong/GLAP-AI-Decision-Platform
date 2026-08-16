@@ -152,12 +152,21 @@ export type ReviewPackage = {
       regionLabel: { zh: string; en: string };
       disruptionLabel: { zh: string; en: string };
       decisionLens: { zh: string; en: string };
+      storyIntro: { zh: string; en: string };
+      goal: { zh: string; en: string };
+      stakes: { zh: string; en: string };
       dependency: { zh: string; en: string };
       statuses: Array<{ zh: string; en: string }>;
+      updates: Array<{ zh: string; en: string }>;
+      unknowns: Array<{ zh: string; en: string }>;
       questions: Array<{ zh: string; en: string }>;
       noEvidence: { zh: string; en: string };
       monitorTitle: { zh: string; en: string };
       mitigationTitle: { zh: string; en: string };
+      monitorActions: Array<{ zh: string; en: string }>;
+      monitorTradeoffs: Array<{ zh: string; en: string }>;
+      mitigationActions: Array<{ zh: string; en: string }>;
+      mitigationTradeoffs: Array<{ zh: string; en: string }>;
     };
     operational_state: {
       as_of_at: string;

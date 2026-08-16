@@ -9,27 +9,29 @@ submission require the dedicated reviewer account.
 
 1. Sign in with the dedicated reviewer username and password; no ChatGPT account is required.
 2. Confirm independence, no conflict, and no access to the blind key.
-3. Review ten distinct stories, each with three frozen point-in-time moments. Every moment explains the story so far, decision pressure, newly available evidence, operational facts, and two anonymous executable choices.
-4. Compare Plan A and Plan B with A/B/Tie judgments across the five rubric dimensions.
+3. Review ten distinct stories, each with three frozen point-in-time moments. Every moment says who you are, what has just happened, what is still unknown, what you need to protect, and what decision is needed now.
+4. When the systems disagree, compare two genuinely different courses of action with five plain-language A/B/Tie questions.
 5. Record an overall preference and confidence.
 6. Review completion and submit once. Final answers are locked.
 
-When both options have identical visible content, the page identifies the case as a frozen control sample and explains that the reviewer may select a tie. The notice does not reveal option identities or alter the frozen package.
+When both systems produce the same visible plan, the page shows that shared plan once and asks the reviewer to confirm it. It never renders two identical A/B cards or asks the reviewer to manufacture a difference. The notice does not reveal system identities or alter the frozen package.
 
 The English package content is the frozen source of truth. Chinese copy is a display-only translation layer identified as `glap-review-zh-v3`. The v3 handoff distinguishes the complete historical case label from cutoff-visible facts and labels every benefit as expected rather than observed.
 
-The v3 bundle is a new review session. Any v1 or v2 draft remains stored under its original bundle ID but is not loaded into or counted toward the v3 review.
+The v3 bundle remains the frozen evidence source. The corrected story presentation uses collection `human-evaluation-story.v2`, isolated from the rejected `human-evaluation-story.v1` presentation and from any earlier questionnaire draft. None of those earlier records are loaded into or counted toward the new collection.
 
 ## Formal Human Evaluation entry
 
-The corrected `/pilot/human-evaluation` candidate preserves the local preview's
-story hub, progressively revealed T0/T1/T2 timeline, anonymous executable
-choices, and A/B/Tie judgments while covering all ten frozen Historical Replay
-cases and 30 point-in-time packages. It requires the three reviewer
+The local `/pilot/human-evaluation` v2 candidate uses ten plain-language stories,
+progressively revealed three-moment timelines, and anonymous choices while
+covering all ten frozen Historical Replay cases and 30 point-in-time packages.
+Internal cohort IDs, contract jargon, raw evidence language, and technical
+option payloads are not presented to the reviewer. It requires the three reviewer
 attestations, saves committed moments through `/api/review`, enforces story
-order on the server, and locks a complete submission. Public Sites v8 still
-contains the rejected numeric questionnaire and must not be used; the corrected
-candidate has not yet been released. The five-case browser-only pilot remains
+order on the server, and locks a complete submission. Public Sites v9 contains
+the user-rejected technical presentation and must be treated as paused; the v2
+story candidate is locally verified but has not yet been released.
+The five-case browser-only pilot remains
 available only for development at `/pilot/baltimore`, and its local answers are
 never imported into formal evidence.
 

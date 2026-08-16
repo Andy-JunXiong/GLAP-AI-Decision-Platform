@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v8 numeric questionnaire is paused after user rejection and the invited reviewer was told not to start; corrected local candidate preserves progressive story-based A/B/Tie interaction across ten distinct cases and 30 packages with isolated server persistence; corrected publication and canary pending; preview answers and v1/v2 drafts ineligible; no expert reviews or decision-quality result",
+      "boundary": "public Sites v9 is paused after user rejection of its technical story copy and duplicate-looking identical controls; the invited reviewer received v9 but must not use it; a locally verified story-v2 candidate presents ten plain-language three-moment cases, renders true controls once as a confirmed shared plan, and isolates persistence under human-evaluation-story.v2; the user authorized commit, exact-source release, canary, and replacement notification only after canary success; earlier questionnaire and story-v1 records are ineligible; no expert reviews or decision-quality result",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
