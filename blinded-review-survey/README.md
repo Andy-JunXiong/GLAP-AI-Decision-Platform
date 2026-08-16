@@ -1,7 +1,7 @@
 # GLAP Independent Blinded Review Survey
 
 Bilingual review application for the frozen GLAP Historical Replay
-decision-quality study. The corrected Human Evaluation candidate uses an
+decision-quality study. The released Human Evaluation story-v2 experience uses an
 authenticated story-based review client. Frozen cases, saved progress, and
 submission require the dedicated reviewer account.
 
@@ -22,15 +22,15 @@ The v3 bundle remains the frozen evidence source. The corrected story presentati
 
 ## Formal Human Evaluation entry
 
-The local `/pilot/human-evaluation` v2 candidate uses ten plain-language stories,
+The released `/pilot/human-evaluation` story-v2 experience uses ten plain-language stories,
 progressively revealed three-moment timelines, and anonymous choices while
 covering all ten frozen Historical Replay cases and 30 point-in-time packages.
 Internal cohort IDs, contract jargon, raw evidence language, and technical
 option payloads are not presented to the reviewer. It requires the three reviewer
 attestations, saves committed moments through `/api/review`, enforces story
-order on the server, and locks a complete submission. Public Sites v9 contains
-the user-rejected technical presentation and must be treated as paused; the v2
-story candidate is locally verified but has not yet been released.
+order on the server, and locks a complete submission. Public Sites v9 is the
+superseded technical presentation; Sites v10 is the canary-verified formal
+story-v2 entry. Story-v1 drafts remain preserved but ineligible.
 The five-case browser-only pilot remains
 available only for development at `/pilot/baltimore`, and its local answers are
 never imported into formal evidence.
@@ -73,5 +73,5 @@ npm test
 npm audit --omit=dev
 ```
 
-The candidate uses Next.js `16.3.1`; its production-only audit must remain at
-zero vulnerabilities before a corrected release.
+The released experience uses Next.js `16.3.1`; its production-only audit must
+remain at zero vulnerabilities before any later release.

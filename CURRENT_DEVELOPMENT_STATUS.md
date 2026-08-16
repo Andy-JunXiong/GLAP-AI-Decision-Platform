@@ -22,7 +22,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `V9_REJECTED_STORY_V2_LOCAL_VERIFIED` | public Sites v9 is paused after user review found its technical language and repeated A/B cards unusable; a plain-language story v2 candidate is local-only and no eligible expert result exists |
+| Decision Quality review handoff | `STORY_V2_RELEASED_CANARY_VERIFIED` | public Sites v10 serves the plain-language story-v2 collection; Ming received the replacement only after a non-submitting canary; the v9 story-v1 draft remains isolated and ineligible, and no eligible expert result exists |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -31,7 +31,7 @@ described as operational evidence.
 
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `STORY_V2_LOCAL_VERIFIED_PENDING_REVIEW_AND_RELEASE`
+**Status:** `STORY_V2_RELEASED_CANARY_VERIFIED_REVIEWER_NOTIFIED`
 
 **Goal**
 
@@ -40,7 +40,7 @@ stories. Each story must tell the reviewer who they are, what has happened,
 what remains unknown, what they need to protect, and what decision is required
 at each of three moments, while preserving governed save/resume and submission.
 
-**Local story v2 candidate**
+**Released story v2 experience**
 
 - `/pilot/human-evaluation` now renders the authenticated formal client;
 - the formal flow covers all ten cases and 30 point-in-time packages;
@@ -65,7 +65,7 @@ at each of three moments, while preserving governed save/resume and submission.
 
 - scenario, rubric, option-contract, bundle, and blind-key digests are unchanged;
 - earlier questionnaires and `human-evaluation-story.v1` remain isolated and
-  ineligible; the new local candidate uses `human-evaluation-story.v2`;
+  ineligible; Sites v10 uses `human-evaluation-story.v2`;
 - unauthenticated clients receive no frozen review bundle;
 - only the invited independent human may make attestations or enter scores;
 - repository tests and agent actions never create expert evidence;
@@ -116,18 +116,28 @@ at each of three moments, while preserving governed save/resume and submission.
 - subsequent user inspection rejected v9 because its story copy still exposed
   internal evaluation jargon and its identical controls appeared as duplicate
   A/B cards; v9 is therefore paused and must not be used for review;
-- the local story v2 candidate replaces that presentation with plain-language,
-  case-specific narratives and a single-card shared-plan interaction. Lint,
-  production build, and all 23 site tests pass; it has not been published,
-  canaried, visually accepted by the user, or sent to Ming.
+- GitHub commit `cc26d95` contains the story-v2 implementation and synchronized
+  documentation. Its exact reviewer-site tree was appended to the Sites source
+  history as commit `21ba5e7`, saved as Sites v10, and deployed successfully at
+  21:47 Sydney time;
+- the production canary returned 200 for the root, formal route, login, and
+  authenticated review read; the unauthenticated review API returned 401;
+- authenticated data verified collection `human-evaluation-story.v2`, schema
+  `decision-quality-comparative-review.v1`, 30 packages, ten stories with three
+  moments each, zero incomplete profiles, and fourteen true shared-plan
+  controls;
+- the canary created no story-v2 session or answer. D1 retained one ineligible
+  story-v1 draft at three committed moments with three answers, showing that
+  Ming had started v9 before its rejection; those records were not migrated;
+- Ming received the Sites v10 replacement instruction only after canary
+  success and was told to restart from Case 1 using the existing login.
 
 **Definition of done**
 
-- the local story v2 correction and automated validation are complete;
-- exact-source publication, production canary, and a replacement message to
-  Ming remain pending the release sequence already authorized by the user;
-- Ming must not review v9; only Ming may attest, review, save, and submit after
-  a replacement version is released and explicitly communicated;
+- the story v2 correction, source push, exact-source Sites v10 publication,
+  production canary, and replacement message are complete;
+- Ming must use Sites v10 and restart at Case 1; only Ming may attest, review,
+  save, and submit;
 - the old-draft isolation and zero-agent-answer boundaries remain intact.
 
 **Stop conditions**
@@ -140,9 +150,9 @@ at each of three moments, while preserving governed save/resume and submission.
 
 **Next slice after completion**
 
-Commit and push the verified story v2 source, publish that exact source to
-Sites under the user's current authority, run a non-submitting canary, and
-notify Ming only after that canary succeeds.
+Have Ming personally verify save/resume and complete the story-v2 formal review.
+Aggregate Decision Quality only after governed eligible submissions meet the
+declared minimum-review gate.
 
 ## Pending validation
 
@@ -151,8 +161,8 @@ notify Ming only after that canary succeeds.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Visually accept and release the local story v2 candidate before Ming resumes;
-  public Sites v9 must remain paused for reviewer use.
+- Have Ming verify story-v2 save/resume and complete only personally true
+  attestations and judgments on Sites v10.
 - Collect genuinely independent Decision Quality reviews only from the v3
   scenario, rubric, and option-contract freeze.
 
@@ -165,8 +175,8 @@ done.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: earlier questionnaire and story-v1 records remain isolated
-  and ineligible; Sites v9 is user-rejected and paused; story v2 is local-only,
-  and no eligible independent expert submission exists yet.
+  and ineligible; Sites v9 is superseded; story v2 is live and canary-verified,
+  but no eligible independent expert submission exists yet.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient.
@@ -238,9 +248,10 @@ done.
   moments. It was then released as Sites v9, canary-verified without creating
   human evidence, and sent to Ming as the replacement formal entry. Subsequent
   user inspection rejected v9's technical copy and duplicate-looking identical
-  controls. A new local story v2 candidate now uses plain narratives, distinct
+  controls. Story v2 now uses plain narratives, distinct
   stage-specific choices, and one confirmed shared-plan card for true controls;
-  it is not yet a public reviewer entry.
+  exact-source Sites v10 passed its non-submitting canary and Ming received the
+  replacement instruction.
 - Documentation Architecture v1 separated rules, direction, current truth, and
   historical evidence and added a fail-closed drift check against legacy mixed
   authority. Local post-migration validation is complete.
@@ -287,8 +298,9 @@ done.
 - The subsequent local story v2 correction passes lint, production build, and
   all 23 site tests. Tests cover plain-language story fields, single-card shared
   plans, three-moment completeness guards, and rejection of distinct options
-  that would render identically. This is local automated evidence only; visual
-  user acceptance and hosted runtime verification remain pending.
+  that would render identically. Sites v10 then passed root, formal-route,
+  authentication, story/profile completeness, collection isolation, and D1
+  zero-pollution canaries.
 - Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
   attributed changes, fourteen no-delta controls, all structural gates met,
   and `NOT_MET` status because independent reviews are absent.
@@ -328,8 +340,11 @@ done.
   that order.
 - The user subsequently rejected v9 as incomprehensible because internal jargon
   remained visible and identical controls appeared as duplicated choices. This
-  makes v9 paused and supersedes the earlier instruction for Ming to begin; it
-  does not authorize publishing or emailing the new local story v2 candidate.
+  made v9 ineligible and superseded the earlier instruction for Ming to begin.
+- The user then explicitly authorized documentation synchronization, story-v2
+  publication, post-canary notification to Ming, and commit/push to GitHub main.
+  GitHub commit `cc26d95`, Sites source `21ba5e7`, Sites v10, the successful
+  canary, and Ming's replacement notification completed in that order.
 
 ### Pending validation
 
@@ -342,11 +357,9 @@ done.
 
 ## Next Up
 
-1. Commit and push the verified local story v2 presentation, then publish an
-   exact-source Sites version under the user's explicit current authority.
-2. After a non-submitting production canary succeeds, notify Ming to use only
-   the replacement version; Ming alone may make judgments or submit.
-3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
+1. Have Ming personally exercise Sites v10 save/resume and complete the formal
+   story-v2 review; the agent must not enter judgments.
+2. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
    until at least three eligible reviews per variant pass governed checks.
 
 ## Current-week history

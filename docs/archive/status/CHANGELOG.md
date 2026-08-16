@@ -6,6 +6,11 @@ preserved handoffs.
 
 ## 2026-08-16
 
+- Released the formal ten-case Human Evaluation story-v2 experience. Each case
+  now presents a plain-language role, situation, goal, unknowns, and
+  stage-specific choices; identical frozen controls appear once as a confirmed
+  shared plan. Sites v10 preserves the authenticated save/resume and immutable
+  submission boundary while isolating all superseded drafts.
 - Added and publicly released a browser-only Human Evaluation experience for
   five selected Historical Replay cases and 15 sequential decision moments.
   The presentation uses operational stories and executable trade-offs, hides

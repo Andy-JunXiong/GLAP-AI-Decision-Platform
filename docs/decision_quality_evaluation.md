@@ -4,10 +4,10 @@
 **Review submissions:** `decision-quality-review.v1` (absolute-score tooling)
 and `decision-quality-comparative-review.v1` (story-mode collection)
 **Option content:** `decision-option-contract.v3`
-**Current status:** public Sites v8's numeric questionnaire is paused after user
-rejection and the invited reviewer was told not to start it. A corrected
-story-mode candidate is locally verified across ten cases and 30 cutoffs but is
-not released; no eligible expert reviews collected
+**Current status:** public Sites v10 is the canary-verified story-v2 formal
+entry across ten cases and 30 cutoffs. Ming received the replacement
+instruction after canary success; superseded questionnaire and story-v1 drafts
+remain isolated and ineligible, and no eligible expert review is collected yet
 
 ## Purpose
 
@@ -156,15 +156,16 @@ The A303 fixture is controlled synthetic engineering evidence. The frozen v3
 Historical Replay bundle is hybrid replay evidence with controlled synthetic
 enterprise state. Public Sites v9 is paused after user inspection found its
 technical story copy and duplicate-looking identical A/B controls unusable;
-Ming received that link before the rejection and must not use it. The new local
-story v2 candidate presents ten plain-language, three-moment stories. Distinct
+Ming received that link before the rejection and began one three-moment case;
+that story-v1 draft is preserved but ineligible. Public Sites v10 now presents
+ten plain-language, three-moment stories. Distinct
 source plans remain anonymous A/B choices, while true identical controls appear
 once as a shared plan requiring explicit confirmation. It stores comparative
 judgments under isolated collection `human-evaluation-story.v2`, aligned with
 `decision-quality-comparative-review.v1`; preview-local answers, questionnaire
-drafts, and story-v1 records are never migrated. The user has authorized the
-commit, exact-source public release, canary, and replacement reviewer
-notification sequence; Ming is notified only after canary success.
+drafts, and story-v1 records are never migrated. Sites v10 passed its
+non-submitting production canary with zero story-v2 sessions or answers, and
+Ming received the replacement instruction only after that success.
 Neither preserved v1/v2 draft progress nor unit-test reviews are eligible
 expert evidence, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring

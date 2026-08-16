@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v9 is paused after user rejection of its technical story copy and duplicate-looking identical controls; the invited reviewer received v9 but must not use it; a locally verified story-v2 candidate presents ten plain-language three-moment cases, renders true controls once as a confirmed shared plan, and isolates persistence under human-evaluation-story.v2; the user authorized commit, exact-source release, canary, and replacement notification only after canary success; earlier questionnaire and story-v1 records are ineligible; no expert reviews or decision-quality result",
+      "boundary": "public Sites v10 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, and isolated human-evaluation-story.v2 persistence; Ming received the replacement instruction after canary success; the superseded v9 story-v1 draft has three preserved answers but is ineligible and was not migrated; no eligible expert review or decision-quality result exists",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
