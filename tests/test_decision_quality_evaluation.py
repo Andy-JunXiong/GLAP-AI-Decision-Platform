@@ -61,6 +61,31 @@ def review(package, reviewer_ref, preferred_option, high_option, reviewed_at):
     }
 
 
+def comparative_review(package, reviewer_ref, preferred_option, reviewed_at):
+    return {
+        "schema_version": "decision-quality-comparative-review.v1",
+        "review_id": package["review_id"],
+        "package_digest": package["package_digest"],
+        "rubric_version": package["rubric_version"],
+        "reviewer_ref": reviewer_ref,
+        "reviewed_at": reviewed_at,
+        "attestations": {
+            "independent_review": True,
+            "conflict_of_interest": False,
+            "blind_key_access": False,
+        },
+        "comparative_judgments": {
+            "evidence_grounding": preferred_option,
+            "risk_detection_and_proportionality": preferred_option,
+            "policy_compliance": preferred_option,
+            "actionability": preferred_option,
+            "authority_compliance": preferred_option,
+        },
+        "preferred_option": preferred_option,
+        "confidence": 4,
+    }
+
+
 class DecisionQualityEvaluationTests(unittest.TestCase):
     def test_rubric_is_complete_and_weights_sum_to_one(self):
         _, _, rubric, _, _ = inputs()
@@ -113,6 +138,44 @@ class DecisionQualityEvaluationTests(unittest.TestCase):
         self.assertEqual(summary["status"], "PENDING_EXPERT_REVIEWS")
         self.assertEqual(summary["claim_boundary"]["supports"], [])
         self.assertIsNone(summary["favored_variant_id"])
+
+    def test_three_comparative_story_reviews_use_weighted_preference_without_numeric_scores(self):
+        _, _, rubric, package, key = inputs()
+        challenger_option = next(
+            option_id
+            for option_id, mapping in key["mapping"].items()
+            if mapping["role"] == "CHALLENGER"
+        )
+        reviews = [
+            comparative_review(package, f"reviewer-story-{index}", challenger_option, f"2026-08-16T1{index}:00:00+10:00")
+            for index in range(3)
+        ]
+        summary = quality.score_reviews(package, key, rubric, reviews)
+        self.assertEqual(summary["status"], "EVALUATED_CONTROLLED_SYNTHETIC")
+        self.assertEqual(summary["result"], "REVIEW_EVIDENCE_FAVORS_VARIANT")
+        self.assertEqual(summary["review_schema_version"], "decision-quality-comparative-review.v1")
+        self.assertEqual(summary["score_basis"], "WEIGHTED_COMPARATIVE_PREFERENCE")
+        challenger = next(
+            item for item in summary["deblinded_options"].values()
+            if item["variant_id"] == "glap-a303-on"
+        )
+        self.assertEqual(challenger["mean_comparative_preference_share"], 100.0)
+
+    def test_comparative_story_review_requires_every_frozen_dimension(self):
+        _, _, rubric, package, key = inputs()
+        option_id = package["options"][0]["option_id"]
+        item = comparative_review(package, "reviewer-story-one", option_id, "2026-08-16T10:00:00+10:00")
+        del item["comparative_judgments"]["authority_compliance"]
+        with self.assertRaisesRegex(quality.ReviewContractError, "dimensions are incomplete"):
+            quality.score_reviews(package, key, rubric, [item])
+
+    def test_absolute_and_comparative_review_versions_cannot_be_mixed(self):
+        _, _, rubric, package, key = inputs()
+        option_id = package["options"][0]["option_id"]
+        absolute = review(package, "reviewer-expert-one", option_id, option_id, "2026-08-16T10:00:00+10:00")
+        comparative = comparative_review(package, "reviewer-story-two", option_id, "2026-08-16T11:00:00+10:00")
+        with self.assertRaisesRegex(quality.ReviewContractError, "cannot be mixed"):
+            quality.score_reviews(package, key, rubric, [absolute, comparative])
 
     def test_ties_cannot_turn_one_preference_into_false_consensus(self):
         _, _, rubric, package, key = inputs()

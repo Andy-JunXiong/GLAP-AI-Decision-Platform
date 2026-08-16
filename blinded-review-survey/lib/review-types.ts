@@ -21,6 +21,17 @@ export type ReviewAnswer = {
   notes: string;
 };
 
+export type ComparativeJudgments = Record<DimensionId, Preference | null>;
+
+export type StoryReviewAnswer = {
+  reviewId: string;
+  packageDigest: string;
+  judgments: ComparativeJudgments;
+  preferred: Preference | null;
+  confidence: number | null;
+  notes: string;
+};
+
 export type DecisionCitation = {
   evidence_id: string;
   fact_ids: string[];
@@ -134,6 +145,20 @@ export type ReviewPackage = {
       transport_mode: string;
       severity_band: string;
     };
+    story_profile?: {
+      id: string;
+      shortTitle: { zh: string; en: string };
+      role: { zh: string; en: string };
+      regionLabel: { zh: string; en: string };
+      disruptionLabel: { zh: string; en: string };
+      decisionLens: { zh: string; en: string };
+      dependency: { zh: string; en: string };
+      statuses: Array<{ zh: string; en: string }>;
+      questions: Array<{ zh: string; en: string }>;
+      noEvidence: { zh: string; en: string };
+      monitorTitle: { zh: string; en: string };
+      mitigationTitle: { zh: string; en: string };
+    };
     operational_state: {
       as_of_at: string;
       state_provenance: string;
@@ -189,6 +214,7 @@ export type RubricDimension = {
 export type ReviewBootstrap = {
   bundleId: string;
   bundleDigest: string;
+  reviewSchemaVersion: "decision-quality-comparative-review.v1";
   packages: ReviewPackage[];
   dimensions: RubricDimension[];
 };
@@ -201,6 +227,35 @@ export function emptyScores(): Scores {
     actionability: null,
     authority_compliance: null,
   };
+}
+
+export function emptyJudgments(): ComparativeJudgments {
+  return {
+    evidence_grounding: null,
+    risk_detection_and_proportionality: null,
+    policy_compliance: null,
+    actionability: null,
+    authority_compliance: null,
+  };
+}
+
+export function emptyStoryAnswer(item: ReviewPackage): StoryReviewAnswer {
+  return {
+    reviewId: item.review_id,
+    packageDigest: item.package_digest,
+    judgments: emptyJudgments(),
+    preferred: null,
+    confidence: null,
+    notes: "",
+  };
+}
+
+export function isStoryComplete(answer: StoryReviewAnswer): boolean {
+  return (
+    DIMENSION_IDS.every((id) => answer.judgments[id] !== null) &&
+    answer.preferred !== null &&
+    answer.confidence !== null
+  );
 }
 
 export function emptyAnswer(item: ReviewPackage): ReviewAnswer {

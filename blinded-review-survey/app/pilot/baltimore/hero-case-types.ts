@@ -27,7 +27,7 @@ export type HeroCase = {
   title: LocalText;
   shortTitle: LocalText;
   role: LocalText;
-  mode: "OCEAN" | "AIR" | "ROAD";
+  mode: "OCEAN" | "AIR" | "RAIL" | "ROAD";
   disruption: LocalText;
   region: LocalText;
   decisionLens: LocalText;

@@ -265,16 +265,18 @@ did not make all five rubric dimensions assessable. V2 remains superseded
 because its richer rule explanation still did not present a complete problem
 story or solution-and-benefit chain. Preserved v1/v2 drafts are non-evidence
 and cannot be combined with v3. The v3 repository-side freeze and handoff are
-released through the formal review flow on public Sites v7 after explicit human
-approval. Sites v7 also exposes a separate five-case, 15-moment Human
-Evaluation experience preview. A separately approved release candidate
-replaces that public route with the authenticated full 30-package formal v3
-client while retaining the old preview only as a development-only artifact.
+available in the authenticated v3 review infrastructure. Sites v8's numeric
+questionnaire presentation was rejected in user review and is paused. A
+corrected local candidate expands the earlier story-based interaction from five
+to all ten cases and from 15 to all 30 moments while retaining the preview only
+as a development artifact.
 The preview maps each displayed moment to the frozen reviewer-safe package,
 hides all future result semantics until sequential unlock, makes earlier
 judgments read-only, and stores answers only in the
-current browser without calling the formal review API. This does not
-complete independent review: no eligible human submissions are stored, no
+current browser without calling the formal review API. The corrected candidate
+uses isolated server-side comparative answers, but a new public release and
+canary remain pending and Ming was told not to use v8. This does not complete independent review:
+no eligible human submissions are stored, no
 reviewer independence is asserted by the code, and benchmark status remains
 `NOT_MET`.
 

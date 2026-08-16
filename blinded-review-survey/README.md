@@ -1,17 +1,17 @@
 # GLAP Independent Blinded Review Survey
 
-Bilingual survey for the frozen GLAP Historical Replay decision-quality review.
-Both the root route and `/pilot/human-evaluation` expose the authenticated
-formal review client. Frozen cases, saved progress, and submission require the
-dedicated reviewer account.
+Bilingual review application for the frozen GLAP Historical Replay
+decision-quality study. The corrected Human Evaluation candidate uses an
+authenticated story-based review client. Frozen cases, saved progress, and
+submission require the dedicated reviewer account.
 
 ## Reviewer flow
 
 1. Sign in with the dedicated reviewer username and password; no ChatGPT account is required.
 2. Confirm independence, no conflict, and no access to the blind key.
-3. Review each of the 30 frozen point-in-time packages. Every case explains the story so far, decision pressure, difficulties, and conditional downstream risks. Every option then shows the problem it addresses, immediate/short-term/long-term solution paths, intended benefits and measurement signals, trade-offs, and authority boundary.
-4. Score OPTION A and OPTION B independently across five rubric dimensions.
-5. Record an overall preference, confidence, and optional notes.
+3. Review ten distinct stories, each with three frozen point-in-time moments. Every moment explains the story so far, decision pressure, newly available evidence, operational facts, and two anonymous executable choices.
+4. Compare Plan A and Plan B with A/B/Tie judgments across the five rubric dimensions.
+5. Record an overall preference and confidence.
 6. Review completion and submit once. Final answers are locked.
 
 When both options have identical visible content, the page identifies the case as a frozen control sample and explains that the reviewer may select a tie. The notice does not reveal option identities or alter the frozen package.
@@ -22,13 +22,16 @@ The v3 bundle is a new review session. Any v1 or v2 draft remains stored under i
 
 ## Formal Human Evaluation entry
 
-The `/pilot/human-evaluation` route now opens the same authenticated formal v3
-flow as the root route. It covers all ten frozen Historical Replay cases and 30
-point-in-time packages, requires the three reviewer attestations, saves through
-`/api/review`, and locks a complete submission. The former five-case,
-15-moment browser-only presentation remains available only through the
-development-only `/pilot/baltimore` route; its local answers are never migrated
-into or counted by the formal review.
+The corrected `/pilot/human-evaluation` candidate preserves the local preview's
+story hub, progressively revealed T0/T1/T2 timeline, anonymous executable
+choices, and A/B/Tie judgments while covering all ten frozen Historical Replay
+cases and 30 point-in-time packages. It requires the three reviewer
+attestations, saves committed moments through `/api/review`, enforces story
+order on the server, and locks a complete submission. Public Sites v8 still
+contains the rejected numeric questionnaire and must not be used; the corrected
+candidate has not yet been released. The five-case browser-only pilot remains
+available only for development at `/pilot/baltimore`, and its local answers are
+never imported into formal evidence.
 
 ## Evidence and authority boundary
 
@@ -68,5 +71,5 @@ npm test
 npm audit --omit=dev
 ```
 
-The formal release candidate uses Next.js `16.3.1`; its production-only audit
-must remain at zero vulnerabilities before release.
+The candidate uses Next.js `16.3.1`; its production-only audit must remain at
+zero vulnerabilities before a corrected release.

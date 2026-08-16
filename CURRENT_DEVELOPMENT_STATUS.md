@@ -22,7 +22,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `FORMAL_HUMAN_EVALUATION_VERIFIED_PENDING_RELEASE` | public Sites v7 still serves formal v3 plus the old preview; the validated release candidate makes `/pilot/human-evaluation` an authenticated 30-package formal entry; no independent expert result |
+| Decision Quality review handoff | `CORRECTED_STORY_MODE_PENDING_RELEASE` | public Sites v8 contains the rejected numeric questionnaire and is paused; a locally verified candidate restores the story-based A/B/Tie interaction across ten distinct cases and 30 cutoffs; no eligible expert result |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -31,25 +31,30 @@ described as operational evidence.
 
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `IMPLEMENTED_VERIFIED_PENDING_PUBLIC_RELEASE`
+**Status:** `CORRECTION_IMPLEMENTED_VERIFIED_PENDING_PUBLIC_RELEASE`
 
 **Goal**
 
-Make the existing Human Evaluation address a genuine formal review entry, not a
-label-only change. The route must use the complete frozen v3 corpus, dedicated
-reviewer authentication, personal eligibility attestations, server-side
-save/resume, and immutable final submission.
+Replace the rejected numeric questionnaire on the Human Evaluation address with
+the interaction already validated in the local preview: ten distinctive
+operational stories, three progressively revealed decision moments per story,
+anonymous executable choices, A/B/Tie judgments, confidence, server save/resume,
+and immutable final submission.
 
-**Release candidate**
+**Corrected local candidate**
 
 - `/pilot/human-evaluation` now renders the authenticated formal client;
 - the formal flow covers all ten cases and 30 point-in-time packages;
-- every answer retains five per-option rubric scores, overall preference,
-  confidence, and optional notes;
+- every answer retains five rubric-aligned A/B/Tie comparisons, overall
+  preference, and confidence;
 - all 30 package digests must match and be complete before submission locks;
 - the former five-case, 15-moment preview remains development-only at
   `/pilot/baltimore` and its browser-local answers are never migrated;
-- the header clearly identifies `正式评审 · 可提交` / `Formal review · submits`.
+- ten server-side story profiles give each case a different role, operational
+  dependency, decision lens, status progression, and cutoff question;
+- later moments show only newly available facts rather than repeating prior
+  evidence as new;
+- the header clearly identifies formal, server-saved story mode.
 
 **Preserved boundaries**
 
@@ -63,26 +68,41 @@ save/resume, and immutable final submission.
 - no AWS, operational Action, production, model, or Business Outcome Effect
   authority is added.
 
-**Local validation**
+**Validation and release evidence**
 
 - reviewer-site lint passed;
 - production build passed with the formal Human Evaluation route;
-- 22 site tests passed, including authentication, formal save/submit wiring,
+- 23 site tests passed, including authentication, formal save/submit wiring,
   30-package completeness, bundle isolation, blind-key exclusion, and the
   development-only preview's future-information controls;
+- the API independently enforces per-story T0 -> T1 -> T2 commit order and
+  immutable committed answers rather than trusting browser navigation;
 - Next.js was upgraded from `16.2.6` to `16.3.1` after the production-only
   dependency audit found the older version inside the official high-severity
   advisory range; the post-upgrade production audit reports zero vulnerabilities;
-- the public Sites deployment remains v7 and still shows the former preview;
-  no release, hosted answer, attestation, or database mutation occurred.
+- GitHub commit `8858458` passed CI and is the implementation source; the
+  Sites source commit `b4334b6` retains the v7 Sites history while using the
+  exact `blinded-review-survey` tree from that GitHub commit;
+- public Sites v8 deployed successfully after explicit human approval;
+- the post-release canary returned 200 for the site and formal route, verified
+  the deployed client contains the formal-submission badge, secure login,
+  30-package scope, and `/api/review` wiring, and confirmed an unauthenticated
+  review request returns 401;
+- D1 remained unchanged by the canary: three preserved draft sessions, zero
+  answer rows, zero submitted sessions, and maximum progress at Case 1;
+- the first formal invitation was sent to Ming only after all v8 release checks
+  passed, but user review then rejected the numeric questionnaire interaction;
+- Ming received a correction asking them not to start v8. No replacement link
+  has been sent and no corrected Sites release has been authorized.
 
 **Definition of done**
 
-- local implementation and validation are complete;
-- a later Sites version must be saved from the exact pushed commit, deployed,
-  and canaried before the public route may be described as formal;
-- the canary must verify login, all 30 packages, save/resume, old-draft
-  isolation, and zero agent-created answers without submitting a personal score.
+- corrected local implementation and validation are complete;
+- a new exact-source Sites release and non-submitting canary remain pending
+  separate human approval;
+- only after that canary may Ming receive the corrected link and personally
+  attest, review, save, and submit;
+- the old-draft isolation and zero-agent-answer boundaries remain intact.
 
 **Stop conditions**
 
@@ -94,9 +114,9 @@ save/resume, and immutable final submission.
 
 **Next slice after completion**
 
-Publish a new Sites version from the exact pushed commit and run a
-non-submitting formal-route canary. Only an eligible human reviewer may then
-resume the v3 session and eventually submit.
+After explicit human release approval, publish the corrected story-mode
+candidate and run a non-submitting canary. Send Ming the replacement link only
+after those checks pass.
 
 ## Pending validation
 
@@ -105,10 +125,10 @@ resume the v3 session and eventually submit.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Save and deploy the formal Human Evaluation release candidate only through
-  the approved Sites release step.
-- Have the independent reviewer verify formal v3 save/resume and complete only
-  personally true attestations after the new public version is canaried.
+- Publish and canary the corrected story-mode candidate only after separate
+  human approval; public Sites v8 must remain paused for reviewer use.
+- Have the independent reviewer verify corrected save/resume and complete only
+  personally true attestations after the new release passes its canary.
 - Collect genuinely independent Decision Quality reviews only from the v3
   scenario, rubric, and option-contract freeze.
 
@@ -121,8 +141,9 @@ done.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: v1/v2 collection is paused and preserved drafts are
-  ineligible; the formal Human Evaluation entry is implemented locally but
-  public Sites remains v7, and no eligible independent expert reviews exist.
+  ineligible; the public v8 questionnaire is also paused after user rejection;
+  the corrected story-mode candidate is local-only and no eligible independent
+  expert submission exists yet.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient.
@@ -180,8 +201,18 @@ done.
   release candidate now routes the Human Evaluation address through the
   authenticated, attested, server-saved, complete 30-package v3 flow. The old
   15-moment browser-only experience remains development-only and its answers
-  cannot migrate into formal evidence. This is implemented and verified;
-  public Sites release and canary remain pending.
+  cannot migrate into formal evidence. The candidate was implemented and
+  verified before release.
+- After separate explicit publication and notification approval, Sites v8 was
+  released from the exact validated site tree. A non-submitting canary verified
+  the formal route, protected API, complete deployed client scope, and zero
+  answer-row pollution. Ming then received the formal link and restart
+  instructions. This notification creates no expert evidence.
+- User review immediately rejected v8's numeric questionnaire interaction and
+  required the formal experience to preserve the local story-based A/B/Tie
+  workflow. Ming was told to pause. The corrected candidate now covers all ten
+  frozen cases with distinct decision lenses and 30 sequentially locked
+  moments, but it remains unreleased and publicly unverified.
 - Documentation Architecture v1 separated rules, direction, current truth, and
   historical evidence and added a fail-closed drift check against legacy mixed
   authority. Local post-migration validation is complete.
@@ -206,14 +237,24 @@ done.
   strict sequential unlock, read-only past judgments, browser-local persistence,
   and absence of formal review API calls. The public Sites v7 deployment
   succeeded; no preview answer was submitted by the agent.
-- Formal-integration validation passed lint, production build, and 22 tests.
-  The added gate verifies that `/pilot/human-evaluation` uses the authenticated
-  client and formal save/submit actions while the old preview stays
-  development-only. Frozen bundle digests and package count remain unchanged.
+- The original formal-integration validation passed lint, production build,
+  and 22 tests, but it validated the now-rejected questionnaire interaction.
+  Frozen bundle digests and package count remained unchanged.
 - The formal review dependency baseline now uses Next.js `16.3.1`; the
   production-only npm audit passed with zero vulnerabilities. Full-tree audit
   findings remain confined to development/build dependencies and are not
   treated as a production-runtime result.
+- Public Sites v8 source provenance maps Sites commit `b4334b6` to the exact
+  reviewer-site tree in GitHub commit `8858458`. The deployment completed
+  successfully; route and client checks passed, unauthenticated `/api/review`
+  returned 401, and D1 retained three drafts with zero answers or submissions.
+- Corrected story-mode validation passes lint, production build, and 23 site
+  tests. It verifies ten server-only profiles, 30 frozen packages, A/B/Tie
+  rubric comparisons, client-side future-information exclusion, server-side
+  cutoff ordering, immutability, and absence of frozen content from public
+  client assets. Repository compile and all 298 Python tests also pass, including
+  comparative-review aggregation and no-mixed-version gates. This is local
+  evidence only.
 - Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
   attributed changes, fourteen no-delta controls, all structural gates met,
   and `NOT_MET` status because independent reviews are absent.
@@ -237,6 +278,16 @@ done.
   That decision authorized the local integration design.
 - The user subsequently gave explicit `commit and push` authority for the
   validated release candidate; this does not itself publish a Sites version.
+- The user separately approved the formal Sites publication and instructed that
+  Ming be notified only after successful verification. Sites v8, the canary,
+  and the formal notification all completed in that order.
+- The user then rejected the v8 questionnaire mode, required the local preview
+  interaction to be retained, and required ten non-repetitive, distinctive
+  cases. This supersedes v8 as the intended reviewer experience; it does not
+  itself authorize another publication or notification.
+- The user explicitly authorized commit and push of the corrected story-mode
+  candidate. That source-control authority does not authorize Sites publication,
+  database migration, public canary mutation, or reviewer notification.
 
 ### Pending validation
 
@@ -249,10 +300,10 @@ done.
 
 ## Next Up
 
-1. Save and deploy a new Sites version from the exact pushed commit, then run
-   a non-submitting login, bundle, save/resume, and database-isolation canary.
-2. Invite the independent reviewer to resume only after the canary passes; only
-   their personally true attestations and scores may create eligible evidence.
+1. Obtain explicit human approval to publish the corrected ten-story candidate,
+   then run a non-submitting route, authentication, bundle, order, and D1 canary.
+2. Send Ming the corrected link only after the canary succeeds; Ming alone may
+   make attestations, judgments, saves, and final submission.
 3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
    until at least three eligible reviews per variant pass governed checks.
 

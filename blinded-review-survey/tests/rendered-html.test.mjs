@@ -11,7 +11,7 @@ test("builds the bilingual review shell", async () => {
   ]);
   assert.match(page, /GLAP Independent Blinded Review/);
   assert.match(client, /GLAP Human Evaluation/);
-  assert.match(client, /Formal review · submits/);
+  assert.match(client, /Formal review · story mode · submits/);
   assert.match(translations, /中文/);
   assert.match(translations, /English/);
   assert.doesNotMatch(`${page}\n${client}\n${translations}\n${packageJson}`, /Your site is taking shape|react-loading-skeleton/);
@@ -51,9 +51,10 @@ test("ships the exact reviewer-safe frozen bundle without an owner key", async (
 });
 
 test("renders story-complete v3 options instead of generic recommendation cards", async () => {
-  const [bundle, client, translations] = await Promise.all([
+  const [bundle, storyClient, storyData, translations] = await Promise.all([
     readFile(new URL("../data/review-bundle.json", import.meta.url), "utf8").then(JSON.parse),
-    readFile(new URL("../app/SurveyClient.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/pilot/human-evaluation/FormalStoryReview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/pilot/human-evaluation/formal-story-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/translations.ts", import.meta.url), "utf8"),
   ]);
   const richPayloads = new Set();
@@ -78,27 +79,30 @@ test("renders story-complete v3 options instead of generic recommendation cards"
     }
   }
   assert.ok(richPayloads.size > 20);
-  assert.match(client, /DecisionDetails/);
-  assert.match(client, /content_zh/);
-  assert.match(client, /solution_horizons/);
-  assert.match(client, /intended_benefits/);
+  assert.match(storyData, /content_zh/);
+  assert.match(storyData, /action_plan\.steps/);
+  assert.match(storyData, /tradeoffs_and_uncertainty/);
+  assert.match(storyClient, /Two executable choices/);
+  assert.match(storyClient, /named-human approval/);
   assert.match(translations, /为什么这样判断/);
   assert.match(translations, /预期收益（尚未验证）/);
   assert.match(translations, /Trade-offs and uncertainty/);
 });
 
 test("explains the story, difficulties, and conditional impacts without treating the case label as evidence", async () => {
-  const [bundle, client, translations, serverTranslations] = await Promise.all([
+  const [bundle, storyData, storyClient, translations, serverTranslations] = await Promise.all([
     readFile(new URL("../data/review-bundle.json", import.meta.url), "utf8").then(JSON.parse),
-    readFile(new URL("../app/SurveyClient.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/pilot/human-evaluation/formal-story-data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/pilot/human-evaluation/FormalStoryReview.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/translations.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/server-review-translations.ts", import.meta.url), "utf8"),
   ]);
   assert.equal(bundle.packages[0].scenario.cutoff_id, "T0_PRE_EVENT");
   assert.equal(bundle.packages[0].scenario.visible_evidence.length, 0);
-  assert.match(client, /scenarioContext\(item, locale\)/);
-  assert.match(client, /difficulty_points/);
-  assert.match(client, /downstream_risks/);
+  assert.match(storyData, /briefZh\.story_summary/);
+  assert.match(storyData, /visible_evidence/);
+  assert.match(storyClient, /What is newly known/);
+  assert.match(storyClient, /Later facts are not shown early/);
   assert.match(translations, /如果不处理，可能影响什么/);
   assert.match(serverTranslations, /标题用于标识完整历史案例/);
   assert.match(bundle.packages[0].scenario.brief.story_summary, /pre-confirmation control point/);
@@ -106,31 +110,36 @@ test("explains the story, difficulties, and conditional impacts without treating
 });
 
 test("explains identical control options without revealing blinded identities", async () => {
-  const [client, translations, types] = await Promise.all([
-    readFile(new URL("../app/SurveyClient.tsx", import.meta.url), "utf8"),
+  const [storyClient, storyData, translations, types] = await Promise.all([
+    readFile(new URL("../app/pilot/human-evaluation/FormalStoryReview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/pilot/human-evaluation/formal-story-data.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/translations.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/review-types.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(client, /visibleOptionsMatch\(item\)/);
+  assert.match(storyData, /source\.recommendation === "RISK_MITIGATION"/);
+  assert.match(storyData, /optionText\(item, 0, profile\)/);
+  assert.match(storyClient, /OPTION_A/);
   assert.match(translations, /冻结评审包中的对照样本/);
   assert.match(translations, /control sample in the frozen review package/);
   assert.match(types, /optionA\.recommendation === optionB\.recommendation/);
-  assert.doesNotMatch(`${client}\n${translations}\n${types}`, /BASELINE|CHALLENGER|variant_id/);
+  assert.doesNotMatch(`${storyClient}\n${storyData}\n${translations}\n${types}`, /BASELINE|CHALLENGER|variant_id/);
 });
 
 test("keeps persisted identity and package fields server-derived", async () => {
   const [route, migration] = await Promise.all([
     readFile(new URL("../app/api/review/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0002_black_hulk.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0003_rapid_misty_knight.sql", import.meta.url), "utf8"),
   ]);
   assert.match(route, /reviewer-ops-01/);
   assert.match(route, /packageFor\(answer\.reviewId\)/);
   assert.match(route, /frozen\.package_digest !== answer\.packageDigest/);
-  assert.match(route, /WHERE review_answers\.is_final = 0/);
-  assert.match(route, /WHERE user_id = \? AND bundle_id = \?/);
+  assert.match(route, /story_review_answers/);
+  assert.match(route, /already committed and locked/);
+  assert.match(route, /WHERE user_id = \? AND bundle_id = \? AND collection_version = \?/);
   assert.match(route, /reviewBundle\.bundle_id/);
-  assert.match(migration, /review_sessions_user_bundle_unique/);
-  assert.match(migration, /bac46037f8e090ff9e4e2662/);
+  assert.match(migration, /story_review_sessions_user_bundle_collection_unique/);
+  assert.match(migration, /comparative_judgments/);
+  assert.match(migration, /committed_at/);
   const allFiles = (await readdir(new URL("../app/", import.meta.url), { recursive: true })).join("\n");
   assert.doesNotMatch(allFiles, /_sites-preview/);
 });
@@ -153,7 +162,7 @@ test("requires the dedicated account and keeps frozen cases out of the public cl
   assert.match(auth, /PBKDF2_ITERATIONS = 100000/);
   assert.match(loginRoute, /MAX_FAILURES = 5/);
   assert.match(loginRoute, /15 \* 60 \* 1000/);
-  assert.match(reviewRoute, /export async function GET[\s\S]*requireReviewer\(request\)[\s\S]*localizeReviewPackages\(reviewBundle\.packages\)/);
+  assert.match(reviewRoute, /export async function GET[\s\S]*requireReviewer\(request\)[\s\S]*attachStoryProfiles\(localizeReviewPackages\(reviewBundle\.packages\)\)/);
 
   const clientFiles = (await readdir(new URL("../dist/client/", import.meta.url), { recursive: true }))
     .filter((name) => /\.(?:css|html|js)$/u.test(String(name)));
@@ -161,4 +170,37 @@ test("requires the dedicated account and keeps frozen cases out of the public cl
   assert.doesNotMatch(clientSource, /Port of Baltimore access disruption after the Francis Scott Key Bridge collapse/);
   assert.doesNotMatch(clientSource, /USACE activated emergency operations/);
   assert.doesNotMatch(clientSource, /60ebd29e920a489c3c171d1daf27b6fe85efbc884e77d2763b64b7b6a14d3cdb/);
+});
+
+test("formal story mode contains ten distinct server-side case profiles and comparative judgments", async () => {
+  const [profiles, storyClient, route, types] = await Promise.all([
+    readFile(new URL("../lib/server-story-profiles.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/pilot/human-evaluation/FormalStoryReview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/review/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/review-types.ts", import.meta.url), "utf8"),
+  ]);
+  assert.equal((profiles.match(/decisionLens:/g) ?? []).length, 10);
+  assert.equal((profiles.match(/statuses:/g) ?? []).length, 10);
+  assert.equal((profiles.match(/questions:/g) ?? []).length, 10);
+  assert.equal((profiles.match(/regionLabel:/g) ?? []).length, 10);
+  assert.equal((profiles.match(/disruptionLabel:/g) ?? []).length, 10);
+  const profileIds = [...profiles.matchAll(/\n\s+id: "([a-z0-9-]+)"/g)].map((match) => match[1]);
+  assert.equal(profileIds.length, 10);
+  assert.equal(new Set(profileIds).size, 10);
+  const decisionLenses = [...profiles.matchAll(/decisionLens: l\("[^"]+", "([^"]+)"\)/g)].map((match) => match[1]);
+  assert.equal(decisionLenses.length, 10);
+  assert.equal(new Set(decisionLenses).size, 10);
+  for (const focus of ["scarce transit slots", "network-wide stop", "truck-capacity capture", "canal queueing", "berth congestion", "fragmented network"]) {
+    assert.match(profiles, new RegExp(focus));
+  }
+  assert.match(storyClient, /DIMENSION_IDS\.map/);
+  assert.match(storyClient, /Compare the two plans/);
+  assert.match(storyClient, /10 distinct decision stories/i);
+  assert.doesNotMatch(storyClient, /replaceAll\("_", " "\)/);
+  assert.match(route, /human-evaluation-story\.v1/);
+  assert.match(route, /decision-quality-comparative-review\.v1/);
+  assert.match(route, /Earlier decision moments in this story must be committed first/);
+  assert.match(route, /This decision moment is already committed and locked/);
+  assert.match(route, /INSERT OR IGNORE INTO story_review_answers/);
+  assert.match(types, /ComparativeJudgments/);
 });

@@ -46,6 +46,12 @@ and keeps human approval, execution evidence and outcomes traceable.
 > decision cutoffs. Structural coverage checks pass, but the corpus is not an
 > eligible benchmark and contains no independent expert Decision Quality result.
 
+> **16 August 2026 Human Evaluation status:** public Sites v8's numeric
+> questionnaire was rejected in user review and the invited reviewer was told
+> to pause. A corrected story-based A/B/Tie candidate now covers ten distinct
+> cases and 30 point-in-time packages locally; it is not yet released and no
+> eligible expert submission or Decision Quality result exists.
+
 ## Explore the interactive product story
 
 The most complete product walkthrough is a self-contained browser demo:
@@ -223,7 +229,7 @@ docs/      architecture, case studies, dashboards and evidence
 examples/  simplified teaching examples
 offline/   zero-install interactive product demo
 decision-brief-demo/ deployable web product demo
-blinded-review-survey/ formal blinded-review site and Human Evaluation release candidate
+blinded-review-survey/ authenticated blinded-review site and corrected Human Evaluation candidate
 ```
 
 ## Evidence boundaries

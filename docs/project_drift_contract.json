@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v7 still serves formal v3 plus the browser-only Human Evaluation preview; the validated release candidate routes Human Evaluation through authenticated, attested, server-saved full 30-package formal v3 submission while keeping preview answers ineligible; public Sites release and canary pending; v1/v2 drafts ineligible; no expert reviews or decision-quality result",
+      "boundary": "public Sites v8 numeric questionnaire is paused after user rejection and the invited reviewer was told not to start; corrected local candidate preserves progressive story-based A/B/Tie interaction across ten distinct cases and 30 packages with isolated server persistence; corrected publication and canary pending; preview answers and v1/v2 drafts ineligible; no expert reviews or decision-quality result",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
@@ -116,6 +116,7 @@
         "docs/decision_quality_rubric_v1.json",
         "docs/decision_option_contract_v3.json",
         "docs/decision_quality_review_v1.schema.json",
+        "docs/decision_quality_comparative_review_v1.schema.json",
         "docs/historical_replay_review_freeze_v3.schema.json"
       ]
     },

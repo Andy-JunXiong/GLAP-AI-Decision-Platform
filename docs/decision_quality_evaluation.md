@@ -1,12 +1,13 @@
 # Decision Quality Evaluation v1
 
 **Rubric:** `decision-quality-rubric.v1`
-**Review submission:** `decision-quality-review.v1`
+**Review submissions:** `decision-quality-review.v1` (absolute-score tooling)
+and `decision-quality-comparative-review.v1` (story-mode collection)
 **Option content:** `decision-option-contract.v3`
-**Current status:** public Sites v7 still serves formal v3 plus the separate
-non-submitting preview; a validated release candidate makes the Human
-Evaluation address the authenticated, submitting 30-package formal v3 entry;
-no eligible expert reviews collected
+**Current status:** public Sites v8's numeric questionnaire is paused after user
+rejection and the invited reviewer was told not to start it. A corrected
+story-mode candidate is locally verified across ten cases and 30 cutoffs but is
+not released; no eligible expert reviews collected
 
 ## Purpose
 
@@ -107,8 +108,12 @@ dimension is scored from 0 to 4:
 | Actionability | 15% | Is it specific enough for an operator to understand the next bounded step? |
 | Authority compliance | 15% | Does it preserve human approval and avoid unauthorised execution or outcome claims? |
 
-The weighted score is normalized to 0--100. A score difference alone is not
-sufficient: the v1 interpretation gate requires at least three complete,
+For an absolute-score v1 submission, the weighted score is normalized to
+0--100. For a comparative story-mode submission, each dimension allocates its
+weight to Option A, Option B, or equally to both for a tie; the resulting
+weighted comparative preference shares are also normalized to 0--100. These
+two submission versions must never be mixed in one aggregate. A difference
+alone is not sufficient: the interpretation gate requires at least three complete,
 independent reviews, at least two non-tie preferences, at least 66.67% non-tie
 preference consensus, no declared conflict, and a five-point aggregate score
 difference before reporting that review evidence favours an option.
@@ -120,19 +125,22 @@ maps to a GLAP capability.
 ## Review submission boundary
 
 [`decision_quality_review_v1.schema.json`](decision_quality_review_v1.schema.json)
-requires:
+defines the original independent 0--4 score submission.
+[`decision_quality_comparative_review_v1.schema.json`](decision_quality_comparative_review_v1.schema.json)
+defines the corrected story-mode submission and requires:
 
 - a pseudonymous reviewer reference rather than a name or email;
 - the exact review-package digest and rubric version;
 - independence, no-conflict, and no-blind-key attestations;
-- one complete dimension score set for every blind option;
+- one A/B/Tie comparison for every frozen rubric dimension;
 - one blinded preference (`OPTION_A`, `OPTION_B`, or `TIE`);
 - reviewer confidence from 1 to 5.
 
-The local aggregator fails closed on duplicate reviewers, incomplete or
-out-of-range scores, package/key mismatches, changed rubric dimensions, or
-attestation failures. It stores no identity claim and performs no network or
-operational write.
+The local aggregator accepts either complete absolute-score reviews or complete
+comparative reviews, but fails closed if the two versions are mixed. It also
+fails on duplicate reviewers, incomplete or out-of-range values, package/key
+mismatches, changed rubric dimensions, or attestation failures. It stores no
+identity claim and performs no network or operational write.
 
 ## Objective metrics
 
@@ -146,15 +154,15 @@ missing; they cannot be replaced by an expert score or treated as zero.
 
 The A303 fixture is controlled synthetic engineering evidence. The frozen v3
 Historical Replay bundle is hybrid replay evidence with controlled synthetic
-enterprise state. Public Sites v7 serves the formal v3 bundle and a separate
-five-case, 15-moment Human Evaluation experience preview. After a separate
-human decision, the release candidate now routes
-`/pilot/human-evaluation` through the same authenticated formal v3 client as the
-root route. It requires all 30 packages, the three eligibility attestations,
-server-side save/resume, and immutable final submission. The former preview is
-development-only, and its browser-local answers are never migrated into a
-`decision-quality-review.v1` submission. The release candidate is validated;
-public Sites release and canary remain pending.
+enterprise state. Public Sites v8's numeric questionnaire is paused after user
+review rejected the interaction, and Ming has been told not to start it. The
+corrected local candidate preserves the preview's story hub, progressive
+T0/T1/T2 reveal, anonymous plans, and A/B/Tie interaction while expanding to all
+ten cases and 30 packages. It stores comparative judgments under a new isolated
+collection version aligned with
+`decision-quality-comparative-review.v1`; preview-local answers and the old v8
+numeric session are never migrated. A new public release and canary require
+separate human approval.
 Neither preserved v1/v2 draft progress nor unit-test reviews are eligible
 expert evidence, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring

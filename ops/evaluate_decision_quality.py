@@ -20,6 +20,8 @@ PACKAGE_KEY_VERSIONS = {
     "decision-review-package.v3": "decision-review-blind-key.v3",
 }
 REVIEW_VERSION = "decision-quality-review.v1"
+COMPARATIVE_REVIEW_VERSION = "decision-quality-comparative-review.v1"
+SUPPORTED_REVIEW_VERSIONS = {REVIEW_VERSION, COMPARATIVE_REVIEW_VERSION}
 SUMMARY_VERSION = "decision-quality-summary.v1"
 
 
@@ -221,7 +223,8 @@ def build_review_package(
 def validate_review(
     review: dict[str, Any], package: dict[str, Any], rubric: dict[str, Any]
 ) -> None:
-    _require(review.get("schema_version") == REVIEW_VERSION, "unsupported review version")
+    review_version = review.get("schema_version")
+    _require(review_version in SUPPORTED_REVIEW_VERSIONS, "unsupported review version")
     _require(review.get("review_id") == package.get("review_id"), "review_id does not match package")
     _require(review.get("package_digest") == package.get("package_digest"), "review package digest mismatch")
     _require(review.get("rubric_version") == rubric.get("schema_version"), "review rubric version mismatch")
@@ -235,15 +238,21 @@ def validate_review(
 
     expected_options = {item["option_id"] for item in package.get("options", [])}
     expected_dimensions = {item["id"] for item in rubric.get("dimensions", [])}
-    rows = review.get("option_scores")
-    _require(isinstance(rows, list) and len(rows) == len(expected_options), "review must score every option once")
-    option_ids = [item.get("option_id") for item in rows]
-    _require(set(option_ids) == expected_options and len(option_ids) == len(set(option_ids)), "review option IDs are incomplete or duplicated")
-    for row in rows:
-        scores = row.get("dimension_scores")
-        _require(isinstance(scores, dict) and set(scores) == expected_dimensions, "review dimensions are incomplete or changed")
-        for dimension, score in scores.items():
-            _require(isinstance(score, int) and not isinstance(score, bool) and 0 <= score <= 4, f"{dimension} score must be an integer from 0 to 4")
+    if review_version == REVIEW_VERSION:
+        rows = review.get("option_scores")
+        _require(isinstance(rows, list) and len(rows) == len(expected_options), "review must score every option once")
+        option_ids = [item.get("option_id") for item in rows]
+        _require(set(option_ids) == expected_options and len(option_ids) == len(set(option_ids)), "review option IDs are incomplete or duplicated")
+        for row in rows:
+            scores = row.get("dimension_scores")
+            _require(isinstance(scores, dict) and set(scores) == expected_dimensions, "review dimensions are incomplete or changed")
+            for dimension, score in scores.items():
+                _require(isinstance(score, int) and not isinstance(score, bool) and 0 <= score <= 4, f"{dimension} score must be an integer from 0 to 4")
+    else:
+        judgments = review.get("comparative_judgments")
+        _require(isinstance(judgments, dict) and set(judgments) == expected_dimensions, "review dimensions are incomplete or changed")
+        for dimension, choice in judgments.items():
+            _require(choice in expected_options | {"TIE"}, f"{dimension} comparative judgment is invalid")
     _require(review.get("preferred_option") in expected_options | {"TIE"}, "preferred option is invalid")
     confidence = review.get("confidence")
     _require(isinstance(confidence, int) and not isinstance(confidence, bool) and 1 <= confidence <= 5, "confidence must be an integer from 1 to 5")
@@ -271,22 +280,37 @@ def score_reviews(
     _require(set(blind_key.get("mapping", {})) == option_ids, "blind key option mapping mismatch")
 
     reviewer_refs: list[str] = []
+    review_versions: set[str] = set()
     for review in reviews:
         validate_review(review, package, rubric)
         reviewer_refs.append(review["reviewer_ref"])
+        review_versions.add(review["schema_version"])
     _require(len(reviewer_refs) == len(set(reviewer_refs)), "duplicate reviewer_ref is not allowed")
+    _require(len(review_versions) <= 1, "review submission versions cannot be mixed")
 
     weights = {item["id"]: item["weight"] for item in rubric["dimensions"]}
     option_review_scores: dict[str, list[float]] = {option_id: [] for option_id in option_ids}
     preference_counts = {option_id: 0 for option_id in option_ids}
     tie_count = 0
     for review in reviews:
-        for row in review["option_scores"]:
-            normalized = sum(
-                row["dimension_scores"][dimension] / 4.0 * weight * 100.0
-                for dimension, weight in weights.items()
-            )
-            option_review_scores[row["option_id"]].append(normalized)
+        if review["schema_version"] == REVIEW_VERSION:
+            for row in review["option_scores"]:
+                normalized = sum(
+                    row["dimension_scores"][dimension] / 4.0 * weight * 100.0
+                    for dimension, weight in weights.items()
+                )
+                option_review_scores[row["option_id"]].append(normalized)
+        else:
+            per_option = {option_id: 0.0 for option_id in option_ids}
+            for dimension, weight in weights.items():
+                choice = review["comparative_judgments"][dimension]
+                if choice == "TIE":
+                    for option_id in option_ids:
+                        per_option[option_id] += weight * 50.0
+                else:
+                    per_option[choice] += weight * 100.0
+            for option_id, score in per_option.items():
+                option_review_scores[option_id].append(score)
         if review["preferred_option"] == "TIE":
             tie_count += 1
         else:
@@ -332,7 +356,7 @@ def score_reviews(
     deblinded = {
         option_id: {
             **blind_key["mapping"][option_id],
-            "mean_quality_score": option_means[option_id],
+            ("mean_comparative_preference_share" if COMPARATIVE_REVIEW_VERSION in review_versions else "mean_quality_score"): option_means[option_id],
             "preference_count": preference_counts[option_id],
         }
         for option_id in sorted(option_ids)
@@ -348,6 +372,8 @@ def score_reviews(
         "package_digest": package["package_digest"],
         "evidence_classification": package["scenario"]["evidence_classification"],
         "review_count": len(reviews),
+        "review_schema_version": next(iter(review_versions), None),
+        "score_basis": "WEIGHTED_COMPARATIVE_PREFERENCE" if COMPARATIVE_REVIEW_VERSION in review_versions else "ABSOLUTE_RUBRIC_SCORE",
         "reviewer_identifiers_retained": False,
         "status": status,
         "result": result,
