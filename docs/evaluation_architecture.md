@@ -164,14 +164,15 @@ The Decision Quality rubric, v3 option-content contract, blinded package,
 independent-review contract, and aggregation gate are implemented. The
 ten-event corpus, rubric, and option contract are content-addressed, and
 deterministic blinded packages cover all 30 cutoffs. V1 and v2 collection is
-paused and preserved draft progress is ineligible. Public Sites v7 serves the
-story-complete v3 formal-review bundle and a separate five-case, 15-moment
-Human Evaluation experience preview after explicit human approval. The preview
-reveals future moments strictly in order, locks earlier judgments, stores
-answers only in the current browser, and never calls the formal review API.
-Its judgments are usability feedback, not eligible expert submissions. No
-eligible expert reviews have been collected, so Decision Quality therefore
-remains
+paused and preserved draft progress is ineligible. Public Sites v7 still serves
+the story-complete formal v3 bundle and the separate five-case, 15-moment Human
+Evaluation preview. A separately human-approved release candidate now
+makes the Human Evaluation address an authenticated formal entry over the full
+30-package v3 bundle, with attestations, server save/resume, and immutable
+submission. The old preview remains development-only and its local answers are
+ineligible. The candidate is validated, while public Sites release and canary
+remain pending. No eligible expert reviews have been collected, so Decision Quality
+therefore remains
 `NOT_EVALUATED`. Business Outcome Effect also remains `NOT_EVALUATED` until an
 eligible outcome method is attached. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).

@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v7 serves the story-complete formal v3 blinded-review site plus a separate browser-only five-case, 15-moment Human Evaluation preview; preview answers never enter the formal review API; v1/v2 drafts ineligible; no expert reviews or decision-quality result",
+      "boundary": "public Sites v7 still serves formal v3 plus the browser-only Human Evaluation preview; the validated release candidate routes Human Evaluation through authenticated, attested, server-saved full 30-package formal v3 submission while keeping preview answers ineligible; public Sites release and canary pending; v1/v2 drafts ineligible; no expert reviews or decision-quality result",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",

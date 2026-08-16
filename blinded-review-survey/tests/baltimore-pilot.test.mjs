@@ -13,11 +13,12 @@ const dataSource = await readFile(new URL("../app/pilot/baltimore/hero-case-data
 const legacyRouteSource = await readFile(new URL("../app/pilot/baltimore/page.tsx", import.meta.url), "utf8");
 const routeSource = await readFile(new URL("../app/pilot/human-evaluation/page.tsx", import.meta.url), "utf8");
 
-test("five-case experience preview is public while the legacy route stays local-only", () => {
+test("formal Human Evaluation uses the authenticated survey while the legacy preview stays local-only", () => {
   assert.match(legacyRouteSource, /NODE_ENV !== "development"/);
   assert.match(legacyRouteSource, /notFound\(\)/);
-  assert.doesNotMatch(routeSource, /NODE_ENV !== "development"/);
-  assert.doesNotMatch(routeSource, /notFound\(\)/);
+  assert.match(routeSource, /SurveyClient/);
+  assert.doesNotMatch(routeSource, /BaltimorePilot/);
+  assert.match(routeSource, /Formal Review/);
   assert.match(pilotSource, /Experience preview/);
   assert.match(pilotSource, /no submission/);
   assert.match(pilotSource, /committed and saved locally/);
@@ -165,7 +166,7 @@ test("human-facing copy excludes harness identity and schema vocabulary", () => 
   for (const token of forbidden) assert.equal(combined.includes(token), false, token);
 });
 
-test("pilot does not call the official review persistence API", () => {
+test("development-only pilot does not call the official review persistence API", () => {
   assert.equal(pilotSource.includes("/api/review"), false);
   assert.equal(pilotSource.includes("fetch("), false);
   assert.equal(pilotSource.includes("onSubmit"), false);

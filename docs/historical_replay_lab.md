@@ -266,10 +266,13 @@ because its richer rule explanation still did not present a complete problem
 story or solution-and-benefit chain. Preserved v1/v2 drafts are non-evidence
 and cannot be combined with v3. The v3 repository-side freeze and handoff are
 released through the formal review flow on public Sites v7 after explicit human
-approval. The same release also exposes a separate five-case, 15-moment Human
-Evaluation experience preview. That preview maps each displayed moment to the
-frozen reviewer-safe package, hides all future result semantics until sequential
-unlock, makes earlier judgments read-only, and stores answers only in the
+approval. Sites v7 also exposes a separate five-case, 15-moment Human
+Evaluation experience preview. A separately approved release candidate
+replaces that public route with the authenticated full 30-package formal v3
+client while retaining the old preview only as a development-only artifact.
+The preview maps each displayed moment to the frozen reviewer-safe package,
+hides all future result semantics until sequential unlock, makes earlier
+judgments read-only, and stores answers only in the
 current browser without calling the formal review API. This does not
 complete independent review: no eligible human submissions are stored, no
 reviewer independence is asserted by the code, and benchmark status remains

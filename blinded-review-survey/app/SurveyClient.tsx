@@ -236,9 +236,10 @@ export default function SurveyClient() {
     <main className="app-shell">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="GLAP review home">
-          <span className="brand-mark">G</span><span>GLAP Review</span>
+          <span className="brand-mark">G</span><span>GLAP Human Evaluation</span>
         </a>
         <div className="header-actions">
+          <span className="formal-review-badge">{locale === "zh" ? "正式评审 · 可提交" : "Formal review · submits"}</span>
           {bootstrap && <button className="logout-button" onClick={() => void logout()}>{text.logout}</button>}
           <div className="language-switch" role="group" aria-label={text.language}>
             <button className={locale === "zh" ? "active" : ""} onClick={() => changeLocale("zh")}>{copy.zh.chinese}</button>

@@ -3,8 +3,10 @@
 **Rubric:** `decision-quality-rubric.v1`
 **Review submission:** `decision-quality-review.v1`
 **Option content:** `decision-option-contract.v3`
-**Current status:** formal v3 review and a separate non-submitting experience
-preview released on public Sites v7; no eligible expert reviews collected
+**Current status:** public Sites v7 still serves formal v3 plus the separate
+non-submitting preview; a validated release candidate makes the Human
+Evaluation address the authenticated, submitting 30-package formal v3 entry;
+no eligible expert reviews collected
 
 ## Purpose
 
@@ -144,11 +146,15 @@ missing; they cannot be replaced by an expert score or treated as zero.
 
 The A303 fixture is controlled synthetic engineering evidence. The frozen v3
 Historical Replay bundle is hybrid replay evidence with controlled synthetic
-enterprise state. The public reviewer site serves the formal v3 bundle after
-explicit human release approval. Sites v7 also exposes a separate five-case,
-15-moment Human Evaluation experience preview. Preview answers remain in the
-current browser, never call the formal review API, and are not
-`decision-quality-review.v1` submissions.
+enterprise state. Public Sites v7 serves the formal v3 bundle and a separate
+five-case, 15-moment Human Evaluation experience preview. After a separate
+human decision, the release candidate now routes
+`/pilot/human-evaluation` through the same authenticated formal v3 client as the
+root route. It requires all 30 packages, the three eligibility attestations,
+server-side save/resume, and immutable final submission. The former preview is
+development-only, and its browser-local answers are never migrated into a
+`decision-quality-review.v1` submission. The release candidate is validated;
+public Sites release and canary remain pending.
 Neither preserved v1/v2 draft progress nor unit-test reviews are eligible
 expert evidence, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring

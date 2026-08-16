@@ -223,7 +223,7 @@ docs/      architecture, case studies, dashboards and evidence
 examples/  simplified teaching examples
 offline/   zero-install interactive product demo
 decision-brief-demo/ deployable web product demo
-blinded-review-survey/ formal blinded-review site and browser-only Human Evaluation preview
+blinded-review-survey/ formal blinded-review site and Human Evaluation release candidate
 ```
 
 ## Evidence boundaries

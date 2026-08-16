@@ -10,10 +10,25 @@ test("builds the bilingual review shell", async () => {
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
   assert.match(page, /GLAP Independent Blinded Review/);
-  assert.match(client, /GLAP Review/);
+  assert.match(client, /GLAP Human Evaluation/);
+  assert.match(client, /Formal review · submits/);
   assert.match(translations, /中文/);
   assert.match(translations, /English/);
   assert.doesNotMatch(`${page}\n${client}\n${translations}\n${packageJson}`, /Your site is taking shape|react-loading-skeleton/);
+});
+
+test("routes Human Evaluation through the formal authenticated v3 client", async () => {
+  const [route, client] = await Promise.all([
+    readFile(new URL("../app/pilot/human-evaluation/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/SurveyClient.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(route, /SurveyClient/);
+  assert.doesNotMatch(route, /BaltimorePilot/);
+  assert.match(route, /Formal Review/);
+  assert.match(client, /\/api\/auth\/login/);
+  assert.match(client, /api\(\{ action: "save"/);
+  assert.match(client, /api\(\{ action: "submit" \}\)/);
+  assert.match(client, /attestations/);
 });
 
 test("ships the exact reviewer-safe frozen bundle without an owner key", async () => {

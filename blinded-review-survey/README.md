@@ -1,9 +1,9 @@
 # GLAP Independent Blinded Review Survey
 
 Bilingual survey for the frozen GLAP Historical Replay decision-quality review.
-The root route exposes only an application login page; the formal frozen cases
-and saved progress require the dedicated reviewer account. The separate Human
-Evaluation preview route is public and non-submitting.
+Both the root route and `/pilot/human-evaluation` expose the authenticated
+formal review client. Frozen cases, saved progress, and submission require the
+dedicated reviewer account.
 
 ## Reviewer flow
 
@@ -20,19 +20,15 @@ The English package content is the frozen source of truth. Chinese copy is a dis
 
 The v3 bundle is a new review session. Any v1 or v2 draft remains stored under its original bundle ID but is not loaded into or counted toward the v3 review.
 
-## Human Evaluation experience preview
+## Formal Human Evaluation entry
 
-The public `/pilot/human-evaluation` route presents five selected Historical
-Replay cases as 15 sequential operational decision moments. It uses
-business-facing stories, current facts, executable anonymous choices and a
-four-question comparison plus confidence score. Future result semantics remain
-locked until the current moment is committed, and earlier judgments become
-read-only after later evidence appears.
-
-This route is deliberately separate from the formal review flow. Its answers
-stay in the current browser, it does not call `/api/review`, and it does not
-create a `decision-quality-review.v1` submission or eligible expert evidence.
-The legacy `/pilot/baltimore` route remains development-only.
+The `/pilot/human-evaluation` route now opens the same authenticated formal v3
+flow as the root route. It covers all ten frozen Historical Replay cases and 30
+point-in-time packages, requires the three reviewer attestations, saves through
+`/api/review`, and locks a complete submission. The former five-case,
+15-moment browser-only presentation remains available only through the
+development-only `/pilot/baltimore` route; its local answers are never migrated
+into or counted by the formal review.
 
 ## Evidence and authority boundary
 
@@ -40,7 +36,9 @@ The legacy `/pilot/baltimore` route remains development-only.
 - The authenticated review API contains the reviewer-safe bundle only.
 - It does not contain the owner key or option-identity mapping.
 - It evaluates point-in-time decision quality only.
-- The Human Evaluation preview is browser-only and non-submitting.
+- Formal Human Evaluation answers are bundle-scoped, server-saved, and locked
+  only after all 30 packages pass completeness checks.
+- Development-only preview answers remain browser-local and ineligible.
 - It does not support business-outcome, production-readiness, or real-logistics-performance claims.
 - The site has no operational write or execution authority.
 
@@ -67,4 +65,8 @@ Apply the generated migration to the local D1 database before exercising persist
 ```bash
 npm run lint
 npm test
+npm audit --omit=dev
 ```
+
+The formal release candidate uses Next.js `16.3.1`; its production-only audit
+must remain at zero vulnerabilities before release.

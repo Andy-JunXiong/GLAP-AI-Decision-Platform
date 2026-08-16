@@ -22,128 +22,81 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `PUBLIC_RELEASED_PENDING_EXPERT_REVIEW` | public Sites v7 serves the formal story-complete v3 flow plus a separate non-submitting Human Evaluation preview; v1/v2 drafts are ineligible; no independent expert result |
+| Decision Quality review handoff | `FORMAL_HUMAN_EVALUATION_VERIFIED_PENDING_RELEASE` | public Sites v7 still serves formal v3 plus the old preview; the validated release candidate makes `/pilot/human-evaluation` an authenticated 30-package formal entry; no independent expert result |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
-## Active slice — Human Evaluation decision-story preview
+## Active slice — Formal Human Evaluation entry
 
-**Status:** `PUBLIC_PREVIEW_PENDING_REVIEWER_FEEDBACK`
+**Status:** `IMPLEMENTED_VERIFIED_PENDING_PUBLIC_RELEASE`
 
 **Goal**
 
-Test whether a logistics reviewer can enter a point-in-time event, understand
-what is currently known, and debate two executable choices without learning the
-Evaluation Harness schema. Present five selected Historical Replay cases as 15
-sequential decision moments while preserving the frozen reviewer-safe source
-mapping and keeping the formal v3 submission flow unchanged.
+Make the existing Human Evaluation address a genuine formal review entry, not a
+label-only change. The route must use the complete frozen v3 corpus, dedicated
+reviewer authentication, personal eligibility attestations, server-side
+save/resume, and immutable final submission.
 
-**Non-goals**
+**Release candidate**
 
-- changing the frozen corpus, scenarios, or rubric;
-- changing the formal v3 review API, D1 session, submission, or attestation flow;
-- fabricating or automatically generating expert reviews;
-- evaluating Business Outcome Effect;
-- calling AWS, deploying, scheduling, or mutating an operational Action;
-- adding External Evidence, Decision Memory, or an Investigation Agent variant.
+- `/pilot/human-evaluation` now renders the authenticated formal client;
+- the formal flow covers all ten cases and 30 point-in-time packages;
+- every answer retains five per-option rubric scores, overall preference,
+  confidence, and optional notes;
+- all 30 package digests must match and be complete before submission locks;
+- the former five-case, 15-moment preview remains development-only at
+  `/pilot/baltimore` and its browser-local answers are never migrated;
+- the header clearly identifies `正式评审 · 可提交` / `Formal review · submits`.
 
-**Objects / schema**
+**Preserved boundaries**
 
-- `decision-option-contract.v3`;
-- `historical-replay-review-freeze.v3`;
-- the frozen reviewer-safe v3 30-package bundle;
-- the separate study-owner-only blind-key bundle;
-- bundle-scoped review sessions that retain but isolate v1/v2 drafts;
-- a browser-only Human Evaluation presentation projection over 15 exact frozen
-  package positions, with seven expected identical pairs allowlisted;
-- `decision-quality-review.v1` submissions created only by independent humans.
+- scenario, rubric, option-contract, bundle, and blind-key digests are unchanged;
+- v1/v2 drafts remain isolated and ineligible;
+- unauthenticated clients receive no frozen review bundle;
+- only the invited independent human may make attestations or enter scores;
+- repository tests and agent actions never create expert evidence;
+- Decision Quality remains `NOT_EVALUATED` until eligible submissions are
+  collected and the governed minimum-review aggregation gate is met;
+- no AWS, operational Action, production, model, or Business Outcome Effect
+  authority is added.
 
-**Files / modules**
+**Local validation**
 
-- deterministic v3 story, solution, expected-benefit, and reviewer-safe package generator;
-- bilingual reviewer site with complete option sections;
-- public `/pilot/human-evaluation` experience preview with five operational
-  stories, sequential reveal, read-only past judgments, and browser-local state;
-- D1 migration from user-only sessions to `(user_id, bundle_id)` sessions;
-- owner-only blind keys retained outside reviewer access;
-- the public review site behind a dedicated reviewer account, with no ChatGPT
-  account dependency.
-
-**Business rules**
-
-- scenario, rubric, and v3 option-contract digests must remain unchanged;
-- reviewers receive packages and rubric, never blind keys;
-- v1/v2 draft answers remain stored but are never loaded into or counted toward v3;
-- repository-generated test objects are never counted as expert evidence;
-- preview answers never call `/api/review`, create a formal submission, or count
-  as Decision Quality evidence;
-- unrevealed moments expose no future title, date, result label, colour cue,
-  progress text, or tooltip;
-- after later evidence appears, earlier preview judgments remain read-only;
-- every accepted submission must satisfy independence, conflict, digest, and
-  completeness gates;
-- no operational mutation authority exists.
-
-**Automated validation**
-
-- fail-closed package, rubric, option-contract, submission, and blind-key
-  digest validation;
-- citations may reference only evidence and facts visible in the same cutoff;
-- every package has a cutoff-safe story, difficulties, conditional impact
-  pathways, and decision question;
-- every option has three solution horizons, expected benefits with measurement
-  signals, trade-offs, uncertainty, and a proposal-only authority boundary;
-- duplicate-reviewer and attestation checks;
-- de-identified aggregation only after the minimum-review gate is met.
-- exact source-position and identical-pair allowlist checks across all 15
-  preview moments;
-- DOM-level future-information exclusion and sequential-unlock checks.
-
-**Manual validation**
-
-- the earlier public Sites v6 canary verified dedicated-account login,
-  bilingual switching, and the formal v3 30-package bundle identity;
-- public Sites v7 now exposes the separate non-submitting preview after
-  explicit approval, and the invited reviewer received its direct link;
-- the hosted database contains a distinct v3 `DRAFT` session at Case 1 and
-  zero review-answer rows; v1/v2 drafts remain under their own bundle IDs;
-- answer save/resume remains for the independent reviewer because the agent
-  did not make the reviewer's personal attestations or submit a score;
-- have the human study owner verify conflicts and key separation;
-- keep reviewer identity details out of repository artifacts.
+- reviewer-site lint passed;
+- production build passed with the formal Human Evaluation route;
+- 22 site tests passed, including authentication, formal save/submit wiring,
+  30-package completeness, bundle isolation, blind-key exclusion, and the
+  development-only preview's future-information controls;
+- Next.js was upgraded from `16.2.6` to `16.3.1` after the production-only
+  dependency audit found the older version inside the official high-severity
+  advisory range; the post-upgrade production audit reports zero vulnerabilities;
+- the public Sites deployment remains v7 and still shows the former preview;
+  no release, hosted answer, attestation, or database mutation occurred.
 
 **Definition of done**
 
-- v3 generation, citation integrity, story, solution, benefit, schema, site
-  build, and bundle-isolation gates pass;
-- public Sites v7 serves the unchanged formal v3 flow and the separate
-  browser-only preview after explicit release approval;
-- all five preview cases and 15 moments map to the frozen reviewer-safe source,
-  with strict future locking and no formal API call;
-- the hosted canary confirms dedicated-account login and the v3 bundle while
-  a fresh v3 `DRAFT` remains at Case 1 and v1/v2 drafts stay preserved under
-  different bundle identities;
-- Decision Quality remains `NOT_EVALUATED` until eligible v3 reviews are later
-  collected and aggregated.
+- local implementation and validation are complete;
+- a later Sites version must be saved from the exact pushed commit, deployed,
+  and canaried before the public route may be described as formal;
+- the canary must verify login, all 30 packages, save/resume, old-draft
+  isolation, and zero agent-created answers without submitting a personal score.
 
 **Stop conditions**
 
-- a frozen v3 digest changes;
-- reviewer identity or independence cannot be verified;
-- a reviewer has blind-key access or a conflict of interest;
-- reviewer access would expose the owner-only blind key or merge v1/v2 answers
-  into v3;
-- the change would require AWS or operational mutation authority.
+- any frozen v3 digest changes;
+- preview local answers would be imported into the formal session;
+- reviewer identity, independence, conflict, or blind-key separation fails;
+- release would occur without an exact pushed source commit;
+- any operational or production authority would be implied.
 
 **Next slice after completion**
 
-Collect reviewer feedback on whether the five preview cases support realistic
-operational debate. Any integration of this presentation into formal review
-submission requires a separate human-approved change; only then resume eligible
-v3 collection and later corpus-level result integration.
+Publish a new Sites version from the exact pushed commit and run a
+non-submitting formal-route canary. Only an eligible human reviewer may then
+resume the v3 session and eventually submit.
 
 ## Pending validation
 
@@ -152,10 +105,10 @@ v3 collection and later corpus-level result integration.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Collect the invited reviewer's usability feedback on the non-submitting
-  preview without treating browser-local judgments as formal evidence.
+- Save and deploy the formal Human Evaluation release candidate only through
+  the approved Sites release step.
 - Have the independent reviewer verify formal v3 save/resume and complete only
-  personally true attestations if formal collection resumes.
+  personally true attestations after the new public version is canaried.
 - Collect genuinely independent Decision Quality reviews only from the v3
   scenario, rubric, and option-contract freeze.
 
@@ -168,8 +121,8 @@ done.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: v1/v2 collection is paused and preserved drafts are
-  ineligible; public Sites v7 serves formal v3 plus a separate browser-only
-  preview, but no eligible independent expert reviews exist.
+  ineligible; the formal Human Evaluation entry is implemented locally but
+  public Sites remains v7, and no eligible independent expert reviews exist.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient.
@@ -223,6 +176,12 @@ done.
   allowlist. Sites v7 exposes this as a separate browser-only preview; it never
   calls the formal review API or creates expert evidence. The invited reviewer
   received the direct preview link after explicit release approval.
+- The user made the separate human decision to formalize Human Evaluation. The
+  release candidate now routes the Human Evaluation address through the
+  authenticated, attested, server-saved, complete 30-package v3 flow. The old
+  15-moment browser-only experience remains development-only and its answers
+  cannot migrate into formal evidence. This is implemented and verified;
+  public Sites release and canary remain pending.
 - Documentation Architecture v1 separated rules, direction, current truth, and
   historical evidence and added a fail-closed drift check against legacy mixed
   authority. Local post-migration validation is complete.
@@ -234,7 +193,7 @@ done.
 - Repository-wide validation after the v3 story-complete handoff: 295 Python
   tests passed, including story, solution-horizon, expected-benefit,
   point-in-time citation, and blinding checks.
-- Reviewer site validation passed lint, production build, and 21 tests across
+- The earlier reviewer-site validation passed lint, production build, and 21 tests across
   the formal v3 flow and the Human Evaluation preview. The v3 bundle contains
   30 packages and keeps fourteen identical
   controls, and remains absent from unauthenticated client assets. The public
@@ -247,6 +206,14 @@ done.
   strict sequential unlock, read-only past judgments, browser-local persistence,
   and absence of formal review API calls. The public Sites v7 deployment
   succeeded; no preview answer was submitted by the agent.
+- Formal-integration validation passed lint, production build, and 22 tests.
+  The added gate verifies that `/pilot/human-evaluation` uses the authenticated
+  client and formal save/submit actions while the old preview stays
+  development-only. Frozen bundle digests and package count remain unchanged.
+- The formal review dependency baseline now uses Next.js `16.3.1`; the
+  production-only npm audit passed with zero vulnerabilities. Full-tree audit
+  findings remain confined to development/build dependencies and are not
+  treated as a production-runtime result.
 - Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
   attributed changes, fourteen no-delta controls, all structural gates met,
   and `NOT_MET` status because independent reviews are absent.
@@ -266,6 +233,10 @@ done.
 - The user explicitly approved public Sites v7 for the non-submitting Human
   Evaluation preview and approved sending the direct link to the invited
   reviewer. Both external writes completed successfully.
+- The user then explicitly decided that Human Evaluation may become formal.
+  That decision authorized the local integration design.
+- The user subsequently gave explicit `commit and push` authority for the
+  validated release candidate; this does not itself publish a Sites version.
 
 ### Pending validation
 
@@ -278,14 +249,11 @@ done.
 
 ## Next Up
 
-1. Collect the invited reviewer's feedback on whether the five preview cases
-   produce realistic operational A/B debate; preview answers remain non-evidence.
-2. Make a separate human decision on whether to integrate the approved
-   presentation into the formal v3 submission flow without changing frozen
-   inputs, blind identities, or reviewer attestations.
-3. If formal collection resumes, accept only integrity-valid v3 reviews;
-   preserved v1/v2 drafts remain ineligible and isolated.
-4. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
+1. Save and deploy a new Sites version from the exact pushed commit, then run
+   a non-submitting login, bundle, save/resume, and database-isolation canary.
+2. Invite the independent reviewer to resume only after the canary passes; only
+   their personally true attestations and scores may create eligible evidence.
+3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
    until at least three eligible reviews per variant pass governed checks.
 
 ## Current-week history

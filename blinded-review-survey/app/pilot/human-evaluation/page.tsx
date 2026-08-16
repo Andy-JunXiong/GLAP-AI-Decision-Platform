@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import BaltimorePilot from "../baltimore/BaltimorePilot";
+import SurveyClient from "../../SurveyClient";
 
 export const metadata: Metadata = {
-  title: "GLAP Human Evaluation · Experience Preview",
-  description: "Five operational decision stories for a browser-only human-evaluation experience preview.",
+  title: "GLAP Human Evaluation · Formal Review",
+  description: "The authenticated formal decision-quality review for the frozen GLAP historical replay corpus.",
 };
 
 export const dynamic = "force-dynamic";
 
-export default function HumanEvaluationPilotPage() {
-  return <BaltimorePilot />;
+export default function HumanEvaluationPage() {
+  return <SurveyClient />;
 }
