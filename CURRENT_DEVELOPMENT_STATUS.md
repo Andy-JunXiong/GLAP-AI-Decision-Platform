@@ -34,10 +34,11 @@ The latest inspected lifecycle controller status remains a failed
 `2026-08-09` operational run. Generation succeeded, but lifecycle validation
 failed only `missing_provider_coverage`; later `2026-08-07` extension attempts
 were rejected before mutation because they would overwrite that newer status.
-A local recovery correction now scopes the check to active providers with route
+A recovery correction now scopes the check to active providers with route
 configuration effective on the logical date and adds safe existing/requested
-date diagnostics. It is implemented and locally verified only: no AWS Lambda,
-staging data, operational baseline, or public Pages artifact has been updated.
+date diagnostics. Commit `1aeb0bbed29dff27d45451a8ba6a5f6ae32fb2da`
+is pushed to `main` and CI-verified; no AWS Lambda, staging data, operational
+baseline, or public Pages artifact has been updated.
 
 ## Active slice — Formal Human Evaluation entry
 
@@ -357,11 +358,11 @@ done.
 
 ### Codex-run validation
 
-- The local lifecycle recovery correction passes Python compilation, all 301
+- The lifecycle recovery correction passes Python compilation, all 301
   repository tests, the 53 focused controller/quality/deployment tests, the
   plan-only extension render, `git diff --check`, and the 16-check project
-  drift audit. No AWS deployment, data mutation, baseline refresh, or Pages
-  publication occurred.
+  drift audit. GitHub CI run `32011815316` passed after the `main` push. No AWS
+  deployment, data mutation, baseline refresh, or Pages publication occurred.
 - Repository-wide validation after the v3 story-complete handoff: 295 Python
   tests passed, including story, solution-horizon, expected-benefit,
   point-in-time citation, and blinding checks.
