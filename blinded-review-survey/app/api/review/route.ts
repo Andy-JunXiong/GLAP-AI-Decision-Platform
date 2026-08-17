@@ -135,12 +135,13 @@ export async function POST(request: Request) {
           `INSERT INTO story_review_sessions
           (user_id, bundle_id, bundle_digest, collection_version, reviewer_ref, locale, translation_version, independent_attested,
            no_conflict_attested, no_blind_key_attested, status, current_index, created_at, updated_at)
-          VALUES (?, ?, ?, ?, 'reviewer-ops-01', ?, ?, 1, 1, 1, 'DRAFT', 0, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 'DRAFT', 0, ?, ?)`,
         ).bind(
           reviewer.userId,
           reviewBundle.bundle_id,
           reviewBundle.bundle_digest,
           COLLECTION_VERSION,
+          reviewer.userId,
           locale,
           TRANSLATION_VERSION,
           now,

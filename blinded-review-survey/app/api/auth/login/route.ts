@@ -30,8 +30,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "Too many attempts. Try again later." }, { status: 429, headers: { "retry-after": "900" } });
   }
 
-  const valid = await verifyCredentials(username, password);
-  if (!valid) {
+  const reviewer = await verifyCredentials(username, password);
+  if (!reviewer) {
     const windowExpired = !prior || now.getTime() - new Date(prior.window_started_at).getTime() > WINDOW_MS;
     const failedCount = windowExpired ? 1 : prior.failed_count + 1;
     const windowStartedAt = windowExpired ? now.toISOString() : prior.window_started_at;
@@ -51,6 +51,6 @@ export async function POST(request: Request) {
   await db.prepare("DELETE FROM login_attempts WHERE attempt_key = ?").bind(attemptKey).run();
   return Response.json(
     { ok: true },
-    { headers: { "set-cookie": await createSessionCookie(request), "cache-control": "no-store" } },
+    { headers: { "set-cookie": await createSessionCookie(request, reviewer), "cache-control": "no-store" } },
   );
 }

@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v10 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, and isolated human-evaluation-story.v2 persistence; Ming received the replacement instruction after canary success; the superseded v9 story-v1 draft has three preserved answers but is ineligible and was not migrated; no eligible expert review or decision-quality result exists",
+      "boundary": "public Sites v10 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, and isolated human-evaluation-story.v2 persistence; one invited reviewer completed all 30 story-v2 packages with three attestations while the superseded story-v1 draft remains isolated and ineligible; a multi-reviewer account extension is locally verified but not published; the three-review minimum is unmet and no decision-quality result exists",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
@@ -111,6 +111,8 @@
         "tests/test_historical_replay_review_bundle.py",
         "tests/fixtures/historical_replay/review_freeze_v3.json",
         "blinded-review-survey/app/pilot/human-evaluation/page.tsx",
+        "blinded-review-survey/app/account-auth.ts",
+        "blinded-review-survey/app/api/review/route.ts",
         "blinded-review-survey/tests/baltimore-pilot.test.mjs",
         "docs/decision_quality_evaluation.md",
         "docs/decision_quality_rubric_v1.json",

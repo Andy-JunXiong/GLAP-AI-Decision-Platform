@@ -15,6 +15,11 @@ const localAuthVars = Object.fromEntries(
     "REVIEW_PASSWORD_HASH",
     "REVIEW_PASSWORD_ITERATIONS",
     "REVIEW_SESSION_SECRET",
+    "REVIEWER_ACCOUNT_02_JSON",
+    "REVIEWER_ACCOUNT_03_JSON",
+    "REVIEWER_ACCOUNT_04_JSON",
+    "REVIEWER_ACCOUNT_05_JSON",
+    "REVIEWER_ACCOUNT_06_JSON",
   ].flatMap((key) => process.env[key] ? [[key, process.env[key] as string]] : []),
 );
 

@@ -29,7 +29,9 @@ versioned `A303_HIGH_RISK_ROUTE` rule contract. It evaluates System Correctness
 and Capability Attribution only. It does not verify the deployed A303 runtime,
 score Decision Quality, measure Business Outcome Effect, or establish
 production readiness. A local Decision Quality rubric and blinded-review gate
-are implemented, but no expert reviews exist and no quality result is claimed. See
+are implemented. One complete story-v2 reviewer submission is preserved in the
+Sites database, but the three-review minimum is not met and no quality result is
+claimed. See
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
 
@@ -49,8 +51,9 @@ evidence, or production reporting.
 A content-addressed review freeze now binds the exact corpus manifest, ten
 scenario bodies, and Decision Quality rubric. A deterministic local builder
 produces 30 reviewer-safe packages and a separately held study-owner key while
-excluding post-decision reveals. This is review-handoff infrastructure only:
-no human reviews or Decision Quality result exist.
+excluding post-decision reveals. One complete human review now exists outside
+the repository, but the governed minimum-review gate remains unmet and no
+Decision Quality result exists.
 
 ## AWS runtime and delivery architecture
 

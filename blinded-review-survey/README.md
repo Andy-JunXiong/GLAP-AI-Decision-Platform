@@ -7,7 +7,7 @@ submission require the dedicated reviewer account.
 
 ## Reviewer flow
 
-1. Sign in with the dedicated reviewer username and password; no ChatGPT account is required.
+1. Sign in with the reviewer's own dedicated username and password; no ChatGPT account is required and credentials must never be shared between reviewers.
 2. Confirm independence, no conflict, and no access to the blind key.
 3. Review ten distinct stories, each with three frozen point-in-time moments. Every moment says who you are, what has just happened, what is still unknown, what you need to protect, and what decision is needed now.
 4. When the systems disagree, compare two genuinely different courses of action with five plain-language A/B/Tie questions.
@@ -51,6 +51,8 @@ never imported into formal evidence.
 
 - Passwords are verified against a PBKDF2-SHA256 hash supplied through the hosting environment; plaintext credentials are not stored in the repository.
 - PBKDF2 uses the hosting runtime's supported maximum of 100,000 iterations together with a strong generated reviewer password.
+- Each configured account maps to a distinct pseudonymous reviewer ID. That ID scopes the server-side session and persisted answers, so a submitted reviewer cannot expose, replace, or satisfy another reviewer's session.
+- The original account remains on its legacy runtime variables; additional accounts use separately numbered secret JSON variables so adding one reviewer does not require reading or replacing another reviewer's password material.
 - Signed, HTTP-only, SameSite=Strict sessions expire after eight hours.
 - Five failed attempts within 15 minutes trigger a 15-minute lockout.
 - Review mutations require both a valid session and a same-origin request.

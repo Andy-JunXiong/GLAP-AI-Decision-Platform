@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-16`
+**Sydney as-of date:** `2026-08-17`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -22,7 +22,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `STORY_V2_RELEASED_CANARY_VERIFIED` | public Sites v10 serves the plain-language story-v2 collection; Ming received the replacement only after a non-submitting canary; the v9 story-v1 draft remains isolated and ineligible, and no eligible expert result exists |
+| Decision Quality review handoff | `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LOCAL` | Sites v10 contains one complete 30-package story-v2 submission; the v9 story-v1 draft remains isolated and ineligible; multi-reviewer account isolation is locally verified but not committed or published, and the three-review gate is unmet |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -31,14 +31,13 @@ described as operational evidence.
 
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `STORY_V2_RELEASED_CANARY_VERIFIED_REVIEWER_NOTIFIED`
+**Status:** `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LOCAL_VERIFIED`
 
 **Goal**
 
-Replace the rejected public presentation with ten understandable operational
-stories. Each story must tell the reviewer who they are, what has happened,
-what remains unknown, what they need to protect, and what decision is required
-at each of three moments, while preserving governed save/resume and submission.
+Collect at least three genuinely independent reviews through the frozen
+story-v2 experience without sharing credentials or allowing one reviewer's
+session, answers, or submitted state to affect another reviewer.
 
 **Released story v2 experience**
 
@@ -61,13 +60,31 @@ at each of three moments, while preserving governed save/resume and submission.
   reject any distinct source options that collapse into identical display copy;
 - the header clearly identifies formal, server-saved story mode.
 
+**Current collection and account state**
+
+- one invited reviewer completed all 30 story-v2 packages and submitted at
+  `2026-08-17 09:16` Sydney time;
+- all 30 answers are final and committed, every package digest is present, and
+  all three eligibility attestations are recorded;
+- the earlier story-v1 draft remains isolated with three ineligible answers;
+- the multi-reviewer extension is locally implemented and verified: each
+  configured account maps to a distinct pseudonymous reviewer ID, and that ID
+  scopes the server-side session, persisted answers, and immutable submission;
+- the extension preserves the existing account and accepts separately numbered
+  secret account slots, so adding Dylan does not require reading or replacing
+  Ming's password material;
+- Dylan's credentials are generated outside the repository, but the new account
+  is not yet configured or usable because the source is not committed, pushed,
+  saved as a Sites version, or published.
+
 **Preserved boundaries**
 
 - scenario, rubric, option-contract, bundle, and blind-key digests are unchanged;
 - earlier questionnaires and `human-evaluation-story.v1` remain isolated and
   ineligible; Sites v10 uses `human-evaluation-story.v2`;
 - unauthenticated clients receive no frozen review bundle;
-- only the invited independent human may make attestations or enter scores;
+- only each invited independent human may make their own attestations or enter
+  their own scores;
 - repository tests and agent actions never create expert evidence;
 - Decision Quality remains `NOT_EVALUATED` until eligible submissions are
   collected and the governed minimum-review aggregation gate is met;
@@ -131,13 +148,18 @@ at each of three moments, while preserving governed save/resume and submission.
   Ming had started v9 before its rejection; those records were not migrated;
 - Ming received the Sites v10 replacement instruction only after canary
   success and was told to restart from Case 1 using the existing login.
+- a later read-only verification found Ming's story-v2 session `SUBMITTED` with
+  30 unique final answers and no missing package digest; the browser independently
+  displayed `REVIEW COMPLETE`, the same submission time, and a locked status;
+- the multi-reviewer extension then passed reviewer-site lint, production build,
+  and all 23 site tests without changing the frozen bundle or D1 schema.
 
 **Definition of done**
 
-- the story v2 correction, source push, exact-source Sites v10 publication,
-  production canary, and replacement message are complete;
-- Ming must use Sites v10 and restart at Case 1; only Ming may attest, review,
-  save, and submit;
+- the first complete story-v2 human submission is preserved and locked;
+- the multi-reviewer implementation and local validation are complete;
+- commit, push, exact-source Sites publication, Dylan account configuration,
+  non-submitting login/isolation canary, and credential email remain pending;
 - the old-draft isolation and zero-agent-answer boundaries remain intact.
 
 **Stop conditions**
@@ -150,9 +172,10 @@ at each of three moments, while preserving governed save/resume and submission.
 
 **Next slice after completion**
 
-Have Ming personally verify save/resume and complete the story-v2 formal review.
-Aggregate Decision Quality only after governed eligible submissions meet the
-declared minimum-review gate.
+Commit and push the multi-reviewer extension only after explicit source-control
+authority, then publish it through Sites, configure Dylan's separate secret
+account slot, run a non-submitting login/isolation canary, and send Dylan's
+credentials only after those checks pass.
 
 ## Pending validation
 
@@ -161,8 +184,10 @@ declared minimum-review gate.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Have Ming verify story-v2 save/resume and complete only personally true
-  attestations and judgments on Sites v10.
+- Commit, push, publish, configure, and canary the locally verified
+  multi-reviewer account extension only through their remaining explicit gates.
+- Have Dylan personally enter only true attestations and judgments after his
+  dedicated account is live and verified.
 - Collect genuinely independent Decision Quality reviews only from the v3
   scenario, rubric, and option-contract freeze.
 
@@ -174,9 +199,10 @@ done.
 
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
-- Decision Quality: earlier questionnaire and story-v1 records remain isolated
-  and ineligible; Sites v9 is superseded; story v2 is live and canary-verified,
-  but no eligible independent expert submission exists yet.
+- Decision Quality: one complete story-v2 submission exists, earlier
+  questionnaire and story-v1 records remain isolated and ineligible, and at
+  least two more complete independent submissions are required before the
+  declared minimum-review gate can be met.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient.
@@ -303,7 +329,7 @@ done.
   zero-pollution canaries.
 - Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
   attributed changes, fourteen no-delta controls, all structural gates met,
-  and `NOT_MET` status because independent reviews are absent.
+  and `NOT_MET` status because the three-review minimum is not met.
 - Project drift audit: 16 checks passed with zero drift.
 - Relative-link validation passed for 64 links across nine changed Markdown
   files.
@@ -345,22 +371,30 @@ done.
   publication, post-canary notification to Ming, and commit/push to GitHub main.
   GitHub commit `cc26d95`, Sites source `21ba5e7`, Sites v10, the successful
   canary, and Ming's replacement notification completed in that order.
+- The user reported that Ming completed the review; read-only Sites and browser
+  checks confirmed the complete locked story-v2 submission. The user then
+  authorized local creation of an independent Dylan account and a later
+  credential email, but has not yet granted the separate commit/push authority
+  required for exact-source Sites publication.
 
 ### Pending validation
 
-- Independent human review and product/runtime items remain listed above.
+- Multi-reviewer publication, Dylan account activation, and the remaining
+  independent human reviews remain listed above.
 
 ### Incomplete
 
-- All independent blinded reviews still remain before the declared benchmark
-  gate can be met.
+- At least two more complete independent blinded reviews remain before the
+  declared benchmark gate can be met.
 
 ## Next Up
 
-1. Have Ming personally exercise Sites v10 save/resume and complete the formal
-   story-v2 review; the agent must not enter judgments.
-2. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
-   until at least three eligible reviews per variant pass governed checks.
+1. After explicit commit/push authority, publish the locally verified
+   multi-reviewer extension, configure Dylan's separate secret account slot,
+   and run a non-submitting login/isolation canary.
+2. Send Dylan's credentials only after the canary succeeds; keep Decision
+   Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET` until at least
+   three eligible reviews per variant pass governed checks.
 
 ## Current-week history
 

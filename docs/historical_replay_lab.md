@@ -235,8 +235,10 @@ python ops/run_historical_replay_corpus.py \
 The manifest requires at least 10 scenarios, four disruption types, three
 regions, two transport modes, two severity bands, and three independent
 blinded reviews per variant. The current corpus passes every structural coverage
-requirement, including scenario count. It has no independent reviews, so the
-runner still returns `eligible=false` and `status=NOT_MET`.
+requirement, including scenario count. The hosted story-v2 collection contains
+one complete independent-review submission, but the local runner has not been
+given a governed export and the three-review minimum is not met. It therefore
+still returns `eligible=false` and `status=NOT_MET`.
 
 Decision Quality and Business Outcome Effect remain `NOT_EVALUATED`.
 Historical reveals do not identify the counterfactual result of an unchosen
@@ -266,19 +268,14 @@ because its richer rule explanation still did not present a complete problem
 story or solution-and-benefit chain. Preserved v1/v2 drafts are non-evidence
 and cannot be combined with v3. The v3 repository-side freeze and handoff are
 available in the authenticated v3 review infrastructure. Sites v8's numeric
-questionnaire presentation was rejected in user review and is paused. A
-corrected local candidate expands the earlier story-based interaction from five
-to all ten cases and from 15 to all 30 moments while retaining the preview only
-as a development artifact.
-The preview maps each displayed moment to the frozen reviewer-safe package,
-hides all future result semantics until sequential unlock, makes earlier
-judgments read-only, and stores answers only in the
-current browser without calling the formal review API. The corrected candidate
-uses isolated server-side comparative answers, but a new public release and
-canary remain pending and Ming was told not to use v8. This does not complete independent review:
-no eligible human submissions are stored, no
-reviewer independence is asserted by the code, and benchmark status remains
-`NOT_MET`.
+questionnaire and Sites v9's technical story-v1 presentation are superseded and
+ineligible. Sites v10 is the canary-verified formal story-v2 entry across all
+ten cases and 30 moments; the five-case preview remains a development-only
+browser-local artifact. The hosted database contains one complete story-v2
+submission and one isolated three-answer story-v1 draft. The single complete
+submission does not satisfy the three-review minimum, reviewer independence
+still depends on truthful human attestation and study-owner enforcement, and
+benchmark status remains `NOT_MET`.
 
 Before calling the corpus a benchmark:
 

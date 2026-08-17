@@ -133,7 +133,7 @@ test("keeps persisted identity and package fields server-derived", async () => {
     readFile(new URL("../app/api/review/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0003_rapid_misty_knight.sql", import.meta.url), "utf8"),
   ]);
-  assert.match(route, /reviewer-ops-01/);
+  assert.match(route, /reviewer\.userId/);
   assert.match(route, /packageFor\(answer\.reviewId\)/);
   assert.match(route, /frozen\.package_digest !== answer\.packageDigest/);
   assert.match(route, /story_review_answers/);
@@ -163,7 +163,11 @@ test("requires the dedicated account and keeps frozen cases out of the public cl
   assert.match(auth, /SameSite=Strict/);
   assert.match(auth, /8 \* 60 \* 60/);
   assert.match(auth, /PBKDF2_ITERATIONS = 100000/);
+  assert.match(auth, /REVIEWER_ACCOUNT_02_JSON/);
+  assert.match(auth, /duplicate accounts/);
+  assert.match(auth, /candidate\.userId === claims\.sub/);
   assert.match(loginRoute, /MAX_FAILURES = 5/);
+  assert.match(loginRoute, /createSessionCookie\(request, reviewer\)/);
   assert.match(loginRoute, /15 \* 60 \* 1000/);
   assert.match(reviewRoute, /export async function GET[\s\S]*requireReviewer\(request\)[\s\S]*attachStoryProfiles\(localizeReviewPackages\(reviewBundle\.packages\)\)/);
 
