@@ -9,9 +9,14 @@ preserved handoffs.
 - Released isolated multi-reviewer authentication for the formal Human
   Evaluation site. Each hosted account now derives a separate pseudonymous
   persistence scope while preserving the existing account, frozen review
-  bundle, immutable submissions, and D1 schema. Sites v11 and a zero-write
-  second-account canary verified the boundary; no Decision Quality result is
+  bundle, immutable submissions, and D1 schema. Sites v11 and zero-write
+  canaries for four additional accounts verified the boundary; two complete
+  human submissions are now preserved, but no Decision Quality result is
   claimed until the governed three-review minimum is met.
+- Added a public-safe Evaluation & Trust view to the GitHub Pages source. It
+  shows the frozen replay scope and aggregate 2-of-3 review progress while
+  keeping reviewer identities, answers, credentials, operational KPIs, and
+  business-outcome claims outside the public evaluation surface.
 
 ## 2026-08-16
 

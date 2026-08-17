@@ -46,11 +46,12 @@ and keeps human approval, execution evidence and outcomes traceable.
 > decision cutoffs. Structural coverage checks pass, but the corpus is not an
 > eligible benchmark and contains no independent expert Decision Quality result.
 
-> **16 August 2026 Human Evaluation status:** public Sites v8's numeric
-> questionnaire was rejected in user review and the invited reviewer was told
-> to pause. A corrected story-based A/B/Tie candidate now covers ten distinct
-> cases and 30 point-in-time packages locally; it is not yet released and no
-> eligible expert submission or Decision Quality result exists.
+> **17 August 2026 Human Evaluation status:** the corrected story-based
+> A/B/Tie workflow is live as Sites v11 with five isolated reviewer accounts.
+> Two eligible reviewers have each completed all 30 frozen packages and all
+> required attestations. The declared minimum is three valid independent
+> reviews, so Decision Quality remains `NOT_EVALUATED` and one more eligible
+> submission is required before governed aggregation.
 
 ## Explore the interactive product story
 
@@ -69,9 +70,11 @@ The published Control Tower reads a versioned, sanitized
 [OPS snapshot contract](docs/ops_snapshot.md). It shows source provenance,
 data date and freshness explicitly. Its KPIs and OLS forecast are calculated in
 Athena at the governed logical run date, and its distributions reuse deployed
-AWS result tables. GitHub Actions only publishes the aggregate contract. Until
-the repository's read-only AWS OIDC role is configured, the public site displays
-a clearly labelled synthetic fallback rather than claiming a live connection.
+AWS result tables. GitHub Actions only publishes the aggregate contract. The
+current Pages deployment is connected through the repository's read-only AWS
+OIDC path; opening the HTML file directly still uses a clearly labelled
+embedded fallback. The separate **Evaluation** page publishes only dated,
+non-identifying progress totals and never reviewer answers or credentials.
 
 [Read what is implemented and simulated](offline/README.md) ·
 [Inspect the deployable web version](decision-brief-demo/README.md) ·
@@ -145,7 +148,7 @@ its source metrics.
 | Authenticated Operations | Private staging cockpit with Cognito roles, governed Action mutations, Outcome Review, Pipeline Health, Forecast Accuracy and authorised Network drill-down |
 | Drift prevention | Staged-snapshot pre-commit gate plus independent CI architecture/capability audit |
 | Decision evaluation | Versioned local A303 ON/OFF ablation with read-only System Correctness and Capability Attribution checks |
-| Historical Replay | Ten-event hybrid corpus with 30 frozen cutoffs, integrity-bound blinded-review handoff, and an explicit `NOT_MET` gate until independent reviews exist |
+| Historical Replay | Ten-event hybrid corpus with 30 frozen cutoffs, two complete eligible reviews, and an explicit `NOT_MET` gate until the three-review minimum and governed aggregation are complete |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is

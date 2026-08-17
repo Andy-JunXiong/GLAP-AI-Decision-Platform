@@ -28,6 +28,7 @@ class OfflineDemoTests(unittest.TestCase):
             "Decisions",
             "Shipment baseline",
             "Outcome maturity",
+            "Evaluation &amp; trust",
             "Decision Brief",
         ):
             with self.subTest(label=label):
@@ -107,6 +108,23 @@ class OfflineDemoTests(unittest.TestCase):
             'id="analyticsLaneProfile"',
             "scenario approvals stay in browser",
             "No measured savings or production performance claim",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
+    def test_evaluation_progress_is_public_safe_and_separate(self):
+        for marker in (
+            'id="evaluation"',
+            'data-page="evaluation"',
+            "Historical Replay",
+            "10</strong><small>cases · 30 frozen cutoffs",
+            "2 / 3",
+            "one more eligible review required",
+            "Decision Quality",
+            "NOT EVALUATED",
+            "No reviewer identities, account details, answers",
+            "No operational or business-outcome claim",
+            "repeat(8,minmax(60px,1fr))",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)

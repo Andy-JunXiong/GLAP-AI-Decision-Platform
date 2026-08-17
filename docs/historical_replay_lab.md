@@ -236,7 +236,7 @@ The manifest requires at least 10 scenarios, four disruption types, three
 regions, two transport modes, two severity bands, and three independent
 blinded reviews per variant. The current corpus passes every structural coverage
 requirement, including scenario count. The hosted story-v2 collection contains
-one complete independent-review submission, but the local runner has not been
+two complete independent-review submissions, but the local runner has not been
 given a governed export and the three-review minimum is not met. It therefore
 still returns `eligible=false` and `status=NOT_MET`.
 
@@ -271,11 +271,11 @@ available in the authenticated v3 review infrastructure. Sites v8's numeric
 questionnaire and Sites v9's technical story-v1 presentation are superseded and
 ineligible. Sites v11 is the canary-verified formal story-v2 entry across all
 ten cases and 30 moments; the five-case preview remains a development-only
-browser-local artifact. Separate pseudonymous reviewer accounts isolate hosted
-sessions and answers. The database contains one complete story-v2 submission
-and one isolated three-answer story-v1 draft; the second account's zero-write
-canary created no review data. The single complete
-submission does not satisfy the three-review minimum, reviewer independence
+browser-local artifact. Five pseudonymous reviewer accounts isolate hosted
+sessions and answers. The database contains two complete story-v2 submissions
+and one isolated three-answer story-v1 draft; all four additional accounts'
+zero-write canaries created no review data. The two complete
+submissions do not satisfy the three-review minimum, reviewer independence
 still depends on truthful human attestation and study-owner enforcement, and
 benchmark status remains `NOT_MET`.
 

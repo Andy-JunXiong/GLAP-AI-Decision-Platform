@@ -164,16 +164,15 @@ The Decision Quality rubric, v3 option-content contract, blinded package,
 independent-review contract, and aggregation gate are implemented. The
 ten-event corpus, rubric, and option contract are content-addressed, and
 deterministic blinded packages cover all 30 cutoffs. V1 and v2 collection is
-paused and preserved draft progress is ineligible. Public Sites v8's numeric
-questionnaire was rejected in user review and is paused; the invited reviewer
-was told not to start it. A corrected candidate now applies the local preview's
-story-based, progressive A/B/Tie interaction to the full 30-package v3 bundle,
-with attestations, server save/resume, per-story ordering, and immutable
-submission. Its comparative-review contract is implemented and locally
-validated, but it has not been publicly released. No eligible expert reviews have been collected, so Decision Quality
-therefore remains
-`NOT_EVALUATED`. Business Outcome Effect also remains `NOT_EVALUATED` until an
-eligible outcome method is attached. See
+paused and preserved draft progress is ineligible. The corrected story-based,
+progressive A/B/Tie workflow is publicly released as Sites v11. It applies the
+full 30-package v3 bundle with attestations, server save/resume, per-story
+ordering, immutable submission, and isolated reviewer scopes. Five hosted
+accounts exist and two eligible story-v2 submissions are complete, each with
+30 committed choices and all required attestations. The declared minimum is
+three valid independent reviews, so collection remains open and Decision
+Quality remains `NOT_EVALUATED`. Business Outcome Effect also remains
+`NOT_EVALUATED` until an eligible outcome method is attached. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
 
 Run it locally with:

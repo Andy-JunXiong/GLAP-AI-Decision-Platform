@@ -5,13 +5,14 @@
 and `decision-quality-comparative-review.v1` (story-mode collection)
 **Option content:** `decision-option-contract.v3`
 **Current status:** public Sites v11 is the canary-verified story-v2 formal
-entry across ten cases and 30 cutoffs. One invited reviewer completed a
-server-saved 30-package submission with all three attestations on 2026-08-17;
+entry across ten cases and 30 cutoffs. Two invited reviewers completed separate
+server-saved 30-package submissions with all three attestations on 2026-08-17;
 the superseded story-v1 draft remains isolated and ineligible. The governed
 three-review minimum is not met, so Decision Quality remains `NOT_EVALUATED`.
-The multi-reviewer account extension is deployed with separate hosted secrets
-and pseudonymous persistence scopes; Dylan's second account passed a zero-write
-login/isolation canary and its credentials were delivered privately.
+The multi-reviewer account extension is deployed with five separate hosted
+accounts and pseudonymous persistence scopes; all four additional accounts
+passed zero-write login/isolation canaries and their credentials were delivered
+privately.
 
 ## Purpose
 
@@ -161,7 +162,7 @@ Historical Replay bundle is hybrid replay evidence with controlled synthetic
 enterprise state. Public Sites v9 is paused after user inspection found its
 technical story copy and duplicate-looking identical A/B controls unusable;
 Ming received that link before the rejection and began one three-moment case;
-that story-v1 draft is preserved but ineligible. Public Sites v10 now presents
+that story-v1 draft is preserved but ineligible. Public Sites v11 presents
 ten plain-language, three-moment stories. Distinct
 source plans remain anonymous A/B choices, while true identical controls appear
 once as a shared plan requiring explicit confirmation. It stores comparative
@@ -169,13 +170,13 @@ judgments under isolated collection `human-evaluation-story.v2`, aligned with
 `decision-quality-comparative-review.v1`; preview-local answers, questionnaire
 drafts, and story-v1 records are never migrated. Sites v11 passed a
 non-submitting production canary before Dylan was notified. The live
-database now contains one complete story-v2 submission: all 30 package digests
-are present, all answers are final and committed, and the three reviewer
-attestations are recorded. The earlier story-v1 draft still contains only three
-ineligible answers and was not migrated. Dylan's account canary created no
-session, attestation, answer, save, or submission. One submission is
-insufficient for
-the declared three-review interpretation gate, so Decision Quality remains
+database now contains two complete story-v2 submissions. Ming's and Dong's
+sessions are locked and submitted with 30 committed answers and all three
+attestations each. The earlier story-v1 draft still contains only three
+ineligible answers and was not migrated. The Dylan, Dong, Xiaoshan, and Linqi
+account canaries created no session, attestation, answer, save, or submission.
+Two submissions are insufficient for the declared three-review interpretation
+gate, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring
 mechanics with in-memory test reviews; those tests are not expert evidence and
 are never written to the scenario corpus.

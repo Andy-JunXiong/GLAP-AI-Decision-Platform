@@ -19,7 +19,7 @@ For a concise interview or portfolio presentation, follow the
 
 ## What is implemented
 
-Navigation, filtering, scenario economics, approval invalidation, approve/reject/override reason capture, cross-page state changes, an in-memory decision ledger, expected-versus-observed outcome presentation, and a detailed AWS System evidence view all run locally in the browser. On GitHub Pages, the Control Tower also loads the published `data/ops-snapshot.json` contract and displays its provenance and freshness. Directly opening the HTML file uses the explicitly labelled embedded fallback because browsers do not allow the page to fetch a sibling local JSON file reliably.
+Navigation, filtering, scenario economics, approval invalidation, approve/reject/override reason capture, cross-page state changes, an in-memory decision ledger, expected-versus-observed outcome presentation, a public-safe Evaluation view, and a detailed AWS System evidence view all run locally in the browser. On GitHub Pages, the Control Tower also loads the published `data/ops-snapshot.json` contract and displays its provenance and freshness. Directly opening the HTML file uses the explicitly labelled embedded fallback because browsers do not allow the page to fetch a sibling local JSON file reliably.
 
 The System view is split into six focused subpages: Daily E2E Flow, AWS Overview, Data Catalog, Logic & SQL, OPS Dashboard, and Release & Lineage. Together they translate the deployed platform into:
 
@@ -40,11 +40,11 @@ All operational records and values are synthetic. State is not persisted after t
 
 This file is the offline presentation layer, not the complete data platform. The full project documents an AWS reference architecture using S3, Glue, governed Iceberg tables, Athena models, Lambda/EventBridge automation, and decision-support outputs.
 
-The System page reflects a read-only AWS inspection performed on 23 July 2026. It separates deployed resources, validated execution, retained dashboard artifacts, synthetic records, and designed product behavior. Account identifiers, ARNs, bucket names, and notification subscribers are not embedded in the demo.
+The System page reflects a read-only AWS inspection performed on 6 August 2026. It separates deployed resources, validated execution, retained dashboard artifacts, synthetic records, and designed product behavior. The Evaluation page separately reports the 17 August 2026 Historical Replay and independent-review gate using aggregate counts only. Account identifiers, ARNs, bucket names, reviewer identities, credentials, answers, and notification subscribers are not embedded in the demo.
 
 ## Known limitations
 
 - One decision path has a detailed interactive brief.
-- The committed fallback is not live. A scheduled Athena export becomes connected only after the documented read-only GitHub OIDC variables are configured.
+- The committed fallback is not live. The published Pages site uses the scheduled read-only Athena export; direct local use remains on the labelled fallback.
 - The ledger is session-local and not written to durable storage.
 - Non-demo actions display a clear scope message instead of silently doing nothing.

@@ -22,7 +22,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LIVE` | Sites v11 contains one complete 30-package story-v2 submission and separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and the three-review gate is unmet |
+| Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_FIVE_ACCOUNTS_LIVE` | Sites v11 contains two complete 30-package story-v2 submissions and five separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
+| Public evaluation evidence view | `IMPLEMENTED_VERIFIED` | GitHub Pages source presents aggregate-only 2-of-3 review progress separately from AWS operations, reviewer identities, answers, and business outcomes |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -31,7 +32,7 @@ described as operational evidence.
 
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LIVE_VERIFIED`
+**Status:** `TWO_COMPLETE_REVIEWS_FIVE_ACCOUNTS_LIVE_VERIFIED`
 
 **Goal**
 
@@ -62,10 +63,9 @@ session, answers, or submitted state to affect another reviewer.
 
 **Current collection and account state**
 
-- one invited reviewer completed all 30 story-v2 packages and submitted at
-  `2026-08-17 09:16` Sydney time;
-- all 30 answers are final and committed, every package digest is present, and
-  all three eligibility attestations are recorded;
+- Ming completed all 30 story-v2 packages and submitted at `2026-08-17 09:16`
+  Sydney time; a later read-only verification found Dong independently
+  `SUBMITTED` with 30 committed answer rows and all three attestations;
 - the earlier story-v1 draft remains isolated with three ineligible answers;
 - the multi-reviewer extension is locally implemented and verified: each
   configured account maps to a distinct pseudonymous reviewer ID, and that ID
@@ -76,6 +76,18 @@ session, answers, or submitted state to affect another reviewer.
 - Dylan's credentials were generated outside the repository, configured in a
   separate hosted secret account slot, canary-verified, and sent privately;
   no plaintext password or personal email address is stored in the repository.
+- Dong's credentials were generated outside the repository and configured in a
+  third hosted secret account slot. The corrected account passed the same zero-
+  write canary and its credential notice was sent privately; no secret or
+  personal email address is stored in the repository.
+- Xiaoshan's credentials were generated outside the repository and configured
+  in a fourth hosted secret account slot after explicit publication approval.
+  The account passed a zero-write canary and its credential notice was sent
+  privately; no secret or personal email address is stored in the repository.
+- Linqi's credentials were generated outside the repository and configured in a
+  fifth hosted secret account slot after explicit publication approval. The
+  account passed a zero-write canary and its credential notice was sent
+  privately; no secret or personal email address is stored in the repository.
 
 **Preserved boundaries**
 
@@ -98,6 +110,9 @@ session, answers, or submitted state to affect another reviewer.
 - 23 site tests passed, including authentication, formal save/submit wiring,
   30-package completeness, bundle isolation, blind-key exclusion, and the
   development-only preview's future-information controls;
+- the GitHub Pages source now includes a public-safe Evaluation & Trust view;
+  17 focused demo tests and the 299-test repository suite pass, and the view
+  keeps the 2-of-3 review gate outside operational KPI and outcome claims;
 - the API independently enforces per-story T0 -> T1 -> T2 commit order and
   immutable committed answers rather than trusting browser navigation;
 - Next.js was upgraded from `16.2.6` to `16.3.1` after the production-only
@@ -164,13 +179,36 @@ session, answers, or submitted state to affect another reviewer.
   attestation, answer, save, or submission;
 - Dylan's credential notice was sent privately in the existing invitation
   thread only after the canary passed and states that no reply is required.
+- the third hosted account was added without changing source, the frozen bundle,
+  or D1. Sites v11 was republished with environment revision 7; Dong's login,
+  authenticated review read, and logout returned 200, exposed all 30 story-v2
+  packages with no session or answers, and left D1 at zero Dong sessions;
+- Dong's credential notice was sent privately only after that canary passed and
+  also states that no reply is required.
+- a later read-only D1 check found Dong's own story-v2 session `SUBMITTED` with
+  30 answer rows and all three eligibility attestations; this is the second
+  complete human submission and was not created by the canary or agent;
+- after explicit user confirmation, a fourth hosted account was added without
+  changing source, the frozen bundle, or D1. Sites v11 was republished with
+  environment revision 8; Xiaoshan's login, authenticated review read, and
+  logout returned 200, exposed all 30 story-v2 packages with no session or
+  answers, and left D1 at zero Xiaoshan sessions;
+- Xiaoshan's credential notice was sent privately only after that canary passed
+  and states that no reply is required.
+- after explicit user confirmation, a fifth hosted account was added without
+  changing source, the frozen bundle, or D1. Sites v11 was republished with
+  environment revision 9; Linqi's login, authenticated review read, and logout
+  returned 200, exposed all 30 story-v2 packages with no session or answers,
+  and left D1 at zero Linqi sessions;
+- Linqi's credential notice was sent privately only after that canary passed
+  and states that no reply is required.
 
 **Definition of done**
 
-- the first complete story-v2 human submission is preserved and locked;
+- two complete story-v2 human submissions are preserved and locked;
 - the multi-reviewer implementation, source release, Sites v11 publication,
-  Dylan account configuration, non-submitting isolation canary, and credential
-  delivery are complete;
+  Dylan, Dong, Xiaoshan, and Linqi account configuration, non-submitting
+  isolation canaries, and credential delivery are complete;
 - the old-draft isolation and zero-agent-answer boundaries remain intact.
 
 **Stop conditions**
@@ -183,9 +221,8 @@ session, answers, or submitted state to affect another reviewer.
 
 **Next slice after completion**
 
-Collect Dylan's independently entered story-v2 review, then create and verify a
-separate account for one additional eligible reviewer so the governed minimum
-of three complete reviews can eventually be evaluated.
+Collect one more independently entered story-v2 review from Dylan, Xiaoshan, or
+Linqi so the governed minimum of three complete reviews can be evaluated.
 
 ## Pending validation
 
@@ -195,6 +232,10 @@ of three complete reviews can eventually be evaluated.
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
 - Have Dylan personally enter only true attestations and judgments after his
+  dedicated account is live and verified.
+- Have Xiaoshan personally enter only true attestations and judgments after her
+  dedicated account is live and verified.
+- Have Linqi personally enter only true attestations and judgments after her
   dedicated account is live and verified.
 - Collect genuinely independent Decision Quality reviews only from the v3
   scenario, rubric, and option-contract freeze.
@@ -207,10 +248,10 @@ done.
 
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
-- Decision Quality: one complete story-v2 submission exists, earlier
-  questionnaire and story-v1 records remain isolated and ineligible, and at
-  least two more complete independent submissions are required before the
-  declared minimum-review gate can be met.
+- Decision Quality: two complete story-v2 submissions exist, earlier
+  questionnaire and story-v1 records remain isolated and ineligible, and one
+  more complete independent submission is required before the declared
+  minimum-review gate can be met.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient.
@@ -386,25 +427,39 @@ done.
   delivery workflow. GitHub commit `faa8861`, Sites source `39cf18e`, Sites v11,
   the successful zero-write canary, and the private credential notice completed
   in that order.
+- The user named Dong as the third eligible reviewer and supplied the delivery
+  address. A third secret account slot was configured, Sites v11 environment
+  revision 7 passed a zero-write account canary, and the private credential
+  notice was sent only after verification.
+- A later read-only check found Dong's story-v2 session independently submitted
+  with 30 committed answers and all three attestations. The user then named
+  Xiaoshan as a new reviewer and explicitly confirmed creation of a fourth
+  hosted account, public Sites republish, canary, and credential email. Sites
+  v11 environment revision 8 and the zero-write canary completed before the
+  private notice was sent.
+- The user named Linqi as a new test reviewer and then explicitly confirmed a
+  fifth hosted account, public Sites republish, canary, and credential email.
+  Sites v11 environment revision 9 and the zero-write canary completed before
+  the private notice was sent.
 
 ### Pending validation
 
-- Dylan's independently entered review and the remaining eligible human review
-  remain listed above.
+- Dylan's, Xiaoshan's, or Linqi's independently entered review remains listed
+  above.
 
 ### Incomplete
 
-- At least two more complete independent blinded reviews remain before the
+- At least one more complete independent blinded review remains before the
   declared benchmark gate can be met.
 
 ## Next Up
 
-1. Let Dylan personally complete the story-v2 flow using the verified dedicated
-   account; do not create, edit, or attest to any answer on his behalf.
-2. Invite and configure one additional eligible reviewer through another
-   separate account. Keep Decision Quality and benchmark eligibility
-   `NOT_EVALUATED` / `NOT_MET` until at least three eligible reviews pass the
-   governed checks.
+1. Let Dylan, Xiaoshan, and Linqi personally complete the story-v2 flow using
+   their verified dedicated accounts; do not create, edit, or attest to any
+   answer on a reviewer's behalf.
+2. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
+   until all three eligible reviews pass the governed checks, then run the
+   blinded aggregate without mixing superseded collections.
 
 ## Current-week history
 

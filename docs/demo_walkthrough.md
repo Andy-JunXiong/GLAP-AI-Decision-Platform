@@ -59,7 +59,13 @@ value. It keeps expected and observed impact separate until reconciliation.
 
 ## 2:40–3:00 — Show the engineering evidence
 
-Open **System** and briefly visit:
+Open **Evaluation** first. Show the ten replay cases, 30 frozen cutoffs, two of
+three complete eligible reviews, and the explicit `NOT EVALUATED` state. Point
+out that the page contains only aggregate progress and withholds reviewer
+identities, answers, credentials, business-outcome claims, and production-
+readiness claims.
+
+Then open **System** and briefly visit:
 
 - **AWS Overview** for deployed compute, catalog, scheduling and monitoring;
 - **Data Catalog** for the business meaning of the Iceberg contracts;
@@ -82,6 +88,8 @@ analysis without bypassing the safety rules.
 
 ### What would make this production-ready?
 
-Durable approval APIs, carrier or TMS integration, identity and role controls,
-live source-quality monitoring, observed-outcome reconciliation and production
-performance validation are still required.
+Private staging already has durable governed Action APIs and identity-based role
+controls. Production readiness still requires production-grade carrier or TMS
+integration, representative operational evidence, live source-quality
+monitoring, observed-outcome reconciliation, load/security/failure validation,
+and separate human approval for any production deployment or authority change.

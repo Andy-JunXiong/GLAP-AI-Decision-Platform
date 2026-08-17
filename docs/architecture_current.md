@@ -29,9 +29,10 @@ versioned `A303_HIGH_RISK_ROUTE` rule contract. It evaluates System Correctness
 and Capability Attribution only. It does not verify the deployed A303 runtime,
 score Decision Quality, measure Business Outcome Effect, or establish
 production readiness. A local Decision Quality rubric and blinded-review gate
-are implemented. Sites v11 provides isolated pseudonymous reviewer accounts;
-one complete story-v2 reviewer submission is preserved in the Sites database,
-but the three-review minimum is not met and no quality result is claimed. See
+are implemented. Sites v11 provides five isolated pseudonymous reviewer
+accounts; two complete story-v2 reviewer submissions are preserved in the Sites
+database, but the three-review minimum is not met and no quality result is
+claimed. See
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
 
@@ -43,7 +44,7 @@ highway network. A version-frozen manifest runs 30 historical cutoffs across
 OCEAN, AIR, RAIL, and ROAD, preserves scenario-level
 attribution, and validates HIGH and MEDIUM severity bands. Structural coverage
 gates, including scenario count, now pass; benchmark eligibility remains blocked
-by absent independent reviews. Public facts remain paraphrased
+until the three-review minimum and governed aggregation are complete. Public facts remain paraphrased
 and digested; enterprise state remains aggregate controlled synthetic. The
 corpus is evaluation-only and cannot enter operational views, readiness
 evidence, or production reporting.
@@ -51,9 +52,9 @@ evidence, or production reporting.
 A content-addressed review freeze now binds the exact corpus manifest, ten
 scenario bodies, and Decision Quality rubric. A deterministic local builder
 produces 30 reviewer-safe packages and a separately held study-owner key while
-excluding post-decision reveals. One complete human review now exists outside
-the repository, but the governed minimum-review gate remains unmet and no
-Decision Quality result exists.
+excluding post-decision reveals. Two complete eligible human reviews now exist
+outside the repository, but the governed three-review minimum remains unmet and
+no Decision Quality result exists.
 
 ## AWS runtime and delivery architecture
 
