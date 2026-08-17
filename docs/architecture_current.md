@@ -29,9 +29,9 @@ versioned `A303_HIGH_RISK_ROUTE` rule contract. It evaluates System Correctness
 and Capability Attribution only. It does not verify the deployed A303 runtime,
 score Decision Quality, measure Business Outcome Effect, or establish
 production readiness. A local Decision Quality rubric and blinded-review gate
-are implemented. One complete story-v2 reviewer submission is preserved in the
-Sites database, but the three-review minimum is not met and no quality result is
-claimed. See
+are implemented. Sites v11 provides isolated pseudonymous reviewer accounts;
+one complete story-v2 reviewer submission is preserved in the Sites database,
+but the three-review minimum is not met and no quality result is claimed. See
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
 

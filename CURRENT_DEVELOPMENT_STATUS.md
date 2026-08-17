@@ -22,7 +22,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LOCAL` | Sites v10 contains one complete 30-package story-v2 submission; the v9 story-v1 draft remains isolated and ineligible; multi-reviewer account isolation is locally verified but not committed or published, and the three-review gate is unmet |
+| Decision Quality review handoff | `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LIVE` | Sites v11 contains one complete 30-package story-v2 submission and separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and the three-review gate is unmet |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -31,7 +31,7 @@ described as operational evidence.
 
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LOCAL_VERIFIED`
+**Status:** `ONE_COMPLETE_REVIEW_MULTI_ACCOUNT_LIVE_VERIFIED`
 
 **Goal**
 
@@ -73,15 +73,15 @@ session, answers, or submitted state to affect another reviewer.
 - the extension preserves the existing account and accepts separately numbered
   secret account slots, so adding Dylan does not require reading or replacing
   Ming's password material;
-- Dylan's credentials are generated outside the repository, but the new account
-  is not yet configured or usable because the source is not committed, pushed,
-  saved as a Sites version, or published.
+- Dylan's credentials were generated outside the repository, configured in a
+  separate hosted secret account slot, canary-verified, and sent privately;
+  no plaintext password or personal email address is stored in the repository.
 
 **Preserved boundaries**
 
 - scenario, rubric, option-contract, bundle, and blind-key digests are unchanged;
 - earlier questionnaires and `human-evaluation-story.v1` remain isolated and
-  ineligible; Sites v10 uses `human-evaluation-story.v2`;
+  ineligible; Sites v11 uses `human-evaluation-story.v2`;
 - unauthenticated clients receive no frozen review bundle;
 - only each invited independent human may make their own attestations or enter
   their own scores;
@@ -153,13 +153,24 @@ session, answers, or submitted state to affect another reviewer.
   displayed `REVIEW COMPLETE`, the same submission time, and a locked status;
 - the multi-reviewer extension then passed reviewer-site lint, production build,
   and all 23 site tests without changing the frozen bundle or D1 schema.
+- GitHub commit `faa8861` was pushed to `main` and passed CI. Its exact reviewer-
+  site tree was appended to the Sites source history as `39cf18e`, saved as
+  Sites v11, and deployed with hosted environment revision 5;
+- a non-submitting Dylan-account canary returned 200 for login, authenticated
+  review read, and logout; it verified `human-evaluation-story.v2`, all 30
+  packages, a null review session, and zero answers;
+- the post-canary D1 read still contained two total story sessions and zero
+  sessions for Dylan's pseudonymous reviewer ID, so the canary created no
+  attestation, answer, save, or submission;
+- Dylan's credential notice was sent privately in the existing invitation
+  thread only after the canary passed and states that no reply is required.
 
 **Definition of done**
 
 - the first complete story-v2 human submission is preserved and locked;
-- the multi-reviewer implementation and local validation are complete;
-- commit, push, exact-source Sites publication, Dylan account configuration,
-  non-submitting login/isolation canary, and credential email remain pending;
+- the multi-reviewer implementation, source release, Sites v11 publication,
+  Dylan account configuration, non-submitting isolation canary, and credential
+  delivery are complete;
 - the old-draft isolation and zero-agent-answer boundaries remain intact.
 
 **Stop conditions**
@@ -172,10 +183,9 @@ session, answers, or submitted state to affect another reviewer.
 
 **Next slice after completion**
 
-Commit and push the multi-reviewer extension only after explicit source-control
-authority, then publish it through Sites, configure Dylan's separate secret
-account slot, run a non-submitting login/isolation canary, and send Dylan's
-credentials only after those checks pass.
+Collect Dylan's independently entered story-v2 review, then create and verify a
+separate account for one additional eligible reviewer so the governed minimum
+of three complete reviews can eventually be evaluated.
 
 ## Pending validation
 
@@ -184,8 +194,6 @@ credentials only after those checks pass.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Commit, push, publish, configure, and canary the locally verified
-  multi-reviewer account extension only through their remaining explicit gates.
 - Have Dylan personally enter only true attestations and judgments after his
   dedicated account is live and verified.
 - Collect genuinely independent Decision Quality reviews only from the v3
@@ -373,14 +381,16 @@ done.
   canary, and Ming's replacement notification completed in that order.
 - The user reported that Ming completed the review; read-only Sites and browser
   checks confirmed the complete locked story-v2 submission. The user then
-  authorized local creation of an independent Dylan account and a later
-  credential email, but has not yet granted the separate commit/push authority
-  required for exact-source Sites publication.
+  authorized creation and delivery of an independent Dylan account, then said
+  to continue with the exact-source commit, publication, canary, and credential
+  delivery workflow. GitHub commit `faa8861`, Sites source `39cf18e`, Sites v11,
+  the successful zero-write canary, and the private credential notice completed
+  in that order.
 
 ### Pending validation
 
-- Multi-reviewer publication, Dylan account activation, and the remaining
-  independent human reviews remain listed above.
+- Dylan's independently entered review and the remaining eligible human review
+  remain listed above.
 
 ### Incomplete
 
@@ -389,12 +399,12 @@ done.
 
 ## Next Up
 
-1. After explicit commit/push authority, publish the locally verified
-   multi-reviewer extension, configure Dylan's separate secret account slot,
-   and run a non-submitting login/isolation canary.
-2. Send Dylan's credentials only after the canary succeeds; keep Decision
-   Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET` until at least
-   three eligible reviews per variant pass governed checks.
+1. Let Dylan personally complete the story-v2 flow using the verified dedicated
+   account; do not create, edit, or attest to any answer on his behalf.
+2. Invite and configure one additional eligible reviewer through another
+   separate account. Keep Decision Quality and benchmark eligibility
+   `NOT_EVALUATED` / `NOT_MET` until at least three eligible reviews pass the
+   governed checks.
 
 ## Current-week history
 

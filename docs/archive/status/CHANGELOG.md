@@ -4,6 +4,15 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-17
+
+- Released isolated multi-reviewer authentication for the formal Human
+  Evaluation site. Each hosted account now derives a separate pseudonymous
+  persistence scope while preserving the existing account, frozen review
+  bundle, immutable submissions, and D1 schema. Sites v11 and a zero-write
+  second-account canary verified the boundary; no Decision Quality result is
+  claimed until the governed three-review minimum is met.
+
 ## 2026-08-16
 
 - Released the formal ten-case Human Evaluation story-v2 experience. Each case

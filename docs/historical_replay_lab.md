@@ -269,10 +269,12 @@ story or solution-and-benefit chain. Preserved v1/v2 drafts are non-evidence
 and cannot be combined with v3. The v3 repository-side freeze and handoff are
 available in the authenticated v3 review infrastructure. Sites v8's numeric
 questionnaire and Sites v9's technical story-v1 presentation are superseded and
-ineligible. Sites v10 is the canary-verified formal story-v2 entry across all
+ineligible. Sites v11 is the canary-verified formal story-v2 entry across all
 ten cases and 30 moments; the five-case preview remains a development-only
-browser-local artifact. The hosted database contains one complete story-v2
-submission and one isolated three-answer story-v1 draft. The single complete
+browser-local artifact. Separate pseudonymous reviewer accounts isolate hosted
+sessions and answers. The database contains one complete story-v2 submission
+and one isolated three-answer story-v1 draft; the second account's zero-write
+canary created no review data. The single complete
 submission does not satisfy the three-review minimum, reviewer independence
 still depends on truthful human attestation and study-owner enforcement, and
 benchmark status remains `NOT_MET`.

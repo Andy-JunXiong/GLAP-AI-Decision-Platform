@@ -4,13 +4,14 @@
 **Review submissions:** `decision-quality-review.v1` (absolute-score tooling)
 and `decision-quality-comparative-review.v1` (story-mode collection)
 **Option content:** `decision-option-contract.v3`
-**Current status:** public Sites v10 is the canary-verified story-v2 formal
+**Current status:** public Sites v11 is the canary-verified story-v2 formal
 entry across ten cases and 30 cutoffs. One invited reviewer completed a
 server-saved 30-package submission with all three attestations on 2026-08-17;
 the superseded story-v1 draft remains isolated and ineligible. The governed
 three-review minimum is not met, so Decision Quality remains `NOT_EVALUATED`.
-A multi-reviewer account extension is locally implemented and verified but is
-not yet committed, published, or configured in Sites.
+The multi-reviewer account extension is deployed with separate hosted secrets
+and pseudonymous persistence scopes; Dylan's second account passed a zero-write
+login/isolation canary and its credentials were delivered privately.
 
 ## Purpose
 
@@ -166,12 +167,14 @@ source plans remain anonymous A/B choices, while true identical controls appear
 once as a shared plan requiring explicit confirmation. It stores comparative
 judgments under isolated collection `human-evaluation-story.v2`, aligned with
 `decision-quality-comparative-review.v1`; preview-local answers, questionnaire
-drafts, and story-v1 records are never migrated. Sites v10 passed its original
-non-submitting production canary before the invited reviewer began. The live
+drafts, and story-v1 records are never migrated. Sites v11 passed a
+non-submitting production canary before Dylan was notified. The live
 database now contains one complete story-v2 submission: all 30 package digests
 are present, all answers are final and committed, and the three reviewer
 attestations are recorded. The earlier story-v1 draft still contains only three
-ineligible answers and was not migrated. One submission is insufficient for
+ineligible answers and was not migrated. Dylan's account canary created no
+session, attestation, answer, save, or submission. One submission is
+insufficient for
 the declared three-review interpretation gate, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring
 mechanics with in-memory test reviews; those tests are not expert evidence and
