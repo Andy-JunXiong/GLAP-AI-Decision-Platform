@@ -124,6 +124,29 @@ The execution role uses the fixed staging-only name
 `glap-stateful-lifecycle-generator-staging-role`; this prevents CloudFormation
 physical-name truncation from widening or bypassing the deployer policy scope.
 
+### Recovery-controller release blocker -- 17 August 2026
+
+Manual workflow run `32012608848` used pushed commit
+`6b2a6c8feda6af37207dedd860babe1b328cf009` and action
+`deploy-recovery-controller`. Repository tests, private-variable checks,
+isolated-target verification, and plan rendering passed. The run then failed
+during idempotent schema application because the GitHub staging deployer did
+not have `glue:GetTable` for one existing lifecycle catalog table.
+
+Repository inspection found that the policy generator already declares the
+read action but its exact table-resource inventory does not include that
+catalog table. No seed was requested. The temporal backfill, stack/controller
+deployment, deployed guard checks, failed-date recovery, operational-baseline
+refresh, and Pages publication were all skipped. Earlier idempotent schema
+statements may have been replayed before the failing statement, so the run is
+not evidence of a complete schema deployment.
+
+Do not retry the recovery workflow until the repository's exact-resource table
+inventory is corrected and locally validated. Applying the resulting bounded
+IAM policy remains a separate named-administrator action requiring explicit
+human authority; the failure does not justify a database-wide wildcard or any
+production permission.
+
 ## Deployment
 
 First inspect a plan without changing AWS:

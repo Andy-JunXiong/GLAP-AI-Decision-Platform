@@ -37,8 +37,14 @@ were rejected before mutation because they would overwrite that newer status.
 A recovery correction now scopes the check to active providers with route
 configuration effective on the logical date and adds safe existing/requested
 date diagnostics. Commit `1aeb0bbed29dff27d45451a8ba6a5f6ae32fb2da`
-is pushed to `main` and CI-verified; no AWS Lambda, staging data, operational
-baseline, or public Pages artifact has been updated.
+is pushed to `main` and CI-verified. Manual staging run `32012608848` from
+commit `6b2a6c8feda6af37207dedd860babe1b328cf009` passed repository
+tests, target isolation, and plan rendering, then stopped during idempotent
+schema application because the staging deployer lacked `glue:GetTable` on one
+existing lifecycle catalog table. No seed was requested; temporal backfill,
+controller/stack deployment, failed-date recovery, operational-baseline
+refresh, and Pages publication were skipped. The correction is therefore not
+deployed and the persisted lifecycle status remains failed on `2026-08-09`.
 
 ## Active slice — Formal Human Evaluation entry
 
@@ -240,8 +246,13 @@ Linqi so the governed minimum of three complete reviews can be evaluated.
 
 ## Pending validation
 
-- Release the lifecycle quality-gate/controller correction through the manual
-  isolated-staging workflow after separate deployment approval.
+- Update and locally verify the repository's exact-resource lifecycle deployer
+  allowlist for the missing existing catalog table. A named IAM administrator
+  must separately review and apply only that bounded policy change; agent
+  authority does not include IAM mutation.
+- After that policy precondition is met, release the lifecycle quality-gate and
+  controller correction through the manual isolated-staging workflow under a
+  new explicit deployment decision.
 - Recover only the persisted failed `2026-08-09` date, then continue from
   `2026-08-10` through the current Sydney date. Do not restart from `2026-08-07`
   and do not count future-simulation provider rows.
@@ -268,6 +279,11 @@ done.
 
 ## Incomplete or blocked
 
+- Lifecycle recovery release: run `32012608848` failed before controller
+  deployment because the staging deployer's exact-resource Glue allowlist does
+  not cover one existing lifecycle catalog table. Do not retry the recovery
+  workflow until the repository policy inventory and separately human-applied
+  IAM policy are reconciled.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: two complete story-v2 submissions exist, earlier
@@ -358,6 +374,10 @@ done.
 
 ### Codex-run validation
 
+- The incident-record closeout passes Python compilation, all 301 repository
+  tests, `git diff --check`, and the 16-check project drift audit. It performed
+  no AWS write, deployment retry, IAM change, data recovery, baseline refresh,
+  or Pages publication.
 - The lifecycle recovery correction passes Python compilation, all 301
   repository tests, the 53 focused controller/quality/deployment tests, the
   plan-only extension render, `git diff --check`, and the 16-check project

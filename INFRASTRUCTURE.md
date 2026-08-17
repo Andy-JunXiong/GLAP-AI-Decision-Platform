@@ -119,6 +119,16 @@ in AWS and are deliberately not published in this repository.
 
 The Lambda execution role needs permission to start and inspect Athena queries, read Glue catalog metadata, and access the relevant S3 data and result locations. The scheduler needs permission to invoke the Lambda function. This repository does not publish account IDs, role ARNs, policies, or bucket names.
 
+The 2026-08-17 lifecycle recovery-controller release attempt exposed a narrower
+staging delivery gap: the GitHub staging deployer's exact-resource Glue
+allowlist did not cover one existing lifecycle catalog table. Manual workflow
+run `32012608848` stopped at schema application before temporal backfill,
+controller/stack deployment, recovery, baseline refresh, or public
+publication. The repository policy inventory must be corrected and validated
+first; a named IAM administrator retains separate authority to review and apply
+any bounded policy change. This finding does not authorize a wildcard resource,
+IAM administration by the agent, or any production permission.
+
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and
 execution, the change set contained one non-replacing Lambda property update,
