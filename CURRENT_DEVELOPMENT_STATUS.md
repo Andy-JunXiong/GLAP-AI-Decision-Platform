@@ -23,7 +23,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
 | Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_FIVE_ACCOUNTS_LIVE` | Sites v11 contains two complete 30-package story-v2 submissions and five separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
-| Public evaluation evidence view | `IMPLEMENTED_VERIFIED` | GitHub Pages source presents aggregate-only 2-of-3 review progress separately from AWS operations, reviewer identities, answers, and business outcomes |
+| Public evaluation evidence view | `PUBLISHED_VERIFIED` | GitHub Pages presents aggregate-only 2-of-3 review progress separately from AWS operations, reviewer identities, answers, and business outcomes |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -113,6 +113,10 @@ session, answers, or submitted state to affect another reviewer.
 - the GitHub Pages source now includes a public-safe Evaluation & Trust view;
   17 focused demo tests and the 299-test repository suite pass, and the view
   keeps the 2-of-3 review gate outside operational KPI and outcome claims;
+- GitHub commit `5819e5549afd4d4bae46a905b4bf4800c41320ec` is the exact
+  published source. CI run `31990342255` and Pages run `31990342232` completed
+  successfully; the live page returned the Evaluation navigation, `2 / 3`,
+  `NOT EVALUATED`, and the dated public-aggregate boundary;
 - the API independently enforces per-story T0 -> T1 -> T2 commit order and
   immutable committed answers rather than trusting browser navigation;
 - Next.js was upgraded from `16.2.6` to `16.3.1` after the production-only
@@ -382,6 +386,9 @@ done.
 - Project drift audit: 16 checks passed with zero drift.
 - Relative-link validation passed for 64 links across nine changed Markdown
   files.
+- Public-demo closeout validation passed all 299 repository tests, the 16-check
+  drift audit, staged credential scanning, successful CI and Pages workflows,
+  and a post-deployment read of the live Evaluation markers.
 
 ### User-reported validation
 
@@ -441,6 +448,10 @@ done.
   fifth hosted account, public Sites republish, canary, and credential email.
   Sites v11 environment revision 9 and the zero-write canary completed before
   the private notice was sent.
+- The user explicitly authorized publishing the aggregate Evaluation & Trust
+  view to the public GitHub Pages demo. Commit `5819e55` was pushed directly to
+  `main`; both CI and Pages completed successfully and the live markers were
+  verified afterward.
 
 ### Pending validation
 
