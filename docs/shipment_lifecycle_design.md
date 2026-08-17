@@ -23,6 +23,21 @@ still has no lifecycle schedule, production alias change, or write into the
 current v2 production boundary. Exception-to-action state, delayed outcomes,
 human-approved policy feedback, and trained forecasts remain later phases.
 
+## Recovery correction -- 17 August 2026
+
+A failed actual-calendar continuation exposed that the provider-coverage check
+was comparing every date with the later three-provider roadmap, even when only
+the Maersk route configuration was effective on that date. The repository now
+defines `missing_provider_coverage` against the active route and provider
+configuration effective on the requested logical date. Once KN and DHL routes
+become effective, the same fail-closed check requires them as well.
+
+This correction does not relabel future simulations, manufacture historical
+KN/DHL rows, or clear provider/model readiness. The AWS quality-gate update,
+controlled recovery of the failed `2026-08-09` status, later actual-calendar
+continuation, operational-baseline refresh, and public publication remain
+separate runtime steps requiring human authority.
+
 ## Decision summary
 
 GLAP will evolve from generating an independent batch of roughly 400--500

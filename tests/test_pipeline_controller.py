@@ -233,6 +233,31 @@ class PipelineControllerTests(unittest.TestCase):
         client.invoke.assert_not_called()
         persist.assert_not_called()
 
+    def test_older_date_rejection_reports_only_safe_logical_dates(self):
+        client = MagicMock()
+        module = load_module(lambda_client=client)
+        existing = {
+            "logical_run_date": "2026-08-09",
+            "status": "failed",
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "as_of_date": "2026-08-09",
+            "scenario_id": None,
+            "stages": [],
+        }
+        with patch.object(module, "load_existing_run", return_value=existing), patch.object(
+            module, "persist_run"
+        ) as persist:
+            with self.assertRaisesRegex(
+                ValueError,
+                r"existing_date=2026-08-09, requested_date=2026-08-07",
+            ):
+                module.execute_pipeline(
+                    STAGES, "2026-08-07", "s3://safe/status.json"
+                )
+        client.invoke.assert_not_called()
+        persist.assert_not_called()
+
     def test_legacy_future_status_is_archived_before_operational_run(self):
         client = MagicMock()
         client.invoke.side_effect = [

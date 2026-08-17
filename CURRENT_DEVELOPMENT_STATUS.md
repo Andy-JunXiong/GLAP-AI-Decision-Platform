@@ -30,6 +30,15 @@ All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
+The latest inspected lifecycle controller status remains a failed
+`2026-08-09` operational run. Generation succeeded, but lifecycle validation
+failed only `missing_provider_coverage`; later `2026-08-07` extension attempts
+were rejected before mutation because they would overwrite that newer status.
+A local recovery correction now scopes the check to active providers with route
+configuration effective on the logical date and adds safe existing/requested
+date diagnostics. It is implemented and locally verified only: no AWS Lambda,
+staging data, operational baseline, or public Pages artifact has been updated.
+
 ## Active slice — Formal Human Evaluation entry
 
 **Status:** `TWO_COMPLETE_REVIEWS_FIVE_ACCOUNTS_LIVE_VERIFIED`
@@ -230,6 +239,14 @@ Linqi so the governed minimum of three complete reviews can be evaluated.
 
 ## Pending validation
 
+- Release the lifecycle quality-gate/controller correction through the manual
+  isolated-staging workflow after separate deployment approval.
+- Recover only the persisted failed `2026-08-09` date, then continue from
+  `2026-08-10` through the current Sydney date. Do not restart from `2026-08-07`
+  and do not count future-simulation provider rows.
+- After every lifecycle, compatibility, and analytics check passes, refresh the
+  operational-calendar baseline and publish the aggregate public snapshot only
+  through separately authorized runtime and Pages steps.
 - Release the Action response-serialization fix only through separately
   authorized narrow Prepare and Execute phases.
 - Retry the original Action request ID after that release and confirm the audit
@@ -258,7 +275,8 @@ done.
   minimum-review gate can be met.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
-  labels remain insufficient.
+  labels remain insufficient; the date-effective integrity correction does not
+  clear this maturity gate.
 - Supervised learning: blocked by governed observed-label thresholds.
 - AWS cost and maintenance controls: designed but require separate human
   infrastructure approval.
@@ -339,6 +357,11 @@ done.
 
 ### Codex-run validation
 
+- The local lifecycle recovery correction passes Python compilation, all 301
+  repository tests, the 53 focused controller/quality/deployment tests, the
+  plan-only extension render, `git diff --check`, and the 16-check project
+  drift audit. No AWS deployment, data mutation, baseline refresh, or Pages
+  publication occurred.
 - Repository-wide validation after the v3 story-complete handoff: 295 Python
   tests passed, including story, solution-horizon, expected-benefit,
   point-in-time citation, and blinding checks.

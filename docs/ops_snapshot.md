@@ -28,11 +28,18 @@ The `1.7` snapshot contains only:
   one transport mode is present;
 - an outcome-maturity gate that keeps on-time and realized-cost measures
   unavailable until deliveries exist and requires 200 delivered outcomes before
-  reporting `ENGINEERING_READY`.
+  reporting `ENGINEERING_READY`;
 - optional success-gated pipeline stage timing, completion state, safe failure
   category, quality-check results, and a public runbook link;
 - explicit expected, completed, and successful stage counts plus the number of
   passed public quality checks.
+
+Lifecycle provider integrity and provider-program maturity are separate. The
+quality gate requires all active providers whose routes are effective on the
+logical date; the public population profile may still report single-mode or
+partial-provider coverage and must keep comparison and readiness unavailable.
+Passing the date-effective integrity check therefore does not establish DHL/KN
+history, label maturity, or model readiness.
 
 Pipeline Health reports `current` only when the operational, actual-calendar
 latest-run contract contains the exact governed six-stage order, all six stages

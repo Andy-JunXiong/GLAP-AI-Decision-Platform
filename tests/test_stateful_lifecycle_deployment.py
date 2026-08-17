@@ -314,6 +314,17 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             with self.subTest(check=check):
                 self.assertIn(check, validation)
 
+    def test_provider_coverage_tracks_only_effective_active_configuration(self):
+        validation = (ROOT / "sql" / "06_stateful_lifecycle_validation.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("eligible_booking_providers AS", validation)
+        self.assertIn("current_booking_providers AS", validation)
+        self.assertIn("route.effective_from <= DATE '{{LOGICAL_RUN_DATE}}'", validation)
+        self.assertIn("route.effective_to >= DATE '{{LOGICAL_RUN_DATE}}'", validation)
+        self.assertIn("FROM eligible_booking_providers AS expected", validation)
+        self.assertNotIn("count(DISTINCT carrier) = 3", validation)
+
     def test_deployment_is_plan_only_without_apply(self):
         script = (ROOT / "ops" / "deploy_stateful_lifecycle.ps1").read_text(encoding="utf-8")
         self.assertIn("[switch]$Apply", script)

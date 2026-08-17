@@ -40,6 +40,22 @@ current_action_audit AS (
     WHERE created_date = DATE '{{LOGICAL_RUN_DATE}}'
       AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
+current_booking_providers AS (
+    SELECT DISTINCT upper(carrier) AS carrier
+    FROM current_snapshot
+    WHERE CAST(booking_at AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+),
+eligible_booking_providers AS (
+    SELECT DISTINCT upper(route.carrier) AS carrier
+    FROM {{SOURCE_DATABASE}}.dim_route_service_v1 AS route
+    JOIN {{SOURCE_DATABASE}}.dim_provider_v1 AS provider
+      ON upper(route.carrier) = upper(provider.provider_code)
+     AND provider.status = 'ACTIVE'
+    WHERE route.status = 'ACTIVE'
+      AND route.effective_from <= DATE '{{LOGICAL_RUN_DATE}}'
+      AND (route.effective_to IS NULL
+           OR route.effective_to >= DATE '{{LOGICAL_RUN_DATE}}')
+),
 booking_cohort AS (
     SELECT DISTINCT shipment_id, carrier, coalesce(transport_mode, 'OCEAN') AS transport_mode
     FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
@@ -308,13 +324,11 @@ checks AS (
             OR shipment.destination_location_type <> 'PORT'
        ))
     UNION ALL
-    SELECT 'missing_provider_coverage',
-           IF(count(DISTINCT carrier) = 3
-              AND count_if(carrier = 'MAERSK') > 0
-              AND count_if(carrier = 'KN') > 0
-              AND count_if(carrier = 'DHL') > 0, 0, 1)
-    FROM current_snapshot
-    WHERE CAST(booking_at AS date) = DATE '{{LOGICAL_RUN_DATE}}'
+    SELECT 'missing_provider_coverage', count(*)
+    FROM eligible_booking_providers AS expected
+    LEFT JOIN current_booking_providers AS observed
+      ON expected.carrier = observed.carrier
+    WHERE observed.carrier IS NULL
     UNION ALL
     SELECT 'air_booking_share_out_of_range',
            IF(count(*) < 70, 0,

@@ -105,13 +105,18 @@ foreach ($logicalDate in $dates) {
                 $failurePayload = Get-Content -LiteralPath $responsePath -Raw |
                     ConvertFrom-Json
                 $candidate = [string]$failurePayload.errorMessage
-                if ($candidate -match (
+                if ($candidate -eq "Refusing to overwrite a newer pipeline run" -or
+                    $candidate -match (
                     '^Pipeline failed at [a-z][a-z0-9_]{1,47}: ' +
                     '(dependency_failure|invalid_response|quality_gate_failed|' +
                     'quality_contract_invalid|unexpected_failure)' +
                     '(; failed_checks=[a-z][a-z0-9_]{1,63}' +
                     '(,[a-z][a-z0-9_]{1,63})*)?$'
-                )) {
+                    ) -or $candidate -match (
+                    '^Refusing to overwrite a newer pipeline run ' +
+                    '\(existing_date=[0-9]{4}-[0-9]{2}-[0-9]{2}, ' +
+                    'requested_date=[0-9]{4}-[0-9]{2}-[0-9]{2}\)$'
+                    )) {
                     $failureDetail = $candidate
                 }
             } catch {

@@ -114,7 +114,7 @@ flowchart LR
     MANUAL[Manual invocation only] --> CTRL[Isolated success-gated controller]
     CTRL --> GEN[Stateful lifecycle generator]
     GEN --> ICE[Staging Iceberg lifecycle history]
-    ICE --> LIFE[19 lifecycle checks]
+    ICE --> LIFE[28 lifecycle checks]
     LIFE --> COMPAT[5 v2 compatibility checks]
     COMPAT --> ANALYTICS[8 multimodal analytics checks]
     ICE --> VIEWS[Six read-only operations / feature / label views]
@@ -130,6 +130,13 @@ Air-vs-Ocean cost comparison; operational commercial units remain separate.
 The staging stack has no Scheduler resource, production alias, or permission to
 write the current v2 production tables. Its next consumer is private,
 time-ordered forecast backtesting, not autonomous production decisions.
+
+Provider coverage inside the lifecycle quality gate is date-effective: the
+current booking cohort must contain every active provider whose route
+configuration is effective on that logical date. This is an integrity check,
+not a claim that the three-provider program has enough actual-calendar history
+for comparison, label readiness, or model readiness. Those maturity gates
+remain separate and fail closed.
 
 ## Authenticated internal Operations boundary — implemented in private staging
 

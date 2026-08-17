@@ -38,7 +38,7 @@ on:
         type: boolean
         default: false
       replay_start_date:
-        description: First logical date (YYYY-MM-DD)
+        description: First date; extension must follow latest status, recovery must equal failed date
         required: true
         type: string
         default: "2026-08-04"

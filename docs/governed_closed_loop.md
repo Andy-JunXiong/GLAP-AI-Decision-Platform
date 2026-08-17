@@ -119,6 +119,14 @@ audit-transition checks, while retaining one pre-existing failure:
 only Maersk Ocean; future DHL/KN simulation rows were not used to manufacture
 operational coverage.
 
+On 17 August, read-only diagnosis confirmed that the persisted `2026-08-09`
+controller status still failed only that check. The local recovery correction
+now compares the booking cohort with providers whose active route configuration
+is effective on the logical date, rather than requiring the later three-provider
+roadmap on every earlier date. This does not rewrite the historical failure,
+add provider rows, or establish provider/model readiness; deployment and
+runtime recovery remain pending human actions.
+
 This deployment does not enable a recurring schedule, create a production
 alias, expose entity records publicly, complete an Action automatically, or
 activate a policy.

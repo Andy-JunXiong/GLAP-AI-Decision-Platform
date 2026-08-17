@@ -310,7 +310,11 @@ def execute_pipeline(
         existing_date = validate_run_date(existing_run.get("logical_run_date"))
         requested_date = date.fromisoformat(logical_run_date)
         if existing_date > requested_date:
-            raise ValueError("Refusing to overwrite a newer pipeline run")
+            raise ValueError(
+                "Refusing to overwrite a newer pipeline run "
+                f"(existing_date={existing_date.isoformat()}, "
+                f"requested_date={requested_date.isoformat()})"
+            )
         if retry_failed_run and existing_date != requested_date:
             raise ValueError("Recovery requires an existing failed run for the same date")
         if existing_date == requested_date:
