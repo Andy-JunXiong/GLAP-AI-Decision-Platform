@@ -167,7 +167,7 @@ deterministic blinded packages cover all 30 cutoffs. V1 and v2 collection is
 paused and preserved draft progress is ineligible. The corrected story-based,
 progressive A/B/Tie workflow is publicly released as Sites v11. It applies the
 full 30-package v3 bundle with attestations, server save/resume, per-story
-ordering, immutable submission, and isolated reviewer scopes. Five hosted
+ordering, immutable submission, and isolated reviewer scopes. Six hosted
 accounts exist and two eligible story-v2 submissions are complete, each with
 30 committed choices and all required attestations. The declared minimum is
 three valid independent reviews, so collection remains open and Decision

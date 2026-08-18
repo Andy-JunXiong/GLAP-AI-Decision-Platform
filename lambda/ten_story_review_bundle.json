@@ -1,0 +1,2099 @@
+{
+  "schema_version": "glap-ten-story-display-bundle.v1",
+  "source_bundle_id": "35397ba1fb3d15d87ad7c071",
+  "source_bundle_digest": "60ebd29e920a489c3c171d1daf27b6fe85efbc884e77d2763b64b7b6a14d3cdb",
+  "source_package_count": 30,
+  "cases": [
+    {
+      "id": "baltimore-key-bridge",
+      "title": {
+        "zh": "Baltimore 港",
+        "en": "Port of Baltimore"
+      },
+      "role": {
+        "zh": "美国东部区域物流经理",
+        "en": "Eastern U.S. regional logistics manager"
+      },
+      "region": {
+        "zh": "北美",
+        "en": "North America"
+      },
+      "disruption": {
+        "zh": "桥梁事故与港口中断",
+        "en": "Bridge failure and port interruption"
+      },
+      "decision_lens": {
+        "zh": "恢复时间不确定时保留选择权",
+        "en": "Preserving options under recovery uncertainty"
+      },
+      "story_intro": {
+        "zh": "你负责一批从巴尔的摩港发往美国东部的重要货物。船期已经排好：太早改港会多花钱，等得太久又可能错过交付。",
+        "en": "You manage an important shipment through Baltimore. Changing ports too early wastes money; waiting too long could miss delivery."
+      },
+      "goal": {
+        "zh": "尽量按时交货，同时避免在消息不清楚时白白改港。",
+        "en": "Deliver on time without changing ports on weak information."
+      },
+      "stakes": {
+        "zh": "关键客户不能断货。",
+        "en": "A key customer cannot run out of stock."
+      },
+      "mode": "OCEAN",
+      "stages": [
+        {
+          "review_id": "f2a0ca874499f3f4fba57e0e",
+          "package_digest": "768f3b230852e9013b0acda161e6168682aa35c7c79159a593c930b1091504af",
+          "moment": "T0",
+          "cutoff_at": "2024-03-26T00:00:00-04:00",
+          "status": {
+            "zh": "尚无港口中断证据",
+            "en": "No port disruption evidence yet"
+          },
+          "update": {
+            "zh": "今天港口仍正常，没有收到中断通知。",
+            "en": "The port is operating normally today and no disruption notice has arrived."
+          },
+          "unknown": {
+            "zh": "还不知道是否会发生中断。",
+            "en": "You do not yet know whether a disruption will occur."
+          },
+          "question": {
+            "zh": "现在没有中断消息，你会先照原计划走，还是花少量精力准备备用港？",
+            "en": "With no disruption news, do you keep the plan or spend a little effort preparing another port?"
+          },
+          "inventory_cover_days": 8,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持港口计划并盯住恢复信号",
+                "en": "Keep the port plan and watch recovery signals"
+              },
+              "body": {
+                "zh": "保留原船期，每四小时查看一次港口消息，不做改港承诺。",
+                "en": "Keep the sailing and check port updates every four hours without committing to another port."
+              },
+              "tradeoff": {
+                "zh": "省下备用成本，但突发中断时反应时间更短。",
+                "en": "Avoids fallback cost but leaves less time if disruption occurs."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持港口计划并盯住恢复信号",
+                "en": "Keep the port plan and watch recovery signals"
+              },
+              "body": {
+                "zh": "保留原船期，每四小时查看一次港口消息，不做改港承诺。",
+                "en": "Keep the sailing and check port updates every four hours without committing to another port."
+              },
+              "tradeoff": {
+                "zh": "省下备用成本，但突发中断时反应时间更短。",
+                "en": "Avoids fallback cost but leaves less time if disruption occurs."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "7069f2800d0db7b40a8687c6",
+          "package_digest": "ff1540a8978748f0f7b8b4ad9e2fb2c4d1feaeff97a7151a28bdc8f9c41aa7ba",
+          "moment": "T1",
+          "cutoff_at": "2024-03-31T00:00:00-04:00",
+          "status": {
+            "zh": "航道中断已确认",
+            "en": "Channel disruption confirmed"
+          },
+          "update": {
+            "zh": "桥梁事故已经切断主航道，清障方案和复航日期都还没确定。",
+            "en": "The bridge accident has blocked the main channel; the clearance plan and reopening date are unknown."
+          },
+          "unknown": {
+            "zh": "还不知道港口何时恢复，也不知道备用港能否接住这批货。",
+            "en": "You do not know when the port will reopen or whether another port can take the cargo."
+          },
+          "question": {
+            "zh": "主航道已经中断，你会继续等待，还是马上把备用港和卡车衔接查清楚？",
+            "en": "With the channel blocked, do you wait or immediately validate another port and trucking connection?"
+          },
+          "inventory_cover_days": 7,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "验证替代港与内陆衔接",
+                "en": "Validate alternate ports and inland connections"
+              },
+              "body": {
+                "zh": "立即确认备用港泊位、卡车和最后改港时间，形成可撤销方案。",
+                "en": "Confirm alternate berth, trucking, and the last diversion deadline as a reversible plan."
+              },
+              "tradeoff": {
+                "zh": "增加准备成本，但不会在恢复时间未知时完全失去选择。",
+                "en": "Adds preparation cost but preserves options while recovery is unknown."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持港口计划并盯住恢复信号",
+                "en": "Keep the port plan and watch recovery signals"
+              },
+              "body": {
+                "zh": "暂不改港，等清障时间表更明确后再决定。",
+                "en": "Wait for a clearer clearance timetable before changing ports."
+              },
+              "tradeoff": {
+                "zh": "避免过早改港，但可用的替代泊位可能被别人占走。",
+                "en": "Avoids an early diversion but alternate berths may be taken."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "f220399b6a70a3e5c43ab6e8",
+          "package_digest": "47ff545bf23754b597861806e30b4972322c673bb36ad6182b42e23c7de1bf3a",
+          "moment": "T2",
+          "cutoff_at": "2024-04-05T00:00:00-04:00",
+          "status": {
+            "zh": "出现暂定恢复节点",
+            "en": "Tentative recovery milestones available"
+          },
+          "update": {
+            "zh": "官方给出了临时通道和全面恢复的目标日期，但天气和残骸仍可能让计划延期。",
+            "en": "Officials published target dates for limited and full access, but weather and wreckage could still delay them."
+          },
+          "unknown": {
+            "zh": "还不知道恢复日期能否兑现。",
+            "en": "You do not know whether the target dates will hold."
+          },
+          "question": {
+            "zh": "有了暂定恢复日期，你会撤掉备用方案，还是再保留一段时间？",
+            "en": "With tentative reopening dates, do you release the fallback or keep it a little longer?"
+          },
+          "inventory_cover_days": 6,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持港口计划并盯住恢复信号",
+                "en": "Keep the port plan and watch recovery signals"
+              },
+              "body": {
+                "zh": "按官方目标日期继续原计划；只有日期再次滑动才启动备用港。",
+                "en": "Continue against the target dates and activate the fallback only if they slip again."
+              },
+              "tradeoff": {
+                "zh": "成本最低，但恢复计划如果落空会再次被动。",
+                "en": "Costs least but creates renewed exposure if recovery slips."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "验证替代港与内陆衔接",
+                "en": "Validate alternate ports and inland connections"
+              },
+              "body": {
+                "zh": "继续保留一个备用港和内陆运力，直到主航道稳定运行。",
+                "en": "Keep one alternate port and inland option until the main channel is stable."
+              },
+              "tradeoff": {
+                "zh": "会继续占用备用资源，但能防止恢复日期再次推迟。",
+                "en": "Keeps fallback resources tied up but protects against another delay."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "panama-canal-drought",
+      "title": {
+        "zh": "巴拿马运河",
+        "en": "Panama Canal"
+      },
+      "role": {
+        "zh": "亚洲至美洲海运网络经理",
+        "en": "Asia–Americas ocean network manager"
+      },
+      "region": {
+        "zh": "中美洲",
+        "en": "Central America"
+      },
+      "disruption": {
+        "zh": "干旱与运河运力限制",
+        "en": "Drought and canal capacity restrictions"
+      },
+      "decision_lens": {
+        "zh": "把稀缺通航名额分配给不同客户",
+        "en": "Allocating scarce transit slots across customers"
+      },
+      "story_intro": {
+        "zh": "你负责亚洲到美洲的海运订舱。几家客户都想按原日期过巴拿马运河，但可用名额可能越来越少。",
+        "en": "You manage Asia-to-Americas bookings. Several customers want their original dates, but Panama Canal slots may shrink."
+      },
+      "goal": {
+        "zh": "把有限名额留给最不能延误的货，同时不提前制造恐慌。",
+        "en": "Protect the most time-sensitive cargo without creating premature disruption."
+      },
+      "stakes": {
+        "zh": "医药和促销货有固定到货窗口。",
+        "en": "Medical and promotion cargo have fixed arrival windows."
+      },
+      "mode": "OCEAN",
+      "stages": [
+        {
+          "review_id": "182de75a3dd1c53e8d7a59b0",
+          "package_digest": "1fb5912c1dfd41736cd0ea4d7fb84a55ebdbe741114613be2dc059f9810c918c",
+          "moment": "T0",
+          "cutoff_at": "2023-10-25T00:00:00-05:00",
+          "status": {
+            "zh": "当前预约条件未改变",
+            "en": "Current booking conditions unchanged"
+          },
+          "update": {
+            "zh": "今天的订舱规则没有变化，现有船期仍可使用。",
+            "en": "Today's booking rules are unchanged and current sailings remain available."
+          },
+          "unknown": {
+            "zh": "还不知道后续是否真的会削减名额。",
+            "en": "You do not know whether slots will actually be cut."
+          },
+          "question": {
+            "zh": "尚无新增限制时，是否应提前改变客户交付顺序？",
+            "en": "Before any new restriction, should customer delivery order change early?"
+          },
+          "inventory_cover_days": 16,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持客户顺序并监测名额",
+                "en": "Keep customer order and monitor slots"
+              },
+              "body": {
+                "zh": "保持原订舱顺序，每天更新名额变化。",
+                "en": "Keep the booking order and review slot changes daily."
+              },
+              "tradeoff": {
+                "zh": "不会挤占资源，但如果名额突然下降会准备不足。",
+                "en": "Avoids crowding capacity but may leave little preparation time."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持客户顺序并监测名额",
+                "en": "Keep customer order and monitor slots"
+              },
+              "body": {
+                "zh": "保持原订舱顺序，每天更新名额变化。",
+                "en": "Keep the booking order and review slot changes daily."
+              },
+              "tradeoff": {
+                "zh": "不会挤占资源，但如果名额突然下降会准备不足。",
+                "en": "Avoids crowding capacity but may leave little preparation time."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "82a53042e047009dd5d99ff8",
+          "package_digest": "a8400f4e300d68bd4f1f2e08a08520d2668b3ea24c2075cb3286b2dc085d5f68",
+          "moment": "T1",
+          "cutoff_at": "2023-10-26T00:00:00-05:00",
+          "status": {
+            "zh": "预约规则开始收紧",
+            "en": "Booking rules begin tightening"
+          },
+          "update": {
+            "zh": "运河开始调整预约规则，但每日总名额还没有大幅减少。",
+            "en": "The canal has begun changing booking rules, but daily capacity has not yet fallen sharply."
+          },
+          "unknown": {
+            "zh": "还不知道规则变化会不会影响你手上的船期。",
+            "en": "You do not know whether the rule change will affect your sailings."
+          },
+          "question": {
+            "zh": "规则变化但名额未大幅下降时，如何避免过早挤占运力？",
+            "en": "When rules change but slots have not materially fallen, how should premature capacity capture be avoided?"
+          },
+          "inventory_cover_days": 15,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持客户顺序并监测名额",
+                "en": "Keep customer order and monitor slots"
+              },
+              "body": {
+                "zh": "先不抢占额外名额，只核对哪些客户可以晚到。",
+                "en": "Do not capture extra slots yet; identify which customers can accept delay."
+              },
+              "tradeoff": {
+                "zh": "成本较低，但关键客户可能在规则进一步收紧时失去位置。",
+                "en": "Costs less but critical customers may lose space if rules tighten."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持客户顺序并监测名额",
+                "en": "Keep customer order and monitor slots"
+              },
+              "body": {
+                "zh": "先不抢占额外名额，只核对哪些客户可以晚到。",
+                "en": "Do not capture extra slots yet; identify which customers can accept delay."
+              },
+              "tradeoff": {
+                "zh": "成本较低，但关键客户可能在规则进一步收紧时失去位置。",
+                "en": "Costs less but critical customers may lose space if rules tighten."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "e2ac2bb8f8d19f642be26c5e",
+          "package_digest": "4669814e723381ecf3bc71327777a701069be48c8a0041d10cdd1afd8000b5bb",
+          "moment": "T2",
+          "cutoff_at": "2023-10-31T00:00:00-05:00",
+          "status": {
+            "zh": "每日名额将显著下降",
+            "en": "Daily slots will materially decline"
+          },
+          "update": {
+            "zh": "官方宣布名额将逐步降到每天 18 个。",
+            "en": "The authority announced that slots will progressively fall to 18 per day."
+          },
+          "unknown": {
+            "zh": "还不知道限制会持续多久，以及替代航线的真实成本。",
+            "en": "You do not know how long restrictions will last or the true cost of alternatives."
+          },
+          "question": {
+            "zh": "名额将降至每日 18 个时，哪些货物应获得保护、延后或绕行？",
+            "en": "When slots fall to 18 per day, which cargo should be protected, deferred, or rerouted?"
+          },
+          "inventory_cover_days": 10,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持客户顺序并监测名额",
+                "en": "Keep customer order and monitor slots"
+              },
+              "body": {
+                "zh": "继续按原顺序排货，只有实际订不到舱时再调整。",
+                "en": "Keep the original order and adjust only when a booking actually fails."
+              },
+              "tradeoff": {
+                "zh": "操作简单，却可能让高优先级货物与普通货物一起排队。",
+                "en": "Simple to operate but treats critical and standard cargo alike."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "保护关键名额并重排货物",
+                "en": "Protect critical slots and reallocate cargo"
+              },
+              "body": {
+                "zh": "把 18 个名额优先分给医药和固定窗口货物，其余延期或改走其他航线。",
+                "en": "Prioritize the 18 slots for medical and fixed-window cargo; delay or reroute the rest."
+              },
+              "tradeoff": {
+                "zh": "保护关键客户，但普通货会更晚或更贵。",
+                "en": "Protects critical customers but delays or raises cost for standard cargo."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "red-sea-security",
+      "title": {
+        "zh": "红海安全",
+        "en": "Red Sea security"
+      },
+      "role": {
+        "zh": "欧亚海运安全与网络经理",
+        "en": "Europe–Asia maritime safety and network manager"
+      },
+      "region": {
+        "zh": "中东",
+        "en": "Middle East"
+      },
+      "disruption": {
+        "zh": "海上安全事件与绕行",
+        "en": "Maritime security and rerouting"
+      },
+      "decision_lens": {
+        "zh": "用安全阈值治理停航与绕航",
+        "en": "Governing suspension and rerouting through safety thresholds"
+      },
+      "story_intro": {
+        "zh": "你负责欧亚航线的船员安全和客户交付。红海是最快路线，绕好望角更安全，但会多走约十天。",
+        "en": "You own crew safety and customer delivery on a Europe-Asia route. The Red Sea is fastest; the Cape route is safer but about ten days longer."
+      },
+      "goal": {
+        "zh": "不拿船员安全冒险，同时避免没有依据就让整条航线绕远。",
+        "en": "Protect crews without rerouting the entire network on weak information."
+      },
+      "stakes": {
+        "zh": "船员安全高于时效和运费。",
+        "en": "Crew safety outranks transit time and freight cost."
+      },
+      "mode": "OCEAN",
+      "stages": [
+        {
+          "review_id": "364a38412b8753f7f2b2261b",
+          "package_digest": "308452041454c1428d32c9f72e618ef070666aa7a08e56ffbd8babc893b140f8",
+          "moment": "T0",
+          "cutoff_at": "2023-12-19T00:00:00+00:00",
+          "status": {
+            "zh": "尚无官方安全升级",
+            "en": "No official security escalation yet"
+          },
+          "update": {
+            "zh": "今天没有新的官方安全警报，航线仍按原计划运行。",
+            "en": "There is no new official security alert today and the route remains open."
+          },
+          "unknown": {
+            "zh": "还不知道威胁是否会升级。",
+            "en": "You do not know whether the threat will escalate."
+          },
+          "question": {
+            "zh": "尚无官方升级时，是否应改变正常航线？",
+            "en": "Without an official escalation, should the normal route change?"
+          },
+          "inventory_cover_days": 12,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持航线并执行安全监测",
+                "en": "Keep the route under security watch"
+              },
+              "body": {
+                "zh": "维持原航线，要求安全团队每班次复核警报。",
+                "en": "Keep the route and require a security review before each sailing."
+              },
+              "tradeoff": {
+                "zh": "保持最快时效，但威胁突然升级时反应窗口较短。",
+                "en": "Preserves speed but leaves less time if threats escalate."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持航线并执行安全监测",
+                "en": "Keep the route under security watch"
+              },
+              "body": {
+                "zh": "维持原航线，要求安全团队每班次复核警报。",
+                "en": "Keep the route and require a security review before each sailing."
+              },
+              "tradeoff": {
+                "zh": "保持最快时效，但威胁突然升级时反应窗口较短。",
+                "en": "Preserves speed but leaves less time if threats escalate."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "4fbe86c2abb09f6717733eb9",
+          "package_digest": "17e9a429985418b2107c6f714bf8830606e693e05891c662679d7de35ab3af5a",
+          "moment": "T1",
+          "cutoff_at": "2023-12-20T00:00:00+00:00",
+          "status": {
+            "zh": "袭击与商业绕航已确认",
+            "en": "Attacks and commercial rerouting confirmed"
+          },
+          "update": {
+            "zh": "多起袭击得到确认，几家大型船公司已经开始绕航。",
+            "en": "Multiple attacks are confirmed and several major carriers have started rerouting."
+          },
+          "unknown": {
+            "zh": "还不知道你的船是否会进入同样的风险区域。",
+            "en": "You do not know whether your vessel will face the same risk."
+          },
+          "question": {
+            "zh": "同业开始绕航后，何种安全阈值足以触发公司响应？",
+            "en": "Once peers reroute, what safety threshold should trigger a company response?"
+          },
+          "inventory_cover_days": 11,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "按安全门槛准备好望角绕航",
+                "en": "Prepare a safety-governed Cape reroute"
+              },
+              "body": {
+                "zh": "达到明确安全门槛的船立即绕好望角，其余船等待复核。",
+                "en": "Reroute vessels that meet a clear safety threshold; hold the rest for review."
+              },
+              "tradeoff": {
+                "zh": "明显增加航程，却把安全决定建立在统一门槛上。",
+                "en": "Adds substantial transit time but bases safety decisions on a consistent threshold."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持航线并执行安全监测",
+                "en": "Keep the route under security watch"
+              },
+              "body": {
+                "zh": "暂不统一绕航，逐船检查位置、船员和保险条件。",
+                "en": "Do not impose a network-wide reroute; review vessel, crew, and insurance conditions case by case."
+              },
+              "tradeoff": {
+                "zh": "减少全网延误，但不同船只可能得到不一致的保护。",
+                "en": "Limits network delay but may protect vessels inconsistently."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "e14aad588544c3193a18f6a4",
+          "package_digest": "b5e828a002eb5e80211211cd9cc98dd17bc2060fd63b7eab072d5ccea3793ea1",
+          "moment": "T2",
+          "cutoff_at": "2024-01-05T00:00:00+00:00",
+          "status": {
+            "zh": "绕航规模与航程影响明确",
+            "en": "Rerouting scale and voyage impact confirmed"
+          },
+          "update": {
+            "zh": "至少 18 家船公司已绕行南非，航程大约增加十天。",
+            "en": "At least 18 carriers are routing around South Africa, adding about ten days."
+          },
+          "unknown": {
+            "zh": "还不知道绕航会持续多久，以及客户愿意承担多少延误。",
+            "en": "You do not know how long rerouting will last or how much delay customers will accept."
+          },
+          "question": {
+            "zh": "绕航增加约十天时，应采用个案判断还是统一网络政策？",
+            "en": "When rerouting adds about ten days, should decisions remain case-by-case or follow a network policy?"
+          },
+          "inventory_cover_days": 7,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "按安全门槛准备好望角绕航",
+                "en": "Prepare a safety-governed Cape reroute"
+              },
+              "body": {
+                "zh": "采用统一安全政策：经过高风险区的船一律绕行，并提前通知客户。",
+                "en": "Adopt one safety rule: every vessel crossing the high-risk zone reroutes and customers are notified early."
+              },
+              "tradeoff": {
+                "zh": "最能保护船员，但会带来约十天延误和更高运费。",
+                "en": "Best protects crews but adds about ten days and higher freight cost."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持航线并执行安全监测",
+                "en": "Keep the route under security watch"
+              },
+              "body": {
+                "zh": "继续逐船决定，只有进入高风险区的船才绕航。",
+                "en": "Continue vessel-by-vessel decisions and reroute only ships entering the high-risk area."
+              },
+              "tradeoff": {
+                "zh": "节省时间和成本，却让安全规则更难统一执行。",
+                "en": "Saves time and cost but makes safety rules harder to apply consistently."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "faa-notam-outage",
+      "title": {
+        "zh": "FAA NOTAM 故障",
+        "en": "FAA NOTAM outage"
+      },
+      "role": {
+        "zh": "美国航空货运控制经理",
+        "en": "U.S. air-cargo control manager"
+      },
+      "region": {
+        "zh": "北美",
+        "en": "North America"
+      },
+      "disruption": {
+        "zh": "航空信息故障与全国停飞",
+        "en": "Aviation information outage and ground stop"
+      },
+      "decision_lens": {
+        "zh": "全网停飞后的货物恢复排序",
+        "en": "Sequencing cargo recovery after a network-wide stop"
+      },
+      "story_intro": {
+        "zh": "你在航空货运控制中心安排医药、易腐和普通货物。系统一旦故障，飞机可能突然停飞，恢复后也不可能所有货同时起飞。",
+        "en": "You schedule medical, perishable, and standard cargo. A system outage can stop flights suddenly, and not everything can depart first when service resumes."
+      },
+      "goal": {
+        "zh": "先保护最紧急的货，同时让恢复顺序透明可执行。",
+        "en": "Protect the most urgent cargo with a recovery order people can execute."
+      },
+      "stakes": {
+        "zh": "医药和易腐货物经不起长时间等待。",
+        "en": "Medical and perishable cargo cannot tolerate long waits."
+      },
+      "mode": "AIR",
+      "stages": [
+        {
+          "review_id": "ab88d65ae5bb6602950af2e0",
+          "package_digest": "8b7cedf246a399b06a6c4ce1a0154fcec4fc1539d4cc69b831aa08ea6ac14d69",
+          "moment": "T0",
+          "cutoff_at": "2023-01-11T00:46:00+00:00",
+          "status": {
+            "zh": "尚无系统故障通知",
+            "en": "No system-outage notice yet"
+          },
+          "update": {
+            "zh": "系统正常，所有航班仍按计划运行。",
+            "en": "The system is normal and flights are operating to plan."
+          },
+          "unknown": {
+            "zh": "还不知道会不会发生系统故障。",
+            "en": "You do not know whether an outage will occur."
+          },
+          "question": {
+            "zh": "正常运行时，是否应为未知系统故障预留恢复资源？",
+            "en": "During normal operations, should recovery resources be held for an unknown failure?"
+          },
+          "inventory_cover_days": 5,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持航班计划并等待权威指令",
+                "en": "Maintain the flight plan pending authoritative direction"
+              },
+              "body": {
+                "zh": "维持原航班计划，只确认紧急联系人和通知渠道。",
+                "en": "Keep the flight plan and confirm emergency contacts and notification channels."
+              },
+              "tradeoff": {
+                "zh": "不占用额外资源，但故障发生后才开始排序。",
+                "en": "Uses no extra resources but leaves prioritization until an outage occurs."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持航班计划并等待权威指令",
+                "en": "Maintain the flight plan pending authoritative direction"
+              },
+              "body": {
+                "zh": "维持原航班计划，只确认紧急联系人和通知渠道。",
+                "en": "Keep the flight plan and confirm emergency contacts and notification channels."
+              },
+              "tradeoff": {
+                "zh": "不占用额外资源，但故障发生后才开始排序。",
+                "en": "Uses no extra resources but leaves prioritization until an outage occurs."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "2160ec6d87a96d8dff54bbfc",
+          "package_digest": "f7dc2680d50f6e91101aa6fe2e5adaa09e390c73928135abe964b637add262d9",
+          "moment": "T1",
+          "cutoff_at": "2023-01-11T01:21:00+00:00",
+          "status": {
+            "zh": "系统故障但尚未全国停飞",
+            "en": "System failed without a nationwide stop"
+          },
+          "update": {
+            "zh": "NOTAM 系统已经故障，新的飞行通知无法处理，但飞机暂时还能起飞。",
+            "en": "The NOTAM system has failed and cannot process new notices, but flights are still moving for now."
+          },
+          "unknown": {
+            "zh": "还不知道系统何时恢复，也不知道停飞令会不会下达。",
+            "en": "You do not know when the system will recover or whether a ground stop will follow."
+          },
+          "question": {
+            "zh": "没有恢复时间但仍可飞行时，应先冻结哪些交接与承诺？",
+            "en": "With no restoration estimate but flights still moving, which handoffs should freeze first?"
+          },
+          "inventory_cover_days": 5,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持航班计划并等待权威指令",
+                "en": "Maintain the flight plan pending authoritative direction"
+              },
+              "body": {
+                "zh": "允许现有航班继续，但暂停接受新的紧急时效承诺。",
+                "en": "Let current flights continue but stop making new urgent-delivery promises."
+              },
+              "tradeoff": {
+                "zh": "避免无谓停运，但系统恶化时可能来不及保护货物。",
+                "en": "Avoids unnecessary stops but may leave too little time if conditions worsen."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持航班计划并等待权威指令",
+                "en": "Maintain the flight plan pending authoritative direction"
+              },
+              "body": {
+                "zh": "允许现有航班继续，但暂停接受新的紧急时效承诺。",
+                "en": "Let current flights continue but stop making new urgent-delivery promises."
+              },
+              "tradeoff": {
+                "zh": "避免无谓停运，但系统恶化时可能来不及保护货物。",
+                "en": "Avoids unnecessary stops but may leave too little time if conditions worsen."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "72441c4cff801e9325791c1a",
+          "package_digest": "b36bb5e15a41d13e827f08668301bad7334ddceb020fe011f9c06146ff2b1ab1",
+          "moment": "T2",
+          "cutoff_at": "2023-01-11T12:22:00+00:00",
+          "status": {
+            "zh": "全国停飞令生效",
+            "en": "Nationwide ground stop in effect"
+          },
+          "update": {
+            "zh": "全国停飞令已经生效，只有军用和医疗救援航班例外。",
+            "en": "A nationwide ground stop is now in force, except for military and medical evacuation flights."
+          },
+          "unknown": {
+            "zh": "还不知道恢复后各机场能放行多少航班。",
+            "en": "You do not know how much capacity each airport will have after recovery."
+          },
+          "question": {
+            "zh": "全国停飞后，应如何跨承运人排序医药、易腐和普通货物？",
+            "en": "After a nationwide stop, how should medical, perishable, and standard cargo be sequenced?"
+          },
+          "inventory_cover_days": 4,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "建立跨承运人的优先恢复序列",
+                "en": "Build a cross-carrier priority recovery sequence"
+              },
+              "body": {
+                "zh": "建立跨承运人的恢复队列：医药优先，其次易腐，最后普通货。",
+                "en": "Create a cross-carrier recovery queue: medical first, perishables second, standard cargo last."
+              },
+              "tradeoff": {
+                "zh": "会让普通货更晚，但恢复过程更公平、更可执行。",
+                "en": "Delays standard cargo but makes recovery fairer and easier to execute."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持航班计划并等待权威指令",
+                "en": "Maintain the flight plan pending authoritative direction"
+              },
+              "body": {
+                "zh": "等待统一复航通知，再按原订舱顺序安排货物。",
+                "en": "Wait for the common restart notice, then use the original booking order."
+              },
+              "tradeoff": {
+                "zh": "规则简单，却可能让普通货排在医药和易腐货前面。",
+                "en": "Simple to apply but may put standard cargo ahead of medical and perishables."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "us-rail-labor-risk",
+      "title": {
+        "zh": "美国铁路劳资风险",
+        "en": "U.S. rail labor risk"
+      },
+      "role": {
+        "zh": "北美内陆联运经理",
+        "en": "North American inland intermodal manager"
+      },
+      "region": {
+        "zh": "北美",
+        "en": "North America"
+      },
+      "disruption": {
+        "zh": "铁路劳资争议与运力风险",
+        "en": "Rail labor dispute and capacity risk"
+      },
+      "decision_lens": {
+        "zh": "在谈判风险下避免过早抢占公路运力",
+        "en": "Avoiding premature truck-capacity capture during negotiations"
+      },
+      "story_intro": {
+        "zh": "你负责把铁路货物接到公路和仓库。劳资谈判可能导致停运，但卡车运力很贵，太早预订会白花钱。",
+        "en": "You connect rail freight to trucks and warehouses. Labor talks could stop trains, but booking trucks too early is expensive."
+      },
+      "goal": {
+        "zh": "在不中断客户交付的前提下，只购买真正需要的后备运力。",
+        "en": "Buy only the fallback capacity needed to protect customer deliveries."
+      },
+      "stakes": {
+        "zh": "铁路一停，内陆枢纽会很快积压。",
+        "en": "A rail stoppage would quickly congest inland hubs."
+      },
+      "mode": "RAIL",
+      "stages": [
+        {
+          "review_id": "b09f3cd5626b6056204efced",
+          "package_digest": "8e59067165448717776f9ae4d6fc507026f88df851b2c811f326476a74286d6b",
+          "moment": "T0",
+          "cutoff_at": "2022-07-15T00:00:00-04:00",
+          "status": {
+            "zh": "尚未成立紧急委员会",
+            "en": "No emergency board yet"
+          },
+          "update": {
+            "zh": "谈判仍在继续，没有正式停运程序。",
+            "en": "Talks continue and no formal stoppage process has begun."
+          },
+          "unknown": {
+            "zh": "还不知道谈判会不会升级。",
+            "en": "You do not know whether talks will escalate."
+          },
+          "question": {
+            "zh": "没有正式升级时，是否应提前锁定卡车和联运容量？",
+            "en": "Without a formal escalation, should truck and intermodal capacity be locked early?"
+          },
+          "inventory_cover_days": 20,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持铁路计划并跟踪谈判",
+                "en": "Maintain the rail plan and track negotiations"
+              },
+              "body": {
+                "zh": "维持铁路计划，每天检查谈判状态，不预订卡车。",
+                "en": "Keep the rail plan, check talks daily, and book no trucks."
+              },
+              "tradeoff": {
+                "zh": "没有闲置费用，但停运时很难临时找到卡车。",
+                "en": "Avoids idle cost but trucks may be scarce during a stoppage."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持铁路计划并跟踪谈判",
+                "en": "Maintain the rail plan and track negotiations"
+              },
+              "body": {
+                "zh": "维持铁路计划，每天检查谈判状态，不预订卡车。",
+                "en": "Keep the rail plan, check talks daily, and book no trucks."
+              },
+              "tradeoff": {
+                "zh": "没有闲置费用，但停运时很难临时找到卡车。",
+                "en": "Avoids idle cost but trucks may be scarce during a stoppage."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "de95aba894f64940fcadca14",
+          "package_digest": "377cece4d8121a78d74231a1e3fad359dc63e889b861044b5cfb0f683d5502bc",
+          "moment": "T1",
+          "cutoff_at": "2022-07-16T00:00:00-04:00",
+          "status": {
+            "zh": "争议进入正式治理程序",
+            "en": "Dispute enters formal governance"
+          },
+          "update": {
+            "zh": "政府成立紧急委员会，确认争议可能严重影响州际运输。",
+            "en": "An emergency board has been formed because the dispute could seriously disrupt interstate transport."
+          },
+          "unknown": {
+            "zh": "还不知道是否真的停运，以及停运会持续多久。",
+            "en": "You do not know whether a stoppage will occur or how long it would last."
+          },
+          "question": {
+            "zh": "争议可能中断州际运输时，应购买多少有限的选择权？",
+            "en": "When interstate transport could be interrupted, how much fallback capacity should be secured?"
+          },
+          "inventory_cover_days": 19,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持铁路计划并跟踪谈判",
+                "en": "Maintain the rail plan and track negotiations"
+              },
+              "body": {
+                "zh": "继续走铁路，只列出最容易积压的枢纽和客户。",
+                "en": "Continue by rail and identify the hubs and customers most exposed to backlog."
+              },
+              "tradeoff": {
+                "zh": "不会推高市场价格，但仍没有真正的后备容量。",
+                "en": "Avoids inflating the market but secures no actual fallback."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持铁路计划并跟踪谈判",
+                "en": "Maintain the rail plan and track negotiations"
+              },
+              "body": {
+                "zh": "继续走铁路，只列出最容易积压的枢纽和客户。",
+                "en": "Continue by rail and identify the hubs and customers most exposed to backlog."
+              },
+              "tradeoff": {
+                "zh": "不会推高市场价格，但仍没有真正的后备容量。",
+                "en": "Avoids inflating the market but secures no actual fallback."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "446edef32199c1b36b30b858",
+          "package_digest": "337321c1aea45b9b50e7b2820e8f8e8fc5846111e8bbe0a8c349605292bc9a53",
+          "moment": "T2",
+          "cutoff_at": "2022-08-17T00:00:00-04:00",
+          "status": {
+            "zh": "建议已出但停运未发生",
+            "en": "Recommendations issued without an observed stoppage"
+          },
+          "update": {
+            "zh": "委员会已经提出解决建议，但铁路仍在运行。",
+            "en": "The board has issued recommendations, but trains are still running."
+          },
+          "unknown": {
+            "zh": "还不知道双方是否会接受建议。",
+            "en": "You do not know whether both sides will accept the recommendations."
+          },
+          "question": {
+            "zh": "谈判建议公布但没有停运时，应继续对冲还是释放运力？",
+            "en": "When recommendations exist but no stoppage has occurred, should the hedge remain?"
+          },
+          "inventory_cover_days": 17,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持铁路计划并跟踪谈判",
+                "en": "Maintain the rail plan and track negotiations"
+              },
+              "body": {
+                "zh": "保留现状，等出现正式停运通知再采购公路运力。",
+                "en": "Keep the plan and buy trucking only after a formal stoppage notice."
+              },
+              "tradeoff": {
+                "zh": "最省钱，却可能在所有人同时抢卡车时失去选择。",
+                "en": "Costs least but risks losing options when everyone books at once."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持铁路计划并跟踪谈判",
+                "en": "Maintain the rail plan and track negotiations"
+              },
+              "body": {
+                "zh": "保留现状，等出现正式停运通知再采购公路运力。",
+                "en": "Keep the plan and buy trucking only after a formal stoppage notice."
+              },
+              "tradeoff": {
+                "zh": "最省钱，却可能在所有人同时抢卡车时失去选择。",
+                "en": "Costs least but risks losing options when everyone books at once."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gotthard-tunnel-closure",
+      "title": {
+        "zh": "Gotthard 隧道",
+        "en": "Gotthard tunnel"
+      },
+      "role": {
+        "zh": "欧洲阿尔卑斯公路网络经理",
+        "en": "European Alpine road-network manager"
+      },
+      "region": {
+        "zh": "欧洲",
+        "en": "Europe"
+      },
+      "disruption": {
+        "zh": "山区隧道关闭与跨境绕行",
+        "en": "Alpine tunnel closure and cross-border detours"
+      },
+      "decision_lens": {
+        "zh": "组合绕行距离、驾驶时限与替代方式",
+        "en": "Combining detour distance, driver hours, and alternate modes"
+      },
+      "story_intro": {
+        "zh": "你安排卡车穿越阿尔卑斯山。主隧道一旦关闭，绕路会增加里程和司机工时，铁路转运则需要重新排期。",
+        "en": "You route trucks across the Alps. A tunnel closure adds distance and driver hours; rail transfer requires new scheduling."
+      },
+      "goal": {
+        "zh": "找到安全、合法且不会频繁改线的运输办法。",
+        "en": "Choose a safe, legal route without repeatedly changing the plan."
+      },
+      "stakes": {
+        "zh": "司机工时和跨境交付时间都不能失控。",
+        "en": "Driver hours and cross-border delivery times must stay controlled."
+      },
+      "mode": "ROAD",
+      "stages": [
+        {
+          "review_id": "e47f0ef76ca42a07cfad65cf",
+          "package_digest": "337f68ff5e1528ceabfeb419af3f2a88395fa42c4d637557a4bbe444ac225941",
+          "moment": "T0",
+          "cutoff_at": "2023-09-11T23:00:00+02:00",
+          "status": {
+            "zh": "官方关闭信息尚不可用",
+            "en": "Official closure source not yet available"
+          },
+          "update": {
+            "zh": "今天没有确认的隧道关闭消息。",
+            "en": "There is no confirmed tunnel closure today."
+          },
+          "unknown": {
+            "zh": "还不知道隧道是否会关闭。",
+            "en": "You do not know whether the tunnel will close."
+          },
+          "question": {
+            "zh": "关闭尚未得到官方确认时，是否应把车辆转移到其他走廊？",
+            "en": "Before official confirmation, should vehicles move to another corridor?"
+          },
+          "inventory_cover_days": 6,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持走廊计划并等待开放确认",
+                "en": "Keep the corridor plan pending reopening confirmation"
+              },
+              "body": {
+                "zh": "维持原路线，只提醒司机出发前再次检查路况。",
+                "en": "Keep the route and ask drivers to recheck conditions before departure."
+              },
+              "tradeoff": {
+                "zh": "避免无谓绕行，但临时关闭会打乱司机工时。",
+                "en": "Avoids unnecessary detours but a sudden closure disrupts driver hours."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持走廊计划并等待开放确认",
+                "en": "Keep the corridor plan pending reopening confirmation"
+              },
+              "body": {
+                "zh": "维持原路线，只提醒司机出发前再次检查路况。",
+                "en": "Keep the route and ask drivers to recheck conditions before departure."
+              },
+              "tradeoff": {
+                "zh": "避免无谓绕行，但临时关闭会打乱司机工时。",
+                "en": "Avoids unnecessary detours but a sudden closure disrupts driver hours."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "234e7066772afb5be804b6c3",
+          "package_digest": "c78a67fe82a530ef38324cf7a3ecd4e68235b6fd18f78fa7765c793d62d8acd7",
+          "moment": "T1",
+          "cutoff_at": "2023-09-12T00:00:00+02:00",
+          "status": {
+            "zh": "隧道无限期关闭",
+            "en": "Tunnel closed until further notice"
+          },
+          "update": {
+            "zh": "官方确认隧道因顶部损坏无限期关闭，损坏范围仍不清楚。",
+            "en": "Officials confirmed an indefinite closure after ceiling damage; the extent is still unclear."
+          },
+          "unknown": {
+            "zh": "还不知道公路何时恢复，也不知道铁路还有多少位置。",
+            "en": "You do not know when the road will reopen or how much rail capacity remains."
+          },
+          "question": {
+            "zh": "无限期关闭后，应优先公路绕行还是铁路转运？",
+            "en": "After an indefinite closure, should road detours or rail transfer take priority?"
+          },
+          "inventory_cover_days": 6,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持走廊计划并等待开放确认",
+                "en": "Keep the corridor plan pending reopening confirmation"
+              },
+              "body": {
+                "zh": "把车辆停在安全节点，等官方给出恢复时间。",
+                "en": "Hold vehicles at safe points until officials publish a reopening time."
+              },
+              "tradeoff": {
+                "zh": "不会承担绕行成本，但交付会继续等待。",
+                "en": "Avoids detour cost but deliveries keep waiting."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "验证阿尔卑斯绕行与铁路转运",
+                "en": "Validate Alpine detours and rail transfer"
+              },
+              "body": {
+                "zh": "把短途车改走合法绕行，长途货转为铁路，并逐票批准。",
+                "en": "Use legal road detours for short trips and rail for long freight, approved shipment by shipment."
+              },
+              "tradeoff": {
+                "zh": "成本更高、操作更复杂，但货物可以继续移动。",
+                "en": "Costs more and is more complex, but cargo keeps moving."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "738c3303eb35d966b09ce20a",
+          "package_digest": "ea226f38ce5d04b158a0484b51970e1904cb61287da4d9a6bd34a1f4f2e46210",
+          "moment": "T2",
+          "cutoff_at": "2023-09-15T00:00:00+02:00",
+          "status": {
+            "zh": "维修继续且开放时间待定",
+            "en": "Repairs continue; reopening time pending"
+          },
+          "update": {
+            "zh": "损坏部分已经拆除，目标是在本周末前开放，但确切时间要到明天才公布。",
+            "en": "The damaged section is removed and reopening is targeted by week's end, but the exact time comes tomorrow."
+          },
+          "unknown": {
+            "zh": "还不知道明天公布的时间是否会改变。",
+            "en": "You do not know whether tomorrow's timing will change."
+          },
+          "question": {
+            "zh": "维修接近完成但时间仍待定时，如何控制再次改线的成本？",
+            "en": "When repairs near completion but timing remains pending, how should another route change be controlled?"
+          },
+          "inventory_cover_days": 3,
+          "alternate_capacity_available": false,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "验证阿尔卑斯绕行与铁路转运",
+                "en": "Validate Alpine detours and rail transfer"
+              },
+              "body": {
+                "zh": "暂时保留绕行和铁路位置，隧道稳定开放后再释放。",
+                "en": "Keep detour and rail options until the tunnel has reopened reliably."
+              },
+              "tradeoff": {
+                "zh": "会多占用一天备用资源，但防止开放时间再次改变。",
+                "en": "Ties up fallback capacity for another day but protects against another timing change."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持走廊计划并等待开放确认",
+                "en": "Keep the corridor plan pending reopening confirmation"
+              },
+              "body": {
+                "zh": "再等一天获取确切开放时间，不做第二次改线。",
+                "en": "Wait one more day for the exact reopening time and avoid a second route change."
+              },
+              "tradeoff": {
+                "zh": "减少反复改线，却可能再损失一天。",
+                "en": "Avoids repeated changes but may lose another day."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ever-given-grounding",
+      "title": {
+        "zh": "苏伊士运河搁浅",
+        "en": "Suez Canal grounding"
+      },
+      "role": {
+        "zh": "亚欧班轮航线经理",
+        "en": "Asia–Europe liner-route manager"
+      },
+      "region": {
+        "zh": "北非",
+        "en": "North Africa"
+      },
+      "disruption": {
+        "zh": "船舶搁浅与运河堵塞",
+        "en": "Vessel grounding and canal blockage"
+      },
+      "decision_lens": {
+        "zh": "在运河排队与好望角绕航之间选择时机",
+        "en": "Timing the choice between canal queueing and Cape diversion"
+      },
+      "story_intro": {
+        "zh": "你负责一条亚洲到欧洲的班轮。苏伊士运河如果堵塞，继续排队可能耽误交付，绕好望角则会增加很长航程和燃油成本。",
+        "en": "You manage an Asia-Europe liner service. Waiting at a blocked Suez Canal risks delay; sailing around the Cape adds a long voyage and fuel cost."
+      },
+      "goal": {
+        "zh": "在排队等待和长距离绕航之间选对时机。",
+        "en": "Choose the right moment between waiting in queue and a long diversion."
+      },
+      "stakes": {
+        "zh": "船上货物有交付窗口，长距离绕航代价很高。",
+        "en": "Cargo has delivery windows and a Cape diversion is expensive."
+      },
+      "mode": "OCEAN",
+      "stages": [
+        {
+          "review_id": "0d8a3d3cecd0605c4ca2e3d0",
+          "package_digest": "0f307d210011236ade837090fc8ff386a5110ef402b35afdf9888944274e6361",
+          "moment": "T0",
+          "cutoff_at": "2021-03-26T23:00:00+02:00",
+          "status": {
+            "zh": "搁浅信息尚不可用于决策",
+            "en": "Grounding source not yet decision-eligible"
+          },
+          "update": {
+            "zh": "今天还没有确认的运河堵塞消息。",
+            "en": "There is no confirmed canal blockage today."
+          },
+          "unknown": {
+            "zh": "还不知道运河是否会被堵住。",
+            "en": "You do not know whether the canal will be blocked."
+          },
+          "question": {
+            "zh": "官方搁浅信息尚不可用时，是否应改变航线？",
+            "en": "Before the official grounding source is available, should the route change?"
+          },
+          "inventory_cover_days": 7,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "保留运河队列并监测脱困进度",
+                "en": "Retain the canal queue and monitor refloating"
+              },
+              "body": {
+                "zh": "保持原航线，不提前改变船舶计划。",
+                "en": "Keep the original route and make no early change."
+              },
+              "tradeoff": {
+                "zh": "不增加航程，但如果堵塞确认会失去早期选择。",
+                "en": "Adds no distance but loses early options if blockage is confirmed."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "保留运河队列并监测脱困进度",
+                "en": "Retain the canal queue and monitor refloating"
+              },
+              "body": {
+                "zh": "保持原航线，不提前改变船舶计划。",
+                "en": "Keep the original route and make no early change."
+              },
+              "tradeoff": {
+                "zh": "不增加航程，但如果堵塞确认会失去早期选择。",
+                "en": "Adds no distance but loses early options if blockage is confirmed."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "65af23176043e15e4dd29adc",
+          "package_digest": "e76324ee157efe6ed31f75585c2ecaff1eaf206f35ad8e1b71e9c61a50ed1088",
+          "moment": "T1",
+          "cutoff_at": "2021-03-27T00:00:00+02:00",
+          "status": {
+            "zh": "脱困作业进行中",
+            "en": "Refloating response under way"
+          },
+          "update": {
+            "zh": "大型集装箱船已经搁浅，救援队正在尝试脱困，但没有恢复时间。",
+            "en": "A large container ship is grounded and crews are trying to refloat it, with no recovery time."
+          },
+          "unknown": {
+            "zh": "还不知道脱困要几小时还是几天。",
+            "en": "You do not know whether refloating will take hours or days."
+          },
+          "question": {
+            "zh": "脱困时间未知时，应继续排队、转运还是准备绕好望角？",
+            "en": "With refloating timing unknown, should cargo queue, transship, or prepare a Cape diversion?"
+          },
+          "inventory_cover_days": 5,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "验证转运与好望角绕航",
+                "en": "Validate transshipment and Cape diversion"
+              },
+              "body": {
+                "zh": "确认最后转向点、额外燃油和客户延误，再由负责人决定是否绕航。",
+                "en": "Confirm the last turn point, extra fuel, and customer delay before a manager decides."
+              },
+              "tradeoff": {
+                "zh": "可能增加数天航程和大量燃油，但交付时间更可控。",
+                "en": "May add days and major fuel cost but gives more control over delivery timing."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "保留运河队列并监测脱困进度",
+                "en": "Retain the canal queue and monitor refloating"
+              },
+              "body": {
+                "zh": "继续在运河队列中等待，每六小时复核脱困进展。",
+                "en": "Remain in the canal queue and review refloating progress every six hours."
+              },
+              "tradeoff": {
+                "zh": "避免昂贵绕航，却可能在队列中继续累积延误。",
+                "en": "Avoids an expensive diversion but delay may keep growing in queue."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "a603d47abed5a7c308d395bb",
+          "package_digest": "70cccc98f2bae7e9f5fed995ffa1eb2bc66e67ed7e527b8f90318f217c750a2d",
+          "moment": "T2",
+          "cutoff_at": "2021-03-29T12:00:00+02:00",
+          "status": {
+            "zh": "恢复消息尚不可保守使用",
+            "en": "Recovery announcement not yet conservatively available"
+          },
+          "update": {
+            "zh": "脱困工作仍在继续，现场希望尽快恢复通航，但你还不能确定何时真正放行。",
+            "en": "Refloating continues and authorities hope to restore traffic quickly, but passage timing remains uncertain."
+          },
+          "unknown": {
+            "zh": "还不知道恢复后要多久才能清完积压船队。",
+            "en": "You do not know how long the vessel queue will take to clear after reopening."
+          },
+          "question": {
+            "zh": "尚不能使用当天恢复消息时，是否已有足够依据承诺长距离绕航？",
+            "en": "When the same-day recovery announcement cannot be used, is there enough evidence for a long diversion?"
+          },
+          "inventory_cover_days": 3,
+          "alternate_capacity_available": false,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "验证转运与好望角绕航",
+                "en": "Validate transshipment and Cape diversion"
+              },
+              "body": {
+                "zh": "对最紧急货物准备转运，其余船舶继续等待运河恢复。",
+                "en": "Prepare transshipment for the most urgent cargo while the remaining vessels wait."
+              },
+              "tradeoff": {
+                "zh": "保护紧急货物，却增加港口操作和转运风险。",
+                "en": "Protects urgent cargo but adds port handling and transshipment risk."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "保留运河队列并监测脱困进度",
+                "en": "Retain the canal queue and monitor refloating"
+              },
+              "body": {
+                "zh": "再等待一个评审周期，同时计算恢复后的排队时间。",
+                "en": "Wait one more review cycle and estimate the queue after reopening."
+              },
+              "tradeoff": {
+                "zh": "可能赶上恢复通航，也可能错过最后的合理绕航时机。",
+                "en": "May benefit from reopening or miss the last sensible diversion point."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cyclone-gabrielle-roads",
+      "title": {
+        "zh": "加布里埃尔气旋",
+        "en": "Cyclone Gabrielle"
+      },
+      "role": {
+        "zh": "新西兰北岛公路运输经理",
+        "en": "New Zealand North Island road-freight manager"
+      },
+      "region": {
+        "zh": "大洋洲",
+        "en": "Oceania"
+      },
+      "disruption": {
+        "zh": "极端天气与公路网络中断",
+        "en": "Extreme weather and road-network disruption"
+      },
+      "decision_lens": {
+        "zh": "没有安全重卡路线时执行 no-go",
+        "en": "Enforcing no-go when no safe heavy-vehicle route exists"
+      },
+      "story_intro": {
+        "zh": "你负责新西兰北岛的卡车配送。气旋正在靠近，客户需要物资，但司机不能被派进洪水、倒木或没有重卡绕行路的区域。",
+        "en": "You manage truck deliveries on New Zealand's North Island. A cyclone is approaching; customers need supplies, but drivers cannot be sent into floods, fallen trees, or routes with no heavy-vehicle detour."
+      },
+      "goal": {
+        "zh": "在保障司机安全的前提下，把真正紧急的物资送到能到达的地方。",
+        "en": "Deliver genuinely urgent supplies wherever safe without risking drivers."
+      },
+      "stakes": {
+        "zh": "任何路线都不能以司机安全换取时效。",
+        "en": "No delivery target overrides driver safety."
+      },
+      "mode": "ROAD",
+      "stages": [
+        {
+          "review_id": "3cf2527dd43593f923e692db",
+          "package_digest": "bb5f70d31494bba99a92dd7c3b677a5e3cd2d91bc5402abda006afc344a6ee09",
+          "moment": "T0",
+          "cutoff_at": "2023-02-13T10:38:00+13:00",
+          "status": {
+            "zh": "首个气旋公路信息尚不可用",
+            "en": "First cyclone road source not yet available"
+          },
+          "update": {
+            "zh": "今天还没有官方道路关闭消息，但天气正在恶化。",
+            "en": "There is no official road closure yet, but weather is worsening."
+          },
+          "unknown": {
+            "zh": "还不知道哪些道路会先关闭。",
+            "en": "You do not know which roads will close first."
+          },
+          "question": {
+            "zh": "主管机构尚未发布关闭信息时，是否应暂停发车？",
+            "en": "Before agency closure information is available, should dispatch stop?"
+          },
+          "inventory_cover_days": 6,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "在安全集结点等待权威通行信息",
+                "en": "Hold at safe staging points pending authoritative access"
+              },
+              "body": {
+                "zh": "照常准备车辆，但出发前必须重新确认路况。",
+                "en": "Prepare vehicles normally but require a final road check before departure."
+              },
+              "tradeoff": {
+                "zh": "保留配送能力，但天气突然恶化时可能临时取消。",
+                "en": "Preserves delivery capacity but may cause last-minute cancellations."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "在安全集结点等待权威通行信息",
+                "en": "Hold at safe staging points pending authoritative access"
+              },
+              "body": {
+                "zh": "照常准备车辆，但出发前必须重新确认路况。",
+                "en": "Prepare vehicles normally but require a final road check before departure."
+              },
+              "tradeoff": {
+                "zh": "保留配送能力，但天气突然恶化时可能临时取消。",
+                "en": "Preserves delivery capacity but may cause last-minute cancellations."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "91753061d940f8fa9be70d81",
+          "package_digest": "b7e925e02d3118c888246b78cec248d1237c63d303284e35b461f7aa5b5a03a5",
+          "moment": "T1",
+          "cutoff_at": "2023-02-13T10:40:00+13:00",
+          "status": {
+            "zh": "Coromandel 多条公路关闭",
+            "en": "Multiple Coromandel highways closed"
+          },
+          "update": {
+            "zh": "洪水、倒木和碎片已经封闭多段公路，25A 全线关闭。",
+            "en": "Flooding, fallen trees, and debris have closed several roads, including all of SH25A."
+          },
+          "unknown": {
+            "zh": "还不知道剩余道路能否承受重卡，也不知道天气何时缓和。",
+            "en": "You do not know whether remaining roads can take heavy trucks or when weather will ease."
+          },
+          "question": {
+            "zh": "多条道路被洪水和倒木阻断时，哪些任务仍可安全执行？",
+            "en": "When flooding blocks multiple roads, which movements remain safe?"
+          },
+          "inventory_cover_days": 4,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "执行 no-go 并验证安全替代方式",
+                "en": "Enforce no-go and validate safe alternatives"
+              },
+              "body": {
+                "zh": "关闭受影响路线，改用安全短途接驳和固定集结点。",
+                "en": "Close affected routes and use safe short shuttles and fixed staging points."
+              },
+              "tradeoff": {
+                "zh": "需要更多交接，配送更慢，但司机不必冒险。",
+                "en": "Adds handoffs and delay but keeps drivers out of danger."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "在安全集结点等待权威通行信息",
+                "en": "Hold at safe staging points pending authoritative access"
+              },
+              "body": {
+                "zh": "把车辆留在安全集结点，只执行已确认开放的短途任务。",
+                "en": "Hold trucks at safe staging points and run only short trips on confirmed-open roads."
+              },
+              "tradeoff": {
+                "zh": "保护司机，但部分客户会延迟收到货。",
+                "en": "Protects drivers but delays some customers."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "f065f154bf704bbd7b07c49f",
+          "package_digest": "2df9064228894796cf937142be0491b274b3a0aad8e731bc61bc123ae3536b30",
+          "moment": "T2",
+          "cutoff_at": "2023-02-14T19:45:00+13:00",
+          "status": {
+            "zh": "Northland 基本隔离",
+            "en": "Northland largely isolated"
+          },
+          "update": {
+            "zh": "Northland 多条道路关闭或塌方，当晚没有可供重卡使用的绕行路线。",
+            "en": "Multiple Northland roads are closed or slipped, with no heavy-truck detour available that night."
+          },
+          "unknown": {
+            "zh": "还不知道安全通道何时恢复。",
+            "en": "You do not know when a safe corridor will reopen."
+          },
+          "question": {
+            "zh": "没有重卡绕行路线时，是否必须坚持绝对 no-go？",
+            "en": "When no heavy-vehicle detour exists, must the no-go remain absolute?"
+          },
+          "inventory_cover_days": 3,
+          "alternate_capacity_available": false,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "在安全集结点等待权威通行信息",
+                "en": "Hold at safe staging points pending authoritative access"
+              },
+              "body": {
+                "zh": "所有重卡停止进入隔离区域，等待白天重新评估。",
+                "en": "Stop all heavy trucks entering the isolated area and reassess in daylight."
+              },
+              "tradeoff": {
+                "zh": "最安全，却会让商业货物全部积压。",
+                "en": "Safest, but all commercial freight will accumulate."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "执行 no-go 并验证安全替代方式",
+                "en": "Enforce no-go and validate safe alternatives"
+              },
+              "body": {
+                "zh": "执行绝对 no-go；紧急物资改用政府确认的其他方式，商业货等待。",
+                "en": "Enforce an absolute no-go; move emergency supplies only through government-confirmed alternatives and hold commercial cargo."
+              },
+              "tradeoff": {
+                "zh": "商业损失更大，但没有安全重卡路线时不拿生命赌博。",
+                "en": "Causes greater commercial delay but never gambles with lives when no safe truck route exists."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "singapore-port-congestion",
+      "title": {
+        "zh": "新加坡港拥堵",
+        "en": "Singapore port congestion"
+      },
+      "role": {
+        "zh": "东南亚集装箱网络经理",
+        "en": "Southeast Asia container-network manager"
+      },
+      "region": {
+        "zh": "东南亚",
+        "en": "Southeast Asia"
+      },
+      "disruption": {
+        "zh": "集装箱港口拥堵",
+        "en": "Container-port congestion"
+      },
+      "decision_lens": {
+        "zh": "在泊位拥堵中重平码头与客户流量",
+        "en": "Rebalancing terminal and customer flows during berth congestion"
+      },
+      "story_intro": {
+        "zh": "你负责东南亚的集装箱转运。新加坡连接很多后续航班，一条船晚靠泊，可能让多个客户的箱子同时错过下一程。",
+        "en": "You manage Southeast Asian transshipment. A late berth in Singapore can make containers for many customers miss onward sailings."
+      },
+      "goal": {
+        "zh": "保护最重要的转运连接，同时避免一拥堵就把所有箱子改港。",
+        "en": "Protect critical connections without diverting every container at the first sign of congestion."
+      },
+      "stakes": {
+        "zh": "错过转运班次会把两三天等待放大成更长延误。",
+        "en": "A missed connection can turn a two-day berth wait into a much longer delay."
+      },
+      "mode": "OCEAN",
+      "stages": [
+        {
+          "review_id": "b37335842f5c28ef9904d78f",
+          "package_digest": "1b5b238aaceb07ba063ebd067c3ee245f1e0477b5ef21c6c7270434a3ce3c51d",
+          "moment": "T0",
+          "cutoff_at": "2024-05-30T23:00:00+08:00",
+          "status": {
+            "zh": "泊位等待来源尚不可用",
+            "en": "Berth-wait source not yet available"
+          },
+          "update": {
+            "zh": "今天没有确认的泊位拥堵消息。",
+            "en": "There is no confirmed berth congestion today."
+          },
+          "unknown": {
+            "zh": "还不知道拥堵是否会出现。",
+            "en": "You do not know whether congestion will emerge."
+          },
+          "question": {
+            "zh": "拥堵尚未得到官方确认时，是否应改变挂靠与箱流？",
+            "en": "Before congestion is confirmed, should calls and container flows change?"
+          },
+          "inventory_cover_days": 7,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持码头计划并监测泊位队列",
+                "en": "Keep the terminal plan and monitor berth queues"
+              },
+              "body": {
+                "zh": "维持现有挂靠，每天检查泊位等待。",
+                "en": "Keep current calls and check berth waits daily."
+              },
+              "tradeoff": {
+                "zh": "不增加改港成本，但拥堵确认后调整时间更短。",
+                "en": "Avoids diversion cost but leaves less time once congestion is confirmed."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持码头计划并监测泊位队列",
+                "en": "Keep the terminal plan and monitor berth queues"
+              },
+              "body": {
+                "zh": "维持现有挂靠，每天检查泊位等待。",
+                "en": "Keep current calls and check berth waits daily."
+              },
+              "tradeoff": {
+                "zh": "不增加改港成本，但拥堵确认后调整时间更短。",
+                "en": "Avoids diversion cost but leaves less time once congestion is confirmed."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "48b7369029750570377202c6",
+          "package_digest": "910f06ddad357ed6bad6d42e47442b7fbffc0b84a7a002747fc9e58dfb2085ba",
+          "moment": "T1",
+          "cutoff_at": "2024-05-31T00:00:00+08:00",
+          "status": {
+            "zh": "平均等待约两至三天",
+            "en": "Average waits reach about two to three days"
+          },
+          "update": {
+            "zh": "船舶到港不准时加上箱量增加，平均泊位等待已到两至三天。",
+            "en": "Off-schedule arrivals and higher volume have pushed average berth waits to two or three days."
+          },
+          "unknown": {
+            "zh": "还不知道哪些转运班次会先受影响。",
+            "en": "You do not know which onward connections will be affected first."
+          },
+          "question": {
+            "zh": "泊位等待达到两至三天时，应优先保护哪些转运连接？",
+            "en": "When berth waits reach two to three days, which connections should be protected first?"
+          },
+          "inventory_cover_days": 5,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "维持码头计划并监测泊位队列",
+                "en": "Keep the terminal plan and monitor berth queues"
+              },
+              "body": {
+                "zh": "保留原港，只优先追踪即将错过转运的箱子。",
+                "en": "Keep Singapore and closely track only containers at risk of missing connections."
+              },
+              "tradeoff": {
+                "zh": "操作变化最小，但部分连接仍可能错过。",
+                "en": "Minimizes operational change but some connections may still be missed."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "重平衡挂靠、箱流与替代港",
+                "en": "Rebalance calls, container flows, and alternate ports"
+              },
+              "body": {
+                "zh": "只把高价值、快错过转运的箱子分流到备用码头或港口。",
+                "en": "Divert only high-value containers about to miss connections to alternate terminals or ports."
+              },
+              "tradeoff": {
+                "zh": "保护关键连接，但增加转运和改单成本。",
+                "en": "Protects critical connections but adds handling and documentation cost."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "fcea3f3ee8595810517c5b32",
+          "package_digest": "0656dae54e2d2b3b2f6b0dfd2aa6c1846123377c9b13e7e5ba3965563620dbc9",
+          "moment": "T2",
+          "cutoff_at": "2024-06-09T00:00:00+08:00",
+          "status": {
+            "zh": "吞吐增长且运力需求持续",
+            "en": "Throughput and capacity demand remain strong"
+          },
+          "update": {
+            "zh": "今年前五个月箱量同比增加 7.7%，港口称运力需求仍然强劲。",
+            "en": "Container volume rose 7.7% in the first five months and demand remains strong."
+          },
+          "unknown": {
+            "zh": "还不知道拥堵会持续多久，以及替代港还能接多少箱。",
+            "en": "You do not know how long congestion will last or how many boxes alternate ports can take."
+          },
+          "question": {
+            "zh": "强劲需求持续时，应临时分流还是建立多港口容量规则？",
+            "en": "When demand persists, should flows be temporarily diverted or governed by a multi-port rule?"
+          },
+          "inventory_cover_days": 4,
+          "alternate_capacity_available": false,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "重平衡挂靠、箱流与替代港",
+                "en": "Rebalance calls, container flows, and alternate ports"
+              },
+              "body": {
+                "zh": "建立多港分配规则，把新增箱量按容量分到新加坡和两个备用港。",
+                "en": "Adopt a multi-port allocation rule across Singapore and two alternate ports."
+              },
+              "tradeoff": {
+                "zh": "网络更有韧性，但长期操作更复杂、需要稳定的备用容量。",
+                "en": "Improves resilience but adds lasting complexity and requires reliable alternate capacity."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "维持码头计划并监测泊位队列",
+                "en": "Keep the terminal plan and monitor berth queues"
+              },
+              "body": {
+                "zh": "继续在新加坡处理全部箱流，按客户紧急程度排队。",
+                "en": "Keep all flows in Singapore and queue containers by customer urgency."
+              },
+              "tradeoff": {
+                "zh": "流程简单，却让网络继续依赖一个拥堵港口。",
+                "en": "Keeps operations simple but leaves the network dependent on one congested port."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rio-grande-floods",
+      "title": {
+        "zh": "巴西南部洪灾",
+        "en": "Southern Brazil floods"
+      },
+      "role": {
+        "zh": "巴西南部公路与集结网络经理",
+        "en": "Southern Brazil road and consolidation-network manager"
+      },
+      "region": {
+        "zh": "南美洲",
+        "en": "South America"
+      },
+      "disruption": {
+        "zh": "洪灾与公路网络破碎",
+        "en": "Flooding and fragmented road network"
+      },
+      "decision_lens": {
+        "zh": "在碎片化路网中保护安全走廊与集结点",
+        "en": "Protecting safe corridors and consolidation points in a fragmented network"
+      },
+      "story_intro": {
+        "zh": "你负责巴西南部的区域配送。洪水把道路切成许多不相连的片段，应急物资必须先走，普通商业货又不能随意进入危险路段。",
+        "en": "You manage regional distribution in southern Brazil. Floods have fragmented the road network; emergency supplies must move first and commercial freight cannot enter unsafe sections."
+      },
+      "goal": {
+        "zh": "先打通安全走廊，把应急和商业货物分开管理。",
+        "en": "Build safe corridors first and manage emergency and commercial freight separately."
+      },
+      "stakes": {
+        "zh": "错误放行会困住司机，也会堵塞救援路线。",
+        "en": "A bad dispatch can strand drivers and block emergency routes."
+      },
+      "mode": "ROAD",
+      "stages": [
+        {
+          "review_id": "c60f7620281d52f55de64b71",
+          "package_digest": "6a2a9b4cc5b5e838cf1c8b9b93a5ec56b77ae75b35ed0a1d4b01b888f8adfa99",
+          "moment": "T0",
+          "cutoff_at": "2024-05-17T20:05:00-03:00",
+          "status": {
+            "zh": "首份洪灾公路公告尚不可用",
+            "en": "First flood-highway bulletin not yet available"
+          },
+          "update": {
+            "zh": "今天还没有完整的官方洪灾路况。",
+            "en": "There is no complete official flood-road picture today."
+          },
+          "unknown": {
+            "zh": "还不知道哪些走廊真正安全。",
+            "en": "You do not know which corridors are truly safe."
+          },
+          "question": {
+            "zh": "官方路况尚不可用时，是否应改变区域配送网络？",
+            "en": "Before official road status is available, should the regional network change?"
+          },
+          "inventory_cover_days": 8,
+          "alternate_capacity_available": true,
+          "shared_plan": true,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "等待核实通行并维持安全集结",
+                "en": "Await verified access and retain safe consolidation"
+              },
+              "body": {
+                "zh": "把车辆留在现有集结点，等完整路况后再发车。",
+                "en": "Keep vehicles at current hubs until a complete road picture is available."
+              },
+              "tradeoff": {
+                "zh": "最稳妥，但可能错过仍然可走的局部路线。",
+                "en": "Safest, but may overlook local routes that remain usable."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "等待核实通行并维持安全集结",
+                "en": "Await verified access and retain safe consolidation"
+              },
+              "body": {
+                "zh": "把车辆留在现有集结点，等完整路况后再发车。",
+                "en": "Keep vehicles at current hubs until a complete road picture is available."
+              },
+              "tradeoff": {
+                "zh": "最稳妥，但可能错过仍然可走的局部路线。",
+                "en": "Safest, but may overlook local routes that remain usable."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "72b6e748fbbc8a2ea22bb6a1",
+          "package_digest": "3060da87ca19035111a7d2ccf12ca729b454ab785a4ed6ec9ff73aef79800b24",
+          "moment": "T1",
+          "cutoff_at": "2024-05-17T20:06:00-03:00",
+          "status": {
+            "zh": "40 个路段完全关闭",
+            "en": "Forty highway sections fully closed"
+          },
+          "update": {
+            "zh": "六条联邦公路共有 40 个路段完全关闭，另有路段只允许救援车辆通行。",
+            "en": "Forty sections across six federal highways are fully closed, and some sections allow emergency vehicles only."
+          },
+          "unknown": {
+            "zh": "还不知道可通行路段能否承受商业车流。",
+            "en": "You do not know whether open sections can absorb commercial traffic."
+          },
+          "question": {
+            "zh": "六条公路有 40 个完全关闭路段时，应如何区分应急与商业货运？",
+            "en": "When six highways have 40 full closures, how should emergency and commercial freight be separated?"
+          },
+          "inventory_cover_days": 5,
+          "alternate_capacity_available": true,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "建立安全走廊与货运优先级",
+                "en": "Build safe corridors and freight priorities"
+              },
+              "body": {
+                "zh": "建立两类队列：救援物资优先，商业货只走不会占用救援道路的路线。",
+                "en": "Create two queues: emergency supplies first; commercial cargo only on routes that do not block relief traffic."
+              },
+              "tradeoff": {
+                "zh": "调度更复杂，却能同时保护救援和有限商业运输。",
+                "en": "Adds scheduling complexity but protects both relief work and limited commerce."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "等待核实通行并维持安全集结",
+                "en": "Await verified access and retain safe consolidation"
+              },
+              "body": {
+                "zh": "商业货物继续等待，只允许救援任务使用已确认道路。",
+                "en": "Hold commercial cargo and allow only emergency missions on confirmed roads."
+              },
+              "tradeoff": {
+                "zh": "保护救援通道，却让商业积压快速增加。",
+                "en": "Protects emergency access but rapidly grows commercial backlog."
+              }
+            }
+          ]
+        },
+        {
+          "review_id": "390caac63eb849a3b11b056c",
+          "package_digest": "8cc479048df66aebdcb046c96c6a1a79c9cfc9f632e84353eb147dffc253dc60",
+          "moment": "T2",
+          "cutoff_at": "2024-05-24T18:57:00-03:00",
+          "status": {
+            "zh": "广泛限制仍在持续",
+            "en": "Extensive highway restrictions continue"
+          },
+          "update": {
+            "zh": "关闭数量有所下降，但仍有 11 个路段全封、23 个路段半封，19 个路段正在抢修。",
+            "en": "Closures have eased, but 11 sections remain fully closed, 23 partly closed, and 19 under repair."
+          },
+          "unknown": {
+            "zh": "还不知道修复路段何时稳定开放。",
+            "en": "You do not know when repaired sections will remain reliably open."
+          },
+          "question": {
+            "zh": "网络仍碎片化时，应恢复直达还是继续使用安全集结点？",
+            "en": "When the network remains fragmented, should direct delivery resume or safe consolidation remain?"
+          },
+          "inventory_cover_days": 3,
+          "alternate_capacity_available": false,
+          "shared_plan": false,
+          "options": [
+            {
+              "id": "A",
+              "title": {
+                "zh": "建立安全走廊与货运优先级",
+                "en": "Build safe corridors and freight priorities"
+              },
+              "body": {
+                "zh": "保留区域集结点，同时逐条恢复经过验证的直达线路。",
+                "en": "Keep regional hubs while reopening verified direct routes one by one."
+              },
+              "tradeoff": {
+                "zh": "恢复更慢、更谨慎，但不会因一次错误放行重新堵塞网络。",
+                "en": "Restores service more slowly but avoids re-fragmenting the network after a bad dispatch."
+              }
+            },
+            {
+              "id": "B",
+              "title": {
+                "zh": "等待核实通行并维持安全集结",
+                "en": "Await verified access and retain safe consolidation"
+              },
+              "body": {
+                "zh": "继续从集结点分批发车，不恢复点到点直达。",
+                "en": "Continue staged dispatch from hubs and do not restore direct delivery yet."
+              },
+              "tradeoff": {
+                "zh": "减少误入封路的风险，但交接次数和等待时间较多。",
+                "en": "Reduces closure risk but adds handoffs and waiting."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "bundle_digest": "b8a9d9fe86398f97d2a5023802dfa5bf0557c467c59f14db42fb3d7c9a8074ba"
+}

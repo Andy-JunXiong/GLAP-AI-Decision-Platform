@@ -9,8 +9,8 @@ entry across ten cases and 30 cutoffs. Two invited reviewers completed separate
 server-saved 30-package submissions with all three attestations on 2026-08-17;
 the superseded story-v1 draft remains isolated and ineligible. The governed
 three-review minimum is not met, so Decision Quality remains `NOT_EVALUATED`.
-The multi-reviewer account extension is deployed with five separate hosted
-accounts and pseudonymous persistence scopes; all four additional accounts
+The multi-reviewer account extension is deployed with six separate hosted
+accounts and pseudonymous persistence scopes; all five additional accounts
 passed zero-write login/isolation canaries and their credentials were delivered
 privately.
 
@@ -180,6 +180,17 @@ gate, so Decision Quality remains
 `NOT_EVALUATED`. Unit tests exercise packaging and scoring
 mechanics with in-memory test reviews; those tests are not expert evidence and
 are never written to the scenario corpus.
+
+The deployed and health-verified collection `glap-ten-story-review.v1` is a
+separate mainland-access fallback for the human-created Lambda Function URL.
+It reuses all ten frozen stories and 30 source package identifiers, and records
+the same five comparative judgments, overall preference, confidence, optional
+notes, and final attestations. Every moment is immutable and time-ordered. The
+collection and export remain separate, so they must not be imported, scored,
+or counted as the third `human-evaluation-story.v2` submission until a named
+study owner approves and passes a governed compatibility/import check. Its
+design and human-owned update procedure are documented in
+[`three_case_review_entry.md`](three_case_review_entry.md).
 
 Use the tooling only after first producing an evaluation report:
 

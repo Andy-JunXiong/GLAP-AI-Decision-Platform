@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-17`
+**Sydney as-of date:** `2026-08-18`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -22,7 +22,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_FIVE_ACCOUNTS_LIVE` | Sites v11 contains two complete 30-package story-v2 submissions and five separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
+| Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_SIX_ACCOUNTS_LIVE` | Sites v11 contains two complete 30-package story-v2 submissions and six separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
+| Mainland ten-story review entry | `DEPLOYED_HEALTH_VERIFIED` | A named human uploaded the ten-story/30-moment package to the isolated Lambda surface; the public health contract reports the expected build, collection, bundle digest, ten cases, and 30 moments, while its separate collection remains ineligible for the formal story-v2 gate without an approved compatibility/import check |
 | Public evaluation evidence view | `PUBLISHED_VERIFIED` | GitHub Pages presents aggregate-only 2-of-3 review progress separately from AWS operations, reviewer identities, answers, and business outcomes |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
@@ -46,9 +47,23 @@ controller/stack deployment, failed-date recovery, operational-baseline
 refresh, and Pages publication were skipped. The correction is therefore not
 deployed and the persisted lifecycle status remains failed on `2026-08-09`.
 
+The mainland-access review surface now has a human-created isolated DynamoDB
+table, Lambda Function URL, execution role, and direct invited-account login.
+Inspected runtime screenshots confirmed the health response and, after raising
+the Lambda timeout from the failing three-second configuration, successful
+login. The replacement collection `glap-ten-story-review.v1` reuses all ten
+frozen stories and 30 package identifiers, locks each moment on the server,
+supports resume, and permits final submission only after all 30 judgments. A
+named human uploaded the repository package. A read-only health check then
+returned build `ten-story-review-2026-08-18.1`, the expected bundle digest, ten
+cases, 30 moments, and status `ok`. The separate collection must not be counted
+as the missing third formal
+`human-evaluation-story.v2` review until a governed compatibility/import check
+is approved and passed.
+
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `TWO_COMPLETE_REVIEWS_FIVE_ACCOUNTS_LIVE_VERIFIED`
+**Status:** `TWO_COMPLETE_REVIEWS_SIX_ACCOUNTS_LIVE_VERIFIED`
 
 **Goal**
 
@@ -222,13 +237,21 @@ session, answers, or submitted state to affect another reviewer.
   and left D1 at zero Linqi sessions;
 - Linqi's credential notice was sent privately only after that canary passed
   and states that no reply is required.
+- after explicit user confirmation, the sixth hosted account was added without
+  changing source, the frozen bundle, or D1. Sites v11 was republished with
+  environment revision 10; a zero-write browser canary verified login, the
+  authenticated ten-story/30-moment entry, and logout without entering an
+  attestation, answer, save, or submission;
+- the sixth account's bilingual credential notice was sent privately only after
+  the canary passed. No address or plaintext credential was stored in the
+  repository.
 
 **Definition of done**
 
 - two complete story-v2 human submissions are preserved and locked;
 - the multi-reviewer implementation, source release, Sites v11 publication,
-  Dylan, Dong, Xiaoshan, and Linqi account configuration, non-submitting
-  isolation canaries, and credential delivery are complete;
+  all six account configurations, non-submitting isolation canaries, and
+  credential delivery are complete;
 - the old-draft isolation and zero-agent-answer boundaries remain intact.
 
 **Stop conditions**
@@ -492,6 +515,10 @@ done.
   fifth hosted account, public Sites republish, canary, and credential email.
   Sites v11 environment revision 9 and the zero-write canary completed before
   the private notice was sent.
+- The user then explicitly approved a sixth hosted account, the required public
+  Sites republish, a zero-write login/read/logout canary, and a bilingual
+  credential email. Sites v11 environment revision 10 deployed successfully,
+  and the private notice was sent only after the canary passed.
 - The user explicitly authorized publishing the aggregate Evaluation & Trust
   view to the public GitHub Pages demo. Commit `5819e55` was pushed directly to
   `main`; both CI and Pages completed successfully and the live markers were

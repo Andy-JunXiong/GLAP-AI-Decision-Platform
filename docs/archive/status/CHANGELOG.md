@@ -4,6 +4,17 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-18
+
+- Replaced the simplified three-case mainland review package with a locally
+  verified ten-story, 30-moment experience generated from the frozen formal
+  story source. The Lambda flow now provides the ten-case hub, sequential
+  `T0`/`T1`/`T2` unlocks, five comparative judgments, immutable per-moment
+  server saves, resume, final attestations, and a pseudonymous export. The
+  named human uploaded the replacement ZIP, and the public health contract now
+  matches the repository build and bundle digest. Its separate collection is
+  not automatically eligible for the formal Decision Quality gate.
+
 ## 2026-08-17
 
 - Released isolated multi-reviewer authentication for the formal Human

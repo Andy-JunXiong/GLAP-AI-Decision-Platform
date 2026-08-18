@@ -27,6 +27,21 @@ The inspected deployment runs in AWS `us-east-1` and uses Python 3.14 Lambda fun
 | Amazon CloudWatch | Execution logs and monitoring | Documented deployment |
 | Amazon QuickSight | Operational dashboards | Validated with synthetic outputs |
 
+## Isolated mainland reviewer entry
+
+The human-created AWS surface consists of an isolated Lambda Function URL,
+DynamoDB table, and least-privilege execution role. Its health endpoint and
+login were inspected; a three-second timeout caused the earlier generic login
+failure, and the human corrected the Lambda to the documented ten-second
+timeout. The repository package for collection `glap-ten-story-review.v1` was
+uploaded by a named human. A read-only health check verified build
+`ten-story-review-2026-08-18.1`, the expected bundle digest, ten cases, 30
+moments, and status `ok`. It stores 30 immutable per-moment answers followed by
+one final submission. It does not reuse operational tables, aliases, schedules,
+Athena, Glue, S3,
+Actions, Outcomes, or production paths. See
+[`docs/three_case_review_entry.md`](docs/three_case_review_entry.md).
+
 ## Runtime flow
 
 ```text

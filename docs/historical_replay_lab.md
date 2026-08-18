@@ -271,9 +271,9 @@ available in the authenticated v3 review infrastructure. Sites v8's numeric
 questionnaire and Sites v9's technical story-v1 presentation are superseded and
 ineligible. Sites v11 is the canary-verified formal story-v2 entry across all
 ten cases and 30 moments; the five-case preview remains a development-only
-browser-local artifact. Five pseudonymous reviewer accounts isolate hosted
+browser-local artifact. Six pseudonymous reviewer accounts isolate hosted
 sessions and answers. The database contains two complete story-v2 submissions
-and one isolated three-answer story-v1 draft; all four additional accounts'
+and one isolated three-answer story-v1 draft; all five additional accounts'
 zero-write canaries created no review data. The two complete
 submissions do not satisfy the three-review minimum, reviewer independence
 still depends on truthful human attestation and study-owner enforcement, and

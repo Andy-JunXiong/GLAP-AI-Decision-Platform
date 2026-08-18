@@ -29,12 +29,25 @@ versioned `A303_HIGH_RISK_ROUTE` rule contract. It evaluates System Correctness
 and Capability Attribution only. It does not verify the deployed A303 runtime,
 score Decision Quality, measure Business Outcome Effect, or establish
 production readiness. A local Decision Quality rubric and blinded-review gate
-are implemented. Sites v11 provides five isolated pseudonymous reviewer
+are implemented. Sites v11 provides six isolated pseudonymous reviewer
 accounts; two complete story-v2 reviewer submissions are preserved in the Sites
 database, but the three-review minimum is not met and no quality result is
 claimed. See
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
+
+A separate mainland reviewer surface uses a human-created Lambda Function URL
+and isolated DynamoDB table. It accepts only pre-provisioned pseudonymous
+accounts and serves no story material before login. The human-deployed
+collection `glap-ten-story-review.v1` reuses the ten frozen stories and 30
+package identifiers, conditionally locks every moment, supports resume, and
+creates one final immutable submission. Its public health contract was
+read-only verified against the repository build and bundle digest. The surface
+has no operational authority, and
+its separate collection cannot be merged into or counted toward the frozen
+`human-evaluation-story.v2` Decision Quality gate without an approved
+compatibility/import check.
+See [`three_case_review_entry.md`](three_case_review_entry.md).
 
 Historical Replay v0.9 adds a local ten-scenario hybrid corpus covering the
 Baltimore, Panama Canal, Red Sea, FAA NOTAM, U.S. rail-labor, Gotthard road-

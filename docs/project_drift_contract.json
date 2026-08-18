@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v11 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, isolated human-evaluation-story.v2 persistence, and five separate pseudonymous reviewer accounts; two invited reviewers completed all 30 story-v2 packages with three attestations each while the superseded story-v1 draft remains isolated and ineligible; all four additional accounts passed zero-write login and isolation canaries and received their credentials privately; one more eligible submission is required and no decision-quality result exists",
+      "boundary": "public Sites v11 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, isolated human-evaluation-story.v2 persistence, and six separate pseudonymous reviewer accounts; two invited reviewers completed all 30 story-v2 packages with three attestations each while the superseded story-v1 draft remains isolated and ineligible; all five additional accounts passed zero-write login and isolation canaries and received their credentials privately; one more eligible submission is required and no decision-quality result exists",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
@@ -120,6 +120,22 @@
         "docs/decision_quality_review_v1.schema.json",
         "docs/decision_quality_comparative_review_v1.schema.json",
         "docs/historical_replay_review_freeze_v3.schema.json"
+      ]
+    },
+    {
+      "id": "mainland_ten_story_review_entry",
+      "state": "PARTIAL",
+      "boundary": "human-created isolated Lambda Function URL login surface exists; a named human deployed glap-ten-story-review.v1, and its public health contract matches the repository build, bundle digest, ten frozen stories, and 30 source package identifiers; no operational authority and not automatically eligible for the formal human-evaluation-story.v2 Decision Quality gate",
+      "evidence_files": [
+        "lambda/glap_three_case_review.py",
+        "lambda/ten_story_review_bundle.json",
+        "ops/generate_three_case_review_secrets.py",
+        "ops/generate_ten_story_review_bundle.mjs",
+        "ops/package_three_case_review_lambda.py",
+        "ops/verify_three_case_review_credentials.py",
+        "tests/test_three_case_review_credentials.py",
+        "tests/test_three_case_review_lambda.py",
+        "docs/three_case_review_entry.md"
       ]
     },
     {
