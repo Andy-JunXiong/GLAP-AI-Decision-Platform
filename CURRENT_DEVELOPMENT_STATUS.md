@@ -82,10 +82,11 @@ after actual-calendar operations had advanced. Stack/controller deployment,
 the deployed guard, failed-date recovery, baseline refresh, production alias,
 Scheduler, and Pages were all skipped. A local fix now keeps the legacy cutoff
 immutable but evaluates operational rows against their stored `as_of_date` and
-the system-derived current Sydney date; it is not yet committed, pushed,
-CI-verified, or deployed. Local validation passes the 21-test lifecycle
-deployment suite, all 313 repository tests, Python compilation, PowerShell
-parsing and plan rendering, the 16-check drift audit, and `git diff --check`.
+the system-derived current Sydney date. The implementation is committed on the
+feature branch as `a800074`; it is not merged, PR-CI-verified, or deployed.
+Local validation passes the 21-test lifecycle deployment suite, all 313
+repository tests, Python compilation, PowerShell parsing and plan rendering,
+the 16-check drift audit, and `git diff --check`.
 
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -325,8 +326,8 @@ complete reviews can be evaluated.
 
 ## Pending validation
 
-- Validate, commit, push, and CI-check the temporal backfill re-run correction;
-  do not retry workflow run `32379866761` from the stale `main` source.
+- Merge and PR-CI-check the validated temporal backfill re-run correction; do
+  not retry workflow run `32379866761` from the stale `main` source.
 - After that correction is merged, obtain a new explicit isolated-staging
   deployment decision before retrying `deploy-recovery-controller`.
 - Recover only the persisted failed `2026-08-09` date, then continue from

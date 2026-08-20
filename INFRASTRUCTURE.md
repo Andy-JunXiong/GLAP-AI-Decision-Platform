@@ -163,9 +163,11 @@ completed the idempotent schema step but failed closed before stack deployment
 because the one-time temporal verifier treated 120 later actual-calendar
 operational rows as if the original `2026-08-06` migration cutoff were still the
 current calendar boundary. A local correction separates the immutable legacy
-classification cutoff from the system-derived current Sydney date. The stack,
-failed-date recovery, baseline refresh, production alias, Scheduler, and Pages
-were not changed. IAM and staging deployment authority remain human-owned.
+classification cutoff from the system-derived current Sydney date and is
+committed on the feature branch as `a800074`; it remains unmerged,
+PR-CI-unverified, and undeployed. The stack, failed-date recovery, baseline
+refresh, production alias, Scheduler, and Pages were not changed. IAM and
+staging deployment authority remain human-owned.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and

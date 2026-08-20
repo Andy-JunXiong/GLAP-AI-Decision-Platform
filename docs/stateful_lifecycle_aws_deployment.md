@@ -193,10 +193,11 @@ validating operational rows against their stored `as_of_date` and the
 system-derived current Sydney business date. The correction passes the 21-test
 lifecycle deployment suite, all 313 repository tests, Python compilation,
 PowerShell parsing and plan rendering, the 16-check drift audit, and
-`git diff --check`. Do not retry the failed deployment until that correction is
-committed, pushed, CI-verified, and separately approved for isolated staging.
-No database-wide wildcard or production permission is justified by either
-failure.
+`git diff --check`. The implementation is committed on the feature branch as
+`a800074`; it remains unmerged, PR-CI-unverified, and undeployed. Do not retry
+the failed deployment until that correction is merged, CI-verified, and
+separately approved for isolated staging. No database-wide wildcard or
+production permission is justified by either failure.
 
 ## Deployment
 
