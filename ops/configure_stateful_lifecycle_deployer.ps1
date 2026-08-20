@@ -3,7 +3,10 @@ param(
     [string]$AdminProfile = "default",
     [string]$Region = "us-east-1",
     [string]$RoleName = "glap-github-staging-deployer",
-    [string]$PolicyName = "GLAPStatefulLifecycleStagingDeploy",
+    [string]$LegacyInlinePolicyName = "GLAPStatefulLifecycleStagingDeploy",
+    [string]$CatalogPolicyName = "GLAPStatefulLifecycleCatalogStagingDeploy",
+    [string]$StoragePolicyName = "GLAPStatefulLifecycleStorageStagingDeploy",
+    [string]$DeploymentPolicyName = "GLAPStatefulLifecycleRuntimeStagingDeploy",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$Workgroup = "primary",
     [string]$StackName = "glap-stateful-lifecycle-staging",
@@ -25,7 +28,10 @@ $ErrorActionPreference = "Stop"
 
 foreach ($name in @(
     $RoleName,
-    $PolicyName,
+    $LegacyInlinePolicyName,
+    $CatalogPolicyName,
+    $StoragePolicyName,
+    $DeploymentPolicyName,
     $StackName,
     $FunctionName,
     $ExecutionRoleName,
@@ -63,16 +69,43 @@ $athenaPrefix = $Matches[2].Trim('/')
 $artifactPrefix = $ArtifactPrefix.Trim('/')
 $dataPrefix = $LifecycleDataPrefix.Trim('/')
 
-$identityArgs = @("sts", "get-caller-identity", "--region", $Region, "--output", "json")
+$awsScope = @("--region", $Region)
 if ($AdminProfile) {
-    $identityArgs += @("--profile", $AdminProfile)
+    $awsScope += @("--profile", $AdminProfile)
 }
-$identityJson = & aws @identityArgs
-if ($LASTEXITCODE -ne 0 -or -not $identityJson) {
-    throw "Unable to resolve the AWS account from AdminProfile"
+
+function Invoke-AwsJson([string[]]$Arguments, [string]$FailureMessage) {
+    $json = & aws @Arguments @awsScope --output json
+    if ($LASTEXITCODE -ne 0 -or -not $json) {
+        throw $FailureMessage
+    }
+    return ($json -join "`n") | ConvertFrom-Json
 }
-$accountId = ($identityJson | ConvertFrom-Json).Account
-if ($accountId -notmatch '^\d{12}$') {
+
+function Invoke-AwsCommand([string[]]$Arguments, [string]$FailureMessage) {
+    & aws @Arguments @awsScope | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw $FailureMessage
+    }
+}
+
+function Write-TemporaryPolicy([string]$Json, [string]$Label) {
+    $path = Join-Path ([System.IO.Path]::GetTempPath()) (
+        "glap-lifecycle-$Label-" + [guid]::NewGuid().ToString("N") + ".json"
+    )
+    [System.IO.File]::WriteAllText(
+        $path,
+        $Json,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    return $path
+}
+
+$identity = Invoke-AwsJson @("sts", "get-caller-identity") `
+    "Unable to resolve the AWS account from AdminProfile"
+$accountId = [string]$identity.Account
+$partition = ([string]$identity.Arn).Split(':')[1]
+if ($accountId -notmatch '^\d{12}$' -or $partition -notmatch '^aws(-[a-z]+)?$') {
     throw "AWS returned an invalid account ID"
 }
 
@@ -122,7 +155,7 @@ $tableNames = @(
 )
 $bucketArns = @($ArtifactBucket, $LifecycleDataBucket, $athenaBucket) |
     Sort-Object -Unique |
-    ForEach-Object { "arn:aws:s3:::$_" }
+    ForEach-Object { "arn:${partition}:s3:::$_" }
 $listPrefixes = @(
     $artifactPrefix,
     "$artifactPrefix/*",
@@ -132,9 +165,7 @@ $listPrefixes = @(
     "$athenaPrefix/*"
 ) | Sort-Object -Unique
 
-$policy = @{
-    Version = "2012-10-17"
-    Statement = @(
+$statements = @(
         @{
             Sid = "RunLifecycleAthena"
             Effect = "Allow"
@@ -145,7 +176,7 @@ $policy = @{
                 "athena:GetQueryResults",
                 "athena:StopQueryExecution"
             )
-            Resource = "arn:aws:athena:${Region}:${accountId}:workgroup/${Workgroup}"
+            Resource = "arn:${partition}:athena:${Region}:${accountId}:workgroup/${Workgroup}"
         },
         @{
             Sid = "ManageLifecycleGlueContracts"
@@ -159,10 +190,10 @@ $policy = @{
                 "glue:UpdateTable"
             )
             Resource = @(
-                "arn:aws:glue:${Region}:${accountId}:catalog",
-                "arn:aws:glue:${Region}:${accountId}:database/${SourceDatabase}"
+                "arn:${partition}:glue:${Region}:${accountId}:catalog",
+                "arn:${partition}:glue:${Region}:${accountId}:database/${SourceDatabase}"
             ) + ($tableNames | ForEach-Object {
-                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/$_"
+                "arn:${partition}:glue:${Region}:${accountId}:table/${SourceDatabase}/$_"
             })
         },
         @{
@@ -188,7 +219,7 @@ $policy = @{
             Sid = "UseLifecycleArtifacts"
             Effect = "Allow"
             Action = @("s3:GetObject", "s3:PutObject", "s3:AbortMultipartUpload")
-            Resource = "arn:aws:s3:::${ArtifactBucket}/${artifactPrefix}/*"
+            Resource = "arn:${partition}:s3:::${ArtifactBucket}/${artifactPrefix}/*"
         },
         @{
             Sid = "UseLifecycleDataPrefix"
@@ -199,7 +230,7 @@ $policy = @{
                 "s3:DeleteObject",
                 "s3:AbortMultipartUpload"
             )
-            Resource = "arn:aws:s3:::${LifecycleDataBucket}/${dataPrefix}/*"
+            Resource = "arn:${partition}:s3:::${LifecycleDataBucket}/${dataPrefix}/*"
         },
         @{
             Sid = "UseLifecycleAthenaResults"
@@ -210,7 +241,7 @@ $policy = @{
                 "s3:DeleteObject",
                 "s3:AbortMultipartUpload"
             )
-            Resource = "arn:aws:s3:::${athenaBucket}/${athenaPrefix}/*"
+            Resource = "arn:${partition}:s3:::${athenaBucket}/${athenaPrefix}/*"
         },
         @{
             Sid = "DeployLifecycleStack"
@@ -224,7 +255,7 @@ $policy = @{
                 "cloudformation:DescribeStackEvents",
                 "cloudformation:ListStackResources"
             )
-            Resource = "arn:aws:cloudformation:${Region}:${accountId}:stack/${StackName}/*"
+            Resource = "arn:${partition}:cloudformation:${Region}:${accountId}:stack/${StackName}/*"
         },
         @{
             Sid = "InspectLifecycleTemplate"
@@ -247,12 +278,12 @@ $policy = @{
                 "lambda:InvokeFunction"
             )
             Resource = @(
-                "arn:aws:lambda:${Region}:${accountId}:function:${FunctionName}",
-                "arn:aws:lambda:${Region}:${accountId}:function:${FunctionName}:*",
-                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationControllerFunctionName}",
-                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationControllerFunctionName}:*",
-                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationQualityGateFunctionName}",
-                "arn:aws:lambda:${Region}:${accountId}:function:${IntegrationQualityGateFunctionName}:*"
+                "arn:${partition}:lambda:${Region}:${accountId}:function:${FunctionName}",
+                "arn:${partition}:lambda:${Region}:${accountId}:function:${FunctionName}:*",
+                "arn:${partition}:lambda:${Region}:${accountId}:function:${IntegrationControllerFunctionName}",
+                "arn:${partition}:lambda:${Region}:${accountId}:function:${IntegrationControllerFunctionName}:*",
+                "arn:${partition}:lambda:${Region}:${accountId}:function:${IntegrationQualityGateFunctionName}",
+                "arn:${partition}:lambda:${Region}:${accountId}:function:${IntegrationQualityGateFunctionName}:*"
             )
         },
         @{
@@ -270,9 +301,9 @@ $policy = @{
                 "iam:UntagRole"
             )
             Resource = @(
-                "arn:aws:iam::${accountId}:role/${ExecutionRoleName}",
-                "arn:aws:iam::${accountId}:role/${IntegrationControllerRoleName}",
-                "arn:aws:iam::${accountId}:role/${IntegrationQualityGateRoleName}"
+                "arn:${partition}:iam::${accountId}:role/${ExecutionRoleName}",
+                "arn:${partition}:iam::${accountId}:role/${IntegrationControllerRoleName}",
+                "arn:${partition}:iam::${accountId}:role/${IntegrationQualityGateRoleName}"
             )
         },
         @{
@@ -285,15 +316,105 @@ $policy = @{
                 "cloudwatch:TagResource",
                 "cloudwatch:UntagResource"
             )
-            Resource = "arn:aws:cloudwatch:${Region}:${accountId}:alarm:${StackName}-*"
+            Resource = "arn:${partition}:cloudwatch:${Region}:${accountId}:alarm:${StackName}-*"
         }
-    )
+)
+
+$catalogSids = @(
+    "RunLifecycleAthena",
+    "ManageLifecycleGlueContracts",
+    "UseGovernedLifecycleData"
+)
+$storageSids = @(
+    "LocateLifecycleBuckets",
+    "ListLifecyclePrefixes",
+    "UseLifecycleArtifacts",
+    "UseLifecycleDataPrefix",
+    "UseLifecycleAthenaResults"
+)
+$deploymentSids = @(
+    "DeployLifecycleStack",
+    "InspectLifecycleTemplate",
+    "ManageLifecycleLambda",
+    "ManageLifecycleExecutionRole",
+    "ManageLifecycleAlarm"
+)
+$assignedSids = @($catalogSids + $storageSids + $deploymentSids)
+$statementSids = @($statements | ForEach-Object { [string]$_.Sid })
+if (@($assignedSids | Sort-Object -Unique).Count -ne $assignedSids.Count -or
+    @(Compare-Object $statementSids $assignedSids).Count -ne 0) {
+    throw "Every lifecycle permission statement must belong to exactly one managed policy"
+}
+$catalogPolicy = @{
+    Version = "2012-10-17"
+    Statement = @($statements | Where-Object Sid -in $catalogSids)
+}
+$storagePolicy = @{
+    Version = "2012-10-17"
+    Statement = @($statements | Where-Object Sid -in $storageSids)
+}
+$deploymentPolicy = @{
+    Version = "2012-10-17"
+    Statement = @($statements | Where-Object Sid -in $deploymentSids)
+}
+$managedPolicyCharacterLimit = 6144
+$managedPolicyMinimumHeadroom = 512
+$managedPolicyAttachmentLimit = 10
+$managedPolicies = @(
+    @{
+        Name = $CatalogPolicyName
+        Arn = "arn:${partition}:iam::${accountId}:policy/${CatalogPolicyName}"
+        Description = "Staging-only Athena, Glue, and Lake Formation access for the GLAP lifecycle workflow"
+        Document = $catalogPolicy
+    },
+    @{
+        Name = $StoragePolicyName
+        Arn = "arn:${partition}:iam::${accountId}:policy/${StoragePolicyName}"
+        Description = "Prefix-scoped staging S3 access for the GLAP lifecycle workflow"
+        Document = $storagePolicy
+    },
+    @{
+        Name = $DeploymentPolicyName
+        Arn = "arn:${partition}:iam::${accountId}:policy/${DeploymentPolicyName}"
+        Description = "Exact-resource staging deployment access for the GLAP lifecycle workflow"
+        Document = $deploymentPolicy
+    }
+)
+foreach ($managedPolicy in $managedPolicies) {
+    $json = $managedPolicy.Document | ConvertTo-Json -Depth 20 -Compress
+    $managedPolicy.Json = $json
+    $managedPolicy.Characters = $json.Length
+    if ($json.Length + $managedPolicyMinimumHeadroom -gt $managedPolicyCharacterLimit) {
+        throw "Managed lifecycle policy does not retain the required 512-character IAM quota headroom: $($managedPolicy.Name)"
+    }
 }
 
-$policyJson = $policy | ConvertTo-Json -Depth 20 -Compress
+$attachedPolicies = Invoke-AwsJson `
+    @("iam", "list-attached-role-policies", "--role-name", $RoleName) `
+    "Unable to inspect the lifecycle staging deployer's managed policies"
+$attachedPolicyArns = @(
+    $attachedPolicies.AttachedPolicies | ForEach-Object { [string]$_.PolicyArn }
+)
+$newAttachmentCount = @(
+    $managedPolicies | Where-Object Arn -notin $attachedPolicyArns
+).Count
+if (@($attachedPolicyArns).Count + $newAttachmentCount -gt $managedPolicyAttachmentLimit) {
+    throw "Lifecycle managed-policy migration would exceed the role attachment limit"
+}
+$inlinePolicies = Invoke-AwsJson `
+    @("iam", "list-role-policies", "--role-name", $RoleName) `
+    "Unable to inspect the lifecycle staging deployer's inline policies"
+$legacyInlineExists = $LegacyInlinePolicyName -in @($inlinePolicies.PolicyNames)
+
 Write-Host "Stateful lifecycle GitHub deployer policy plan"
 Write-Host "  Role: $RoleName"
-Write-Host "  Inline policy: $PolicyName"
+Write-Host "  Legacy inline policy migration required: $legacyInlineExists"
+Write-Host "  Customer-managed policy split: Catalog, Storage, Deployment"
+foreach ($managedPolicy in $managedPolicies) {
+    $headroom = $managedPolicyCharacterLimit - $managedPolicy.Characters
+    Write-Host "  Managed policy: $($managedPolicy.Name) ($($managedPolicy.Characters)/$managedPolicyCharacterLimit characters; $headroom headroom)"
+}
+Write-Host "  Managed policy attachments after migration: $(@($attachedPolicyArns).Count + $newAttachmentCount)/$managedPolicyAttachmentLimit"
 Write-Host "  Stack: $StackName"
 Write-Host "  Function: $FunctionName"
 Write-Host "  Execution role: $ExecutionRoleName"
@@ -304,38 +425,179 @@ Write-Host "  Workgroup: $Workgroup"
 Write-Host "  Artifact prefix scoped: True"
 Write-Host "  Lifecycle data prefix scoped: True"
 Write-Host "  Athena results prefix scoped: True"
+Write-Host "  Database-wide Glue table wildcard: False"
 Write-Host "  Production alias or schedule permission: False"
+Write-Host "  GitHub role self-modification permission: False"
 
 if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply using an IAM administrator profile."
     return
 }
 
-$policyPath = Join-Path ([System.IO.Path]::GetTempPath()) (
-    "glap-lifecycle-deployer-" + [guid]::NewGuid().ToString("N") + ".json"
-)
+$policyPaths = @{}
+$stagedPolicies = @()
+$defaultSwitches = @()
+$newAttachments = @()
+$migrationCommitted = $false
 try {
-    [System.IO.File]::WriteAllText(
-        $policyPath,
-        $policyJson,
-        [System.Text.UTF8Encoding]::new($false)
-    )
-    $putArgs = @(
-        "iam", "put-role-policy",
-        "--role-name", $RoleName,
-        "--policy-name", $PolicyName,
-        "--policy-document", "file://$policyPath",
-        "--region", $Region
-    )
-    if ($AdminProfile) {
-        $putArgs += @("--profile", $AdminProfile)
+    foreach ($managedPolicy in $managedPolicies) {
+        $policyPaths[$managedPolicy.Name] = Write-TemporaryPolicy `
+            $managedPolicy.Json $managedPolicy.Name
     }
-    & aws @putArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to configure the lifecycle staging deployer policy"
+
+    $localPolicies = Invoke-AwsJson `
+        @("iam", "list-policies", "--scope", "Local") `
+        "Unable to inspect customer-managed lifecycle policies"
+    foreach ($managedPolicy in $managedPolicies) {
+        $existing = @(
+            $localPolicies.Policies | Where-Object Arn -eq $managedPolicy.Arn
+        )
+        if ($existing.Count -gt 1) {
+            throw "More than one lifecycle managed policy matched the expected ARN"
+        }
+        if ($existing.Count -eq 0) {
+            $created = Invoke-AwsJson @(
+                "iam", "create-policy",
+                "--policy-name", $managedPolicy.Name,
+                "--policy-document", "file://$($policyPaths[$managedPolicy.Name])",
+                "--description", $managedPolicy.Description,
+                "--tags", "Key=Project,Value=GLAP", "Key=Environment,Value=staging"
+            ) "Unable to create lifecycle managed policy: $($managedPolicy.Name)"
+            if ([string]$created.Policy.Arn -ne $managedPolicy.Arn) {
+                throw "Created lifecycle managed policy ARN did not match the reviewed target"
+            }
+            $stagedPolicies += @{
+                Name = $managedPolicy.Name
+                Arn = $managedPolicy.Arn
+                StagedVersionId = [string]$created.Policy.DefaultVersionId
+                OriginalDefaultVersionId = $null
+                WasCreated = $true
+            }
+            continue
+        }
+
+        $metadata = Invoke-AwsJson `
+            @("iam", "get-policy", "--policy-arn", $managedPolicy.Arn) `
+            "Unable to inspect lifecycle managed policy: $($managedPolicy.Name)"
+        $originalDefaultVersionId = [string]$metadata.Policy.DefaultVersionId
+        $versionsResponse = Invoke-AwsJson `
+            @("iam", "list-policy-versions", "--policy-arn", $managedPolicy.Arn) `
+            "Unable to inspect lifecycle managed policy versions: $($managedPolicy.Name)"
+        $versions = @($versionsResponse.Versions)
+        while ($versions.Count -ge 5) {
+            $oldestNonDefault = @(
+                $versions |
+                    Where-Object IsDefaultVersion -eq $false |
+                    Sort-Object CreateDate |
+                    Select-Object -First 1
+            )
+            if ($oldestNonDefault.Count -ne 1) {
+                throw "No removable lifecycle policy version is available"
+            }
+            Invoke-AwsCommand @(
+                "iam", "delete-policy-version",
+                "--policy-arn", $managedPolicy.Arn,
+                "--version-id", $oldestNonDefault[0].VersionId
+            ) "Unable to prune the oldest non-default lifecycle policy version"
+            $versions = @(
+                $versions | Where-Object VersionId -ne $oldestNonDefault[0].VersionId
+            )
+        }
+        $createdVersion = Invoke-AwsJson @(
+            "iam", "create-policy-version",
+            "--policy-arn", $managedPolicy.Arn,
+            "--policy-document", "file://$($policyPaths[$managedPolicy.Name])"
+        ) "Unable to stage lifecycle managed policy version: $($managedPolicy.Name)"
+        $stagedPolicies += @{
+            Name = $managedPolicy.Name
+            Arn = $managedPolicy.Arn
+            StagedVersionId = [string]$createdVersion.PolicyVersion.VersionId
+            OriginalDefaultVersionId = $originalDefaultVersionId
+            WasCreated = $false
+        }
     }
+
+    foreach ($stagedPolicy in $stagedPolicies | Where-Object WasCreated -eq $false) {
+        Invoke-AwsCommand @(
+            "iam", "set-default-policy-version",
+            "--policy-arn", $stagedPolicy.Arn,
+            "--version-id", $stagedPolicy.StagedVersionId
+        ) "Unable to activate lifecycle managed policy: $($stagedPolicy.Name)"
+        $defaultSwitches += $stagedPolicy
+    }
+
+    foreach ($stagedPolicy in $stagedPolicies) {
+        if ($stagedPolicy.Arn -notin $attachedPolicyArns) {
+            Invoke-AwsCommand @(
+                "iam", "attach-role-policy",
+                "--role-name", $RoleName,
+                "--policy-arn", $stagedPolicy.Arn
+            ) "Unable to attach lifecycle managed policy: $($stagedPolicy.Name)"
+            $newAttachments += $stagedPolicy
+        }
+    }
+
+    $verifiedAttachments = Invoke-AwsJson `
+        @("iam", "list-attached-role-policies", "--role-name", $RoleName) `
+        "Unable to verify lifecycle managed-policy attachments"
+    $verifiedAttachmentArns = @(
+        $verifiedAttachments.AttachedPolicies | ForEach-Object { [string]$_.PolicyArn }
+    )
+    foreach ($stagedPolicy in $stagedPolicies) {
+        if ($stagedPolicy.Arn -notin $verifiedAttachmentArns) {
+            throw "Lifecycle managed-policy attachment verification failed"
+        }
+        $verifiedPolicy = Invoke-AwsJson `
+            @("iam", "get-policy", "--policy-arn", $stagedPolicy.Arn) `
+            "Unable to verify lifecycle managed-policy version"
+        if ([string]$verifiedPolicy.Policy.DefaultVersionId -ne $stagedPolicy.StagedVersionId) {
+            throw "Lifecycle managed-policy default-version verification failed"
+        }
+    }
+
+    if ($legacyInlineExists) {
+        Invoke-AwsCommand @(
+            "iam", "delete-role-policy",
+            "--role-name", $RoleName,
+            "--policy-name", $LegacyInlinePolicyName
+        ) "Unable to remove the superseded lifecycle inline policy"
+    }
+    $migrationCommitted = $true
+} catch {
+    $failureMessage = $_.Exception.Message
+    if (-not $migrationCommitted) {
+        foreach ($defaultSwitch in @($defaultSwitches) | Sort-Object Name -Descending) {
+            try {
+                Invoke-AwsCommand @(
+                    "iam", "set-default-policy-version",
+                    "--policy-arn", $defaultSwitch.Arn,
+                    "--version-id", $defaultSwitch.OriginalDefaultVersionId
+                ) "Unable to restore a prior lifecycle policy version"
+            } catch {
+                Write-Warning "A prior managed-policy version needs human recovery: $($defaultSwitch.Name)"
+            }
+        }
+        if ($legacyInlineExists) {
+            foreach ($newAttachment in @($newAttachments)) {
+                try {
+                    Invoke-AwsCommand @(
+                        "iam", "detach-role-policy",
+                        "--role-name", $RoleName,
+                        "--policy-arn", $newAttachment.Arn
+                    ) "Unable to detach an incomplete lifecycle policy migration"
+                } catch {
+                    Write-Warning "An incomplete managed-policy attachment needs human recovery: $($newAttachment.Name)"
+                }
+            }
+        }
+    }
+    throw $failureMessage
 } finally {
-    Remove-Item -LiteralPath $policyPath -Force -ErrorAction SilentlyContinue
+    if ($policyPaths.Count -gt 0) {
+        Remove-Item -LiteralPath @($policyPaths.Values) -Force -ErrorAction SilentlyContinue
+    }
 }
 
-Write-Host "Lifecycle staging deployer policy configured. Run the workflow with action=plan before any deploy-replay-validate execution."
+Write-Host "Lifecycle staging deployer managed policies configured."
+Write-Host "Legacy inline lifecycle policy present: False"
+Write-Host "Run the workflow with action=plan before any deployment or recovery execution."

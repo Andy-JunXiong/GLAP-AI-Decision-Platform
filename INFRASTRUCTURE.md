@@ -144,9 +144,23 @@ publication. PR #71 corrected the repository policy inventory and merged to
 reconciles the explicit inventory with every object declared by the lifecycle
 schema DDL, adding the five governed closed-loop tables and their current-action
 view that were previously omitted. A regression test enforces DDL-to-policy
-coverage and rejects a database-wide table wildcard. The correction is not
-applied in AWS; a named IAM administrator retains separate authority to review
-and apply the bounded policy change. This finding does not authorize IAM
+coverage and rejects a database-wide table wildcard.
+
+A named-human apply on 2026-08-20 then failed closed before IAM mutation because
+the shared role's four inline policies already used approximately 10,234 of the
+fixed 10,240-character aggregate quota. The corrected inline policy would have
+raised the total to approximately 10,827. The local migration implementation
+now preserves the same permission statements across three bounded
+customer-managed policies for Catalog, Storage, and Deployment. It preflights
+the per-policy size and attachment quotas, stages and verifies the managed
+policies before removing the legacy inline policy, and retains rollback paths
+before final legacy removal. A read-only plan measured 4,829, 1,317, and 2,221
+characters and four of ten final attachments. The migration is not applied in
+AWS or workflow-verified. Local validation includes all 313 repository tests,
+the 16-check drift audit, and success/failure migration simulations that
+preserve the legacy policy until final verification. Repository commit and push
+maturity is recorded by Git history. A named IAM administrator retains separate
+authority to review and apply it. This finding does not authorize IAM
 administration by the agent or any production permission.
 
 The Action mutation staging release boundary was exercised end to end on

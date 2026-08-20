@@ -52,6 +52,24 @@ regression test rejects any schema object omission or database-wide table
 wildcard. The policy has not been applied, the controller correction is not
 deployed, and the persisted lifecycle status remains failed on `2026-08-09`.
 
+The first named-human apply attempt on `2026-08-20` failed closed before IAM
+mutation with `LimitExceeded`: the shared staging role's four inline policies
+already used approximately 10,234 of the fixed 10,240-character aggregate
+quota, while the corrected lifecycle document would have raised the total to
+approximately 10,827. The existing inline policy remained unchanged. A local
+migration now divides the unchanged bounded permission set into three
+customer-managed policies for Catalog, Storage, and Deployment, validates each
+against the 6,144-character managed-policy limit, checks the role attachment
+quota, requires 512 characters of headroom per policy, activates and verifies
+all three before removing the old inline policy,
+and retains rollback behavior for incomplete migration. A read-only plan
+measured 4,829, 1,317, and 2,221 characters and projected four of ten attached
+managed policies. The implementation passes all 21 focused lifecycle deployment
+tests, all 313 repository tests, Python compilation, the 16-check drift audit,
+success-path migration simulation, and fail-closed rollback simulation. It is
+not applied in AWS or followed by a GitHub workflow plan. Repository commit and
+push maturity is recorded by Git history and the final delivery handoff.
+
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
 Inspected runtime screenshots confirmed the health response and, after raising
@@ -290,10 +308,12 @@ complete reviews can be evaluated.
 
 ## Pending validation
 
-- A named IAM administrator must separately review and apply the merged and
-  CI-verified exact-resource lifecycle deployer correction; agent authority
-  does not include IAM mutation. Do not retry the workflow before that
-  applied-policy precondition is confirmed.
+- Use only the validated, pushed three-managed-policy lifecycle deployer source
+  for the next IAM attempt; do not apply from an uncommitted worktree.
+- A named IAM administrator must separately review and apply that migration;
+  agent authority does not include IAM mutation. Do not retry the failed inline
+  policy command or the lifecycle workflow before the managed-policy migration
+  is applied and verified.
 - After that policy precondition is met, release the lifecycle quality-gate and
   controller correction through the manual isolated-staging workflow under a
   new explicit deployment decision.
@@ -327,9 +347,12 @@ done.
 
 - Lifecycle recovery release: run `32012608848` failed before controller
   deployment because the staging deployer's exact-resource Glue allowlist did
-  not cover the full schema inventory. The repository correction is merged to
-  `main` and CI-verified; do not retry the recovery workflow until a named human
-  administrator separately applies that bounded IAM policy.
+  not cover the full schema inventory. The exact inventory correction is merged
+  and CI-verified, but its first IAM apply was rejected by the role's aggregate
+  inline-policy quota. The three-managed-policy migration is locally
+  implemented and focused-tested only; do not retry the recovery workflow until
+  it is committed, pushed, separately applied by a named human administrator,
+  and followed by a successful workflow plan.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: two complete story-v2 submissions exist, earlier
@@ -437,6 +460,16 @@ done.
   passes 16/16 checks. PR #71 merged the correction to `main` as commit
   `2af45d06`, and push CI run `32360803923` passed. No IAM policy was applied
   and no lifecycle workflow was retried.
+- The lifecycle deployer managed-policy migration replaces the quota-blocked
+  inline update path locally without changing its permission statements. A
+  read-only AWS plan reports 4,829/1,317/2,221 characters and four of ten final
+  attachments. All 21 focused lifecycle deployment tests and all 313 repository
+  tests pass; Python compilation and the 16-check drift audit pass. Mocked apply
+  verifies three creations, three attachments, verification-before-delete, and
+  one final legacy removal; an injected second-attachment failure preserves the
+  legacy inline policy and detaches the partial first attachment. No AWS write,
+  workflow retry, deployment, recovery, or Pages publication occurred from the
+  repository agent. Commit and push maturity is recorded by Git history.
 - Repository-wide validation after the v3 story-complete handoff: 295 Python
   tests passed, including story, solution-horizon, expected-benefit,
   point-in-time citation, and blinding checks.

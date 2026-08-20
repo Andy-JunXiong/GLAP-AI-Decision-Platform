@@ -91,10 +91,10 @@ the production controller.
 
 ### One-time deployer permission bootstrap
 
-The existing `glap-github-staging-deployer` role may only have permissions for
-the older Lambda staging release path. Before the first lifecycle workflow run,
-an IAM administrator must add the lifecycle-specific inline policy. Review the
-plan first:
+The existing `glap-github-staging-deployer` role also supports older staging
+release paths. Before a lifecycle workflow run that needs a new catalog object,
+an IAM administrator must reconcile the lifecycle-specific permissions. Review
+the plan first:
 
 ```powershell
 .\ops\configure_stateful_lifecycle_deployer.ps1 `
@@ -104,7 +104,12 @@ plan first:
   -AthenaOutputUri "s3://<private-query-bucket>/athena-results/"
 ```
 
-Apply only after checking the three prefixes and role name:
+The plan derives the exact current policy set and checks all three documents
+against the non-adjustable `6,144`-character customer-managed-policy limit. It
+requires at least 512 characters of headroom in each document and checks that
+the role will have no more than ten attached managed policies.
+Apply only after checking the three prefixes, role name, reported policy sizes,
+and attachment count:
 
 ```powershell
 .\ops\configure_stateful_lifecycle_deployer.ps1 `
@@ -115,11 +120,18 @@ Apply only after checking the three prefixes and role name:
   -Apply
 ```
 
-The inline policy is scoped to the lifecycle workgroup/database contracts,
-artifact, data and query-result prefixes, the isolated CloudFormation stack,
-the staging Lambda, its stack-generated execution role and its alarm. It grants
-no Scheduler action and no production alias update. Re-run `action=plan` after
-the policy is applied; do not start the one-time seed while plan is failing.
+The script splits the lifecycle permission set into three customer-managed
+policies: Catalog covers the exact Athena workgroup, Glue database/table/view
+inventory, and Lake Formation data access; Storage covers only the reviewed S3
+prefixes; Deployment covers the isolated CloudFormation stack, staging Lambda
+functions, exact execution roles, and staging alarms. It stages and verifies
+all managed policies before removing the superseded
+`GLAPStatefulLifecycleStagingDeploy` inline policy. If migration fails before
+that final removal, the legacy inline policy remains and newly activated
+versions are rolled back where possible. No managed policy grants the GitHub
+role permission to modify its own policies. The set grants no Scheduler action
+and no production alias update. Re-run `action=plan` after the policies are
+applied; do not start the one-time seed while plan is failing.
 The execution role uses the fixed staging-only name
 `glap-stateful-lifecycle-generator-staging-role`; this prevents CloudFormation
 physical-name truncation from widening or bypassing the deployer policy scope.
@@ -141,19 +153,35 @@ refresh, and Pages publication were all skipped. Earlier idempotent schema
 statements may have been replayed before the failing statement, so the run is
 not evidence of a complete schema deployment.
 
-PR #71 merged the repository correction to `main` as commit `2af45d06`, and CI
-run `32360803923` passed. The correction adds the five governed closed-loop
-tables and `vw_lifecycle_action_current_staging_v1` to the explicit Glue
-resource inventory. A regression test derives every table and view declared by
+PR #71 merged the exact Glue inventory correction to `main` as commit
+`2af45d06`, and CI run `32360803923` passed. The correction adds the five
+governed closed-loop tables and `vw_lifecycle_action_current_staging_v1`. A
+regression test derives every table and view declared by
 `sql/04_stateful_lifecycle_config.sql`, requires each object to appear in the
-policy inventory, and rejects a database-wide table wildcard. This is merged,
-CI-verified policy source only; it has not been applied to the GitHub staging
-role.
+policy inventory, and rejects a database-wide table wildcard.
 
-Do not retry the recovery workflow until a named IAM administrator separately
-reviews and applies the merged exact-resource policy. Applying that
-bounded IAM change requires explicit human authority; the failure does not
-justify a database-wide wildcard or any production permission.
+On 20 August 2026, a named human first ran the corrected inline-policy apply.
+AWS rejected `PutRolePolicy` with `LimitExceeded` before mutation because all
+four inline policies on the shared role already occupied approximately 10,234
+of the fixed 10,240-character aggregate quota; the corrected lifecycle policy
+would have raised the total to approximately 10,827. The existing lifecycle
+inline policy remained unchanged. Repository source now avoids that aggregate
+limit by using the three customer-managed policies described above. A read-only
+plan measured them at 4,829, 1,317, and 2,221 characters and projected four of
+ten managed-policy attachments. All 21 focused lifecycle deployment tests and
+all 313 repository tests pass, as do Python compilation and the 16-check drift
+audit. Mocked success and injected-failure runs verify final legacy removal only
+after all three attachments and preserve the legacy policy on incomplete
+migration. The implementation is locally verified but is not applied in AWS or
+followed by a GitHub workflow plan. Repository commit and push maturity is
+recorded by Git history.
+
+Do not retry either the old inline-policy command or the recovery workflow. A
+named IAM administrator must separately review and apply the three-policy
+migration after its repository change is committed and pushed, then the GitHub
+workflow must pass with `action=plan`. Applying that bounded IAM change requires
+explicit human authority; neither limit failure justifies a database-wide
+wildcard or any production permission.
 
 ## Deployment
 

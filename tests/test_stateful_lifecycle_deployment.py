@@ -575,10 +575,49 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('${LifecycleDataBucket}/${dataPrefix}/*', script)
         self.assertIn('stateful-lifecycle-staging/artifacts', script)
         self.assertIn('stateful-lifecycle-staging/data', script)
+        self.assertIn("GLAPStatefulLifecycleCatalogStagingDeploy", script)
+        self.assertIn("GLAPStatefulLifecycleStorageStagingDeploy", script)
+        self.assertIn("GLAPStatefulLifecycleRuntimeStagingDeploy", script)
+        self.assertIn("Customer-managed policy split: Catalog, Storage, Deployment", script)
+        self.assertIn("$managedPolicyCharacterLimit = 6144", script)
+        self.assertIn("$managedPolicyMinimumHeadroom = 512", script)
+        self.assertIn("$managedPolicyAttachmentLimit = 10", script)
+        self.assertIn('"iam", "list-attached-role-policies"', script)
+        self.assertIn('"iam", "create-policy"', script)
+        self.assertIn('"iam", "create-policy-version"', script)
+        self.assertIn('"iam", "set-default-policy-version"', script)
+        self.assertIn('"iam", "attach-role-policy"', script)
+        self.assertIn('"iam", "delete-role-policy"', script)
+        self.assertIn('"iam", "detach-role-policy"', script)
+        self.assertIn("OriginalDefaultVersionId", script)
+        self.assertIn("Legacy inline lifecycle policy present: False", script)
+        self.assertNotIn('"iam", "put-role-policy"', script)
+        self.assertLess(
+            script.index("$verifiedAttachmentArns"),
+            script.index('"iam", "delete-role-policy"'),
+        )
         self.assertIn("Production alias or schedule permission: False", script)
+        self.assertIn("GitHub role self-modification permission: False", script)
         self.assertNotIn("lambda:UpdateAlias", script)
         self.assertNotIn("scheduler:", script.lower())
-        self.assertIn("Remove-Item -LiteralPath $policyPath", script)
+        self.assertIn("Remove-Item -LiteralPath @($policyPaths.Values)", script)
+
+    def test_deployer_managed_policy_split_assigns_every_statement_once(self):
+        script = (
+            ROOT / "ops" / "configure_stateful_lifecycle_deployer.ps1"
+        ).read_text(encoding="utf-8")
+        statement_sids = re.findall(r'Sid\s*=\s*"([A-Za-z0-9]+)"', script)
+        assigned_sids = []
+        for group_name in ("catalogSids", "storageSids", "deploymentSids"):
+            group_match = re.search(
+                rf"\${group_name}\s*=\s*@\((.*?)\)\s*\r?\n\$",
+                script,
+                flags=re.DOTALL,
+            )
+            self.assertIsNotNone(group_match)
+            assigned_sids.extend(re.findall(r'"([A-Za-z0-9]+)"', group_match.group(1)))
+        self.assertEqual(set(statement_sids), set(assigned_sids))
+        self.assertEqual(len(assigned_sids), len(set(assigned_sids)))
 
     def test_deployer_glue_inventory_covers_every_schema_object_without_wildcard(self):
         script = (
