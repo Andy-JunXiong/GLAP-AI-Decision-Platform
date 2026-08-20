@@ -103,7 +103,7 @@
     {
       "id": "decision_quality_review",
       "state": "PARTIAL",
-      "boundary": "public Sites v11 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, isolated human-evaluation-story.v2 persistence, and six separate pseudonymous reviewer accounts; two invited reviewers completed all 30 story-v2 packages with three attestations each while the superseded story-v1 draft remains isolated and ineligible; all five additional accounts passed zero-write login and isolation canaries and received their credentials privately; one more eligible submission is required and no decision-quality result exists",
+      "boundary": "public Sites v12 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, isolated human-evaluation-story.v2 persistence, and seven separate pseudonymous reviewer accounts; two invited reviewers completed all 30 story-v2 packages with three attestations each while the superseded story-v1 draft remains isolated and ineligible; all six additional accounts passed zero-write login and isolation canaries and received their credentials privately; one more eligible submission is required and no decision-quality result exists",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",

@@ -22,7 +22,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_SIX_ACCOUNTS_LIVE` | Sites v11 contains two complete 30-package story-v2 submissions and six separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
+| Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_SEVEN_ACCOUNTS_LIVE` | Sites v12 contains two complete 30-package story-v2 submissions and seven separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
 | Mainland ten-story review entry | `DEPLOYED_HEALTH_VERIFIED` | A named human uploaded the ten-story/30-moment package to the isolated Lambda surface; the public health contract reports the expected build, collection, bundle digest, ten cases, and 30 moments, while its separate collection remains ineligible for the formal story-v2 gate without an approved compatibility/import check |
 | Public evaluation evidence view | `PUBLISHED_VERIFIED` | GitHub Pages presents aggregate-only 2-of-3 review progress separately from AWS operations, reviewer identities, answers, and business outcomes |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
@@ -63,7 +63,7 @@ is approved and passed.
 
 ## Active slice — Formal Human Evaluation entry
 
-**Status:** `TWO_COMPLETE_REVIEWS_SIX_ACCOUNTS_LIVE_VERIFIED`
+**Status:** `TWO_COMPLETE_REVIEWS_SEVEN_ACCOUNTS_LIVE_VERIFIED`
 
 **Goal**
 
@@ -124,7 +124,7 @@ session, answers, or submitted state to affect another reviewer.
 
 - scenario, rubric, option-contract, bundle, and blind-key digests are unchanged;
 - earlier questionnaires and `human-evaluation-story.v1` remain isolated and
-  ineligible; Sites v11 uses `human-evaluation-story.v2`;
+  ineligible; Sites v12 uses `human-evaluation-story.v2`;
 - unauthenticated clients receive no frozen review bundle;
 - only each invited independent human may make their own attestations or enter
   their own scores;
@@ -245,16 +245,27 @@ session, answers, or submitted state to affect another reviewer.
 - the sixth account's bilingual credential notice was sent privately only after
   the canary passed. No address or plaintext credential was stored in the
   repository.
-- a seventh isolated account slot is implemented and locally verified for the
-  next invited reviewer. It is not yet configured, published, canary-verified,
-  or delivered, and no credential or contact address is stored in the
+- the seventh isolated account slot was committed and pushed as GitHub commit
+  `dba8f6e`, synchronized to exact Sites source commit `285fc55`, saved as
+  Sites v12, and published with environment revision 12;
+- its final random credential was generated outside the repository and stored
+  only as a hosted secret. The first unvalidated credential attempt was never
+  delivered and was replaced before the final canary;
+- the final account returned 200 for the root, formal route, login,
+  authenticated review read, and logout; it exposed `human-evaluation-story.v2`
+  with 30 packages, no session, and zero answers, then returned 401 after
+  logout;
+- D1 retained three total story sessions and zero sessions for the seventh
+  pseudonymous reviewer ID, so the canary created no attestation, answer, save,
+  or submission. Its bilingual credential notice was sent privately only after
+  that check passed; no address or plaintext credential is stored in the
   repository.
 
 **Definition of done**
 
 - two complete story-v2 human submissions are preserved and locked;
-- the multi-reviewer implementation, source release, Sites v11 publication,
-  all six account configurations, non-submitting isolation canaries, and
+- the multi-reviewer implementation, source release, Sites v12 publication,
+  all seven account configurations, non-submitting isolation canaries, and
   credential delivery are complete;
 - the old-draft isolation and zero-agent-answer boundaries remain intact.
 
@@ -268,8 +279,9 @@ session, answers, or submitted state to affect another reviewer.
 
 **Next slice after completion**
 
-Collect one more independently entered story-v2 review from Dylan, Xiaoshan, or
-Linqi so the governed minimum of three complete reviews can be evaluated.
+Collect one more independently entered story-v2 review from any invited
+reviewer with a verified dedicated account so the governed minimum of three
+complete reviews can be evaluated.
 
 ## Pending validation
 
@@ -297,6 +309,8 @@ Linqi so the governed minimum of three complete reviews can be evaluated.
   dedicated account is live and verified.
 - Have Linqi personally enter only true attestations and judgments after her
   dedicated account is live and verified.
+- Have the seventh invited reviewer personally enter only true attestations and
+  judgments through the verified dedicated account.
 - Collect genuinely independent Decision Quality reviews only from the v3
   scenario, rubric, and option-contract freeze.
 
@@ -523,6 +537,11 @@ done.
   Sites republish, a zero-write login/read/logout canary, and a bilingual
   credential email. Sites v11 environment revision 10 deployed successfully,
   and the private notice was sent only after the canary passed.
+- The user explicitly authorized the seventh account implementation commit and
+  push, exact-source Sites republish, zero-write validation, and bilingual
+  credential email. GitHub commit `dba8f6e`, Sites source `285fc55`, Sites v12
+  environment revision 12, the successful canary, and the private notice
+  completed in that order.
 - The user explicitly authorized publishing the aggregate Evaluation & Trust
   view to the public GitHub Pages demo. Commit `5819e55` was pushed directly to
   `main`; both CI and Pages completed successfully and the live markers were
@@ -530,8 +549,8 @@ done.
 
 ### Pending validation
 
-- Dylan's, Xiaoshan's, or Linqi's independently entered review remains listed
-  above.
+- One independently entered review from any invited reviewer with a verified
+  dedicated account remains listed above.
 
 ### Incomplete
 
@@ -540,9 +559,9 @@ done.
 
 ## Next Up
 
-1. Let Dylan, Xiaoshan, and Linqi personally complete the story-v2 flow using
-   their verified dedicated accounts; do not create, edit, or attest to any
-   answer on a reviewer's behalf.
+1. Let any invited reviewer with a verified dedicated account personally
+   complete the story-v2 flow; do not create, edit, or attest to any answer on
+   a reviewer's behalf.
 2. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
    until all three eligible reviews pass the governed checks, then run the
    blinded aggregate without mixing superseded collections.

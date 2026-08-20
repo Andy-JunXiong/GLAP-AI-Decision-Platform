@@ -29,7 +29,7 @@ Internal cohort IDs, contract jargon, raw evidence language, and technical
 option payloads are not presented to the reviewer. It requires the three reviewer
 attestations, saves committed moments through `/api/review`, enforces story
 order on the server, and locks a complete submission. Public Sites v9 is the
-superseded technical presentation; Sites v11 is the canary-verified formal
+superseded technical presentation; Sites v12 is the canary-verified formal
 story-v2 entry with separate pseudonymous reviewer accounts. Story-v1 drafts
 remain preserved but ineligible.
 The five-case browser-only pilot remains

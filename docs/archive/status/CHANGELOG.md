@@ -4,6 +4,14 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-20
+
+- Released a seventh isolated reviewer account through exact-source Sites v12.
+  The new hosted secret passed login, 30-package read, logout, and D1 zero-write
+  checks before its bilingual invitation was sent. Existing accounts, the
+  frozen bundle, the D1 schema, and all preserved submissions remained
+  unchanged.
+
 ## 2026-08-18
 
 - Replaced the simplified three-case mainland review package with a locally

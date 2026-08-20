@@ -47,7 +47,7 @@ and keeps human approval, execution evidence and outcomes traceable.
 > eligible benchmark and contains no independent expert Decision Quality result.
 
 > **20 August 2026 Human Evaluation status:** the corrected story-based
-> A/B/Tie workflow is live as Sites v11 with six isolated reviewer accounts.
+> A/B/Tie workflow is live as Sites v12 with seven isolated reviewer accounts.
 > Two eligible reviewers have each completed all 30 frozen packages and all
 > required attestations. The declared minimum is three valid independent
 > reviews, so Decision Quality remains `NOT_EVALUATED` and one more eligible
