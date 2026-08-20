@@ -49,8 +49,8 @@ exact-resource inventory with every lifecycle schema object and merged to
 `main` as commit `2af45d06`; CI run `32360803923` passed. The correction adds
 the five governed closed-loop tables and their current-action view, while a
 regression test rejects any schema object omission or database-wide table
-wildcard. The policy has not been applied, the controller correction is not
-deployed, and the persisted lifecycle status remains failed on `2026-08-09`.
+wildcard. The controller correction is not deployed, and the persisted
+lifecycle status remains failed on `2026-08-09`.
 
 The first named-human apply attempt on `2026-08-20` failed closed before IAM
 mutation with `LimitExceeded`: the shared staging role's four inline policies
@@ -67,8 +67,25 @@ measured 4,829, 1,317, and 2,221 characters and projected four of ten attached
 managed policies. The implementation passes all 21 focused lifecycle deployment
 tests, all 313 repository tests, Python compilation, the 16-check drift audit,
 success-path migration simulation, and fail-closed rollback simulation. It is
-not applied in AWS or followed by a GitHub workflow plan. Repository commit and
-push maturity is recorded by Git history and the final delivery handoff.
+merged to `main` through PR #72 as commit `68035ee`.
+
+On `2026-08-21` Sydney time, a named IAM administrator applied and verified the
+three managed policies before the legacy lifecycle inline policy was removed.
+The final attachment count was four of ten. Read-only workflow run
+`32379095685` then passed from `68035ee` with `action=plan`, `OPERATIONAL` /
+`ACTUAL_CALENDAR`, and logical date `2026-08-09`. Separately authorised run
+`32379866761` completed local tests, target inspection, plan rendering, and the
+idempotent schema step, then failed closed during temporal backfill verification
+with `invalid=0` and `future_operational=120`. The verifier incorrectly treated
+the original `2026-08-06` legacy-classification cutoff as a permanent ceiling
+after actual-calendar operations had advanced. Stack/controller deployment,
+the deployed guard, failed-date recovery, baseline refresh, production alias,
+Scheduler, and Pages were all skipped. A local fix now keeps the legacy cutoff
+immutable but evaluates operational rows against their stored `as_of_date` and
+the system-derived current Sydney date; it is not yet committed, pushed,
+CI-verified, or deployed. Local validation passes the 21-test lifecycle
+deployment suite, all 313 repository tests, Python compilation, PowerShell
+parsing and plan rendering, the 16-check drift audit, and `git diff --check`.
 
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -308,18 +325,13 @@ complete reviews can be evaluated.
 
 ## Pending validation
 
-- Use only the validated, pushed three-managed-policy lifecycle deployer source
-  for the next IAM attempt; do not apply from an uncommitted worktree.
-- A named IAM administrator must separately review and apply that migration;
-  agent authority does not include IAM mutation. Do not retry the failed inline
-  policy command or the lifecycle workflow before the managed-policy migration
-  is applied and verified.
-- After that policy precondition is met, release the lifecycle quality-gate and
-  controller correction through the manual isolated-staging workflow under a
-  new explicit deployment decision.
+- Validate, commit, push, and CI-check the temporal backfill re-run correction;
+  do not retry workflow run `32379866761` from the stale `main` source.
+- After that correction is merged, obtain a new explicit isolated-staging
+  deployment decision before retrying `deploy-recovery-controller`.
 - Recover only the persisted failed `2026-08-09` date, then continue from
-  `2026-08-10` through the current Sydney date. Do not restart from `2026-08-07`
-  and do not count future-simulation provider rows.
+  `2026-08-10` through the then-current Sydney date. Do not restart from
+  `2026-08-07` and do not count future-simulation provider rows.
 - After every lifecycle, compatibility, and analytics check passes, refresh the
   operational-calendar baseline and publish the aggregate public snapshot only
   through separately authorized runtime and Pages steps.

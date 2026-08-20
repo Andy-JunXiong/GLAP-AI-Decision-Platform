@@ -155,13 +155,17 @@ customer-managed policies for Catalog, Storage, and Deployment. It preflights
 the per-policy size and attachment quotas, stages and verifies the managed
 policies before removing the legacy inline policy, and retains rollback paths
 before final legacy removal. A read-only plan measured 4,829, 1,317, and 2,221
-characters and four of ten final attachments. The migration is not applied in
-AWS or workflow-verified. Local validation includes all 313 repository tests,
-the 16-check drift audit, and success/failure migration simulations that
-preserve the legacy policy until final verification. Repository commit and push
-maturity is recorded by Git history. A named IAM administrator retains separate
-authority to review and apply it. This finding does not authorize IAM
-administration by the agent or any production permission.
+characters and four of ten final attachments. PR #72 merged the migration as
+commit `68035ee`. On 2026-08-21 Sydney time, a named IAM administrator applied
+and verified all three attachments before the legacy inline policy was removed;
+read-only workflow run `32379095685` then passed. Deployment run `32379866761`
+completed the idempotent schema step but failed closed before stack deployment
+because the one-time temporal verifier treated 120 later actual-calendar
+operational rows as if the original `2026-08-06` migration cutoff were still the
+current calendar boundary. A local correction separates the immutable legacy
+classification cutoff from the system-derived current Sydney date. The stack,
+failed-date recovery, baseline refresh, production alias, Scheduler, and Pages
+were not changed. IAM and staging deployment authority remain human-owned.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and
