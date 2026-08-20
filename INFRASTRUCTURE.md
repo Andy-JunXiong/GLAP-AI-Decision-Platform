@@ -139,15 +139,15 @@ staging delivery gap: the GitHub staging deployer's exact-resource Glue
 allowlist did not cover one existing lifecycle catalog table. Manual workflow
 run `32012608848` stopped at schema application before temporal backfill,
 controller/stack deployment, recovery, baseline refresh, or public
-publication. The repository policy inventory must be corrected and validated
-first. The local correction now reconciles the explicit policy inventory with
-every object declared by the lifecycle schema DDL, adding the five governed
-closed-loop tables and their current-action view that were previously omitted.
-A regression test enforces that DDL-to-policy coverage and rejects a database-
-wide table wildcard. The correction is not applied in AWS; a named IAM
-administrator retains separate authority to review and apply the bounded policy
-change. This finding does not authorize IAM administration by the agent or any
-production permission.
+publication. PR #71 corrected the repository policy inventory and merged to
+`main` as commit `2af45d06`; CI run `32360803923` passed. The correction
+reconciles the explicit inventory with every object declared by the lifecycle
+schema DDL, adding the five governed closed-loop tables and their current-action
+view that were previously omitted. A regression test enforces DDL-to-policy
+coverage and rejects a database-wide table wildcard. The correction is not
+applied in AWS; a named IAM administrator retains separate authority to review
+and apply the bounded policy change. This finding does not authorize IAM
+administration by the agent or any production permission.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and

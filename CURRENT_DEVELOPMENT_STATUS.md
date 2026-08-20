@@ -44,8 +44,9 @@ tests, target isolation, and plan rendering, then stopped during idempotent
 schema application because the staging deployer lacked `glue:GetTable` on one
 existing lifecycle catalog table. No seed was requested; temporal backfill,
 controller/stack deployment, failed-date recovery, operational-baseline
-refresh, and Pages publication were skipped. The repository's exact-resource
-inventory is now locally reconciled with every lifecycle schema object: it adds
+refresh, and Pages publication were skipped. PR #71 reconciled the repository's
+exact-resource inventory with every lifecycle schema object and merged to
+`main` as commit `2af45d06`; CI run `32360803923` passed. The correction adds
 the five governed closed-loop tables and their current-action view, while a
 regression test rejects any schema object omission or database-wide table
 wildcard. The policy has not been applied, the controller correction is not
@@ -289,10 +290,10 @@ complete reviews can be evaluated.
 
 ## Pending validation
 
-- A named IAM administrator must separately review and apply the locally
-  verified exact-resource lifecycle deployer correction; agent authority does
-  not include IAM mutation. Do not retry the workflow before that applied-policy
-  precondition is confirmed.
+- A named IAM administrator must separately review and apply the merged and
+  CI-verified exact-resource lifecycle deployer correction; agent authority
+  does not include IAM mutation. Do not retry the workflow before that
+  applied-policy precondition is confirmed.
 - After that policy precondition is met, release the lifecycle quality-gate and
   controller correction through the manual isolated-staging workflow under a
   new explicit deployment decision.
@@ -326,9 +327,9 @@ done.
 
 - Lifecycle recovery release: run `32012608848` failed before controller
   deployment because the staging deployer's exact-resource Glue allowlist did
-  not cover the full schema inventory. The repository correction is locally
-  implemented and verified; do not retry the recovery workflow until a named
-  human administrator separately applies that bounded IAM policy.
+  not cover the full schema inventory. The repository correction is merged to
+  `main` and CI-verified; do not retry the recovery workflow until a named human
+  administrator separately applies that bounded IAM policy.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: two complete story-v2 submissions exist, earlier
@@ -433,7 +434,9 @@ done.
   schema DDL object is covered and that no database-wide table wildcard was
   introduced. The focused lifecycle deployment suite passes all 20 tests; the
   full repository suite passes all 312 tests, and the project drift audit
-  passes 16/16 checks. No IAM policy was applied and no workflow was retried.
+  passes 16/16 checks. PR #71 merged the correction to `main` as commit
+  `2af45d06`, and push CI run `32360803923` passed. No IAM policy was applied
+  and no lifecycle workflow was retried.
 - Repository-wide validation after the v3 story-complete handoff: 295 Python
   tests passed, including story, solution-horizon, expected-benefit,
   point-in-time citation, and blinding checks.
