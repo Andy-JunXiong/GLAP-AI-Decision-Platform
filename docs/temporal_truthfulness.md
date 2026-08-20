@@ -100,4 +100,11 @@ pre-existing rows after `2026-08-06` as
 `SIMULATION:legacy-pre-boundary-2026`. The migration is plan-only unless
 `ops/backfill_temporal_scope.ps1 -Apply` is explicitly approved. This permanent
 row label prevents old September or October scenario rows from becoming
-operational merely because the calendar later reaches those dates.
+operational merely because the calendar later reaches those dates. The fixed
+`2026-08-06` value is a classification cutoff, not a permanent ceiling on later
+actual-calendar operations. On a safe re-run, verification derives the current
+Sydney business date from the system and accepts an `OPERATIONAL` row only when
+its logical date is on or before both its stored `as_of_date` and the current
+Sydney date. The default operational view is checked against the same dynamic
+boundary. This preserves the legacy labels while allowing governed operational
+history to accumulate as calendar dates arrive.

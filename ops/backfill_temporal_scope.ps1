@@ -23,6 +23,11 @@ if ($AthenaOutputUri -notmatch '^s3://[^/]+/.+') {
 }
 
 $root = Split-Path $PSScriptRoot -Parent
+. (Join-Path $PSScriptRoot "temporal_boundary.ps1")
+$temporalContext = Resolve-TemporalContext `
+    -LastLogicalDate $AsOfDate `
+    -ExecutionMode "OPERATIONAL"
+$sydneyBusinessDate = $temporalContext.as_of_date
 $template = Get-Content -LiteralPath (
     Join-Path $root "sql/12_temporal_scope_backfill.sql"
 ) -Raw
@@ -37,7 +42,8 @@ $statements = @($rendered -split ';' | Where-Object { $_.Trim() })
 
 Write-Host "Temporal scope backfill plan"
 Write-Host "  Database: $SourceDatabase"
-Write-Host "  Sydney cutoff: $($AsOfDate.ToString('yyyy-MM-dd'))"
+Write-Host "  Legacy migration cutoff: $($AsOfDate.ToString('yyyy-MM-dd'))"
+Write-Host "  Sydney business date: $sydneyBusinessDate"
 Write-Host "  Legacy future scenario: $LegacyScenarioId"
 Write-Host "  Iceberg updates: $($statements.Count)"
 if (-not $Apply) {
@@ -97,8 +103,19 @@ WITH temporal_rows AS (
 )
 SELECT
     count_if(
-        temporal_scope_id IS NULL OR execution_mode IS NULL OR time_basis IS NULL
+        row_date IS NULL
+        OR temporal_scope_id IS NULL OR execution_mode IS NULL OR time_basis IS NULL
         OR as_of_date IS NULL
+        OR as_of_date > DATE '$sydneyBusinessDate'
+        OR execution_mode NOT IN ('OPERATIONAL', 'FUTURE_SIMULATION')
+        OR (
+            execution_mode = 'OPERATIONAL'
+            AND execution_scenario_id IS NOT NULL
+        )
+        OR (
+            execution_mode = 'FUTURE_SIMULATION'
+            AND execution_scenario_id IS NULL
+        )
         OR temporal_scope_id <> IF(
             execution_mode = 'OPERATIONAL', 'OPERATIONAL',
             concat('SIMULATION:', execution_scenario_id)
@@ -112,12 +129,16 @@ SELECT
         AND temporal_scope_id = 'SIMULATION:$LegacyScenarioId'
     ) AS legacy_future_rows,
     count_if(
-        row_date > DATE '$cutoff'
-        AND execution_mode = 'OPERATIONAL'
+        execution_mode = 'OPERATIONAL'
+        AND (
+            row_date > as_of_date
+            OR row_date > DATE '$sydneyBusinessDate'
+        )
     ) AS future_operational_rows,
     count_if(
-        row_date <= DATE '$cutoff'
-        AND execution_mode = 'OPERATIONAL'
+        execution_mode = 'OPERATIONAL'
+        AND row_date <= as_of_date
+        AND as_of_date <= DATE '$sydneyBusinessDate'
     ) AS operational_rows
 FROM temporal_rows
 "@
@@ -163,7 +184,9 @@ if ($legacyFutureRows -le 0 -or $operationalRows -le 0) {
 $operationalViewQuery = @"
 SELECT count(*) AS future_operational_view_rows
 FROM $SourceDatabase.vw_multimodal_shipment_daily_v1
-WHERE metric_date > DATE '$cutoff'
+WHERE metric_date > as_of_date
+   OR metric_date > DATE '$sydneyBusinessDate'
+   OR as_of_date > DATE '$sydneyBusinessDate'
 "@
 $viewQueryId = & aws athena start-query-execution `
     --query-string $operationalViewQuery `

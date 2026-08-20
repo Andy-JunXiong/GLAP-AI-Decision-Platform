@@ -172,16 +172,32 @@ ten managed-policy attachments. All 21 focused lifecycle deployment tests and
 all 313 repository tests pass, as do Python compilation and the 16-check drift
 audit. Mocked success and injected-failure runs verify final legacy removal only
 after all three attachments and preserve the legacy policy on incomplete
-migration. The implementation is locally verified but is not applied in AWS or
-followed by a GitHub workflow plan. Repository commit and push maturity is
-recorded by Git history.
+migration. PR #72 merged the migration as commit `68035ee`.
 
-Do not retry either the old inline-policy command or the recovery workflow. A
-named IAM administrator must separately review and apply the three-policy
-migration after its repository change is committed and pushed, then the GitHub
-workflow must pass with `action=plan`. Applying that bounded IAM change requires
-explicit human authority; neither limit failure justifies a database-wide
-wildcard or any production permission.
+On 21 August Sydney time, a named IAM administrator reviewed and applied the
+three-policy migration. All three managed policies were attached and verified,
+the final attachment count was four of ten, and the superseded lifecycle inline
+policy was then removed. Read-only workflow run `32379095685` passed with
+`action=plan`, `OPERATIONAL` / `ACTUAL_CALENDAR`, and logical date `2026-08-09`.
+
+Separately authorised deployment run `32379866761` then completed repository
+tests, isolated-target inspection, plan rendering, and the idempotent schema
+step. It failed closed during temporal backfill verification with zero invalid
+temporal identities but 120 `OPERATIONAL` rows later than the original
+`2026-08-06` migration cutoff. The fixed cutoff correctly classifies only the
+pre-boundary legacy rows; it is not a valid ceiling after actual-calendar
+operations have advanced. The stack deployment, deployed guard check,
+failed-date recovery, baseline refresh, and Pages publication were skipped.
+A local correction now retains the original classification cutoff while
+validating operational rows against their stored `as_of_date` and the
+system-derived current Sydney business date. The correction passes the 21-test
+lifecycle deployment suite, all 313 repository tests, Python compilation,
+PowerShell parsing and plan rendering, the 16-check drift audit, and
+`git diff --check`. The implementation is committed on the feature branch as
+`a800074`; it remains unmerged, PR-CI-unverified, and undeployed. Do not retry
+the failed deployment until that correction is merged, CI-verified, and
+separately approved for isolated staging. No database-wide wildcard or
+production permission is justified by either failure.
 
 ## Deployment
 

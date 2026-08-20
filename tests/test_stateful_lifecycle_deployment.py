@@ -160,9 +160,20 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
         ).read_text(encoding="utf-8")
         self.assertIn("[switch]$Apply", script)
+        self.assertIn("Resolve-TemporalContext", script)
+        self.assertIn("Sydney business date: $sydneyBusinessDate", script)
         self.assertIn("invalid_temporal_rows", script)
         self.assertIn("legacy_future_rows", script)
         self.assertIn("future_operational_view_rows", script)
+        self.assertIn("row_date > as_of_date", script)
+        self.assertIn("row_date > DATE '$sydneyBusinessDate'", script)
+        self.assertIn("as_of_date > DATE '$sydneyBusinessDate'", script)
+        self.assertIn("row_date <= as_of_date", script)
+        self.assertNotIn(
+            "row_date > DATE '$cutoff'\n        AND execution_mode = 'OPERATIONAL'",
+            script,
+        )
+        self.assertNotIn("WHERE metric_date > DATE '$cutoff'", script)
         self.assertIn("Backfill and verify row-level temporal isolation", workflow)
         self.assertIn("./ops/backfill_temporal_scope.ps1", workflow)
 
