@@ -91,20 +91,31 @@ lifecycle generator and quality gate or read the general lifecycle artifact
 prefix. Automatic rollback also failed, leaving the isolated stack at
 `UPDATE_ROLLBACK_FAILED`.
 
-A repository correction now defines a separate CloudFormation-only
-lifecycle maintenance role, grants the staging OIDC deployer only pass-role and
+A repository correction defines a separate CloudFormation-only lifecycle
+maintenance role, grants the staging OIDC deployer only pass-role and
 rollback-continuation access for that exact boundary, preserves the currently
 reviewed Action mutation artifact, and rejects any lifecycle change set that
 touches the Action mutation function or role. A new manual
 `recover-stack-rollback` action continues rollback without skipping resources.
-The focused 24-test lifecycle deployment suite, all 316 repository tests,
-Python compilation, four-script PowerShell parsing, the 16-check drift audit,
-and `git diff --check` pass. Read-only actual-account plans measured the new
+PR #74 merged this correction to `main` as `63f8cab8`; PR and post-merge CI run
+`32388433518` passed. Read-only actual-account plans measured the new
 service-role policy at 2,409 of 10,240 characters and the updated OIDC runtime
-policy at 2,524 of 6,144 characters with four of ten attachments. PR review,
-IAM configuration, protected-variable configuration, rollback recovery,
-controller deployment, failed-date recovery, baseline refresh, production
-alias, Scheduler, and Pages remain pending or human-owned.
+policy at 2,524 of 6,144 characters with four of ten attachments.
+
+A named IAM administrator then reviewed the service-role plan and ran its
+separately authorised Apply. The role was absent, and Windows PowerShell
+promoted the expected AWS `NoSuchEntity` probe response to a terminating
+`NativeCommandError` before `create-role`; a subsequent read-only check
+confirmed that no role or IAM policy had been created. The repository follow-up
+now captures the native result under a scoped non-terminating preference,
+treats only `NoSuchEntity` as absence, and fails closed for every other probe
+error. A read-only actual-account probe returned `ROLE_MISSING_HANDLED` without
+mutation. PowerShell parsing, all 25 focused lifecycle deployment tests, all
+317 repository tests, Python compilation, and the 16-check drift audit pass.
+PR review for this follow-up, IAM configuration,
+protected-variable configuration, rollback recovery, controller deployment,
+failed-date recovery, baseline refresh, production alias, Scheduler, and Pages
+remain pending or human-owned.
 
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.

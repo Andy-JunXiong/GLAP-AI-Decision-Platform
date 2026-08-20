@@ -189,9 +189,13 @@ update. Repository source now defines a separate CloudFormation-only
 lifecycle maintenance role, requires that role for full lifecycle changes,
 preserves the existing Action mutation artifact, and rejects a lifecycle change
 set that touches the mutation function or role. Rollback recovery is a distinct
-manual action and never skips a resource. These controls are not deployed: the
-stack remains at `UPDATE_ROLLBACK_FAILED` until a named human configures the
-role boundary and separately approves recovery.
+manual action and never skips a resource. PR #74 merged these repository
+controls as `63f8cab8`, but they are not deployed: the first named-human role
+Apply stopped before IAM mutation when Windows PowerShell mishandled the
+expected missing-role response. A repository follow-up now handles only
+`NoSuchEntity` as absence and fails closed for every other probe error. The
+stack remains at `UPDATE_ROLLBACK_FAILED` until that follow-up is reviewed, a
+named human configures the role boundary, and recovery is separately approved.
 
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached

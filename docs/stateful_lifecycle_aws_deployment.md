@@ -157,6 +157,17 @@ role and `cloudformation:ContinueUpdateRollback` for the one lifecycle stack.
 Set the resulting protected ARN as
 `AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN` in the `staging` environment.
 
+On 21 August 2026 Sydney time, after PR #74 and post-merge CI passed, a named
+IAM administrator reviewed the plan and attempted this Apply. The role did not
+exist, and Windows PowerShell promoted the expected AWS `NoSuchEntity` probe
+response to a terminating `NativeCommandError` before `create-role`. A
+subsequent read-only check confirmed no role or policy was created. The
+repository follow-up captures native output under a scoped non-terminating
+preference, treats only `NoSuchEntity` as absence, restores fail-closed handling
+for all other AWS errors, and passes a read-only actual-account missing-role
+probe. Do not retry Apply from `main` until this follow-up is reviewed and
+merged.
+
 The service role is trusted only by CloudFormation and is exact-resource scoped
 to the four staging functions, their four runtime roles, the lifecycle alarm,
 and the lifecycle plus retained Action mutation artifact prefixes. Its Action
