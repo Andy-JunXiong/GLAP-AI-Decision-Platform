@@ -4,6 +4,19 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-21
+
+- Released the isolated staging lifecycle recovery controller after a bounded
+  IAM-policy migration, rerunnable temporal verification, and separation of the
+  full lifecycle CloudFormation role from the narrow Action mutation release
+  role. Separately approved rollback recovery skipped no resources; the stack
+  then reached `UPDATE_COMPLETE`, and read-only inspection found the Python
+  3.14 controller active with a successful last update. A no-mutation diagnosis
+  passed all 28 checks for the failed `2026-08-09` date; changing that persisted
+  status remains a separate named-human recovery action. No production alias,
+  schedule, baseline refresh, analytics deployment, replay, or Pages
+  publication was performed.
+
 ## 2026-08-20
 
 - Released a seventh isolated reviewer account through exact-source Sites v12.

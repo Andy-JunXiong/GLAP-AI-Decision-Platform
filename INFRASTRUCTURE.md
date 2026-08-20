@@ -166,27 +166,24 @@ current calendar boundary. PR #73 merged the correction to `main` as commit
 `7adf1863`, and both PR and post-merge CI passed.
 
 Separately authorised deployment run `32383741062` then passed that temporal
-backfill and reached the stack update. CloudFormation reused the narrow Action
-mutation service role that an earlier one-resource release had permanently
-associated with the shared stack. That role correctly lacked permission to
-update the generator and quality-gate functions or read the lifecycle artifact
-prefix, so the update and its automatic rollback failed closed at
-`UPDATE_ROLLBACK_FAILED`. Repository source introduces a separate lifecycle
-CloudFormation service-role plan, makes full lifecycle updates pass that role
-explicitly, preserves the existing Action mutation artifact, rejects any
-Action mutation resource in the lifecycle change set, and exposes a separate
-manual rollback-recovery action that never skips a resource. PR #74 merged
-these controls as `63f8cab8`, and post-merge CI passed.
+backfill but exposed the persisted CloudFormation-role collision and stopped at
+`UPDATE_ROLLBACK_FAILED`. PRs #74 and #75 introduced and hardened a dedicated
+CloudFormation-only lifecycle maintenance role, preserved the narrow Action
+mutation release boundary, and added rollback continuation without skipped
+resources. PR #75 merged as `1f602c5d`; post-merge CI run `32389801911` passed.
 
-The first named-human service-role Apply then failed before IAM mutation. The
-role did not yet exist, and Windows PowerShell converted the expected AWS
-`NoSuchEntity` existence probe into a terminating `NativeCommandError` before
-the create branch. A read-only check confirmed the role remained absent. The
-repository follow-up scopes native error handling only around that probe,
-accepts only `NoSuchEntity` as an absent role, and fails closed for all other
-AWS errors. The IAM role, GitHub variable, deployer-policy update, rollback
-recovery, controller release, failed-date recovery, baseline refresh,
-production alias, Scheduler, and Pages remain unchanged and human-owned.
+A named IAM administrator then configured and verified the dedicated role,
+the bounded deployer policies, and the protected staging variable. Plan run
+`32390302719`, rollback-recovery run `32390505373`, and follow-up plan run
+`32390677045` passed; rollback recovery restored the stack without skipping a
+resource. Separately approved deployment run `32390847334` completed the schema
+replay, temporal backfill, full isolated stack update, and deployed guard.
+Read-only inspection found the stack at `UPDATE_COMPLETE` and the controller
+active on Python 3.14 with a successful last update. Diagnostic run
+`32391364627` passed all 28 checks for `2026-08-09` without mutation. The
+persisted failed-date status remains pending a separately approved recovery;
+baseline refresh, production alias, Scheduler, and Pages remain unchanged and
+human-owned.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and

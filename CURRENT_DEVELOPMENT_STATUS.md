@@ -31,91 +31,41 @@ All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
-The latest inspected lifecycle controller status remains a failed
-`2026-08-09` operational run. Generation succeeded, but lifecycle validation
-failed only `missing_provider_coverage`; later `2026-08-07` extension attempts
-were rejected before mutation because they would overwrite that newer status.
-A recovery correction now scopes the check to active providers with route
-configuration effective on the logical date and adds safe existing/requested
-date diagnostics. Commit `1aeb0bbed29dff27d45451a8ba6a5f6ae32fb2da`
-is pushed to `main` and CI-verified. Manual staging run `32012608848` from
-commit `6b2a6c8feda6af37207dedd860babe1b328cf009` passed repository
-tests, target isolation, and plan rendering, then stopped during idempotent
-schema application because the staging deployer lacked `glue:GetTable` on one
-existing lifecycle catalog table. No seed was requested; temporal backfill,
-controller/stack deployment, failed-date recovery, operational-baseline
-refresh, and Pages publication were skipped. PR #71 reconciled the repository's
-exact-resource inventory with every lifecycle schema object and merged to
-`main` as commit `2af45d06`; CI run `32360803923` passed. The correction adds
-the five governed closed-loop tables and their current-action view, while a
-regression test rejects any schema object omission or database-wide table
-wildcard. The controller correction is not deployed, and the persisted
-lifecycle status remains failed on `2026-08-09`.
+The persisted lifecycle status still records the failed `2026-08-09`
+operational run. Generation succeeded and only `missing_provider_coverage`
+failed. The deployed correction now evaluates coverage only for providers whose
+route configuration was effective on the logical date. Diagnostic run
+`32391364627` exercised that date without mutation and passed all 28 checks;
+the status remains failed because no `recover-failed-integration-date` action
+has yet been approved or executed.
 
-The first named-human apply attempt on `2026-08-20` failed closed before IAM
-mutation with `LimitExceeded`: the shared staging role's four inline policies
-already used approximately 10,234 of the fixed 10,240-character aggregate
-quota, while the corrected lifecycle document would have raised the total to
-approximately 10,827. The existing inline policy remained unchanged. A local
-migration now divides the unchanged bounded permission set into three
-customer-managed policies for Catalog, Storage, and Deployment, validates each
-against the 6,144-character managed-policy limit, checks the role attachment
-quota, requires 512 characters of headroom per policy, activates and verifies
-all three before removing the old inline policy,
-and retains rollback behavior for incomplete migration. A read-only plan
-measured 4,829, 1,317, and 2,221 characters and projected four of ten attached
-managed policies. The implementation passes all 21 focused lifecycle deployment
-tests, all 313 repository tests, Python compilation, the 16-check drift audit,
-success-path migration simulation, and fail-closed rollback simulation. It is
-merged to `main` through PR #72 as commit `68035ee`.
+PRs #71 through #75 closed the deployment blockers without widening the
+staging boundary. They completed exact Glue-object coverage, migrated the
+deployer's oversized inline policy into three bounded managed policies, made
+the temporal backfill verifier safely rerunnable, separated full lifecycle
+CloudFormation ownership from the narrow Action mutation release role, and
+made the IAM role-existence probe handle only `NoSuchEntity` as absence. PR
+#75 merged as `1f602c5d`; post-merge CI run `32389801911` passed.
 
-On `2026-08-21` Sydney time, a named IAM administrator applied and verified the
-three managed policies before the legacy lifecycle inline policy was removed.
-The final attachment count was four of ten. Read-only workflow run
-`32379095685` then passed from `68035ee` with `action=plan`, `OPERATIONAL` /
-`ACTUAL_CALENDAR`, and logical date `2026-08-09`. Separately authorised run
-`32379866761` completed local tests, target inspection, plan rendering, and the
-idempotent schema step, then failed closed during temporal backfill verification
-with `invalid=0` and `future_operational=120`. The verifier incorrectly treated
-the original `2026-08-06` legacy-classification cutoff as a permanent ceiling
-after actual-calendar operations had advanced. Stack/controller deployment,
-the deployed guard, failed-date recovery, baseline refresh, production alias,
-Scheduler, and Pages were all skipped. A fix now keeps the legacy cutoff
-immutable but evaluates operational rows against their stored `as_of_date` and
-the system-derived current Sydney date. PR #73 merged it to `main` as commit
-`7adf1863`; both PR and post-merge CI passed. Separately authorised run
-`32383741062` then passed temporal backfill and failed later during the full
-stack update. CloudFormation reused the narrow Action mutation service role
-persisted by the earlier one-resource release; that role could not update the
-lifecycle generator and quality gate or read the general lifecycle artifact
-prefix. Automatic rollback also failed, leaving the isolated stack at
-`UPDATE_ROLLBACK_FAILED`.
+On `2026-08-21` Sydney time, a named IAM administrator configured and verified
+the dedicated lifecycle CloudFormation service role, reapplied the three
+bounded deployer policies, and set the protected staging variable for the role.
+Plan run `32390302719` passed. Separately approved rollback-recovery run
+`32390505373` used the dedicated role, skipped no resources, and restored the
+stack to `UPDATE_ROLLBACK_COMPLETE`; follow-up plan run `32390677045` passed.
 
-A repository correction defines a separate CloudFormation-only lifecycle
-maintenance role, grants the staging OIDC deployer only pass-role and
-rollback-continuation access for that exact boundary, preserves the currently
-reviewed Action mutation artifact, and rejects any lifecycle change set that
-touches the Action mutation function or role. A new manual
-`recover-stack-rollback` action continues rollback without skipping resources.
-PR #74 merged this correction to `main` as `63f8cab8`; PR and post-merge CI run
-`32388433518` passed. Read-only actual-account plans measured the new
-service-role policy at 2,409 of 10,240 characters and the updated OIDC runtime
-policy at 2,524 of 6,144 characters with four of ten attachments.
+Separately approved run `32390847334` then deployed the isolated staging
+recovery controller successfully. Repository tests, protected-variable and
+OIDC checks, target-isolation checks, schema replay, temporal backfill, full
+stack deployment, and the deployed temporal guard all passed. Direct read-only
+AWS inspection afterward found the stack at `UPDATE_COMPLETE` and the
+controller `Active`, with its last update successful and runtime `python3.14`.
 
-A named IAM administrator then reviewed the service-role plan and ran its
-separately authorised Apply. The role was absent, and Windows PowerShell
-promoted the expected AWS `NoSuchEntity` probe response to a terminating
-`NativeCommandError` before `create-role`; a subsequent read-only check
-confirmed that no role or IAM policy had been created. The repository follow-up
-now captures the native result under a scoped non-terminating preference,
-treats only `NoSuchEntity` as absence, and fails closed for every other probe
-error. A read-only actual-account probe returned `ROLE_MISSING_HANDLED` without
-mutation. PowerShell parsing, all 25 focused lifecycle deployment tests, all
-317 repository tests, Python compilation, and the 16-check drift audit pass.
-PR review for this follow-up, IAM configuration,
-protected-variable configuration, rollback recovery, controller deployment,
-failed-date recovery, baseline refresh, production alias, Scheduler, and Pages
-remain pending or human-owned.
+This release did not seed data, recover the persisted failed date, refresh the
+operational baseline, deploy analytics, run replay, move a production alias,
+create a schedule, or publish Pages. The next lifecycle action requires a new
+named-human approval to recover only `2026-08-09`, followed by verification of
+the controller status and all 28 lifecycle checks.
 
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -355,13 +305,9 @@ complete reviews can be evaluated.
 
 ## Pending validation
 
-- Merge and PR-CI-check the validated temporal backfill re-run correction; do
-  not retry workflow run `32379866761` from the stale `main` source.
-- After that correction is merged, obtain a new explicit isolated-staging
-  deployment decision before retrying `deploy-recovery-controller`.
-- Recover only the persisted failed `2026-08-09` date, then continue from
-  `2026-08-10` through the then-current Sydney date. Do not restart from
-  `2026-08-07` and do not count future-simulation provider rows.
+- Obtain a separate named-human approval to recover only the persisted failed
+  `2026-08-09` date, then verify the controller status and all 28 lifecycle
+  checks. The no-mutation diagnosis has passed, but it did not change status.
 - After every lifecycle, compatibility, and analytics check passes, refresh the
   operational-calendar baseline and publish the aggregate public snapshot only
   through separately authorized runtime and Pages steps.
@@ -387,14 +333,10 @@ done.
 
 ## Incomplete or blocked
 
-- Lifecycle recovery release: run `32012608848` failed before controller
-  deployment because the staging deployer's exact-resource Glue allowlist did
-  not cover the full schema inventory. The exact inventory correction is merged
-  and CI-verified, but its first IAM apply was rejected by the role's aggregate
-  inline-policy quota. The three-managed-policy migration is locally
-  implemented and focused-tested only; do not retry the recovery workflow until
-  it is committed, pushed, separately applied by a named human administrator,
-  and followed by a successful workflow plan.
+- Lifecycle failed-date recovery: the corrected controller is deployed and all
+  28 no-mutation diagnostic checks pass, but the persisted `2026-08-09` status
+  remains failed until a named human separately authorizes the bounded recovery
+  action.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: two complete story-v2 submissions exist, earlier
@@ -485,6 +427,13 @@ done.
 
 ### Codex-run validation
 
+- The final lifecycle release chain is source- and runtime-verified: PR #75
+  merged as `1f602c5d`, post-merge CI run `32389801911` passed, plan runs
+  `32390302719` and `32390677045` passed, rollback-recovery run `32390505373`
+  skipped no resources, and deployment run `32390847334` completed. Read-only
+  inspection found `UPDATE_COMPLETE` and an active Python 3.14 controller;
+  no-mutation diagnostic run `32391364627` passed 28/28 checks. The persisted
+  failed date remains pending separate human-authorized recovery.
 - The incident-record closeout passes Python compilation, all 301 repository
   tests, `git diff --check`, and the 16-check project drift audit. It performed
   no AWS write, deployment retry, IAM change, data recovery, baseline refresh,
@@ -647,10 +596,14 @@ done.
 
 ## Next Up
 
-1. Let any invited reviewer with a verified dedicated account personally
+1. With separate named-human approval, run the isolated staging
+   `recover-failed-integration-date` action for only `2026-08-09`, then verify
+   the persisted controller status and all 28 lifecycle checks. This is not a
+   production, baseline-refresh, schedule, or Pages action.
+2. Let any invited reviewer with a verified dedicated account personally
    complete the story-v2 flow; do not create, edit, or attest to any answer on
    a reviewer's behalf.
-2. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
+3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
    until all three eligible reviews pass the governed checks, then run the
    blinded aggregate without mixing superseded collections.
 

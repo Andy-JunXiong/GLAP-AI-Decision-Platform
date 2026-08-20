@@ -157,16 +157,11 @@ role and `cloudformation:ContinueUpdateRollback` for the one lifecycle stack.
 Set the resulting protected ARN as
 `AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN` in the `staging` environment.
 
-On 21 August 2026 Sydney time, after PR #74 and post-merge CI passed, a named
-IAM administrator reviewed the plan and attempted this Apply. The role did not
-exist, and Windows PowerShell promoted the expected AWS `NoSuchEntity` probe
-response to a terminating `NativeCommandError` before `create-role`. A
-subsequent read-only check confirmed no role or policy was created. The
-repository follow-up captures native output under a scoped non-terminating
-preference, treats only `NoSuchEntity` as absence, restores fail-closed handling
-for all other AWS errors, and passes a read-only actual-account missing-role
-probe. Do not retry Apply from `main` until this follow-up is reviewed and
-merged.
+On 21 August 2026 Sydney time, PR #75 merged the missing-role probe correction
+as `1f602c5d`, and post-merge CI run `32389801911` passed. A named IAM
+administrator then reviewed and successfully applied the service-role plan,
+reapplied the bounded deployer policies, and configured the protected staging
+variable. Direct GitHub assumption remains disabled.
 
 The service role is trusted only by CloudFormation and is exact-resource scoped
 to the four staging functions, their four runtime roles, the lifecycle alarm,
@@ -229,14 +224,22 @@ release. That role could not update the lifecycle generator or quality gate and
 could not read the general lifecycle artifact prefix. Automatic rollback also
 failed, leaving the isolated stack at `UPDATE_ROLLBACK_FAILED`.
 
-Do not retry `deploy-recovery-controller` from that state. After the lifecycle
-CloudFormation role, protected variable, and staging deployer permissions above
-are configured by a named human, run the manual workflow once with
-`action=recover-stack-rollback`. It calls
-`ops/recover_stateful_lifecycle_stack.ps1`, supplies the dedicated role, waits
-for `UPDATE_ROLLBACK_COMPLETE`, verifies the persisted role, and never supplies
-`resources-to-skip`. Rollback recovery and the subsequent controller deployment
-require separate human approvals.
+That failed state was recovered through separately approved run `32390505373`.
+It called `ops/recover_stateful_lifecycle_stack.ps1`, supplied the dedicated
+role, skipped no resources, verified the persisted role, and finished at
+`UPDATE_ROLLBACK_COMPLETE`. Plan runs `32390302719` and `32390677045` passed on
+either side of recovery. Separately approved run `32390847334` then completed
+the isolated schema replay, temporal backfill, full stack deployment, and
+deployed temporal guard. Read-only inspection found the stack at
+`UPDATE_COMPLETE` and the controller active on Python 3.14 with a successful
+last update.
+
+Diagnostic run `32391364627` checked the persisted failed `2026-08-09` date
+without mutation and passed all 28 lifecycle checks. The stored status remains
+failed until a named human separately approves
+`action=recover-failed-integration-date` for only that date. Do not combine that
+recovery with a seed, baseline refresh, analytics deployment, replay,
+production alias, schedule, or Pages publication.
 
 Separately authorised deployment run `32379866761` then completed repository
 tests, isolated-target inspection, plan rendering, and the idempotent schema

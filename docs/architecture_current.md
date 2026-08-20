@@ -185,17 +185,18 @@ The Action mutation function still resides in the shared lifecycle stack, so
 the two release paths must also preserve CloudFormation ownership explicitly.
 AWS persists a supplied stack service role; run `32383741062` demonstrated that
 the narrow Action mutation role cannot safely own a later full lifecycle
-update. Repository source now defines a separate CloudFormation-only
-lifecycle maintenance role, requires that role for full lifecycle changes,
-preserves the existing Action mutation artifact, and rejects a lifecycle change
-set that touches the mutation function or role. Rollback recovery is a distinct
-manual action and never skips a resource. PR #74 merged these repository
-controls as `63f8cab8`, but they are not deployed: the first named-human role
-Apply stopped before IAM mutation when Windows PowerShell mishandled the
-expected missing-role response. A repository follow-up now handles only
-`NoSuchEntity` as absence and fails closed for every other probe error. The
-stack remains at `UPDATE_ROLLBACK_FAILED` until that follow-up is reviewed, a
-named human configures the role boundary, and recovery is separately approved.
+update. The deployed architecture now uses a separate CloudFormation-only
+lifecycle maintenance role for full lifecycle changes while preserving the
+narrow Action mutation release role. Lifecycle change sets retain the reviewed
+mutation artifact and reject any change to the mutation function or role. PRs
+#74 and #75 supplied and hardened that boundary. A named IAM administrator
+configured the role and protected staging variable; separately approved run
+`32390505373` continued rollback without skipped resources, and run
+`32390847334` completed the isolated stack update. Read-only inspection found
+the stack at `UPDATE_COMPLETE` and the controller active on Python 3.14.
+Diagnostic run `32391364627` passed all 28 checks for `2026-08-09` without
+mutation. Recovering the persisted failed-date status remains a separate
+named-human action.
 
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached

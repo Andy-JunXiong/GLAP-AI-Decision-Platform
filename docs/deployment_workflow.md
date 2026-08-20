@@ -168,23 +168,19 @@ backfill passed, but the narrow role could neither update the lifecycle
 generator and quality gate nor read their artifact prefix, and automatic
 rollback stopped at `UPDATE_ROLLBACK_FAILED`.
 
-Repository source now gives broader lifecycle maintenance its own
-CloudFormation-only service role and always supplies it explicitly. The
-lifecycle deployer preserves the currently reviewed Action mutation artifact,
-creates and inspects a change set, and refuses to execute if either
-`ActionMutationFunction` or `ActionMutationRole` would change. A separate manual
-`recover-stack-rollback` action continues the failed rollback under the
-lifecycle service role without skipping resources. This implementation remains
-repository-only until a named human configures the role and protected variable,
-updates the staging deployer policy, and separately authorises rollback
-recovery. The narrow Prepare/Execute path remains the only routine Action
-mutation release path.
+Broader lifecycle maintenance now has its own CloudFormation-only service role
+and supplies it explicitly. The lifecycle deployer preserves the reviewed
+Action mutation artifact, inspects its change set, and refuses to execute if
+either `ActionMutationFunction` or `ActionMutationRole` would change. The narrow
+Prepare/Execute path remains the only routine Action mutation release path.
 
-After PR #74 merged as `63f8cab8` and post-merge CI passed, the first
-named-human service-role Apply stopped before IAM mutation: Windows PowerShell
-promoted the expected `NoSuchEntity` result from the missing-role probe to a
-terminating `NativeCommandError`. A read-only check confirmed the role remained
-absent. The follow-up probe implementation temporarily captures native output,
-treats only `NoSuchEntity` as an absent role, restores fail-closed error handling,
-and rejects every other AWS failure. Do not retry Apply from `main` until that
-follow-up has passed source review and merged.
+PR #75 merged the missing-role probe hardening as `1f602c5d`, and post-merge CI
+run `32389801911` passed. A named IAM administrator then configured the role,
+bounded deployer policies, and protected staging variable. Plan run
+`32390302719` passed; separately approved recovery run `32390505373` continued
+rollback without skipped resources; plan run `32390677045` passed; and
+separately approved deployment run `32390847334` completed the isolated stack
+update. Read-only inspection found `UPDATE_COMPLETE` and an active Python 3.14
+controller. Diagnostic run `32391364627` passed all 28 checks for the failed
+logical date without mutation. The persisted status still requires a separate
+named-human `recover-failed-integration-date` approval.
