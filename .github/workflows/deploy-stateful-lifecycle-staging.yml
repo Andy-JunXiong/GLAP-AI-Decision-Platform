@@ -17,6 +17,7 @@ on:
           - deploy-q4-configuration
           - extend-integration-validate
           - deploy-recovery-controller
+          - recover-stack-rollback
           - recover-failed-integration-date
           - diagnose-integration-date
       execution_mode:
@@ -85,6 +86,7 @@ jobs:
       ARTIFACT_BUCKET: ${{ vars.AWS_LIFECYCLE_ARTIFACT_BUCKET }}
       DATA_BUCKET: ${{ vars.AWS_LIFECYCLE_DATA_BUCKET }}
       ATHENA_OUTPUT: ${{ vars.AWS_LIFECYCLE_ATHENA_OUTPUT || vars.AWS_OPS_ATHENA_OUTPUT }}
+      CF_EXECUTION_ROLE_ARN: ${{ vars.AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN }}
 
     steps:
       - name: Check out repository
@@ -109,6 +111,7 @@ jobs:
         run: |
           test -n "$ARTIFACT_BUCKET"
           test -n "$DATA_BUCKET"
+          test -n "$CF_EXECUTION_ROLE_ARN"
           [[ "$ATHENA_OUTPUT" =~ ^s3://[^/]+/.+ ]]
           [[ "${{ inputs.replay_start_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
           [[ "${{ inputs.integration_logical_date }}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
@@ -159,6 +162,7 @@ jobs:
           aws s3api get-bucket-location --bucket "$DATA_BUCKET" >/dev/null
 
       - name: Render deployment plans
+        if: inputs.action != 'recover-stack-rollback'
         shell: pwsh
         run: |
           $schemaPlan = @{
@@ -183,7 +187,8 @@ jobs:
             -ArtifactBucket $env:ARTIFACT_BUCKET `
             -LifecycleDataBucket $env:DATA_BUCKET `
             -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
-            -AthenaOutputUri $env:ATHENA_OUTPUT
+            -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN
           ./ops/replay_stateful_lifecycle_staging.ps1 `
             -Region $env:AWS_REGION `
             -FunctionName $env:FUNCTION_NAME `
@@ -297,10 +302,20 @@ jobs:
             -LifecycleDataBucket $env:DATA_BUCKET `
             -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
             -AthenaOutputUri $env:ATHENA_OUTPUT `
+            -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
             -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
             -ControllerArtifactKey "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip" `
             -QualityGateArtifactKey "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip" `
-            -ActionMutationArtifactKey "$env:ARTIFACT_PREFIX/action-mutation-${{ github.sha }}.zip" `
+            -Apply
+
+      - name: Recover failed CloudFormation rollback
+        if: inputs.action == 'recover-stack-rollback'
+        shell: pwsh
+        run: |
+          ./ops/recover_stateful_lifecycle_stack.ps1 `
+            -Region $env:AWS_REGION `
+            -StackName $env:STACK_NAME `
+            -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
             -Apply
 
       - name: Deploy read-only analytics contract
@@ -508,6 +523,7 @@ jobs:
             echo "- Extension safety cap: \`12 dates / 50 elapsed minutes\`"
             echo "- Q4 synthetic configuration only: \`${{ inputs.action == 'deploy-q4-configuration' }}\`"
             echo "- Explicit failed-date recovery: \`${{ inputs.action == 'recover-failed-integration-date' }}\`"
+            echo "- CloudFormation rollback recovered: \`${{ inputs.action == 'recover-stack-rollback' }}\`"
             echo "- Row-level temporal isolation deployed: \`${{ inputs.action == 'deploy-recovery-controller' }}\`"
             echo "- Operational-calendar baseline deployed: \`${{ inputs.action == 'deploy-operational-baseline' }}\`"
             echo "- Real-world evidence claimed: \`false\`"

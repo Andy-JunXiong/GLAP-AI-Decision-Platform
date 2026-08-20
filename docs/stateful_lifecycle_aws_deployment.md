@@ -80,6 +80,7 @@ requires these private repository/environment variables:
 | Variable | Purpose |
 | --- | --- |
 | `AWS_STAGING_ROLE_ARN` | OIDC role assumed only by the staging workflow |
+| `AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN` | CloudFormation-only service role for the complete lifecycle staging stack |
 | `AWS_LIFECYCLE_ARTIFACT_BUCKET` | Existing private bucket for the Lambda ZIP |
 | `AWS_LIFECYCLE_DATA_BUCKET` | Existing private bucket; writes are restricted to `stateful-lifecycle-staging/data/` |
 | `AWS_LIFECYCLE_ATHENA_OUTPUT` | Prefix-scoped private Athena result URI; `AWS_OPS_ATHENA_OUTPUT` is the fallback |
@@ -136,6 +137,35 @@ The execution role uses the fixed staging-only name
 `glap-stateful-lifecycle-generator-staging-role`; this prevents CloudFormation
 physical-name truncation from widening or bypassing the deployer policy scope.
 
+### Lifecycle CloudFormation ownership bootstrap
+
+The Action mutation Prepare/Execute path supplies a deliberately narrow service
+role to the shared stack. Because AWS permanently associates that role with the
+stack, full lifecycle maintenance must explicitly replace it with a separate
+CloudFormation-only lifecycle role. Review its exact-resource plan first:
+
+```powershell
+.\ops\configure_stateful_lifecycle_cloudformation_role.ps1 `
+  -AdminProfile "<iam-admin-profile>" `
+  -ArtifactBucket "<private-artifact-bucket>"
+```
+
+After named-human review, apply it with the same arguments plus `-Apply`. Then
+re-run `configure_stateful_lifecycle_deployer.ps1` in plan and apply modes so
+the existing staging OIDC role receives only `iam:PassRole` for that service
+role and `cloudformation:ContinueUpdateRollback` for the one lifecycle stack.
+Set the resulting protected ARN as
+`AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN` in the `staging` environment.
+
+The service role is trusted only by CloudFormation and is exact-resource scoped
+to the four staging functions, their four runtime roles, the lifecycle alarm,
+and the lifecycle plus retained Action mutation artifact prefixes. Its Action
+mutation capability exists for shared-stack consistency and rollback only. The
+normal lifecycle deployer preserves the existing mutation artifact and rejects
+any change set containing `ActionMutationFunction` or `ActionMutationRole`; the
+separately approved Prepare/Execute workflow remains the only routine mutation
+release path.
+
 ### Recovery-controller release blocker -- 17 August 2026
 
 Manual workflow run `32012608848` used pushed commit
@@ -180,6 +210,23 @@ the final attachment count was four of ten, and the superseded lifecycle inline
 policy was then removed. Read-only workflow run `32379095685` passed with
 `action=plan`, `OPERATIONAL` / `ACTUAL_CALENDAR`, and logical date `2026-08-09`.
 
+PR #73 then merged the rerunnable temporal verifier as commit `7adf1863`; both
+PR and post-merge CI passed. Separately authorised run `32383741062` passed the
+backfill and failed later during the full stack update. CloudFormation reused
+the narrow Action mutation service role persisted by the earlier one-resource
+release. That role could not update the lifecycle generator or quality gate and
+could not read the general lifecycle artifact prefix. Automatic rollback also
+failed, leaving the isolated stack at `UPDATE_ROLLBACK_FAILED`.
+
+Do not retry `deploy-recovery-controller` from that state. After the lifecycle
+CloudFormation role, protected variable, and staging deployer permissions above
+are configured by a named human, run the manual workflow once with
+`action=recover-stack-rollback`. It calls
+`ops/recover_stateful_lifecycle_stack.ps1`, supplies the dedicated role, waits
+for `UPDATE_ROLLBACK_COMPLETE`, verifies the persisted role, and never supplies
+`resources-to-skip`. Rollback recovery and the subsequent controller deployment
+require separate human approvals.
+
 Separately authorised deployment run `32379866761` then completed repository
 tests, isolated-target inspection, plan rendering, and the idempotent schema
 step. It failed closed during temporal backfill verification with zero invalid
@@ -188,16 +235,16 @@ temporal identities but 120 `OPERATIONAL` rows later than the original
 pre-boundary legacy rows; it is not a valid ceiling after actual-calendar
 operations have advanced. The stack deployment, deployed guard check,
 failed-date recovery, baseline refresh, and Pages publication were skipped.
-A local correction now retains the original classification cutoff while
+The merged correction retains the original classification cutoff while
 validating operational rows against their stored `as_of_date` and the
-system-derived current Sydney business date. The correction passes the 21-test
+system-derived current Sydney business date. The correction passed the 21-test
 lifecycle deployment suite, all 313 repository tests, Python compilation,
 PowerShell parsing and plan rendering, the 16-check drift audit, and
-`git diff --check`. The implementation is committed on the feature branch as
-`a800074`; it remains unmerged, PR-CI-unverified, and undeployed. Do not retry
-the failed deployment until that correction is merged, CI-verified, and
-separately approved for isolated staging. No database-wide wildcard or
-production permission is justified by either failure.
+`git diff --check`, then merged through PR #73 as `7adf1863` with successful PR
+and post-merge CI. Run `32383741062` confirmed the temporal step now passes; the
+remaining blocker is the separate stack-role collision and failed rollback
+described above. No database-wide wildcard or production permission is
+justified by either failure.
 
 ## Deployment
 
@@ -238,12 +285,15 @@ Deploy the unscheduled staging writer after the tables and seed exist:
   -ArtifactBucket "<private-artifact-bucket>" `
   -LifecycleDataBucket "<private-data-bucket>" `
   -AthenaOutputUri "s3://<private-query-bucket>/athena-results/" `
+  -CloudFormationRoleArn "<lifecycle-cloudformation-role-arn>" `
   -Apply
 ```
 
-This checks Athena engine version 3, packages only `lambda_function.py` and the
-pure lifecycle engine module, uploads a versioned artifact when the workflow is
-used, and deploys an IAM role, Lambda and error alarm. It creates no event source.
+This checks Athena engine version 3, preserves the existing Action mutation
+artifact, packages the lifecycle generator, controller, and quality gate,
+inspects the proposed change set for protected-resource changes, and deploys
+the staging roles, Lambdas, and alarm through the dedicated CloudFormation
+service role. It creates no event source.
 
 ## Staging Lambda configuration
 

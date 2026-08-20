@@ -181,6 +181,18 @@ identity can call the Lambda update API directly. The guard rejects every
 change set except one non-replacing `ActionMutationFunction` property
 modification and preserves the prior artifact for rollback.
 
+The Action mutation function still resides in the shared lifecycle stack, so
+the two release paths must also preserve CloudFormation ownership explicitly.
+AWS persists a supplied stack service role; run `32383741062` demonstrated that
+the narrow Action mutation role cannot safely own a later full lifecycle
+update. Repository source now defines a separate CloudFormation-only
+lifecycle maintenance role, requires that role for full lifecycle changes,
+preserves the existing Action mutation artifact, and rejects a lifecycle change
+set that touches the mutation function or role. Rollback recovery is a distinct
+manual action and never skips a resource. These controls are not deployed: the
+stack remains at `UPDATE_ROLLBACK_FAILED` until a named human configures the
+role boundary and separately approves recovery.
+
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached
 `UPDATE_ROLLBACK_FAILED`; a named human corrected only those resource-specific

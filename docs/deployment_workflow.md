@@ -159,3 +159,23 @@ to `UPDATE_ROLLBACK_COMPLETE`, the prior artifact was restored, and the new
 prepare/execute pair then succeeded. The release scripts accept
 `UPDATE_ROLLBACK_COMPLETE` only as a reusable preflight state; successful
 execution still requires final `UPDATE_COMPLETE`.
+
+AWS permanently associates a supplied service role with the stack for future
+operations. The successful one-resource release therefore left its deliberately
+narrow Action mutation role as owner of the broader shared lifecycle stack.
+Deployment run `32383741062` later exposed that ownership collision: temporal
+backfill passed, but the narrow role could neither update the lifecycle
+generator and quality gate nor read their artifact prefix, and automatic
+rollback stopped at `UPDATE_ROLLBACK_FAILED`.
+
+Repository source now gives broader lifecycle maintenance its own
+CloudFormation-only service role and always supplies it explicitly. The
+lifecycle deployer preserves the currently reviewed Action mutation artifact,
+creates and inspects a change set, and refuses to execute if either
+`ActionMutationFunction` or `ActionMutationRole` would change. A separate manual
+`recover-stack-rollback` action continues the failed rollback under the
+lifecycle service role without skipping resources. This implementation remains
+repository-only until a named human configures the role and protected variable,
+updates the staging deployer policy, and separately authorises rollback
+recovery. The narrow Prepare/Execute path remains the only routine Action
+mutation release path.

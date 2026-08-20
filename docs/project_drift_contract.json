@@ -28,6 +28,10 @@
       "evidence_files": [
         "lambda/glap_stateful_lifecycle_generator.py",
         "infrastructure/stateful-lifecycle-staging.yaml",
+        ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+        "ops/deploy_stateful_lifecycle_stack.ps1",
+        "ops/recover_stateful_lifecycle_stack.ps1",
+        "ops/configure_stateful_lifecycle_cloudformation_role.ps1",
         "docs/shipment_lifecycle_design.md"
       ]
     },

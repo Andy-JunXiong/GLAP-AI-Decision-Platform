@@ -393,8 +393,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
         ).read_text(encoding="utf-8")
         self.assertIn("glap_governed_closed_loop.py", package_script)
-        self.assertIn("glap_action_mutation.py", package_script)
         self.assertIn("ActionMutationArtifactKey", package_script)
+        self.assertNotIn("glap_action_mutation.py", package_script)
 
     def test_replay_is_plan_only_and_seeds_only_first_day(self):
         script = (ROOT / "ops" / "replay_stateful_lifecycle_staging.ps1").read_text(
@@ -447,7 +447,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             self.assertIn("if (-not $Apply)", script)
             self.assertIn("[string]$Profile = $env:AWS_PROFILE", script)
         self.assertIn("Athena engine version 3", stack)
-        self.assertIn("--no-fail-on-empty-changeset", stack)
+        self.assertIn("cloudformation create-change-set", stack)
+        self.assertIn("cloudformation execute-change-set", stack)
+        self.assertIn("--role-arn $CloudFormationRoleArn", stack)
         self.assertIn("CAPABILITY_NAMED_IAM", stack)
         self.assertIn("glap_pipeline_controller.py", stack)
         self.assertIn("glap_data_quality_gate.py", stack)
@@ -472,6 +474,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("default: plan", workflow)
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
+        self.assertIn("AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN", workflow)
         self.assertIn("deploy-replay-validate", workflow)
         self.assertIn("deploy-integration-validate", workflow)
         self.assertIn("deploy-analytics-contract", workflow)
@@ -479,6 +482,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("deploy-q4-configuration", workflow)
         self.assertIn("extend-integration-validate", workflow)
         self.assertIn("deploy-recovery-controller", workflow)
+        self.assertIn("recover-stack-rollback", workflow)
         self.assertIn("recover-failed-integration-date", workflow)
         self.assertIn("diagnose-integration-date", workflow)
         self.assertIn("execution_mode:", workflow)
@@ -516,6 +520,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Deploy read-only analytics contract", workflow)
         self.assertIn("Validate lifecycle pipeline integration", workflow)
         self.assertIn("Verify deployed temporal truthfulness guard", workflow)
+        self.assertIn("Recover failed CloudFormation rollback", workflow)
+        self.assertIn("-CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN", workflow)
         self.assertIn("exceeds Sydney as_of_date", workflow)
         self.assertIn("temporal-boundary-smoke", workflow)
         self.assertIn('\\"dry_run\\":true', workflow)
@@ -582,6 +588,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('glap-stateful-lifecycle-generator-staging-role', script)
         self.assertIn('glap-stateful-lifecycle-controller-staging-role', script)
         self.assertIn('glap-stateful-lifecycle-quality-gate-staging-role', script)
+        self.assertIn('glap-stateful-lifecycle-cloudformation-staging-role', script)
         self.assertIn('vw_lifecycle_shipment_v2_compat', script)
         self.assertIn('${LifecycleDataBucket}/${dataPrefix}/*', script)
         self.assertIn('stateful-lifecycle-staging/artifacts', script)
@@ -609,6 +616,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         )
         self.assertIn("Production alias or schedule permission: False", script)
         self.assertIn("GitHub role self-modification permission: False", script)
+        self.assertIn('"cloudformation:ContinueUpdateRollback"', script)
+        self.assertIn("PassLifecycleCloudFormationRole", script)
         self.assertNotIn("lambda:UpdateAlias", script)
         self.assertNotIn("scheduler:", script.lower())
         self.assertIn("Remove-Item -LiteralPath @($policyPaths.Values)", script)
@@ -653,6 +662,49 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertTrue(schema_objects)
         self.assertEqual(set(), schema_objects - policy_objects)
         self.assertNotIn('table/${SourceDatabase}/*', script)
+
+    def test_lifecycle_stack_deploy_preserves_action_mutation_release_boundary(self):
+        script = (
+            ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Action mutation artifact preserved from the existing stack", script)
+        self.assertIn('Where-Object ParameterKey -eq "ActionMutationArtifactKey"', script)
+        self.assertIn('"ActionMutationFunction", "ActionMutationRole"', script)
+        self.assertIn("Lifecycle deployment cannot modify Action mutation resources", script)
+        self.assertIn("No lifecycle stack changes are required", script)
+        self.assertNotIn("glap_action_mutation.py", script)
+        self.assertNotIn("Unable to upload the Action mutation artifact", script)
+
+    def test_lifecycle_cloudformation_role_is_plan_first_and_staging_scoped(self):
+        script = (
+            ROOT / "ops" / "configure_stateful_lifecycle_cloudformation_role.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn("cloudformation.amazonaws.com", script)
+        self.assertIn("glap-stateful-lifecycle-cloudformation-staging-role", script)
+        self.assertIn("ReadLifecycleDeploymentArtifacts", script)
+        self.assertIn("MaintainLifecycleLambdaFunctions", script)
+        self.assertIn("PassLifecycleRuntimeRolesToLambda", script)
+        self.assertIn("stateful-lifecycle-staging/artifacts", script)
+        self.assertIn("action-mutation", script)
+        self.assertIn("Direct GitHub assumption allowed: False", script)
+        self.assertIn("Production alias or schedule permission: False", script)
+        self.assertNotIn("lambda:UpdateAlias", script)
+        self.assertNotIn("scheduler:", script.lower())
+
+    def test_lifecycle_stack_rollback_recovery_is_explicit_and_never_skips(self):
+        script = (
+            ROOT / "ops" / "recover_stateful_lifecycle_stack.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$Apply", script)
+        self.assertIn("if (-not $Apply)", script)
+        self.assertIn('StackStatus -ne "UPDATE_ROLLBACK_FAILED"', script)
+        self.assertIn("cloudformation continue-update-rollback", script)
+        self.assertIn("--role-arn $CloudFormationRoleArn", script)
+        self.assertIn("cloudformation wait stack-rollback-complete", script)
+        self.assertIn("Resources skipped during rollback: False", script)
+        self.assertNotIn("resources-to-skip", script.lower())
 
 
 if __name__ == "__main__":

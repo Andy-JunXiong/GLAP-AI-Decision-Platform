@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-20`
+**Sydney as-of date:** `2026-08-21`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -80,13 +80,31 @@ with `invalid=0` and `future_operational=120`. The verifier incorrectly treated
 the original `2026-08-06` legacy-classification cutoff as a permanent ceiling
 after actual-calendar operations had advanced. Stack/controller deployment,
 the deployed guard, failed-date recovery, baseline refresh, production alias,
-Scheduler, and Pages were all skipped. A local fix now keeps the legacy cutoff
+Scheduler, and Pages were all skipped. A fix now keeps the legacy cutoff
 immutable but evaluates operational rows against their stored `as_of_date` and
-the system-derived current Sydney date. The implementation is committed on the
-feature branch as `a800074`; it is not merged, PR-CI-verified, or deployed.
-Local validation passes the 21-test lifecycle deployment suite, all 313
-repository tests, Python compilation, PowerShell parsing and plan rendering,
-the 16-check drift audit, and `git diff --check`.
+the system-derived current Sydney date. PR #73 merged it to `main` as commit
+`7adf1863`; both PR and post-merge CI passed. Separately authorised run
+`32383741062` then passed temporal backfill and failed later during the full
+stack update. CloudFormation reused the narrow Action mutation service role
+persisted by the earlier one-resource release; that role could not update the
+lifecycle generator and quality gate or read the general lifecycle artifact
+prefix. Automatic rollback also failed, leaving the isolated stack at
+`UPDATE_ROLLBACK_FAILED`.
+
+A repository correction now defines a separate CloudFormation-only
+lifecycle maintenance role, grants the staging OIDC deployer only pass-role and
+rollback-continuation access for that exact boundary, preserves the currently
+reviewed Action mutation artifact, and rejects any lifecycle change set that
+touches the Action mutation function or role. A new manual
+`recover-stack-rollback` action continues rollback without skipping resources.
+The focused 24-test lifecycle deployment suite, all 316 repository tests,
+Python compilation, four-script PowerShell parsing, the 16-check drift audit,
+and `git diff --check` pass. Read-only actual-account plans measured the new
+service-role policy at 2,409 of 10,240 characters and the updated OIDC runtime
+policy at 2,524 of 6,144 characters with four of ten attachments. PR review,
+IAM configuration, protected-variable configuration, rollback recovery,
+controller deployment, failed-date recovery, baseline refresh, production
+alias, Scheduler, and Pages remain pending or human-owned.
 
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
