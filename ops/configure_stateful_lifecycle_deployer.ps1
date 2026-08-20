@@ -16,6 +16,7 @@ param(
     [string]$IntegrationControllerRoleName = "glap-stateful-lifecycle-controller-staging-role",
     [string]$IntegrationQualityGateFunctionName = "glap-stateful-lifecycle-quality-gate-staging",
     [string]$IntegrationQualityGateRoleName = "glap-stateful-lifecycle-quality-gate-staging-role",
+    [string]$CloudFormationRoleName = "glap-stateful-lifecycle-cloudformation-staging-role",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
     [string]$ArtifactPrefix = "stateful-lifecycle-staging/artifacts",
     [Parameter(Mandatory)] [string]$LifecycleDataBucket,
@@ -38,7 +39,8 @@ foreach ($name in @(
     $IntegrationControllerFunctionName,
     $IntegrationControllerRoleName,
     $IntegrationQualityGateFunctionName,
-    $IntegrationQualityGateRoleName
+    $IntegrationQualityGateRoleName,
+    $CloudFormationRoleName
 )) {
     if ($name -notmatch '^[A-Za-z0-9+=,.@_-]{1,128}$') {
         throw "Role, policy, stack and function names must use safe AWS characters"
@@ -251,6 +253,7 @@ $statements = @(
                 "cloudformation:DescribeChangeSet",
                 "cloudformation:ExecuteChangeSet",
                 "cloudformation:DeleteChangeSet",
+                "cloudformation:ContinueUpdateRollback",
                 "cloudformation:DescribeStacks",
                 "cloudformation:DescribeStackEvents",
                 "cloudformation:ListStackResources"
@@ -262,6 +265,17 @@ $statements = @(
             Effect = "Allow"
             Action = @("cloudformation:ValidateTemplate", "cloudformation:GetTemplateSummary")
             Resource = "*"
+        },
+        @{
+            Sid = "PassLifecycleCloudFormationRole"
+            Effect = "Allow"
+            Action = "iam:PassRole"
+            Resource = "arn:${partition}:iam::${accountId}:role/${CloudFormationRoleName}"
+            Condition = @{
+                StringEquals = @{
+                    "iam:PassedToService" = "cloudformation.amazonaws.com"
+                }
+            }
         },
         @{
             Sid = "ManageLifecycleLambda"
@@ -335,6 +349,7 @@ $storageSids = @(
 $deploymentSids = @(
     "DeployLifecycleStack",
     "InspectLifecycleTemplate",
+    "PassLifecycleCloudFormationRole",
     "ManageLifecycleLambda",
     "ManageLifecycleExecutionRole",
     "ManageLifecycleAlarm"
@@ -420,6 +435,7 @@ Write-Host "  Function: $FunctionName"
 Write-Host "  Execution role: $ExecutionRoleName"
 Write-Host "  Integration controller: $IntegrationControllerFunctionName"
 Write-Host "  Integration quality gate: $IntegrationQualityGateFunctionName"
+Write-Host "  CloudFormation service role: $CloudFormationRoleName"
 Write-Host "  Database: $SourceDatabase"
 Write-Host "  Workgroup: $Workgroup"
 Write-Host "  Artifact prefix scoped: True"
@@ -428,6 +444,7 @@ Write-Host "  Athena results prefix scoped: True"
 Write-Host "  Database-wide Glue table wildcard: False"
 Write-Host "  Production alias or schedule permission: False"
 Write-Host "  GitHub role self-modification permission: False"
+Write-Host "  CloudFormation rollback continuation permission: True"
 
 if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply using an IAM administrator profile."

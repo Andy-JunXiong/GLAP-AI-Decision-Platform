@@ -149,7 +149,7 @@ coverage and rejects a database-wide table wildcard.
 A named-human apply on 2026-08-20 then failed closed before IAM mutation because
 the shared role's four inline policies already used approximately 10,234 of the
 fixed 10,240-character aggregate quota. The corrected inline policy would have
-raised the total to approximately 10,827. The local migration implementation
+raised the total to approximately 10,827. The migration implementation
 now preserves the same permission statements across three bounded
 customer-managed policies for Catalog, Storage, and Deployment. It preflights
 the per-policy size and attachment quotas, stages and verifies the managed
@@ -162,12 +162,24 @@ read-only workflow run `32379095685` then passed. Deployment run `32379866761`
 completed the idempotent schema step but failed closed before stack deployment
 because the one-time temporal verifier treated 120 later actual-calendar
 operational rows as if the original `2026-08-06` migration cutoff were still the
-current calendar boundary. A local correction separates the immutable legacy
-classification cutoff from the system-derived current Sydney date and is
-committed on the feature branch as `a800074`; it remains unmerged,
-PR-CI-unverified, and undeployed. The stack, failed-date recovery, baseline
-refresh, production alias, Scheduler, and Pages were not changed. IAM and
-staging deployment authority remain human-owned.
+current calendar boundary. PR #73 merged the correction to `main` as commit
+`7adf1863`, and both PR and post-merge CI passed.
+
+Separately authorised deployment run `32383741062` then passed that temporal
+backfill and reached the stack update. CloudFormation reused the narrow Action
+mutation service role that an earlier one-resource release had permanently
+associated with the shared stack. That role correctly lacked permission to
+update the generator and quality-gate functions or read the lifecycle artifact
+prefix, so the update and its automatic rollback failed closed at
+`UPDATE_ROLLBACK_FAILED`. Repository source now introduces a separate lifecycle
+CloudFormation service-role plan, makes full lifecycle updates pass that role
+explicitly, preserves the existing Action mutation artifact, rejects any
+Action mutation resource in the lifecycle change set, and exposes a separate
+manual rollback-recovery action that never skips a resource. These controls are
+implemented and repository-tested only; the new IAM role, GitHub
+variable, deployer-policy update, rollback recovery, controller release,
+failed-date recovery, baseline refresh, production alias, Scheduler, and Pages
+remain unchanged and human-owned.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and

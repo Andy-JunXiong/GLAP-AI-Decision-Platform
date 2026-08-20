@@ -11,6 +11,7 @@ param(
     [string]$IntegrationQualityGateRoleName = "glap-stateful-lifecycle-quality-gate-staging-role",
     [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
     [string]$ActionMutationRoleName = "glap-lifecycle-action-mutation-staging-role",
+    [string]$CloudFormationRoleArn = "",
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$Workgroup = "primary",
     [Parameter(Mandatory)] [string]$ArtifactBucket,
@@ -20,7 +21,6 @@ param(
     [string]$ArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-generator.zip",
     [string]$ControllerArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-controller.zip",
     [string]$QualityGateArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-quality-gate.zip",
-    [string]$ActionMutationArtifactKey = "stateful-lifecycle-staging/artifacts/glap-action-mutation.zip",
     [switch]$Apply
 )
 
@@ -57,13 +57,18 @@ if ($LifecycleDataPrefix -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,511}$' 
     throw "LifecycleDataPrefix is not a safe prefix"
 }
 foreach ($key in @(
-    $ArtifactKey, $ControllerArtifactKey, $QualityGateArtifactKey,
-    $ActionMutationArtifactKey
+    $ArtifactKey, $ControllerArtifactKey, $QualityGateArtifactKey
 )) {
     if ($key -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,1023}$' -or
         $key.Contains("..")) {
         throw "Artifact keys must be safe object keys"
     }
+}
+if ($CloudFormationRoleArn -and $CloudFormationRoleArn -notmatch (
+    '^arn:aws(-[a-z]+)?:iam::\d{12}:role/(?:[A-Za-z0-9+=,.@_-]+/)*' +
+    'glap-stateful-lifecycle-cloudformation-staging-role$'
+)) {
+    throw "CloudFormationRoleArn must identify the dedicated lifecycle staging service role"
 }
 if ($AthenaOutputUri -notmatch '^s3://([^/]+)/(.+)$') {
     throw "AthenaOutputUri must be a prefix-scoped s3:// URI"
@@ -83,8 +88,6 @@ $controllerPackageDir = Join-Path $distDir "stateful-lifecycle-controller-packag
 $controllerArchivePath = Join-Path $distDir "glap-stateful-lifecycle-controller.zip"
 $qualityPackageDir = Join-Path $distDir "stateful-lifecycle-quality-package"
 $qualityArchivePath = Join-Path $distDir "glap-stateful-lifecycle-quality-gate.zip"
-$mutationPackageDir = Join-Path $distDir "action-mutation-package"
-$mutationArchivePath = Join-Path $distDir "glap-action-mutation.zip"
 
 Write-Host "Stateful lifecycle staging stack plan"
 Write-Host "  Stack: $StackName"
@@ -99,7 +102,8 @@ Write-Host "  Artifact: s3://$ArtifactBucket/$ArtifactKey"
 Write-Host "  Controller artifact: s3://$ArtifactBucket/$ControllerArtifactKey"
 Write-Host "  Quality artifact: s3://$ArtifactBucket/$QualityGateArtifactKey"
 Write-Host "  Action mutation: $ActionMutationFunctionName"
-Write-Host "  Mutation artifact: s3://$ArtifactBucket/$ActionMutationArtifactKey"
+Write-Host "  Action mutation artifact preserved from the existing stack: True"
+Write-Host "  Dedicated CloudFormation service role configured: $([bool]$CloudFormationRoleArn)"
 Write-Host "  Lifecycle data: s3://$LifecycleDataBucket/$dataPrefix/"
 Write-Host "  Athena results prefix configured: True"
 Write-Host "  Schedule created: False"
@@ -108,10 +112,39 @@ if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply after validating buckets and the OIDC role."
     return
 }
+if (-not $CloudFormationRoleArn) {
+    throw "CloudFormationRoleArn is required for lifecycle stack deployment"
+}
 
 $awsScope = @("--region", $Region)
 if ($Profile) {
     $awsScope += @("--profile", $Profile)
+}
+
+$stackJson = & aws cloudformation describe-stacks `
+    --stack-name $StackName @awsScope --output json
+if ($LASTEXITCODE -ne 0 -or -not $stackJson) {
+    throw "The existing lifecycle staging stack is required; bootstrap is a separate reviewed operation"
+}
+$stack = ($stackJson -join "`n" | ConvertFrom-Json).Stacks[0]
+$stableStackStates = @("CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE")
+if ([string]$stack.StackStatus -notin $stableStackStates) {
+    if ([string]$stack.StackStatus -eq "UPDATE_ROLLBACK_FAILED") {
+        throw "Lifecycle staging stack rollback must be recovered before deployment"
+    }
+    throw "Lifecycle staging stack is not stable: $($stack.StackStatus)"
+}
+$actionMutationParameters = @(
+    $stack.Parameters |
+        Where-Object ParameterKey -eq "ActionMutationArtifactKey"
+)
+if ($actionMutationParameters.Count -ne 1) {
+    throw "Existing Action mutation artifact identity is unavailable"
+}
+$actionMutationArtifactKey = [string]$actionMutationParameters[0].ParameterValue
+if ($actionMutationArtifactKey -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,1023}$' -or
+    $actionMutationArtifactKey.Contains("..")) {
+    throw "Existing Action mutation artifact identity is unsafe"
 }
 
 $effectiveEngine = & aws athena get-work-group `
@@ -171,16 +204,6 @@ Compress-Archive -LiteralPath `
     (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
     -DestinationPath $qualityArchivePath -Force
 
-New-Item -ItemType Directory -Path $mutationPackageDir -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $root "lambda/glap_action_mutation.py") `
-    -Destination (Join-Path $mutationPackageDir "lambda_function.py") -Force
-Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-    -Destination (Join-Path $mutationPackageDir "glap_temporal_boundary.py") -Force
-Compress-Archive -LiteralPath `
-    (Join-Path $mutationPackageDir "lambda_function.py"), `
-    (Join-Path $mutationPackageDir "glap_temporal_boundary.py") `
-    -DestinationPath $mutationArchivePath -Force
-
 & aws s3 cp $archivePath "s3://$ArtifactBucket/$ArtifactKey" @awsScope --only-show-errors
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to upload the lifecycle Lambda artifact"
@@ -193,17 +216,12 @@ if ($LASTEXITCODE -ne 0) {
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to upload the lifecycle integration quality artifact"
 }
-& aws s3 cp $mutationArchivePath "s3://$ArtifactBucket/$ActionMutationArtifactKey" @awsScope --only-show-errors
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to upload the Action mutation artifact"
-}
-
 $parameterOverrides = @(
     "ArtifactBucket=$ArtifactBucket",
     "GeneratorArtifactKey=$ArtifactKey",
     "ControllerArtifactKey=$ControllerArtifactKey",
     "QualityGateArtifactKey=$QualityGateArtifactKey",
-    "ActionMutationArtifactKey=$ActionMutationArtifactKey",
+    "ActionMutationArtifactKey=$actionMutationArtifactKey",
     "AthenaOutputUri=$AthenaOutputUri",
     "AthenaResultsBucketName=$athenaResultsBucket",
     "AthenaResultsPrefix=$athenaResultsPrefix",
@@ -224,15 +242,104 @@ $parameterOverrides = @(
     "ActionMutationFunctionName=$ActionMutationFunctionName",
     "ActionMutationRoleName=$ActionMutationRoleName"
 )
-& aws cloudformation deploy `
-    --stack-name $StackName `
-    --template-file $templatePath `
-    --capabilities CAPABILITY_NAMED_IAM `
-    --no-fail-on-empty-changeset `
-    --parameter-overrides @parameterOverrides `
-    @awsScope
-if ($LASTEXITCODE -ne 0) {
-    throw "Lifecycle staging stack deployment failed"
+$changeSetName = "lifecycle-$([DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+$changeSetCreated = $false
+try {
+    $parameterArguments = @(
+        $parameterOverrides | ForEach-Object {
+            $parts = $_ -split '=', 2
+            "ParameterKey=$($parts[0]),ParameterValue=$($parts[1])"
+        }
+    )
+    & aws cloudformation create-change-set `
+        --stack-name $StackName `
+        --change-set-name $changeSetName `
+        --change-set-type UPDATE `
+        --template-body "file://$templatePath" `
+        --role-arn $CloudFormationRoleArn `
+        --capabilities CAPABILITY_NAMED_IAM `
+        --parameters @parameterArguments `
+        @awsScope `
+        --output json | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to create the lifecycle staging change set"
+    }
+    $changeSetCreated = $true
+    & aws cloudformation wait change-set-create-complete `
+        --stack-name $StackName --change-set-name $changeSetName @awsScope
+    if ($LASTEXITCODE -ne 0) {
+        $failedChangeSetJson = & aws cloudformation describe-change-set `
+            --stack-name $StackName --change-set-name $changeSetName @awsScope --output json
+        if ($LASTEXITCODE -eq 0 -and $failedChangeSetJson) {
+            $failedChangeSet = $failedChangeSetJson -join "`n" | ConvertFrom-Json
+            if ([string]$failedChangeSet.Status -eq "FAILED" -and
+                [string]$failedChangeSet.StatusReason -match (
+                    "didn't contain changes|No updates are to be performed"
+                )) {
+                & aws cloudformation delete-change-set `
+                    --stack-name $StackName --change-set-name $changeSetName @awsScope | Out-Null
+                $changeSetCreated = $false
+                $unchangedStackJson = & aws cloudformation describe-stacks `
+                    --stack-name $StackName @awsScope --output json
+                $unchangedStack = if ($LASTEXITCODE -eq 0 -and $unchangedStackJson) {
+                    ($unchangedStackJson -join "`n" | ConvertFrom-Json).Stacks[0]
+                } else {
+                    $null
+                }
+                if (-not $unchangedStack -or
+                    [string]$unchangedStack.StackStatus -notin $stableStackStates -or
+                    [string]$unchangedStack.RoleARN -ne $CloudFormationRoleArn) {
+                    throw "No lifecycle changes exist, but the dedicated stack role is not verified"
+                }
+                Write-Host "No lifecycle stack changes are required; the dedicated role remains verified."
+                return
+            }
+        }
+        throw "Lifecycle staging change set did not become ready"
+    }
+    $changeSetJson = & aws cloudformation describe-change-set `
+        --stack-name $StackName --change-set-name $changeSetName @awsScope --output json
+    if ($LASTEXITCODE -ne 0 -or -not $changeSetJson) {
+        throw "Unable to inspect the lifecycle staging change set"
+    }
+    $changeSet = $changeSetJson -join "`n" | ConvertFrom-Json
+    $protectedChanges = @(
+        $changeSet.Changes | Where-Object {
+            $_.ResourceChange.LogicalResourceId -in @(
+                "ActionMutationFunction", "ActionMutationRole"
+            )
+        }
+    )
+    if ($protectedChanges.Count -ne 0) {
+        throw "Lifecycle deployment cannot modify Action mutation resources"
+    }
+    & aws cloudformation execute-change-set `
+        --stack-name $StackName --change-set-name $changeSetName @awsScope
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to execute the lifecycle staging change set"
+    }
+    & aws cloudformation wait stack-update-complete `
+        --stack-name $StackName @awsScope
+    if ($LASTEXITCODE -ne 0) {
+        throw "Lifecycle staging stack deployment failed"
+    }
+    $updatedStackJson = & aws cloudformation describe-stacks `
+        --stack-name $StackName @awsScope --output json
+    if ($LASTEXITCODE -ne 0 -or -not $updatedStackJson) {
+        throw "Unable to verify the lifecycle staging stack"
+    }
+    $updatedStack = ($updatedStackJson -join "`n" | ConvertFrom-Json).Stacks[0]
+    if ([string]$updatedStack.StackStatus -ne "UPDATE_COMPLETE" -or
+        [string]$updatedStack.RoleARN -ne $CloudFormationRoleArn) {
+        throw "Lifecycle staging stack role or final status verification failed"
+    }
+    $changeSetCreated = $false
+} catch {
+    if ($changeSetCreated) {
+        & aws cloudformation delete-change-set `
+            --stack-name $StackName --change-set-name $changeSetName @awsScope 2>$null | Out-Null
+    }
+    throw
 }
 
-Write-Host "Lifecycle staging stack and isolated integration controller deployed without a schedule or production alias change."
+Write-Host "Lifecycle staging stack and isolated integration controller deployed without a schedule, production alias change, or Action mutation release."
