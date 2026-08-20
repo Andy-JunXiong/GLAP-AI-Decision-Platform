@@ -693,6 +693,21 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertNotIn("lambda:UpdateAlias", script)
         self.assertNotIn("scheduler:", script.lower())
 
+    def test_lifecycle_cloudformation_role_missing_probe_handles_only_no_such_entity(self):
+        script = (
+            ROOT / "ops" / "configure_stateful_lifecycle_cloudformation_role.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("function Test-AwsIamRoleExists", script)
+        self.assertIn('$ErrorActionPreference = "Continue"', script)
+        self.assertIn("2>&1", script)
+        self.assertIn("NoSuchEntity", script)
+        self.assertIn(
+            'throw "Unable to inspect the lifecycle CloudFormation service role"',
+            script,
+        )
+        self.assertIn("$roleExists = Test-AwsIamRoleExists $RoleName", script)
+        self.assertNotIn("2>$null | Out-Null", script)
+
     def test_lifecycle_stack_rollback_recovery_is_explicit_and_never_skips(self):
         script = (
             ROOT / "ops" / "recover_stateful_lifecycle_stack.ps1"

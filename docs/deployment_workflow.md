@@ -179,3 +179,12 @@ repository-only until a named human configures the role and protected variable,
 updates the staging deployer policy, and separately authorises rollback
 recovery. The narrow Prepare/Execute path remains the only routine Action
 mutation release path.
+
+After PR #74 merged as `63f8cab8` and post-merge CI passed, the first
+named-human service-role Apply stopped before IAM mutation: Windows PowerShell
+promoted the expected `NoSuchEntity` result from the missing-role probe to a
+terminating `NativeCommandError`. A read-only check confirmed the role remained
+absent. The follow-up probe implementation temporarily captures native output,
+treats only `NoSuchEntity` as an absent role, restores fail-closed error handling,
+and rejects every other AWS failure. Do not retry Apply from `main` until that
+follow-up has passed source review and merged.

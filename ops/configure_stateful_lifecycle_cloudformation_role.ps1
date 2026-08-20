@@ -65,6 +65,30 @@ function Invoke-AwsCommand([string[]]$Arguments, [string]$FailureMessage) {
     }
 }
 
+function Test-AwsIamRoleExists([string]$Name) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $output = @()
+    $exitCode = 1
+    try {
+        # Windows PowerShell promotes native stderr to NativeCommandError when
+        # ErrorActionPreference is Stop. NoSuchEntity is an expected probe
+        # result here, so capture it before restoring the fail-closed default.
+        $ErrorActionPreference = "Continue"
+        $output = @(& aws iam get-role --role-name $Name @awsScope --output json 2>&1)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -eq 0) {
+        return $true
+    }
+    if (($output | Out-String) -match '(?i)NoSuchEntity') {
+        return $false
+    }
+    throw "Unable to inspect the lifecycle CloudFormation service role"
+}
+
 function Write-TemporaryJson([string]$Json, [string]$Label) {
     $path = Join-Path ([System.IO.Path]::GetTempPath()) (
         "glap-lifecycle-cloudformation-$Label-" + [guid]::NewGuid().ToString("N") + ".json"
@@ -204,11 +228,7 @@ if (-not $Apply) {
 $trustPath = Write-TemporaryJson $trustJson "trust"
 $policyPath = Write-TemporaryJson $policyJson "policy"
 try {
-    $roleExists = $true
-    & aws iam get-role --role-name $RoleName @awsScope --output json 2>$null | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        $roleExists = $false
-    }
+    $roleExists = Test-AwsIamRoleExists $RoleName
     if (-not $roleExists) {
         Invoke-AwsCommand @(
             "iam", "create-role",

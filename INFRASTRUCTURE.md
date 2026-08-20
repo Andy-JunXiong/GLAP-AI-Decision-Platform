@@ -171,15 +171,22 @@ mutation service role that an earlier one-resource release had permanently
 associated with the shared stack. That role correctly lacked permission to
 update the generator and quality-gate functions or read the lifecycle artifact
 prefix, so the update and its automatic rollback failed closed at
-`UPDATE_ROLLBACK_FAILED`. Repository source now introduces a separate lifecycle
+`UPDATE_ROLLBACK_FAILED`. Repository source introduces a separate lifecycle
 CloudFormation service-role plan, makes full lifecycle updates pass that role
 explicitly, preserves the existing Action mutation artifact, rejects any
 Action mutation resource in the lifecycle change set, and exposes a separate
-manual rollback-recovery action that never skips a resource. These controls are
-implemented and repository-tested only; the new IAM role, GitHub
-variable, deployer-policy update, rollback recovery, controller release,
-failed-date recovery, baseline refresh, production alias, Scheduler, and Pages
-remain unchanged and human-owned.
+manual rollback-recovery action that never skips a resource. PR #74 merged
+these controls as `63f8cab8`, and post-merge CI passed.
+
+The first named-human service-role Apply then failed before IAM mutation. The
+role did not yet exist, and Windows PowerShell converted the expected AWS
+`NoSuchEntity` existence probe into a terminating `NativeCommandError` before
+the create branch. A read-only check confirmed the role remained absent. The
+repository follow-up scopes native error handling only around that probe,
+accepts only `NoSuchEntity` as an absent role, and fails closed for all other
+AWS errors. The IAM role, GitHub variable, deployer-policy update, rollback
+recovery, controller release, failed-date recovery, baseline refresh,
+production alias, Scheduler, and Pages remain unchanged and human-owned.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and
