@@ -12,7 +12,8 @@ three-review minimum is not met, so Decision Quality remains `NOT_EVALUATED`.
 The multi-reviewer account extension is deployed with six separate hosted
 accounts and pseudonymous persistence scopes; all five additional accounts
 passed zero-write login/isolation canaries and their credentials were delivered
-privately.
+privately. A seventh isolated account slot is implemented and locally verified
+but is not yet configured, published, canary-verified, or delivered.
 
 ## Purpose
 

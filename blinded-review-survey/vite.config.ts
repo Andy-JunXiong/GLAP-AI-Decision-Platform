@@ -20,6 +20,7 @@ const localAuthVars = Object.fromEntries(
     "REVIEWER_ACCOUNT_04_JSON",
     "REVIEWER_ACCOUNT_05_JSON",
     "REVIEWER_ACCOUNT_06_JSON",
+    "REVIEWER_ACCOUNT_07_JSON",
   ].flatMap((key) => process.env[key] ? [[key, process.env[key] as string]] : []),
 );
 

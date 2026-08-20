@@ -164,6 +164,7 @@ test("requires the dedicated account and keeps frozen cases out of the public cl
   assert.match(auth, /8 \* 60 \* 60/);
   assert.match(auth, /PBKDF2_ITERATIONS = 100000/);
   assert.match(auth, /REVIEWER_ACCOUNT_02_JSON/);
+  assert.match(auth, /REVIEWER_ACCOUNT_07_JSON/);
   assert.match(auth, /duplicate accounts/);
   assert.match(auth, /candidate\.userId === claims\.sub/);
   assert.match(loginRoute, /MAX_FAILURES = 5/);

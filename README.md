@@ -46,8 +46,8 @@ and keeps human approval, execution evidence and outcomes traceable.
 > decision cutoffs. Structural coverage checks pass, but the corpus is not an
 > eligible benchmark and contains no independent expert Decision Quality result.
 
-> **17 August 2026 Human Evaluation status:** the corrected story-based
-> A/B/Tie workflow is live as Sites v11 with five isolated reviewer accounts.
+> **20 August 2026 Human Evaluation status:** the corrected story-based
+> A/B/Tie workflow is live as Sites v11 with six isolated reviewer accounts.
 > Two eligible reviewers have each completed all 30 frozen packages and all
 > required attestations. The declared minimum is three valid independent
 > reviews, so Decision Quality remains `NOT_EVALUATED` and one more eligible

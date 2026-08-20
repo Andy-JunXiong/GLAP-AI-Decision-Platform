@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-18`
+**Sydney as-of date:** `2026-08-20`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -244,6 +244,10 @@ session, answers, or submitted state to affect another reviewer.
   attestation, answer, save, or submission;
 - the sixth account's bilingual credential notice was sent privately only after
   the canary passed. No address or plaintext credential was stored in the
+  repository.
+- a seventh isolated account slot is implemented and locally verified for the
+  next invited reviewer. It is not yet configured, published, canary-verified,
+  or delivered, and no credential or contact address is stored in the
   repository.
 
 **Definition of done**
