@@ -580,6 +580,30 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertNotIn("scheduler:", script.lower())
         self.assertIn("Remove-Item -LiteralPath $policyPath", script)
 
+    def test_deployer_glue_inventory_covers_every_schema_object_without_wildcard(self):
+        script = (
+            ROOT / "ops" / "configure_stateful_lifecycle_deployer.ps1"
+        ).read_text(encoding="utf-8")
+        ddl = (ROOT / "sql" / "04_stateful_lifecycle_config.sql").read_text(
+            encoding="utf-8"
+        )
+        schema_objects = set(re.findall(
+            r"CREATE\s+(?:TABLE\s+IF\s+NOT\s+EXISTS|OR\s+REPLACE\s+VIEW)\s+"
+            r"\{\{SOURCE_DATABASE\}\}\.([a-z0-9_]+)",
+            ddl,
+            flags=re.IGNORECASE,
+        ))
+        inventory_match = re.search(
+            r"\$tableNames\s*=\s*@\((.*?)\)\s*\r?\n\$bucketArns",
+            script,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(inventory_match)
+        policy_objects = set(re.findall(r'"([a-z0-9_]+)"', inventory_match.group(1)))
+        self.assertTrue(schema_objects)
+        self.assertEqual(set(), schema_objects - policy_objects)
+        self.assertNotIn('table/${SourceDatabase}/*', script)
+
 
 if __name__ == "__main__":
     unittest.main()

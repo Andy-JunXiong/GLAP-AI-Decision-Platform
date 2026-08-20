@@ -44,8 +44,12 @@ tests, target isolation, and plan rendering, then stopped during idempotent
 schema application because the staging deployer lacked `glue:GetTable` on one
 existing lifecycle catalog table. No seed was requested; temporal backfill,
 controller/stack deployment, failed-date recovery, operational-baseline
-refresh, and Pages publication were skipped. The correction is therefore not
-deployed and the persisted lifecycle status remains failed on `2026-08-09`.
+refresh, and Pages publication were skipped. The repository's exact-resource
+inventory is now locally reconciled with every lifecycle schema object: it adds
+the five governed closed-loop tables and their current-action view, while a
+regression test rejects any schema object omission or database-wide table
+wildcard. The policy has not been applied, the controller correction is not
+deployed, and the persisted lifecycle status remains failed on `2026-08-09`.
 
 The mainland-access review surface now has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -285,10 +289,10 @@ complete reviews can be evaluated.
 
 ## Pending validation
 
-- Update and locally verify the repository's exact-resource lifecycle deployer
-  allowlist for the missing existing catalog table. A named IAM administrator
-  must separately review and apply only that bounded policy change; agent
-  authority does not include IAM mutation.
+- A named IAM administrator must separately review and apply the locally
+  verified exact-resource lifecycle deployer correction; agent authority does
+  not include IAM mutation. Do not retry the workflow before that applied-policy
+  precondition is confirmed.
 - After that policy precondition is met, release the lifecycle quality-gate and
   controller correction through the manual isolated-staging workflow under a
   new explicit deployment decision.
@@ -321,10 +325,10 @@ done.
 ## Incomplete or blocked
 
 - Lifecycle recovery release: run `32012608848` failed before controller
-  deployment because the staging deployer's exact-resource Glue allowlist does
-  not cover one existing lifecycle catalog table. Do not retry the recovery
-  workflow until the repository policy inventory and separately human-applied
-  IAM policy are reconciled.
+  deployment because the staging deployer's exact-resource Glue allowlist did
+  not cover the full schema inventory. The repository correction is locally
+  implemented and verified; do not retry the recovery workflow until a named
+  human administrator separately applies that bounded IAM policy.
 - Historical Replay: ten scenarios meet the declared structural gate; the
   independent-review gate remains unmet.
 - Decision Quality: two complete story-v2 submissions exist, earlier
@@ -424,6 +428,12 @@ done.
   plan-only extension render, `git diff --check`, and the 16-check project
   drift audit. GitHub CI run `32011815316` passed after the `main` push. No AWS
   deployment, data mutation, baseline refresh, or Pages publication occurred.
+- The lifecycle deployer inventory correction adds only the six schema objects
+  omitted from its exact Glue resource list. Its regression test proves every
+  schema DDL object is covered and that no database-wide table wildcard was
+  introduced. The focused lifecycle deployment suite passes all 20 tests; the
+  full repository suite passes all 312 tests, and the project drift audit
+  passes 16/16 checks. No IAM policy was applied and no workflow was retried.
 - Repository-wide validation after the v3 story-complete handoff: 295 Python
   tests passed, including story, solution-horizon, expected-benefit,
   point-in-time citation, and blinding checks.

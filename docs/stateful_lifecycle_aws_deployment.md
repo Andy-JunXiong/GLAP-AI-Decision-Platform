@@ -141,11 +141,17 @@ refresh, and Pages publication were all skipped. Earlier idempotent schema
 statements may have been replayed before the failing statement, so the run is
 not evidence of a complete schema deployment.
 
-Do not retry the recovery workflow until the repository's exact-resource table
-inventory is corrected and locally validated. Applying the resulting bounded
-IAM policy remains a separate named-administrator action requiring explicit
-human authority; the failure does not justify a database-wide wildcard or any
-production permission.
+The repository correction now adds the five governed closed-loop tables and
+`vw_lifecycle_action_current_staging_v1` to the explicit Glue resource
+inventory. A regression test derives every table and view declared by
+`sql/04_stateful_lifecycle_config.sql`, requires each object to appear in the
+policy inventory, and rejects a database-wide table wildcard. This is locally
+verified policy source only; it has not been applied to the GitHub staging role.
+
+Do not retry the recovery workflow until a named IAM administrator separately
+reviews and applies the locally validated exact-resource policy. Applying that
+bounded IAM change requires explicit human authority; the failure does not
+justify a database-wide wildcard or any production permission.
 
 ## Deployment
 
