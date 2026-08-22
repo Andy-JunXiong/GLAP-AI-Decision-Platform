@@ -1,0 +1,89 @@
+{
+  "schema_version": "a303-outcome-simulator.v1",
+  "business_timezone": "Australia/Sydney",
+  "scenario_evidence_class": "HYBRID_HISTORICAL_REPLAY",
+  "outcome_evidence_class": "SIMULATED_COUNTERFACTUAL",
+  "coverage_contract": {
+    "frozen_scenario_count": 10,
+    "frozen_decision_package_count": 30,
+    "expected_attributed_change_count": 16,
+    "expected_negative_control_count": 14,
+    "human_decision_quality_required_for_simulation": false,
+    "negative_control_expected_delta": 0.0
+  },
+  "formulas": {
+    "gross_delay_hours": "mode_base_delay_hours * severity_multiplier + no_alternate_delay_penalty_hours_if_applicable",
+    "mitigation_effectiveness": "avoided_dwell_fraction * reroute_success_probability * capacity_effectiveness_multiplier",
+    "expected_delay_hours": "gross_delay_hours * (1 - mitigation_effectiveness) for RISK_MITIGATION; gross_delay_hours for MONITOR",
+    "delay_loss_index": "expected_delay_hours / 24 * service_impact_cost_per_delay_day_index * sla_criticality_multiplier",
+    "stockout_loss_index": "max(0, expected_delay_hours / 24 - inventory_cover_days) * stockout_penalty_per_exposed_day_index",
+    "intervention_cost_index": "0 for MONITOR; mitigation_incremental_cost_index * capacity_cost_multiplier for RISK_MITIGATION",
+    "total_modeled_loss_index": "delay_loss_index + stockout_loss_index + intervention_cost_index",
+    "paired_outcome_delta": "baseline_total_modeled_loss_index - a303_total_modeled_loss_index"
+  },
+  "fixed_parameters": {
+    "mode_base_delay_hours": {
+      "AIR": 24.0,
+      "OCEAN": 120.0,
+      "RAIL": 72.0,
+      "ROAD": 48.0
+    },
+    "severity_multipliers": {
+      "LOW": 0.5,
+      "MEDIUM": 0.75,
+      "HIGH": 1.0
+    },
+    "no_alternate_delay_penalty_hours": 24.0,
+    "no_alternate_capacity_effectiveness_multiplier": 0.35,
+    "no_alternate_capacity_cost_multiplier": 0.4,
+    "sla_criticality_multipliers": {
+      "LOW": 0.25,
+      "MEDIUM": 0.5,
+      "HIGH": 1.0
+    },
+    "minimum_material_loss_delta": 2.0
+  },
+  "sensitivity_parameter_defaults": {
+    "mitigation_incremental_cost_index": 18.0,
+    "avoided_dwell_fraction": 0.45,
+    "reroute_success_probability": 0.75,
+    "stockout_penalty_per_exposed_day_index": 25.0,
+    "service_impact_cost_per_delay_day_index": 10.0
+  },
+  "units": {
+    "delay": "hours",
+    "inventory_cover": "days",
+    "probability_and_fraction": "unit interval",
+    "cost_and_loss": "synthetic index points"
+  },
+  "assumptions": [
+    "All enterprise state and economic values are controlled synthetic plausibility assumptions.",
+    "RISK_MITIGATION reduces only the avoidable share of modeled disruption delay and incurs an intervention cost.",
+    "No-alternate-capacity mitigation has lower effectiveness and lower intervention cost than alternate-capacity mitigation.",
+    "Higher avoided dwell, reroute success, stockout exposure, or service impact increases the modeled value of effective mitigation; higher intervention cost decreases it.",
+    "The simulator is deterministic and does not estimate real probability, realised savings, or production impact."
+  ],
+  "authority": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "action_mutations_allowed": false,
+    "production_effect": false,
+    "model_promotion_allowed": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "PRE_SPECIFIED_SYNTHETIC_OUTCOME_COMPARISON",
+      "SIMULATOR_NEGATIVE_CONTROL_VALIDATION"
+    ],
+    "does_not_support": [
+      "OBSERVED_FACTUAL_OUTCOME",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "PRODUCTION_MEASURED_EFFECT",
+      "EMPIRICAL_CALIBRATION",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS",
+      "POLICY_ACTIVATION"
+    ]
+  }
+}

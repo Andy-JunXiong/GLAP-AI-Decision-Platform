@@ -6,6 +6,42 @@ preserved handoffs.
 
 ## 2026-08-22
 
+- Recorded the human project owner's option-1 decision to retire A303.v1 from
+  further development progression. Threshold tuning, new A303.v1 holdouts,
+  prospective Outcome collection, calibration, activation, and production
+  progression are closed. All reviews and evaluation evidence remain preserved
+  read-only, and a fail-closed validator prevents silent reactivation or
+  evidence deletion. A303.v1 was never deployed, so no runtime or AWS mutation
+  was required.
+- Completed the development-only A303.v2 eligibility-guardrail screen. Two
+  candidates were replayed over the same frozen v1 space with an anti-
+  abstention gate: central-safe retained only two actions and reached 86.42%
+  non-negative on its action subset, while stable-positive-only retained none.
+  Neither passes, both remain post-hoc and confirmatory-ineligible, and no rule,
+  policy, prospective collection, production, or operational authority was
+  created. A human stop/retire versus fundamentally-new-design decision remains.
+- Completed the corrected A303 synthetic Outcome robustness capability. The
+  simulator, five-parameter/243-combination sensitivity protocol, capability
+  gate, and stopping rules were frozen before running all 16 attributed changes
+  and 14 negative controls independently of human preference. Controls passed
+  3,402 exact-zero comparisons, but the rule result is `NOT_ROBUST`: base counts
+  are 2 A303-on, 7 A303-off, and 7 immaterial, with 39.81% non-negative results
+  across the full grid. No real business effect or production claim was made.
+- Preserved and reclassified the earlier human-selected 15-package run as
+  `EXPLORATORY_CONDITIONAL` and `NOT_ELIGIBLE_FOR_CAPABILITY_GATE`. Its 14
+  positive, 0 negative, and 1 neutral result remains reproducible historical
+  method evidence but cannot override the complete robustness result.
+- Completed a future A303 Outcome calibration interface. Versioned input,
+  policy, and report contracts distinguish factual baseline observations from
+  prospective controlled treatment pairs and bind to Simulator v1. It is not
+  the active next slice because the synthetic capability gate is `NOT_ROBUST`
+  and no eligible controlled pairs exist; no Outcome, policy, model, production,
+  or AWS authority was added.
+- Aligned the current architecture diagram with the governed implementation:
+  human decisions append immutable Action audit events and completed Actions
+  lead only to delayed simulated Outcomes, not external logistics execution or
+  measured real-world effects. Added and enforced an exact v1 formal-review
+  export contract so unversioned evidence-shape changes fail closed.
 - Completed governed cross-entry Decision Quality reconciliation. Two formal
   Sites submissions and two content-equivalent mainland Lambda submissions
   passed exact frozen-bundle, package-digest, rubric, lock, attestation, and

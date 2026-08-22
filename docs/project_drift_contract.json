@@ -125,7 +125,78 @@
         "docs/decision_option_contract_v3.json",
         "docs/decision_quality_review_v1.schema.json",
         "docs/decision_quality_comparative_review_v1.schema.json",
+        "docs/formal_story_review_export_v1.schema.json",
         "docs/historical_replay_review_freeze_v3.schema.json"
+      ]
+    },
+    {
+      "id": "a303_synthetic_outcome_robustness",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local read-only pre-specified synthetic robustness evaluation covers all 16 A303-attributed changes and all 14 no-delta controls independently of human preference; controls pass exact-zero, but the frozen v1 gate result is NOT_ROBUST, so the result does not support real logistics performance, realised savings, empirical calibration, model readiness, production evidence, policy activation, or operational authority",
+      "evidence_files": [
+        "ops/evaluate_a303_outcome_robustness.py",
+        "tests/test_a303_outcome_robustness.py",
+        "docs/a303_outcome_simulator_v1.json",
+        "docs/a303_outcome_sensitivity_protocol_v1.json",
+        "docs/a303_synthetic_capability_gate_v1.json",
+        "docs/a303_synthetic_outcome_robustness_result_v1.json",
+        "docs/a303_synthetic_outcome_robustness_result_v1.schema.json",
+        "docs/archive/evaluation/a303_decision_outcome_method_exploratory_v0.json",
+        "docs/archive/evaluation/a303_exploratory_conditional_run_2026-08-22.json",
+        "docs/evaluation_architecture.md",
+        "docs/historical_replay_lab.md",
+        "docs/temporal_truthfulness.md"
+      ]
+    },
+    {
+      "id": "a303_outcome_calibration_gate",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local read-only calibration interface is retained as inactive reusable infrastructure. A303.v1 calibration is CLOSED_NOT_APPLICABLE following the explicit human retirement decision, and current repository evidence contains no eligible independently validated prospective controlled pairs. No observed-effect, production-readiness, policy-activation, model-promotion, or rule-reactivation claim is supported",
+      "evidence_files": [
+        "ops/calibrate_a303_outcome_method.py",
+        "tests/test_a303_outcome_calibration.py",
+        "docs/a303_outcome_calibration_policy_v1.json",
+        "docs/a303_outcome_calibration_input_v1.schema.json",
+        "docs/a303_outcome_calibration_report_v1.schema.json",
+        "docs/a303_outcome_simulator_v1.json",
+        "docs/a303_synthetic_outcome_robustness_result_v1.json",
+        "docs/evaluation_architecture.md",
+        "docs/temporal_truthfulness.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "a303_v2_guardrail_candidate_screen",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local read-only post-hoc development screen compares two A303.v2 eligibility guardrails against the same frozen v1 robustness space with an anti-abstention gate. Neither candidate passes: central-safe acts in only two scenarios and reaches 86.42% non-negative on its action subset, while stable-positive-only acts nowhere. Both are ineligible for confirmatory claims, rule activation, prospective collection, production readiness, or operational authority; the human subsequently selected stop/retire A303.v1",
+      "evidence_files": [
+        "ops/evaluate_a303_v2_guardrail_candidate.py",
+        "tests/test_a303_v2_guardrail_candidate.py",
+        "docs/a303_v2_eligibility_guardrail_proposal.json",
+        "docs/a303_v2_guardrail_development_result_v1.json",
+        "docs/a303_v2_guardrail_development_result_v1.schema.json",
+        "docs/a303_synthetic_outcome_robustness_result_v1.json",
+        "docs/evaluation_architecture.md",
+        "docs/historical_replay_lab.md",
+        "CURRENT_DEVELOPMENT_STATUS.md",
+        "DEVELOPMENT_PLAN.md"
+      ]
+    },
+    {
+      "id": "a303_v1_retirement",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "an explicit human project-owner session decision retires A303.v1 from further development progression after NOT_ROBUST v1 evidence and two failed post-hoc guardrail candidates. All reviews, exploratory results, robustness evidence, and candidate evidence remain preserved read-only. A303.v1 threshold tuning, holdout creation, prospective Outcome collection, calibration, activation, and production progression are closed; the decision adds no AWS, operational, production, policy, or review-mutation authority",
+      "evidence_files": [
+        "docs/a303_v1_retirement_decision.json",
+        "docs/a303_v1_retirement_decision.schema.json",
+        "ops/validate_a303_v1_retirement.py",
+        "tests/test_a303_v1_retirement.py",
+        "docs/a303_synthetic_outcome_robustness_result_v1.json",
+        "docs/a303_v2_guardrail_development_result_v1.json",
+        "docs/evaluation_architecture.md",
+        "docs/architecture_current.md",
+        "CURRENT_DEVELOPMENT_STATUS.md",
+        "DEVELOPMENT_PLAN.md"
       ]
     },
     {

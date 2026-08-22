@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/a303-v2-guardrail-development-result.v1.schema.json",
+  "title": "GLAP A303.v2 guardrail development result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sydney_as_of_date",
+    "run_classification",
+    "proposal_sha256",
+    "source_result_sha256",
+    "v1_reproduction",
+    "candidate_results",
+    "slice_conclusion",
+    "claim_boundary",
+    "operational_mutations"
+  ],
+  "properties": {
+    "schema_version": {"const": "a303-v2-guardrail-development-result.v1"},
+    "sydney_as_of_date": {"type": "string", "format": "date"},
+    "run_classification": {"const": "POST_HOC_DEVELOPMENT_EVIDENCE"},
+    "proposal_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "v1_reproduction": {"type": "object"},
+    "candidate_results": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "development_disposition",
+          "confirmatory_eligibility",
+          "action_opportunity_count",
+          "distinct_action_scenario_count",
+          "abstention_opportunity_count",
+          "action_subset_combination_count",
+          "action_subset_model_favors_on",
+          "action_subset_model_favors_off",
+          "action_subset_no_material_difference",
+          "action_subset_non_negative_pct",
+          "full_set_non_negative_pct_including_abstentions",
+          "failed_checks"
+        ],
+        "properties": {
+          "candidate_id": {"enum": ["a303-v2-central-safe", "a303-v2-stable-positive-only"]},
+          "development_disposition": {"const": "REJECT_OR_FUNDAMENTALLY_REDESIGN"},
+          "confirmatory_eligibility": {"const": "NOT_ELIGIBLE_POST_HOC_SAME_CORPUS"},
+          "action_opportunity_count": {"type": "integer", "minimum": 0},
+          "distinct_action_scenario_count": {"type": "integer", "minimum": 0},
+          "abstention_opportunity_count": {"type": "integer", "minimum": 0},
+          "action_subset_combination_count": {"type": "integer", "minimum": 0},
+          "action_subset_model_favors_on": {"type": "integer", "minimum": 0},
+          "action_subset_model_favors_off": {"type": "integer", "minimum": 0},
+          "action_subset_no_material_difference": {"type": "integer", "minimum": 0},
+          "action_subset_non_negative_pct": {"type": "number", "minimum": 0, "maximum": 100},
+          "full_set_non_negative_pct_including_abstentions": {"type": "number", "minimum": 0, "maximum": 100},
+          "failed_checks": {"type": "array", "minItems": 1, "uniqueItems": true}
+        }
+      }
+    },
+    "slice_conclusion": {
+      "type": "object",
+      "properties": {
+        "status": {"const": "NO_A303_V2_GUARDRAIL_CANDIDATE_PASSES_DEVELOPMENT_GATE"},
+        "human_decision_required": {"const": true},
+        "decision_options": {"type": "array", "minItems": 2, "maxItems": 2}
+      },
+      "required": ["status", "human_decision_required", "decision_options"],
+      "additionalProperties": false
+    },
+    "claim_boundary": {"type": "object"},
+    "operational_mutations": {"type": "array", "maxItems": 0}
+  }
+}

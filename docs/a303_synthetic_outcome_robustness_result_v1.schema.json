@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/a303-synthetic-outcome-robustness-result.v1.schema.json",
+  "title": "GLAP A303 synthetic outcome robustness result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sydney_as_of_date",
+    "run_classification",
+    "frozen_inputs",
+    "coverage",
+    "decision_quality",
+    "base_case_simulated_outcome",
+    "global_robustness",
+    "scenario_stability",
+    "negative_control_integrity",
+    "decision_flip_summary",
+    "capability_gate",
+    "claim_boundary",
+    "operational_mutations"
+  ],
+  "properties": {
+    "schema_version": {"const": "a303-synthetic-outcome-robustness-result.v1"},
+    "sydney_as_of_date": {"type": "string", "format": "date"},
+    "run_classification": {"const": "PRE_SPECIFIED_SYNTHETIC_ROBUSTNESS_EVALUATION"},
+    "frozen_inputs": {"type": "object"},
+    "coverage": {"type": "object"},
+    "decision_quality": {"type": "object"},
+    "base_case_simulated_outcome": {"type": "object"},
+    "global_robustness": {"type": "object"},
+    "scenario_stability": {"type": "object"},
+    "negative_control_integrity": {"type": "object"},
+    "decision_flip_summary": {"type": "object"},
+    "capability_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["synthetic_outcome_robustness", "real_business_outcome_effect"],
+      "properties": {
+        "synthetic_outcome_robustness": {"enum": ["ROBUST", "CONDITIONALLY_ROBUST", "NOT_ROBUST", "SIMULATOR_INTEGRITY_FAILURE"]},
+        "real_business_outcome_effect": {"const": "NOT_EVALUATED"}
+      }
+    },
+    "claim_boundary": {"type": "object"},
+    "operational_mutations": {"type": "array", "maxItems": 0}
+  }
+}

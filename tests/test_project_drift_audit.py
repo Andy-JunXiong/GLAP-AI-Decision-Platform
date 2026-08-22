@@ -17,6 +17,27 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class ProjectDriftAuditTests(unittest.TestCase):
+    def test_current_architecture_does_not_claim_external_action_execution(self):
+        current = AUDIT.check_governed_action_outcome_boundary(ROOT)[0]
+        self.assertEqual(current.status, "PASS")
+
+        architecture = (ROOT / "docs" / "architecture_current.md").read_text(
+            encoding="utf-8"
+        )
+        drifted = architecture.replace(
+            "Append immutable Action audit event", "Execute diversion or escalation"
+        ).replace(
+            "Generate delayed simulated Outcome", "Measure cost and in-stock outcome"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docs").mkdir()
+            (root / "docs" / "architecture_current.md").write_text(
+                drifted, encoding="utf-8"
+            )
+            detected = AUDIT.check_governed_action_outcome_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_repository_baseline_has_no_detected_drift(self):
         report = AUDIT.run_audit(ROOT)
         self.assertEqual(report["overall_status"], "PASS")
@@ -137,6 +158,94 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 proposal_source, encoding="utf-8"
             )
             result = AUDIT.check_action_mutation_release(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_a303_outcome_human_preference_gate_is_detected(self):
+        filenames = (
+            "a303_outcome_simulator_v1.json",
+            "a303_outcome_sensitivity_protocol_v1.json",
+            "a303_synthetic_capability_gate_v1.json",
+            "a303_synthetic_outcome_robustness_result_v1.json",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docs").mkdir(parents=True)
+            for filename in filenames:
+                source = json.loads(
+                    (ROOT / "docs" / filename).read_text(encoding="utf-8")
+                )
+                if filename == "a303_synthetic_capability_gate_v1.json":
+                    source["decision_quality_handling"][
+                        "human_preference_controls_simulator_eligibility"
+                    ] = True
+                (root / "docs" / filename).write_text(
+                    json.dumps(source), encoding="utf-8"
+                )
+            result = AUDIT.check_a303_outcome_robustness_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_a303_calibration_evidence_expansion_is_detected(self):
+        source = json.loads(
+            (ROOT / "docs" / "a303_outcome_calibration_policy_v1.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        source["eligible_evidence"]["controlled_pair"].append(
+            "SIMULATED_COUNTERFACTUAL"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            contract_path = root / "docs" / "a303_outcome_calibration_policy_v1.json"
+            contract_path.parent.mkdir(parents=True)
+            contract_path.write_text(json.dumps(source), encoding="utf-8")
+            result = AUDIT.check_a303_outcome_calibration_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_a303_v2_post_hoc_candidate_cannot_claim_confirmation(self):
+        filenames = (
+            "a303_v2_eligibility_guardrail_proposal.json",
+            "a303_v2_guardrail_development_result_v1.json",
+            "a303_synthetic_outcome_robustness_result_v1.json",
+            "a303_outcome_simulator_v1.json",
+            "a303_outcome_sensitivity_protocol_v1.json",
+            "a303_synthetic_capability_gate_v1.json",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docs").mkdir(parents=True)
+            for filename in filenames:
+                source = json.loads(
+                    (ROOT / "docs" / filename).read_text(encoding="utf-8")
+                )
+                if filename == "a303_v2_eligibility_guardrail_proposal.json":
+                    source["validation_boundary"][
+                        "same_corpus_can_satisfy_confirmatory_gate"
+                    ] = True
+                (root / "docs" / filename).write_text(
+                    json.dumps(source), encoding="utf-8"
+                )
+            result = AUDIT.check_a303_v2_guardrail_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_a303_v1_retirement_cannot_be_reopened_by_drift(self):
+        filenames = (
+            "a303_v1_retirement_decision.json",
+            "a303_synthetic_outcome_robustness_result_v1.json",
+            "a303_v2_guardrail_development_result_v1.json",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "docs").mkdir(parents=True)
+            for filename in filenames:
+                source = json.loads(
+                    (ROOT / "docs" / filename).read_text(encoding="utf-8")
+                )
+                if filename == "a303_v1_retirement_decision.json":
+                    source["reopening_rule"]["a303_v1_may_be_reactivated"] = True
+                (root / "docs" / filename).write_text(
+                    json.dumps(source), encoding="utf-8"
+                )
+            result = AUDIT.check_a303_v1_retirement_boundary(root)[0]
         self.assertEqual(result.status, "DRIFT")
 
     def test_json_report_is_serializable(self):

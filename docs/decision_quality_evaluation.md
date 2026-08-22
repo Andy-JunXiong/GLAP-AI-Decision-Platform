@@ -141,6 +141,14 @@ defines the corrected story-mode submission and requires:
 - one blinded preference (`OPTION_A`, `OPTION_B`, or `TIE`);
 - reviewer confidence from 1 to 5.
 
+The private formal Sites export is separately bound by
+[`formal_story_review_export_v1.schema.json`](formal_story_review_export_v1.schema.json).
+V1 intentionally has no submission-level status field: finality requires a
+timezone-aware `submitted_at`, all three attestations, and exactly 30
+`ANSWER_LOCKED` answers. The reconciler enforces the Schema's exact field sets,
+so adding or removing fields requires a new export version rather than being
+silently accepted.
+
 The local aggregator accepts either complete absolute-score reviews or complete
 comparative reviews, but fails closed if the two versions are mixed. It also
 fails on duplicate reviewers, incomplete or out-of-range values, package/key
@@ -183,7 +191,7 @@ The deployed and health-verified collection `glap-ten-story-review.v1` is a
 separate mainland-access fallback for the human-created Lambda Function URL.
 It reuses all ten frozen stories and 30 source package identifiers, and records
 the same five comparative judgments, overall preference, confidence, optional
-notes, and final attestations. Every moment is immutable and time-ordered. The
+notes, and final attestations. Every moment is immutable and time-ordered.
 On 2026-08-22 the study owner approved combining the content-equivalent entry
 surfaces. Read-only source inspection found two complete mainland submissions.
 The compatibility/import check passed exact frozen-bundle identity, all 30
@@ -198,7 +206,8 @@ The mainland design and human-owned update procedure are documented in
 
 [`reconcile_review_collections.py`](../ops/reconcile_review_collections.py)
 normalizes both exports to `decision-quality-comparative-review.v1`, fails
-closed on any compatibility or integrity mismatch, and optionally deblinds
+closed on any version, field-shape, compatibility, or integrity mismatch, and
+optionally deblinds
 only the aggregate with the study-owner key. Its output is private because it
 retains pseudonymous review records; `artifacts/` is excluded from Git.
 
@@ -232,3 +241,36 @@ python ops/evaluate_decision_quality.py build-package \
 
 The blind key must not be distributed to reviewers. No repository review
 submission is provided because doing so would manufacture human evidence.
+
+## Parallel Decision Quality and Outcome robustness
+
+Decision Quality answers whether reviewers regard one recommendation as more
+reasonable from the then-visible evidence. It is not an admission gate for the
+local A303 Outcome simulator and is not a substitute for an Outcome. All 16
+verified A303-attributed decision changes enter the synthetic robustness run,
+including the package with a 2:2 human split; all 14 unchanged packages enter
+as exact-zero controls.
+
+The corrected path applies the frozen
+[`a303-outcome-simulator.v1`](a303_outcome_simulator_v1.json), sensitivity
+protocol, and capability gate and emits `SIMULATED_COUNTERFACTUAL` evidence.
+The controls pass, but the rule result is `NOT_ROBUST`: only 2 of 16 base cases
+favour A303-on and the full-grid non-negative rate is 39.81%. The earlier
+human-selected 15-package run is preserved as `EXPLORATORY_CONDITIONAL` and is
+not eligible for the capability gate. Neither result is observed business
+performance, real logistics evidence, or production/model readiness evidence. See
+[`evaluation_architecture.md`](evaluation_architecture.md) and
+[`historical_replay_lab.md`](historical_replay_lab.md).
+
+The future calibration interface keeps a second separation: historical factual
+reveals may calibrate the baseline that actually occurred, while A303 treatment
+effects require independently validated prospective controlled pairs. No such
+pairs currently exist. In addition, the current synthetic capability gate is
+`NOT_ROBUST`, so a human-governed A303 redesign or stop decision comes before
+prospective calibration.
+
+After the complete robustness failure and two failed post-hoc guardrail
+candidates, the human project owner selected retirement option 1 on
+`2026-08-22`. A303.v1 no longer progresses, but the four original reviews and
+their mixed Decision Quality result remain preserved; retirement does not
+rewrite a reviewer judgment into an Outcome conclusion.

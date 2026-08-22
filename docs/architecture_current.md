@@ -8,12 +8,16 @@ flowchart LR
     DETECT --> EXPOSE[Estimate fee and inventory exposure]
     EXPOSE --> DECIDE[Recommend action and priority]
     DECIDE --> REVIEW{Human review}
-    REVIEW -->|Approve| ACTION[Execute diversion or escalation]
-    REVIEW -->|Edit / reject| FEEDBACK[Record feedback]
-    ACTION --> OUTCOME[Measure cost and in-stock outcome]
+    REVIEW -->|Approve / edit / reject| ACTION[Append immutable Action audit event]
+    ACTION -->|Approved then completed| OUTCOME[Generate delayed simulated Outcome]
+    ACTION --> FEEDBACK[Governed feedback evidence]
     FEEDBACK --> LEARN[Policy-learning input]
     OUTCOME --> LEARN
 ```
+
+The Action node records an immutable governed audit event; it does not command
+an external carrier, port, or logistics system. Outcome generation is delayed,
+reproducible, and `SIMULATED`, not a measurement of real business performance.
 
 ## Cross-cutting evaluation boundary
 
@@ -25,15 +29,39 @@ authority.
 
 The first controlled synthetic experiment holds the scenario, point-in-time
 evidence, policy version, authority profile, and seed fixed while toggling the
-versioned `A303_HIGH_RISK_ROUTE` rule contract. It evaluates System Correctness
-and Capability Attribution only. It does not verify the deployed A303 runtime,
-score Decision Quality, measure Business Outcome Effect, or establish
-production readiness. A local Decision Quality rubric and blinded-review gate
-are implemented. Sites v12 provides seven isolated pseudonymous reviewer
+versioned `A303_HIGH_RISK_ROUTE` rule contract. Its paired replay evaluates
+System Correctness and Capability Attribution; it does not verify the deployed
+A303 runtime. A local Decision Quality rubric and blinded-review gate are
+implemented. Sites v12 provides seven isolated pseudonymous reviewer
 accounts and preserves two complete story-v2 submissions. Two complete
 mainland submissions passed the study-owner-approved frozen-v3 compatibility
 check on `2026-08-22`. The private four-review aggregate has 15 package results
 favouring `glap-a303-on`, fourteen unanimous control ties, and one 2:2 result.
+Decision Quality does not select Business Outcome simulator eligibility. A
+parallel pre-specified synthetic path evaluates all sixteen attributed changes
+and all fourteen no-delta controls using frozen Simulator v1, sensitivity
+ranges, and capability gates. Controls remain exact-zero across the full grid,
+but the current result is `NOT_ROBUST` (2 A303-on, 7 A303-off, and 7 immaterial
+at base; 39.81% non-negative across all combinations). This evaluates synthetic
+assumption robustness only; it does not measure a factual Outcome, validate
+real logistics performance, establish production readiness, or gain any
+operational authority. The former human-selected 15-package 14/0/1 run is
+preserved as exploratory and is ineligible for the capability gate.
+Two post-hoc A303.v2 eligibility guardrails were screened next with an anti-
+abstention gate. The central-safe candidate retains only two action
+opportunities and reaches 86.42% non-negative within that action subset; the
+stable-positive-only candidate retains none. Both are rejected as development
+candidates, cannot claim confirmation on the reused corpus, and add no rule-
+activation authority. The human project owner subsequently selected
+stop/retire. A303.v1 is closed from further progression while every review and
+evaluation artifact remains preserved. It was never deployed, so this
+repository-local direction change requires no runtime rollback.
+The future calibration interface is local and read-only. It accepts factual
+records only for observed-baseline calibration and requires independently
+validated `PROSPECTIVE_CONTROLLED` actual-calendar pairs for A303 treatment-
+effect calibration. No eligible pairs currently exist, and A303.v1 calibration
+is now `CLOSED_NOT_APPLICABLE`; the generic interface remains inactive reusable
+infrastructure. Staging simulations and test fixtures are ineligible.
 See
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
@@ -69,7 +97,15 @@ scenario bodies, and Decision Quality rubric. A deterministic local builder
 produces 30 reviewer-safe packages and a separately held study-owner key while
 excluding post-decision reveals. Four complete eligible human reviews now exist
 outside the repository, and the governed aggregate reports mixed package-level
-Decision Quality results without creating Business Outcome Effect evidence.
+Decision Quality results. A separate local evaluator consumes the full
+attributed set and negative controls independently of review preference to
+create explicitly `SIMULATED_COUNTERFACTUAL` robustness evidence; it never
+writes the governed staging Outcome store.
+
+The calibration runner consumes that private simulated report only as a model
+prediction. It cannot accept the generated staging Outcome as factual treatment
+evidence, approve an Outcome, mutate an Action, activate a policy, promote a
+model, or produce a production-readiness decision.
 
 ## AWS runtime and delivery architecture
 

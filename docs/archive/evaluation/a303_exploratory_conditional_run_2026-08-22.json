@@ -1,0 +1,41 @@
+{
+  "schema_version": "a303-exploratory-conditional-run.v1",
+  "recorded_sydney_date": "2026-08-22",
+  "run_classification": "EXPLORATORY_CONDITIONAL",
+  "confirmatory_eligibility": "NOT_ELIGIBLE_FOR_CAPABILITY_GATE",
+  "method": {
+    "path": "docs/archive/evaluation/a303_decision_outcome_method_exploratory_v0.json",
+    "sha256": "0fb51d2755b6695777528c8522f82ffe35b5b12a5981e8c2b20702cfbd45db8d"
+  },
+  "selection_condition": {
+    "decision_changed": true,
+    "human_review_result": "REVIEW_EVIDENCE_FAVORS_VARIANT",
+    "favored_variant_id": "glap-a303-on"
+  },
+  "coverage": {
+    "attributed_change_count": 16,
+    "selected_human_favored_count": 15,
+    "excluded_inconclusive_attributed_count": 1,
+    "negative_control_count_evaluated": 0
+  },
+  "result": {
+    "model_favors_a303_on": 14,
+    "model_favors_a303_off": 0,
+    "no_material_modeled_difference": 1
+  },
+  "methodological_finding": "Human Decision Quality was incorrectly used as an Outcome simulation eligibility condition, so this conditional descriptive result cannot estimate Outcome across all attributed A303 decision changes.",
+  "superseded_by": "PRE_SPECIFIED_SYNTHETIC_ROBUSTNESS_EVALUATION",
+  "claim_boundary": {
+    "supports": [
+      "EXPLORATORY_CONDITIONAL_SIMULATION",
+      "SELECTION_BIAS_DISCOVERY"
+    ],
+    "does_not_support": [
+      "CONFIRMATORY_CAPABILITY_GATE",
+      "ALL_ATTRIBUTED_CHANGE_OUTCOME_EFFECT",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "PRODUCTION_READINESS"
+    ]
+  },
+  "operational_mutations": []
+}

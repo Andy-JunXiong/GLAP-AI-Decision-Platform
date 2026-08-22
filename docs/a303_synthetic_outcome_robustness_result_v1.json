@@ -1,0 +1,109 @@
+{
+  "schema_version": "a303-synthetic-outcome-robustness-result.v1",
+  "sydney_as_of_date": "2026-08-22",
+  "run_classification": "PRE_SPECIFIED_SYNTHETIC_ROBUSTNESS_EVALUATION",
+  "frozen_inputs": {
+    "simulator_sha256": "1c9f68a6336f9dfee06d332bbec1dbd21e9db35d88b8282d3fca76e5967eb3b1",
+    "sensitivity_protocol_sha256": "43a1bc00332260ca898e15873e3701afecfff78a2bf042c8ba3ee85757e7f81d",
+    "capability_gate_sha256": "1f9cc90790cbe831b53948d25164a57e58e81d047d8e34a00f942cddc0dfc835"
+  },
+  "coverage": {
+    "historical_scenario_count": 10,
+    "decision_package_count": 30,
+    "attributed_change_count": 16,
+    "negative_control_count": 14,
+    "parameter_combination_count": 243,
+    "attributed_package_combination_count": 3888
+  },
+  "decision_quality": {
+    "favors_a303_on": 15,
+    "favors_a303_off": 0,
+    "inconclusive": 1,
+    "simulator_eligibility_dependency": false
+  },
+  "base_case_simulated_outcome": {
+    "model_favors_a303_on": 2,
+    "model_favors_a303_off": 7,
+    "no_material_modeled_difference": 7
+  },
+  "global_robustness": {
+    "model_favors_a303_on": 1086,
+    "model_favors_a303_off": 2340,
+    "no_material_modeled_difference": 462,
+    "non_negative_pct": 39.81,
+    "central_negative_result_count": 93
+  },
+  "scenario_stability": {
+    "stable_positive": 0,
+    "parameter_sensitive": 2,
+    "stable_negative": 14
+  },
+  "negative_control_integrity": {
+    "status": "PASS",
+    "paired_comparisons_checked": 3402,
+    "non_zero_delta_count": 0
+  },
+  "decision_flip_summary": {
+    "packages_with_one_at_a_time_flip": 13,
+    "mitigation_incremental_cost_index": {
+      "break_even_count": 10,
+      "positive_across_frozen_range_count": 2,
+      "negative_across_frozen_range_count": 4,
+      "break_even_min": 8.859375,
+      "break_even_median": 16.875,
+      "break_even_max": 16.875
+    },
+    "avoided_dwell_fraction": {
+      "break_even_count": 7,
+      "positive_across_frozen_range_count": 2,
+      "negative_across_frozen_range_count": 7,
+      "break_even_min": 0.48,
+      "break_even_median": 0.48,
+      "break_even_max": 0.48
+    },
+    "reroute_success_probability": {
+      "break_even_count": 7,
+      "positive_across_frozen_range_count": 2,
+      "negative_across_frozen_range_count": 7,
+      "break_even_min": 0.8,
+      "break_even_median": 0.8,
+      "break_even_max": 0.8
+    },
+    "stockout_penalty_per_exposed_day_index": {
+      "break_even_count": 0,
+      "positive_across_frozen_range_count": 2,
+      "negative_across_frozen_range_count": 14,
+      "break_even_min": null,
+      "break_even_median": null,
+      "break_even_max": null
+    },
+    "service_impact_cost_per_delay_day_index": {
+      "break_even_count": 7,
+      "positive_across_frozen_range_count": 2,
+      "negative_across_frozen_range_count": 7,
+      "break_even_min": 10.666667,
+      "break_even_median": 10.666667,
+      "break_even_max": 10.666667
+    }
+  },
+  "capability_gate": {
+    "synthetic_outcome_robustness": "NOT_ROBUST",
+    "real_business_outcome_effect": "NOT_EVALUATED"
+  },
+  "claim_boundary": {
+    "supports": [
+      "SYNTHETIC_COUNTERFACTUAL_OUTCOME_ROBUSTNESS",
+      "SYNTHETIC_DECISION_FLIP_BOUNDARIES",
+      "SIMULATOR_NEGATIVE_CONTROL_VALIDATION"
+    ],
+    "does_not_support": [
+      "REAL_LOGISTICS_PERFORMANCE",
+      "REALISED_SAVINGS",
+      "EMPIRICAL_CALIBRATION",
+      "PRODUCTION_READINESS",
+      "MODEL_PROMOTION",
+      "POLICY_ACTIVATION"
+    ]
+  },
+  "operational_mutations": []
+}

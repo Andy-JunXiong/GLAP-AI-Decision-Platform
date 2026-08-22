@@ -1,0 +1,80 @@
+{
+  "schema_version": "a303-synthetic-capability-gate.v1",
+  "frozen_sydney_date": "2026-08-22",
+  "gate_scope": "SYNTHETIC_EVALUATION_ONLY",
+  "simulator": {
+    "schema_version": "a303-outcome-simulator.v1",
+    "sha256": "1c9f68a6336f9dfee06d332bbec1dbd21e9db35d88b8282d3fca76e5967eb3b1"
+  },
+  "sensitivity_protocol": {
+    "schema_version": "a303-outcome-sensitivity-protocol.v1",
+    "sha256": "43a1bc00332260ca898e15873e3701afecfff78a2bf042c8ba3ee85757e7f81d"
+  },
+  "integrity_prerequisites": {
+    "system_correctness_required_status": "PASS_LOCAL_DETERMINISTIC_READ_ONLY",
+    "capability_attribution_required_status": "PASS_LOCAL_PAIRED_REPLAY",
+    "expected_attributed_change_count": 16,
+    "expected_negative_control_count": 14,
+    "negative_control_required_delta": 0.0,
+    "negative_control_tolerance": 0.0,
+    "negative_controls_must_pass_every_parameter_combination": true,
+    "non_finite_metric_is_integrity_failure": true
+  },
+  "decision_quality_handling": {
+    "status_reported_separately": true,
+    "human_preference_controls_simulator_eligibility": false,
+    "original_reviews_may_be_overwritten": false,
+    "inconclusive_packages_remain_explicit": true
+  },
+  "scenario_stability_rules": {
+    "STABLE_POSITIVE": {
+      "minimum_positive_combination_pct": 80.0,
+      "maximum_central_negative_combination_count": 0
+    },
+    "STABLE_NEGATIVE": {
+      "minimum_negative_combination_pct": 50.0
+    },
+    "PARAMETER_SENSITIVE": "ANY_ATTRIBUTED_PACKAGE_NOT_CLASSIFIED_STABLE_POSITIVE_OR_STABLE_NEGATIVE"
+  },
+  "robustness_rules": {
+    "ROBUST": {
+      "minimum_global_non_negative_pct": 90.0,
+      "maximum_base_case_negative_count": 0,
+      "maximum_central_negative_result_count": 0,
+      "minimum_stable_positive_package_count": 12,
+      "maximum_stable_negative_package_count": 0
+    },
+    "CONDITIONALLY_ROBUST": {
+      "minimum_global_non_negative_pct": 70.0,
+      "maximum_base_case_negative_count": 2,
+      "requires_explicit_flip_boundaries": true
+    },
+    "NOT_ROBUST": "INTEGRITY_PASSES_AND_NEITHER_ROBUST_NOR_CONDITIONALLY_ROBUST_RULES_PASS",
+    "SIMULATOR_INTEGRITY_FAILURE": "ANY_INTEGRITY_PREREQUISITE_FAILS"
+  },
+  "stopping_rules": [
+    "STOP_IF_ANY_NEGATIVE_CONTROL_HAS_NON_ZERO_PAIRED_DELTA",
+    "STOP_IF_ANY_METRIC_OR_DELTA_IS_NON_FINITE",
+    "STOP_IF_FROZEN_CORPUS_MEMBERSHIP_OR_ATTRIBUTION_COUNTS_DRIFT",
+    "STOP_IF_SIMULATOR_OR_PROTOCOL_DIGEST_MISMATCHES"
+  ],
+  "required_layer_report": {
+    "system_correctness": "EXPLICIT_STATUS",
+    "capability_attribution": "EXPLICIT_STATUS",
+    "decision_quality": "EXPLICIT_15_ON_0_OFF_1_INCONCLUSIVE_OR_CURRENT_GOVERNED_RESULT",
+    "synthetic_outcome_robustness": "ROBUST_OR_CONDITIONALLY_ROBUST_OR_NOT_ROBUST_OR_INTEGRITY_FAILURE",
+    "real_business_outcome_effect": "NOT_EVALUATED"
+  },
+  "threshold_rationale": {
+    "ROBUST": "Requires broad non-negative behavior, no material harm in the base or central one-at-a-time range, and stable-positive behavior in at least three quarters of attributed packages.",
+    "CONDITIONALLY_ROBUST": "Allows bounded edge-case reversals only when at least seventy percent of the predefined space is non-negative and the base case is not broadly harmful.",
+    "NOT_ROBUST": "Prevents a rule with frequent or base-case modeled harm from advancing merely because selected combinations are favorable."
+  },
+  "authority": {
+    "mode": "LOCAL_READ_ONLY",
+    "production_readiness_decision_authorized": false,
+    "model_promotion_authorized": false,
+    "policy_activation_authorized": false,
+    "operational_mutation_authorized": false
+  }
+}

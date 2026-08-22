@@ -1,0 +1,63 @@
+{
+  "schema_version": "a303-decision-outcome-method.v1",
+  "outcome_evidence_class": "SIMULATED_COUNTERFACTUAL",
+  "input_gate": {
+    "required_scenario_evidence_class": "HYBRID_HISTORICAL_REPLAY",
+    "required_decision_quality_result": "REVIEW_EVIDENCE_FAVORS_VARIANT",
+    "required_favored_variant_id": "glap-a303-on",
+    "required_decision_change": true,
+    "minimum_review_count": 3
+  },
+  "parameters": {
+    "mode_base_delay_hours": {
+      "AIR": 24.0,
+      "OCEAN": 120.0,
+      "RAIL": 72.0,
+      "ROAD": 48.0
+    },
+    "severity_multipliers": {
+      "LOW": 0.5,
+      "MEDIUM": 0.75,
+      "HIGH": 1.0
+    },
+    "no_alternate_delay_penalty_hours": 24.0,
+    "mitigation_delay_reduction_pct": {
+      "alternate_capacity": 45.0,
+      "no_alternate_capacity": 15.0
+    },
+    "intervention_cost_index": {
+      "monitor": 0.0,
+      "alternate_capacity": 18.0,
+      "no_alternate_capacity": 7.0
+    },
+    "critical_inventory_risk_floor_pct": 10.0,
+    "stockout_risk_per_shortfall_day_pct": 25.0,
+    "delay_normalization_hours": 120.0,
+    "outcome_loss_weights": {
+      "delay": 0.45,
+      "stockout": 0.35,
+      "intervention_cost": 0.2
+    },
+    "minimum_material_loss_delta": 2.0
+  },
+  "authority": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "action_mutations_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "DIRECTIONAL_MODELED_OUTCOME_COMPARISON",
+      "COUNTERFACTUAL_METHOD_ENGINEERING_VALIDATION"
+    ],
+    "does_not_support": [
+      "OBSERVED_FACTUAL_OUTCOME",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "PRODUCTION_MEASURED_EFFECT",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

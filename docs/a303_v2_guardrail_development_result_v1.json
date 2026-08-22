@@ -1,0 +1,76 @@
+{
+  "schema_version": "a303-v2-guardrail-development-result.v1",
+  "sydney_as_of_date": "2026-08-22",
+  "run_classification": "POST_HOC_DEVELOPMENT_EVIDENCE",
+  "proposal_sha256": "1526e52eb036616a34c8af1dbbca26789f6ac2ba85c3b64f5a4c69e8015df7a2",
+  "source_result_sha256": "7018aba07f4b7c0cc081ac01fa531a7e81d58809a7fd186d76804f3850592f81",
+  "v1_reproduction": {
+    "capability_gate": "NOT_ROBUST",
+    "attributed_change_count": 16,
+    "negative_control_count": 14,
+    "parameter_combination_count": 243
+  },
+  "candidate_results": [
+    {
+      "candidate_id": "a303-v2-central-safe",
+      "development_disposition": "REJECT_OR_FUNDAMENTALLY_REDESIGN",
+      "confirmatory_eligibility": "NOT_ELIGIBLE_POST_HOC_SAME_CORPUS",
+      "action_opportunity_count": 2,
+      "distinct_action_scenario_count": 2,
+      "abstention_opportunity_count": 14,
+      "action_subset_combination_count": 486,
+      "action_subset_model_favors_on": 372,
+      "action_subset_model_favors_off": 66,
+      "action_subset_no_material_difference": 48,
+      "action_subset_non_negative_pct": 86.42,
+      "full_set_non_negative_pct_including_abstentions": 98.3,
+      "failed_checks": [
+        "minimum_action_opportunity_count",
+        "minimum_distinct_action_scenario_count",
+        "minimum_action_subset_non_negative_pct"
+      ]
+    },
+    {
+      "candidate_id": "a303-v2-stable-positive-only",
+      "development_disposition": "REJECT_OR_FUNDAMENTALLY_REDESIGN",
+      "confirmatory_eligibility": "NOT_ELIGIBLE_POST_HOC_SAME_CORPUS",
+      "action_opportunity_count": 0,
+      "distinct_action_scenario_count": 0,
+      "abstention_opportunity_count": 16,
+      "action_subset_combination_count": 0,
+      "action_subset_model_favors_on": 0,
+      "action_subset_model_favors_off": 0,
+      "action_subset_no_material_difference": 0,
+      "action_subset_non_negative_pct": 0.0,
+      "full_set_non_negative_pct_including_abstentions": 100.0,
+      "failed_checks": [
+        "minimum_action_opportunity_count",
+        "minimum_distinct_action_scenario_count",
+        "minimum_action_subset_non_negative_pct"
+      ]
+    }
+  ],
+  "slice_conclusion": {
+    "status": "NO_A303_V2_GUARDRAIL_CANDIDATE_PASSES_DEVELOPMENT_GATE",
+    "human_decision_required": true,
+    "decision_options": [
+      "STOP_OR_RETIRE_A303_V1",
+      "AUTHORIZE_FUNDAMENTALLY_NEW_A303_DESIGN"
+    ]
+  },
+  "claim_boundary": {
+    "supports": [
+      "POST_HOC_GUARDRAIL_CANDIDATE_SCREENING",
+      "ANTI_ABSTENTION_CANDIDATE_COMPARISON"
+    ],
+    "does_not_support": [
+      "INDEPENDENT_VALIDATION",
+      "CONFIRMATORY_CAPABILITY_GATE",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "PRODUCTION_READINESS",
+      "RULE_ACTIVATION",
+      "POLICY_ACTIVATION"
+    ]
+  },
+  "operational_mutations": []
+}

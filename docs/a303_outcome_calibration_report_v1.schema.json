@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/a303-outcome-calibration-report.v1.schema.json",
+  "title": "GLAP A303 outcome calibration report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_date",
+    "evidence_set",
+    "method",
+    "readiness",
+    "calibration_metrics",
+    "execution_boundary",
+    "claim_boundary",
+    "operational_mutations"
+  ],
+  "properties": {
+    "schema_version": {"const": "a303-outcome-calibration-report.v1"},
+    "as_of_date": {"type": "string", "format": "date"},
+    "evidence_set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_set_id", "collection_status", "independent_validation_attested", "observation_count", "observation_kind_counts"],
+      "properties": {
+        "evidence_set_id": {"type": "string", "minLength": 1},
+        "collection_status": {"enum": ["DRAFT", "FROZEN"]},
+        "independent_validation_attested": {"type": "boolean"},
+        "observation_count": {"type": "integer", "minimum": 0},
+        "observation_kind_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["BASELINE_OBSERVATION", "CONTROLLED_PAIR"],
+          "properties": {
+            "BASELINE_OBSERVATION": {"type": "integer", "minimum": 0},
+            "CONTROLLED_PAIR": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "method_digest", "calibration_policy_version", "calibration_policy_digest"],
+      "properties": {
+        "schema_version": {"const": "a303-outcome-simulator.v1"},
+        "method_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "calibration_policy_version": {"const": "a303-outcome-calibration-policy.v1"},
+        "calibration_policy_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "blockers"],
+      "properties": {
+        "status": {"enum": ["BLOCKED_EVIDENCE", "INSUFFICIENT_EVIDENCE", "CALIBRATION_CHECKS_PASS", "CALIBRATION_CHECKS_FAIL"]},
+        "blockers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["INSUFFICIENT_BASELINE_OBSERVATIONS", "INSUFFICIENT_PROSPECTIVE_CONTROLLED_PAIRS"]}
+        }
+      }
+    },
+    "calibration_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_level", "treatment_effect", "thresholds"],
+      "properties": {
+        "baseline_level": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["eligible_observation_count", "delay_mae_hours", "stockout_exposure_mae_days", "intervention_cost_mae_index"],
+          "properties": {
+            "eligible_observation_count": {"type": "integer", "minimum": 0},
+            "delay_mae_hours": {"type": ["number", "null"], "minimum": 0},
+            "stockout_exposure_mae_days": {"type": ["number", "null"], "minimum": 0},
+            "intervention_cost_mae_index": {"type": ["number", "null"], "minimum": 0}
+          }
+        },
+        "treatment_effect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["eligible_controlled_pair_count", "delay_effect_mae_hours", "stockout_exposure_effect_mae_days", "intervention_cost_effect_mae_index", "treatment_direction_agreement_pct"],
+          "properties": {
+            "eligible_controlled_pair_count": {"type": "integer", "minimum": 0},
+            "delay_effect_mae_hours": {"type": ["number", "null"], "minimum": 0},
+            "stockout_exposure_effect_mae_days": {"type": ["number", "null"], "minimum": 0},
+            "intervention_cost_effect_mae_index": {"type": ["number", "null"], "minimum": 0},
+            "treatment_direction_agreement_pct": {"type": ["number", "null"], "minimum": 0, "maximum": 100}
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maximum_delay_mae_hours", "maximum_stockout_exposure_mae_days", "maximum_intervention_cost_mae_index", "minimum_treatment_direction_agreement_pct"],
+          "properties": {
+            "maximum_delay_mae_hours": {"type": "number", "minimum": 0},
+            "maximum_stockout_exposure_mae_days": {"type": "number", "minimum": 0},
+            "maximum_intervention_cost_mae_index": {"type": "number", "minimum": 0},
+            "minimum_treatment_direction_agreement_pct": {"type": "number", "minimum": 0, "maximum": 100}
+          }
+        }
+      }
+    },
+    "execution_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network_access_allowed", "operational_writes_allowed", "action_mutations_allowed", "production_effect", "model_promotion_allowed"],
+      "properties": {
+        "mode": {"const": "LOCAL_READ_ONLY"},
+        "network_access_allowed": {"const": false},
+        "operational_writes_allowed": {"const": false},
+        "action_mutations_allowed": {"const": false},
+        "production_effect": {"const": false},
+        "model_promotion_allowed": {"const": false}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supports", "does_not_support"],
+      "properties": {
+        "supports": {"type": "array", "contains": {"const": "FUTURE_EMPIRICAL_CALIBRATION_INTERFACE"}},
+        "does_not_support": {
+          "type": "array",
+          "allOf": [
+            {"contains": {"const": "MODEL_PROMOTION"}},
+            {"contains": {"const": "PRODUCTION_READINESS"}},
+            {"contains": {"const": "POLICY_ACTIVATION"}}
+          ]
+        }
+      }
+    },
+    "operational_mutations": {"type": "array", "maxItems": 0}
+  }
+}

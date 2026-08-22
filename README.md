@@ -53,6 +53,31 @@ and keeps human approval, execution evidence and outcomes traceable.
 > ties, and one 2:2 result. The public-safe Evaluation & Trust view is now live
 > on GitHub Pages with those aggregate counts and no private review content.
 
+> **22 August 2026 A303 robustness status:** the four-review result answers
+> whether people prefer the A303 recommendation; it does not decide whether the
+> recommendation improves a business outcome. A separate pre-specified
+> synthetic evaluation therefore tested all 16 A303-attributed changes and all
+> 14 no-delta controls over 243 parameter combinations. Controls passed exact-
+> zero, but the A303 synthetic capability gate is `NOT_ROBUST`: only 2 of 16
+> base cases favour A303-on, 7 favour A303-off, and 7 are immaterial. This is a
+> local model-risk finding, not real logistics performance or production
+> evidence.
+
+> **22 August 2026 A303.v2 candidate status:** two conservative eligibility
+> guardrails were screened against the same frozen robustness space with an
+> anti-abstention gate. The central-safe candidate acts in only two scenarios
+> and reaches 86.42% non-negative on the action subset; the stable-positive
+> candidate acts nowhere. Neither passes the development gate. This post-hoc
+> screen narrows the human decision to stopping/retiring A303.v1 or authorizing
+> a fundamentally new rule design; it does not approve A303.v2.
+
+> **22 August 2026 A303 disposition:** the human project owner selected option
+> 1. A303.v1 is retired from further development progression. Its reviews and
+> evaluation evidence remain preserved, while threshold tuning, new holdouts,
+> prospective Outcome collection, calibration, activation, and production
+> progression are closed. A303.v1 was never deployed, so no runtime rollback or
+> operational mutation was required.
+
 ## Explore the interactive product story
 
 The most complete product walkthrough is a self-contained browser demo:
@@ -147,8 +172,10 @@ its source metrics.
 | Forecast validation | Private AWS backtest retained recent-level for Maersk; DHL/KN remain partial-history and supervised labels remain blocked |
 | Authenticated Operations | Private staging cockpit with Cognito roles, governed Action mutations, Outcome Review, Pipeline Health, Forecast Accuracy and authorised Network drill-down |
 | Drift prevention | Staged-snapshot pre-commit gate plus independent CI architecture/capability audit |
-| Decision evaluation | Versioned local A303 ON/OFF ablation with read-only System Correctness and Capability Attribution checks |
-| Historical Replay | Ten-event hybrid corpus with 30 frozen cutoffs, two complete eligible reviews, and an explicit `NOT_MET` gate until the three-review minimum and governed aggregation are complete |
+| Decision evaluation | Versioned local A303 ON/OFF ablation plus independent 16-change/14-control synthetic robustness; the frozen result is `NOT_ROBUST` |
+| A303.v2 candidate screen | Two post-hoc guardrails tested with an anti-abstention gate; neither passes and both remain development-only |
+| A303.v1 disposition | Human-selected retirement from progression; all evaluation history preserved, no deployed runtime change |
+| Historical Replay | Ten-event hybrid corpus with 30 frozen cutoffs and four compatible independent reviews per cutoff; Decision Quality is mixed and remains separate from outcome evidence |
 
 One measured reliability improvement reduced a duplicate-only scheduled run from
 approximately **55.37 seconds to 2.34 seconds**. The synthetic data generator is

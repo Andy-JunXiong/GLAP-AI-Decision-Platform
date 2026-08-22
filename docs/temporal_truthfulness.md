@@ -84,6 +84,40 @@ tables. Post-cutoff factual reveals remain isolated from decision inputs. They
 can score what actually happened, but cannot establish the counterfactual
 business effect of an action that was not taken.
 
+## Synthetic Outcome robustness and calibration
+
+A303 synthetic robustness uses `HYBRID_HISTORICAL_REPLAY` decision inputs and
+`SIMULATED_COUNTERFACTUAL` outcomes. It must evaluate the complete attributed
+set and frozen negative controls independently of human preference. A synthetic
+robustness result, whether favourable or unfavourable, is engineering evidence
+only and never becomes actual-calendar Outcome, realised savings, or production
+performance. The current Simulator v1 result is `NOT_ROBUST`.
+
+Any guardrail designed after inspecting that result is post-hoc development
+evidence. Replaying it on the same dated corpus cannot become independent or
+confirmatory evidence, even though the historical cutoffs themselves are
+valid. A new design requires a new frozen holdout; repeated threshold tuning on
+the current corpus is evaluation leakage.
+
+The `2026-08-22` human retirement decision closes A303.v1 progression without
+changing the time or evidence class of any prior record. Historical review,
+exploratory, robustness, and candidate artifacts remain preserved under their
+original classifications; retirement does not turn them into operational or
+measured evidence.
+
+Outcome calibration uses the current Sydney clock derived by the evaluator.
+Every eligible record must use `ACTUAL_CALENDAR`, have timezone-aware observed
+and source-availability timestamps on or before that clock, be frozen, and
+carry an independent validation attestation. `FUTURE_SIMULATION`, generated
+staging Outcomes, and `SIMULATED_COUNTERFACTUAL` records are ineligible.
+
+An `OBSERVED_FACTUAL` record may calibrate only the baseline level actually
+observed. It cannot be paired with an invented A303 result. Calibrating the
+A303 treatment effect requires independently governed
+`PROSPECTIVE_CONTROLLED` pairs. Test fixtures prove contract behavior only and
+never count toward the minimum evidence gate, readiness, policy activation, or
+model promotion.
+
 ## Existing September--October 2026 runs
 
 Runs already executed through `2026-10-05` are retained for auditability. As of

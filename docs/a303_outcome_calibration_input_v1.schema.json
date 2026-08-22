@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/a303-outcome-calibration-input.v1.schema.json",
+  "title": "GLAP A303 outcome calibration input v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_set_id",
+    "collection_status",
+    "independent_validation_attested",
+    "observations",
+    "operational_mutations"
+  ],
+  "properties": {
+    "schema_version": {"const": "a303-outcome-calibration-input.v1"},
+    "evidence_set_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "collection_status": {"enum": ["DRAFT", "FROZEN"]},
+    "independent_validation_attested": {"type": "boolean"},
+    "observations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/baseline_observation"},
+          {"$ref": "#/$defs/controlled_pair"}
+        ]
+      }
+    },
+    "operational_mutations": {"type": "array", "maxItems": 0}
+  },
+  "$defs": {
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delay_hours", "stockout_exposure_days", "intervention_cost_index"],
+      "properties": {
+        "delay_hours": {"type": "number", "minimum": 0},
+        "stockout_exposure_days": {"type": "number", "minimum": 0},
+        "intervention_cost_index": {"type": "number", "minimum": 0}
+      }
+    },
+    "common": {
+      "type": "object",
+      "required": [
+        "observation_id",
+        "observation_kind",
+        "scenario_id",
+        "cutoff_id",
+        "outcome_evidence_class",
+        "time_basis",
+        "observed_at",
+        "source_available_at",
+        "source_digest",
+        "independent_evaluator_attested"
+      ],
+      "properties": {
+        "observation_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+        "observation_kind": {"enum": ["BASELINE_OBSERVATION", "CONTROLLED_PAIR"]},
+        "scenario_id": {"type": "string", "minLength": 1},
+        "cutoff_id": {"type": "string", "minLength": 1},
+        "outcome_evidence_class": {"enum": ["OBSERVED_FACTUAL", "PROSPECTIVE_CONTROLLED"]},
+        "time_basis": {"const": "ACTUAL_CALENDAR"},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "source_available_at": {"type": "string", "format": "date-time"},
+        "source_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "independent_evaluator_attested": {"const": true}
+      }
+    },
+    "baseline_observation": {
+      "allOf": [
+        {"$ref": "#/$defs/common"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "observation_id",
+            "observation_kind",
+            "scenario_id",
+            "cutoff_id",
+            "outcome_evidence_class",
+            "time_basis",
+            "observed_at",
+            "source_available_at",
+            "source_digest",
+            "independent_evaluator_attested",
+            "observed_variant_id",
+            "metrics"
+          ],
+          "properties": {
+            "observation_id": {},
+            "observation_kind": {"const": "BASELINE_OBSERVATION"},
+            "scenario_id": {},
+            "cutoff_id": {},
+            "outcome_evidence_class": {},
+            "time_basis": {},
+            "observed_at": {},
+            "source_available_at": {},
+            "source_digest": {},
+            "independent_evaluator_attested": {},
+            "observed_variant_id": {"const": "baseline-a303-off"},
+            "metrics": {"$ref": "#/$defs/metrics"}
+          }
+        }
+      ]
+    },
+    "controlled_pair": {
+      "allOf": [
+        {"$ref": "#/$defs/common"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "observation_id",
+            "observation_kind",
+            "scenario_id",
+            "cutoff_id",
+            "outcome_evidence_class",
+            "time_basis",
+            "observed_at",
+            "source_available_at",
+            "source_digest",
+            "independent_evaluator_attested",
+            "baseline_metrics",
+            "a303_metrics"
+          ],
+          "properties": {
+            "observation_id": {},
+            "observation_kind": {"const": "CONTROLLED_PAIR"},
+            "scenario_id": {},
+            "cutoff_id": {},
+            "outcome_evidence_class": {"const": "PROSPECTIVE_CONTROLLED"},
+            "time_basis": {},
+            "observed_at": {},
+            "source_available_at": {},
+            "source_digest": {},
+            "independent_evaluator_attested": {},
+            "baseline_metrics": {"$ref": "#/$defs/metrics"},
+            "a303_metrics": {"$ref": "#/$defs/metrics"}
+          }
+        }
+      ]
+    }
+  }
+}

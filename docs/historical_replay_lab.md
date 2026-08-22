@@ -245,8 +245,100 @@ export is supplied; that old no-review run must not override the new private
 aggregate.
 
 Decision Quality is evaluated with mixed package-level results. Business
-Outcome Effect remains `NOT_EVALUATED`. Historical reveals do not identify the
-counterfactual result of an unchosen action.
+Outcome simulation is a separate, parallel path: human preference does not
+select simulator eligibility. The corrected run evaluates all sixteen verified
+A303-attributed changes, including Cyclone Gabrielle T1, and uses the fourteen
+unchanged packages as negative controls. Historical reveals still do not
+identify the counterfactual result of an unchosen action.
+
+## Pre-specified synthetic Outcome robustness
+
+[`a303_outcome_simulator_v1.json`](a303_outcome_simulator_v1.json)
+freezes a transparent v1 counterfactual simulator. It maps each paired
+`MONITOR` versus `RISK_MITIGATION` recommendation to modeled delay, stockout
+risk, intervention-cost, and combined-loss indexes. The simulator is deliberately
+simple, deterministic, and inspectable; its assumptions are not fitted to or
+validated against observed shipment outcomes.
+
+[`a303_outcome_sensitivity_protocol_v1.json`](a303_outcome_sensitivity_protocol_v1.json)
+freezes five low/base/high synthetic ranges before execution, producing 243
+full-factorial combinations and 11 central one-at-a-time combinations. The
+separate
+[`a303_synthetic_capability_gate_v1.json`](a303_synthetic_capability_gate_v1.json)
+freezes integrity, stability, robustness, and stopping rules. The runner
+[`evaluate_a303_outcome_robustness.py`](../ops/evaluate_a303_outcome_robustness.py)
+fails closed on any input digest, corpus count, control, authority, or finite-
+metric drift and makes no network call or operational mutation.
+
+All 14 controls remain exact-zero across 3,402 comparisons, so simulator
+integrity passes. The 16 attributed packages produce a base result of 2
+`MODEL_FAVORS_A303_ON`, 7 `MODEL_FAVORS_A303_OFF`, and 7 no-material results.
+Across 3,888 attributed package/parameter combinations, the non-negative rate
+is 39.81%; the pre-specified gate is `NOT_ROBUST`. The tracked result is
+[`a303_synthetic_outcome_robustness_result_v1.json`](a303_synthetic_outcome_robustness_result_v1.json).
+It does not establish an observed factual outcome, real logistics performance,
+production measured effect, model promotion, or production readiness.
+
+The earlier 15-package run is preserved under `docs/archive/evaluation/` as
+`EXPLORATORY_CONDITIONAL`. It selected packages using Decision Quality and
+reported 14 positive, 0 negative, and 1 neutral result. Because that selection
+created survivorship bias and omitted negative controls, it is explicitly
+`NOT_ELIGIBLE_FOR_CAPABILITY_GATE` and must not override the corrected result.
+
+Run the private local robustness evaluator with:
+
+```bash
+python ops/evaluate_a303_outcome_robustness.py \
+  --decision-quality-evidence artifacts/combined-review-evidence.json \
+  --output artifacts/a303-synthetic-outcome-robustness-v1.json
+```
+
+## A303.v2 guardrail candidate screen
+
+[`a303_v2_eligibility_guardrail_proposal.json`](a303_v2_eligibility_guardrail_proposal.json)
+defines two development-only candidates and an anti-abstention gate. The
+central-safe candidate requires a positive frozen base case and no negative
+central one-at-a-time result. The stable-positive-only candidate requires the
+stronger frozen stability classification. Because both were derived after
+seeing v1 results, the reused-corpus screen is post-hoc and cannot satisfy a
+confirmatory gate.
+
+The central-safe candidate keeps 2 of 16 action opportunities and achieves
+86.42% non-negative across its 486 action-subset combinations, below the 90%
+threshold and below minimum action/scenario coverage. The stable-positive-only
+candidate keeps no actions. Its apparent 100% full-set result is all abstention,
+which the anti-abstention gate explicitly rejects. The tracked result is
+[`a303_v2_guardrail_development_result_v1.json`](a303_v2_guardrail_development_result_v1.json).
+
+Neither candidate may progress. The human project owner selected stop/retire
+A303.v1 on `2026-08-22`. Its review and evaluation history remains frozen and
+read-only; repeated threshold tuning, A303.v1 calibration, prospective
+collection, and activation are closed. A fundamentally new rule would require
+separate human authorization and a new frozen holdout.
+
+## Outcome calibration gate
+
+[`calibrate_a303_outcome_method.py`](../ops/calibrate_a303_outcome_method.py)
+is a future evaluation boundary, not the active next slice. Historical
+`OBSERVED_FACTUAL` reveals may
+calibrate the modeled baseline level only when they include independently
+validated actual-calendar delay, stockout-risk, and intervention-cost metrics.
+They cannot establish what an unchosen A303 intervention would have caused.
+
+Treatment-effect calibration requires `PROSPECTIVE_CONTROLLED` paired evidence
+under the exact
+[`a303_outcome_calibration_policy_v1.json`](a303_outcome_calibration_policy_v1.json)
+contract. At least three eligible baseline observations and three controlled
+pairs are required. The input and output shapes are versioned by
+[`a303_outcome_calibration_input_v1.schema.json`](a303_outcome_calibration_input_v1.schema.json)
+and
+[`a303_outcome_calibration_report_v1.schema.json`](a303_outcome_calibration_report_v1.schema.json).
+
+The repository currently contains no eligible independently validated
+prospective controlled pairs. More importantly, A303 Simulator v1 is currently
+`NOT_ROBUST`; a human-governed rule redesign or stop decision comes before any
+prospective collection. Unit-test pairs validate mechanics only and are never
+calibration evidence.
 
 ## Frozen blinded-review handoff
 

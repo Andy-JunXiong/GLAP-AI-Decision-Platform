@@ -1,0 +1,82 @@
+{
+  "schema_version": "a303-v2-eligibility-guardrail-proposal.v1",
+  "proposal_status": "DEVELOPMENT_ONLY_PENDING_HUMAN_DECISION",
+  "design_classification": "POST_HOC_CANDIDATE_FROM_V1_ROBUSTNESS",
+  "source_result": {
+    "schema_version": "a303-synthetic-outcome-robustness-result.v1",
+    "sha256": "7018aba07f4b7c0cc081ac01fa531a7e81d58809a7fd186d76804f3850592f81",
+    "required_capability_gate": "NOT_ROBUST"
+  },
+  "frozen_evaluation_inputs": {
+    "simulator_sha256": "1c9f68a6336f9dfee06d332bbec1dbd21e9db35d88b8282d3fca76e5967eb3b1",
+    "sensitivity_protocol_sha256": "43a1bc00332260ca898e15873e3701afecfff78a2bf042c8ba3ee85757e7f81d",
+    "capability_gate_sha256": "1f9cc90790cbe831b53948d25164a57e58e81d047d8e34a00f942cddc0dfc835"
+  },
+  "candidate_policies": [
+    {
+      "candidate_id": "a303-v2-central-safe",
+      "description": "Propose RISK_MITIGATION only when the frozen base case materially favours A303 and no central one-at-a-time parameter combination materially favours A303-off; otherwise abstain to MONITOR.",
+      "eligibility_conditions": {
+        "v1_decision_changed": true,
+        "required_base_case_interpretation": "MODEL_FAVORS_A303_ON",
+        "maximum_central_negative_combination_count": 0
+      }
+    },
+    {
+      "candidate_id": "a303-v2-stable-positive-only",
+      "description": "Propose RISK_MITIGATION only for a package classified STABLE_POSITIVE by the frozen v1 gate; otherwise abstain to MONITOR.",
+      "eligibility_conditions": {
+        "v1_decision_changed": true,
+        "required_stability_classification": "STABLE_POSITIVE"
+      }
+    }
+  ],
+  "anti_abstention_gate": {
+    "minimum_action_opportunity_count": 3,
+    "minimum_distinct_action_scenario_count": 3,
+    "minimum_action_subset_non_negative_pct": 90.0,
+    "maximum_action_subset_base_negative_count": 0,
+    "maximum_action_subset_central_negative_result_count": 0,
+    "negative_controls_must_remain_exact_zero": true,
+    "rationale": "A candidate cannot pass by converting nearly every opportunity to MONITOR; it must retain a minimally diverse action surface and remain non-harmful across the pre-specified synthetic range."
+  },
+  "validation_boundary": {
+    "same_corpus_result_classification": "POST_HOC_DEVELOPMENT_EVIDENCE",
+    "same_corpus_can_satisfy_confirmatory_gate": false,
+    "new_frozen_holdout_required_before_progression": true,
+    "human_approval_required_to_create_new_rule_version": true,
+    "human_approval_required_to_retire_current_rule": true
+  },
+  "decision_options": [
+    {
+      "option": "STOP_OR_RETIRE_A303_V1",
+      "effect": "Do not progress the current rule to prospective Outcome collection or production use."
+    },
+    {
+      "option": "AUTHORIZE_FUNDAMENTALLY_NEW_A303_DESIGN",
+      "effect": "Permit a separately versioned design using new evidence or mechanisms, followed by a newly frozen holdout evaluation; this does not activate a rule."
+    }
+  ],
+  "authority": {
+    "mode": "LOCAL_READ_ONLY",
+    "rule_activation_allowed": false,
+    "policy_activation_allowed": false,
+    "production_effect": false,
+    "operational_mutation_allowed": false,
+    "prospective_collection_authorized": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "POST_HOC_GUARDRAIL_CANDIDATE_SCREENING",
+      "ANTI_ABSTENTION_CANDIDATE_COMPARISON"
+    ],
+    "does_not_support": [
+      "INDEPENDENT_VALIDATION",
+      "CONFIRMATORY_CAPABILITY_GATE",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "PRODUCTION_READINESS",
+      "RULE_ACTIVATION",
+      "POLICY_ACTIVATION"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "a303-v1-retirement-decision.v1",
+  "decision_status": "HUMAN_DECISION_RECORDED",
+  "sydney_decision_date": "2026-08-22",
+  "decision_source": "EXPLICIT_HUMAN_PROJECT_OWNER_SESSION_SELECTION_OPTION_1",
+  "decision": "RETIRE_A303_V1_FROM_PROGRESSION",
+  "scope": {
+    "rule_contract": "A303.v1",
+    "applies_to": [
+      "FURTHER_THRESHOLD_TUNING",
+      "NEW_A303_V1_HOLDOUT",
+      "PROSPECTIVE_OUTCOME_COLLECTION",
+      "A303_V1_CALIBRATION",
+      "RULE_OR_POLICY_ACTIVATION",
+      "PRODUCTION_PROGRESSION"
+    ],
+    "does_not_delete_or_rewrite": [
+      "FOUR_REVIEW_DECISION_QUALITY_EVIDENCE",
+      "EXPLORATORY_CONDITIONAL_RUN",
+      "V1_SYNTHETIC_ROBUSTNESS_RESULT",
+      "V2_GUARDRAIL_DEVELOPMENT_RESULT",
+      "ORIGINAL_REVIEW_SUBMISSIONS"
+    ]
+  },
+  "evidence_basis": [
+    {
+      "schema_version": "a303-synthetic-outcome-robustness-result.v1",
+      "sha256": "7018aba07f4b7c0cc081ac01fa531a7e81d58809a7fd186d76804f3850592f81",
+      "finding": "NOT_ROBUST"
+    },
+    {
+      "schema_version": "a303-v2-guardrail-development-result.v1",
+      "sha256": "4fabce5c1c92b293e6f8cf26093edaa2475236f8cc6f0adc652b25e36215e3ca",
+      "finding": "NO_A303_V2_GUARDRAIL_CANDIDATE_PASSES_DEVELOPMENT_GATE"
+    }
+  ],
+  "downstream_effect": {
+    "a303_v1_development_status": "RETIRED_FROM_PROGRESSION",
+    "a303_v1_calibration_status": "CLOSED_NOT_APPLICABLE",
+    "a303_v1_prospective_collection_status": "NOT_AUTHORIZED",
+    "calibration_interface_status": "RETAINED_AS_INACTIVE_REUSABLE_INFRASTRUCTURE",
+    "evaluation_history_status": "PRESERVED_READ_ONLY",
+    "deployed_runtime_change": "NONE_A303_V1_WAS_NOT_DEPLOYED"
+  },
+  "reopening_rule": {
+    "a303_v1_may_be_reactivated": false,
+    "fundamentally_new_rule_requires_new_version": true,
+    "new_explicit_human_authorization_required": true,
+    "new_frozen_development_and_holdout_evidence_required": true
+  },
+  "authority_boundary": {
+    "scope": "REPOSITORY_LOCAL_DEVELOPMENT_DIRECTION",
+    "aws_write_authorized": false,
+    "operational_action_authorized": false,
+    "production_change_authorized": false,
+    "policy_activation_authorized": false,
+    "review_mutation_authorized": false
+  },
+  "operational_mutations": []
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -184,6 +185,35 @@ def check_public_private_boundary(root: Path) -> list[CheckResult]:
             "The public Pages workflow contains no private Operations/Cognito configuration.",
             "The public Pages workflow contains a private Operations or Cognito marker.",
             (workflow_path, "docs/ops_snapshot.md"),
+        )
+    ]
+
+
+def check_governed_action_outcome_boundary(root: Path) -> list[CheckResult]:
+    architecture_path = "docs/architecture_current.md"
+    source = (root / architecture_path).read_text(encoding="utf-8")
+    normalized = " ".join(source.split())
+    required = (
+        "Append immutable Action audit event",
+        "Generate delayed simulated Outcome",
+        "does not command an external carrier, port, or logistics system",
+        "not a measurement of real business performance",
+    )
+    forbidden = (
+        "Execute diversion or escalation",
+        "Measure cost and in-stock outcome",
+    )
+    bounded = all(marker in normalized for marker in required) and not any(
+        marker in normalized for marker in forbidden
+    )
+    return [
+        _result(
+            "governed_action_outcome_claims",
+            "architecture",
+            bounded,
+            "The current architecture records governed Action events and labels delayed Outcomes as simulated.",
+            "The current architecture implies external logistics execution or measured real-world outcomes.",
+            (architecture_path, "docs/governed_closed_loop.md"),
         )
     ]
 
@@ -669,12 +699,307 @@ def check_temporal_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def _canonical_digest(value: dict[str, Any]) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def check_a303_outcome_robustness_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "simulator": "docs/a303_outcome_simulator_v1.json",
+        "protocol": "docs/a303_outcome_sensitivity_protocol_v1.json",
+        "gate": "docs/a303_synthetic_capability_gate_v1.json",
+        "result": "docs/a303_synthetic_outcome_robustness_result_v1.json",
+    }
+    loaded: dict[str, dict[str, Any]] = {}
+    try:
+        for name, path in paths.items():
+            loaded[name] = json.loads((root / path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        loaded = {}
+    simulator = loaded.get("simulator", {})
+    protocol = loaded.get("protocol", {})
+    gate = loaded.get("gate", {})
+    result = loaded.get("result", {})
+    coverage = simulator.get("coverage_contract", {})
+    simulator_authority = simulator.get("authority", {})
+    gate_handling = gate.get("decision_quality_handling", {})
+    result_gate = result.get("capability_gate", {})
+    unsupported = set(result.get("claim_boundary", {}).get("does_not_support", []))
+    simulator_digest = _canonical_digest(simulator) if simulator else ""
+    protocol_digest = _canonical_digest(protocol) if protocol else ""
+    gate_digest = _canonical_digest(gate) if gate else ""
+    frozen = result.get("frozen_inputs", {})
+    bounded = (
+        simulator.get("schema_version") == "a303-outcome-simulator.v1"
+        and simulator.get("outcome_evidence_class") == "SIMULATED_COUNTERFACTUAL"
+        and coverage.get("frozen_decision_package_count") == 30
+        and coverage.get("expected_attributed_change_count") == 16
+        and coverage.get("expected_negative_control_count") == 14
+        and coverage.get("human_decision_quality_required_for_simulation") is False
+        and protocol.get("design", {}).get("expected_combination_count") == 243
+        and protocol.get("design", {}).get("ranges_frozen_before_confirmatory_run") is True
+        and protocol.get("simulator", {}).get("sha256") == simulator_digest
+        and gate.get("simulator", {}).get("sha256") == simulator_digest
+        and gate.get("sensitivity_protocol", {}).get("sha256") == protocol_digest
+        and gate_handling.get("human_preference_controls_simulator_eligibility") is False
+        and gate.get("integrity_prerequisites", {}).get("negative_controls_must_pass_every_parameter_combination") is True
+        and simulator_authority.get("mode") == "LOCAL_READ_ONLY"
+        and all(
+            simulator_authority.get(field) is False
+            for field in (
+                "network_access_allowed",
+                "operational_writes_allowed",
+                "action_mutations_allowed",
+                "production_effect",
+                "model_promotion_allowed",
+            )
+        )
+        and result.get("coverage", {}).get("attributed_change_count") == 16
+        and result.get("coverage", {}).get("negative_control_count") == 14
+        and result.get("negative_control_integrity", {}).get("status") == "PASS"
+        and result.get("negative_control_integrity", {}).get("non_zero_delta_count") == 0
+        and frozen.get("simulator_sha256") == simulator_digest
+        and frozen.get("sensitivity_protocol_sha256") == protocol_digest
+        and frozen.get("capability_gate_sha256") == gate_digest
+        and result_gate.get("synthetic_outcome_robustness") == "NOT_ROBUST"
+        and result_gate.get("real_business_outcome_effect") == "NOT_EVALUATED"
+        and {
+            "REAL_LOGISTICS_PERFORMANCE",
+            "EMPIRICAL_CALIBRATION",
+            "PRODUCTION_READINESS",
+            "MODEL_PROMOTION",
+            "POLICY_ACTIVATION",
+        }.issubset(unsupported)
+        and result.get("operational_mutations") == []
+    )
+    return [
+        _result(
+            "a303_synthetic_robustness_boundary",
+            "evidence",
+            bounded,
+            "A303 robustness evaluates all 16 changes and 14 controls independently of human preference; controls remain exact-zero and the current synthetic gate remains NOT_ROBUST.",
+            "The A303 robustness corpus, frozen inputs, negative controls, independent evaluation path, result, or authority boundary drifted.",
+            (
+                *paths.values(),
+                "ops/evaluate_a303_outcome_robustness.py",
+                "docs/evaluation_architecture.md",
+            ),
+        )
+    ]
+
+
+def check_a303_outcome_calibration_boundary(root: Path) -> list[CheckResult]:
+    policy_path = "docs/a303_outcome_calibration_policy_v1.json"
+    simulator_path = "docs/a303_outcome_simulator_v1.json"
+    try:
+        policy = json.loads((root / policy_path).read_text(encoding="utf-8"))
+        simulator = json.loads((root / simulator_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        policy = {}
+        simulator = {}
+    eligible = policy.get("eligible_evidence", {})
+    authority = policy.get("authority", {})
+    unsupported = set(policy.get("claim_boundary", {}).get("does_not_support", []))
+    bounded = (
+        policy.get("schema_version") == "a303-outcome-calibration-policy.v1"
+        and policy.get("business_timezone") == "Australia/Sydney"
+        and policy.get("simulator", {}).get("schema_version")
+        == "a303-outcome-simulator.v1"
+        and policy.get("simulator", {}).get("sha256") == _canonical_digest(simulator)
+        and set(eligible.get("baseline_observation", []))
+        == {"OBSERVED_FACTUAL", "PROSPECTIVE_CONTROLLED"}
+        and eligible.get("controlled_pair") == ["PROSPECTIVE_CONTROLLED"]
+        and eligible.get("required_time_basis") == "ACTUAL_CALENDAR"
+        and isinstance(eligible.get("minimum_baseline_observations"), int)
+        and eligible["minimum_baseline_observations"] >= 3
+        and isinstance(eligible.get("minimum_controlled_pairs"), int)
+        and eligible["minimum_controlled_pairs"] >= 3
+        and authority.get("mode") == "LOCAL_READ_ONLY"
+        and all(
+            authority.get(field) is False
+            for field in (
+                "network_access_allowed",
+                "operational_writes_allowed",
+                "action_mutations_allowed",
+                "production_effect",
+                "model_promotion_allowed",
+            )
+        )
+        and {"MODEL_PROMOTION", "PRODUCTION_READINESS", "POLICY_ACTIVATION"}.issubset(unsupported)
+    )
+    return [
+        _result(
+            "a303_outcome_calibration_boundary",
+            "evidence",
+            bounded,
+            "A303 calibration requires actual-calendar factual baselines and prospective controlled treatment pairs while remaining local and authority bounded.",
+            "The A303 calibration policy broadened eligible evidence, weakened sample gates, or gained operational, production, or promotion authority.",
+            (
+                policy_path,
+                simulator_path,
+                "docs/a303_outcome_calibration_input_v1.schema.json",
+                "docs/a303_outcome_calibration_report_v1.schema.json",
+                "ops/calibrate_a303_outcome_method.py",
+                "docs/temporal_truthfulness.md",
+            ),
+        )
+    ]
+
+
+def check_a303_v2_guardrail_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "proposal": "docs/a303_v2_eligibility_guardrail_proposal.json",
+        "result": "docs/a303_v2_guardrail_development_result_v1.json",
+        "source": "docs/a303_synthetic_outcome_robustness_result_v1.json",
+        "simulator": "docs/a303_outcome_simulator_v1.json",
+        "protocol": "docs/a303_outcome_sensitivity_protocol_v1.json",
+        "gate": "docs/a303_synthetic_capability_gate_v1.json",
+    }
+    loaded: dict[str, dict[str, Any]] = {}
+    try:
+        for name, path in paths.items():
+            loaded[name] = json.loads((root / path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        loaded = {}
+    proposal = loaded.get("proposal", {})
+    result = loaded.get("result", {})
+    source = loaded.get("source", {})
+    frozen = proposal.get("frozen_evaluation_inputs", {})
+    validation = proposal.get("validation_boundary", {})
+    authority = proposal.get("authority", {})
+    anti_abstention = proposal.get("anti_abstention_gate", {})
+    candidates = result.get("candidate_results", [])
+    bounded = (
+        proposal.get("schema_version") == "a303-v2-eligibility-guardrail-proposal.v1"
+        and proposal.get("proposal_status") == "DEVELOPMENT_ONLY_PENDING_HUMAN_DECISION"
+        and proposal.get("design_classification") == "POST_HOC_CANDIDATE_FROM_V1_ROBUSTNESS"
+        and proposal.get("source_result", {}).get("sha256") == _canonical_digest(source)
+        and source.get("capability_gate", {}).get("synthetic_outcome_robustness") == "NOT_ROBUST"
+        and frozen.get("simulator_sha256") == _canonical_digest(loaded.get("simulator", {}))
+        and frozen.get("sensitivity_protocol_sha256") == _canonical_digest(loaded.get("protocol", {}))
+        and frozen.get("capability_gate_sha256") == _canonical_digest(loaded.get("gate", {}))
+        and anti_abstention.get("minimum_action_opportunity_count", 0) >= 3
+        and anti_abstention.get("minimum_distinct_action_scenario_count", 0) >= 3
+        and anti_abstention.get("minimum_action_subset_non_negative_pct", 0) >= 90.0
+        and anti_abstention.get("negative_controls_must_remain_exact_zero") is True
+        and validation.get("same_corpus_result_classification") == "POST_HOC_DEVELOPMENT_EVIDENCE"
+        and validation.get("same_corpus_can_satisfy_confirmatory_gate") is False
+        and validation.get("new_frozen_holdout_required_before_progression") is True
+        and authority.get("mode") == "LOCAL_READ_ONLY"
+        and all(value is False for key, value in authority.items() if key != "mode")
+        and result.get("proposal_sha256") == _canonical_digest(proposal)
+        and result.get("source_result_sha256") == _canonical_digest(source)
+        and result.get("slice_conclusion", {}).get("status")
+        == "NO_A303_V2_GUARDRAIL_CANDIDATE_PASSES_DEVELOPMENT_GATE"
+        and result.get("slice_conclusion", {}).get("human_decision_required") is True
+        and len(candidates) == 2
+        and all(
+            item.get("development_disposition") == "REJECT_OR_FUNDAMENTALLY_REDESIGN"
+            and item.get("confirmatory_eligibility")
+            == "NOT_ELIGIBLE_POST_HOC_SAME_CORPUS"
+            for item in candidates
+        )
+        and result.get("operational_mutations") == []
+    )
+    return [
+        _result(
+            "a303_v2_guardrail_candidate_boundary",
+            "evidence",
+            bounded,
+            "A303.v2 guardrail screening remains post-hoc, anti-abstention, authority bounded, and concludes that neither candidate passes the development gate.",
+            "The A303.v2 proposal, anti-abstention gate, post-hoc boundary, failed-candidate result, or authority boundary drifted.",
+            (
+                *paths.values(),
+                "ops/evaluate_a303_v2_guardrail_candidate.py",
+                "tests/test_a303_v2_guardrail_candidate.py",
+                "CURRENT_DEVELOPMENT_STATUS.md",
+            ),
+        )
+    ]
+
+
+def check_a303_v1_retirement_boundary(root: Path) -> list[CheckResult]:
+    decision_path = "docs/a303_v1_retirement_decision.json"
+    robustness_path = "docs/a303_synthetic_outcome_robustness_result_v1.json"
+    guardrail_path = "docs/a303_v2_guardrail_development_result_v1.json"
+    try:
+        decision = json.loads((root / decision_path).read_text(encoding="utf-8"))
+        robustness = json.loads((root / robustness_path).read_text(encoding="utf-8"))
+        guardrail = json.loads((root / guardrail_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        decision = {}
+        robustness = {}
+        guardrail = {}
+    evidence = decision.get("evidence_basis", [])
+    evidence_map = {
+        item.get("schema_version"): item
+        for item in evidence
+        if isinstance(item, dict)
+    }
+    scope = decision.get("scope", {})
+    downstream = decision.get("downstream_effect", {})
+    reopening = decision.get("reopening_rule", {})
+    authority = decision.get("authority_boundary", {})
+    bounded = (
+        decision.get("schema_version") == "a303-v1-retirement-decision.v1"
+        and decision.get("decision_status") == "HUMAN_DECISION_RECORDED"
+        and decision.get("decision_source")
+        == "EXPLICIT_HUMAN_PROJECT_OWNER_SESSION_SELECTION_OPTION_1"
+        and decision.get("decision") == "RETIRE_A303_V1_FROM_PROGRESSION"
+        and scope.get("rule_contract") == "A303.v1"
+        and {
+            "FURTHER_THRESHOLD_TUNING",
+            "NEW_A303_V1_HOLDOUT",
+            "PROSPECTIVE_OUTCOME_COLLECTION",
+            "A303_V1_CALIBRATION",
+            "RULE_OR_POLICY_ACTIVATION",
+            "PRODUCTION_PROGRESSION",
+        }.issubset(set(scope.get("applies_to", [])))
+        and "ORIGINAL_REVIEW_SUBMISSIONS"
+        in set(scope.get("does_not_delete_or_rewrite", []))
+        and evidence_map.get("a303-synthetic-outcome-robustness-result.v1", {}).get("sha256")
+        == _canonical_digest(robustness)
+        and evidence_map.get("a303-v2-guardrail-development-result.v1", {}).get("sha256")
+        == _canonical_digest(guardrail)
+        and downstream.get("a303_v1_development_status") == "RETIRED_FROM_PROGRESSION"
+        and downstream.get("a303_v1_calibration_status") == "CLOSED_NOT_APPLICABLE"
+        and downstream.get("evaluation_history_status") == "PRESERVED_READ_ONLY"
+        and downstream.get("deployed_runtime_change") == "NONE_A303_V1_WAS_NOT_DEPLOYED"
+        and reopening.get("a303_v1_may_be_reactivated") is False
+        and reopening.get("fundamentally_new_rule_requires_new_version") is True
+        and reopening.get("new_explicit_human_authorization_required") is True
+        and authority.get("scope") == "REPOSITORY_LOCAL_DEVELOPMENT_DIRECTION"
+        and all(value is False for key, value in authority.items() if key != "scope")
+        and decision.get("operational_mutations") == []
+    )
+    return [
+        _result(
+            "a303_v1_retirement_boundary",
+            "governance",
+            bounded,
+            "A303.v1 remains retired from progression by explicit human choice; evidence is preserved and no operational authority is added.",
+            "The A303.v1 human retirement decision, evidence preservation, reopening rule, or authority boundary drifted.",
+            (
+                decision_path,
+                "docs/a303_v1_retirement_decision.schema.json",
+                robustness_path,
+                guardrail_path,
+                "ops/validate_a303_v1_retirement.py",
+                "tests/test_a303_v1_retirement.py",
+                "CURRENT_DEVELOPMENT_STATUS.md",
+            ),
+        )
+    ]
+
+
 def run_audit(root: Path) -> dict[str, Any]:
     contract = load_contract(root)
     checks: list[CheckResult] = []
     checks.extend(check_contract(root, contract))
     checks.extend(check_manual_staging_boundary(root))
     checks.extend(check_public_private_boundary(root))
+    checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_audit_automation(root))
     checks.extend(check_documentation_operating_model(root))
     checks.extend(check_action_contract(root, contract))
@@ -682,6 +1007,10 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_action_mutation_release(root))
     checks.extend(check_readiness_contract(root))
     checks.extend(check_temporal_boundary(root))
+    checks.extend(check_a303_outcome_robustness_boundary(root))
+    checks.extend(check_a303_outcome_calibration_boundary(root))
+    checks.extend(check_a303_v2_guardrail_boundary(root))
+    checks.extend(check_a303_v1_retirement_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     sydney_date = sydney_business_date().isoformat()

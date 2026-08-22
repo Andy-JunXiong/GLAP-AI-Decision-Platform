@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/a303-v1-retirement-decision.v1.schema.json",
+  "title": "GLAP A303.v1 retirement decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decision_status",
+    "sydney_decision_date",
+    "decision_source",
+    "decision",
+    "scope",
+    "evidence_basis",
+    "downstream_effect",
+    "reopening_rule",
+    "authority_boundary",
+    "operational_mutations"
+  ],
+  "properties": {
+    "schema_version": {"const": "a303-v1-retirement-decision.v1"},
+    "decision_status": {"const": "HUMAN_DECISION_RECORDED"},
+    "sydney_decision_date": {"type": "string", "format": "date"},
+    "decision_source": {"const": "EXPLICIT_HUMAN_PROJECT_OWNER_SESSION_SELECTION_OPTION_1"},
+    "decision": {"const": "RETIRE_A303_V1_FROM_PROGRESSION"},
+    "scope": {"type": "object"},
+    "evidence_basis": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "sha256", "finding"],
+        "properties": {
+          "schema_version": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "finding": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "downstream_effect": {"type": "object"},
+    "reopening_rule": {"type": "object"},
+    "authority_boundary": {"type": "object"},
+    "operational_mutations": {"type": "array", "maxItems": 0}
+  }
+}

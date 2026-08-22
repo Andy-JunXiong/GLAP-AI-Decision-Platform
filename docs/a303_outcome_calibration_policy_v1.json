@@ -1,0 +1,48 @@
+{
+  "schema_version": "a303-outcome-calibration-policy.v1",
+  "business_timezone": "Australia/Sydney",
+  "simulator": {
+    "schema_version": "a303-outcome-simulator.v1",
+    "sha256": "1c9f68a6336f9dfee06d332bbec1dbd21e9db35d88b8282d3fca76e5967eb3b1"
+  },
+  "eligible_evidence": {
+    "baseline_observation": [
+      "OBSERVED_FACTUAL",
+      "PROSPECTIVE_CONTROLLED"
+    ],
+    "controlled_pair": [
+      "PROSPECTIVE_CONTROLLED"
+    ],
+    "required_time_basis": "ACTUAL_CALENDAR",
+    "minimum_baseline_observations": 3,
+    "minimum_controlled_pairs": 3
+  },
+  "thresholds": {
+    "maximum_delay_mae_hours": 24.0,
+    "maximum_stockout_exposure_mae_days": 1.0,
+    "maximum_intervention_cost_mae_index": 10.0,
+    "minimum_treatment_direction_agreement_pct": 67.0
+  },
+  "authority": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "action_mutations_allowed": false,
+    "production_effect": false,
+    "model_promotion_allowed": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "FUTURE_EMPIRICAL_CALIBRATION_INTERFACE",
+      "CALIBRATION_READINESS_ASSESSMENT"
+    ],
+    "does_not_support": [
+      "AUTOMATIC_OUTCOME_ACCEPTANCE",
+      "REAL_LOGISTICS_PERFORMANCE_FROM_SYNTHETIC_RECORDS",
+      "PRODUCTION_MEASURED_EFFECT_WITHOUT_ELIGIBLE_EVIDENCE",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS",
+      "POLICY_ACTIVATION"
+    ]
+  }
+}

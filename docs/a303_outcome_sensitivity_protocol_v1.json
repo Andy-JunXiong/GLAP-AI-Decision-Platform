@@ -1,0 +1,93 @@
+{
+  "schema_version": "a303-outcome-sensitivity-protocol.v1",
+  "frozen_sydney_date": "2026-08-22",
+  "protocol_classification": "PRE_SPECIFIED_SYNTHETIC_ROBUSTNESS",
+  "simulator": {
+    "schema_version": "a303-outcome-simulator.v1",
+    "sha256": "1c9f68a6336f9dfee06d332bbec1dbd21e9db35d88b8282d3fca76e5967eb3b1"
+  },
+  "design": {
+    "method": "FULL_FACTORIAL_LOW_BASE_HIGH",
+    "parameter_count": 5,
+    "level_count_per_parameter": 3,
+    "expected_combination_count": 243,
+    "central_range_definition": "BASE_CONFIGURATION_PLUS_ONE_PARAMETER_AT_A_TIME_LOW_OR_HIGH",
+    "expected_central_combination_count": 11,
+    "ranges_frozen_before_confirmatory_run": true,
+    "post_hoc_range_changes_require_new_protocol_version": true
+  },
+  "parameters": {
+    "mitigation_incremental_cost_index": {
+      "low": 8.0,
+      "base": 18.0,
+      "high": 40.0,
+      "unit": "synthetic index points per mitigation decision",
+      "rationale_class": "SYNTHETIC_PLAUSIBILITY_ASSUMPTION",
+      "rationale": "Spans low-friction capacity substitution through materially expensive rerouting without claiming observed market cost.",
+      "expected_monotonic_direction_for_a303_value": "DECREASING"
+    },
+    "avoided_dwell_fraction": {
+      "low": 0.2,
+      "base": 0.45,
+      "high": 0.7,
+      "unit": "fraction of modeled disruption delay eligible for avoidance",
+      "rationale_class": "SYNTHETIC_PLAUSIBILITY_ASSUMPTION",
+      "rationale": "Represents partial through substantial avoidable dwell while keeping unavoidable disruption time explicit.",
+      "expected_monotonic_direction_for_a303_value": "INCREASING"
+    },
+    "reroute_success_probability": {
+      "low": 0.4,
+      "base": 0.75,
+      "high": 0.95,
+      "unit": "probability on unit interval",
+      "rationale_class": "SYNTHETIC_PLAUSIBILITY_ASSUMPTION",
+      "rationale": "Covers unreliable, credible, and highly reliable mitigation execution without treating the range as empirically calibrated.",
+      "expected_monotonic_direction_for_a303_value": "INCREASING"
+    },
+    "stockout_penalty_per_exposed_day_index": {
+      "low": 10.0,
+      "base": 25.0,
+      "high": 50.0,
+      "unit": "synthetic index points per uncovered inventory day",
+      "rationale_class": "SYNTHETIC_PLAUSIBILITY_ASSUMPTION",
+      "rationale": "Represents low through high inventory exposure while preserving scenario-specific inventory cover as a fixed replay input.",
+      "expected_monotonic_direction_for_a303_value": "NON_DECREASING"
+    },
+    "service_impact_cost_per_delay_day_index": {
+      "low": 4.0,
+      "base": 10.0,
+      "high": 20.0,
+      "unit": "synthetic index points per delay day at HIGH criticality",
+      "rationale_class": "SYNTHETIC_PLAUSIBILITY_ASSUMPTION",
+      "rationale": "Represents bounded service impact across delay-sensitive cohorts; replay SLA criticality supplies the fixed cohort multiplier.",
+      "expected_monotonic_direction_for_a303_value": "INCREASING"
+    }
+  },
+  "required_outputs": [
+    "BASE_CASE_COUNTS",
+    "GLOBAL_ROBUSTNESS_COUNTS",
+    "SCENARIO_STABILITY",
+    "DECISION_FLIP_BOUNDARIES",
+    "NEGATIVE_CONTROL_INTEGRITY"
+  ],
+  "authority": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false,
+    "model_promotion_allowed": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "SYNTHETIC_PARAMETER_ROBUSTNESS",
+      "SYNTHETIC_DECISION_FLIP_BOUNDARIES"
+    ],
+    "does_not_support": [
+      "EMPIRICALLY_CALIBRATED_RANGE",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "PRODUCTION_MEASURED_EFFECT",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

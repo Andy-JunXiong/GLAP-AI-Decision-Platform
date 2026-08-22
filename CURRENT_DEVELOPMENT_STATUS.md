@@ -23,6 +23,10 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; four compatible reviews per cutoff produce 15 results favouring A303-on, 14 expected control ties, and one 2:2 split |
 | Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Two formal Sites and two mainland Lambda submissions passed the governed cross-entry checks, creating 120 compatible locked review records; superseded drafts remain isolated and ineligible |
+| A303 synthetic Outcome robustness | `IMPLEMENTED_VERIFIED_NOT_ROBUST` | Pre-specified local evaluation covers all 16 attributed changes and 14 controls independently of human preference; controls pass exact-zero, but only 39.81% of 3,888 attributed grid results are non-negative and the frozen gate is `NOT_ROBUST` |
+| A303.v2 eligibility-guardrail candidates | `IMPLEMENTED_VERIFIED_REJECTED` | Two post-hoc candidates were screened with an anti-abstention gate; central-safe acts in only two scenarios at 86.42% non-negative on the action subset, stable-positive-only acts nowhere, and neither may advance |
+| A303.v1 development disposition | `RETIRED_FROM_PROGRESSION` | The human project owner explicitly selected option 1 on 2026-08-22; threshold tuning, new holdouts, prospective Outcome collection, calibration, activation, and production progression are closed while all evidence remains preserved |
+| A303 Outcome calibration interface | `INACTIVE_REUSABLE_INFRASTRUCTURE` | Contract and validator remain available for a separately authorized future rule, but A303.v1 calibration is `CLOSED_NOT_APPLICABLE` and no eligible controlled pairs exist |
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
 | Public evaluation evidence view | `PUBLISHED_VERIFIED` | The live aggregate-only GitHub Pages view shows four reviews, 120 locked records, and the mixed 15/15 package result without private review content |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
@@ -84,15 +88,15 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Decision Quality aggregate and adjudication
+## Active slice — A303.v1 retirement closeout
 
-**Status:** `FOUR_REVIEWS_AGGREGATED_ONE_POINT_PENDING_ADJUDICATION`
+**Status:** `HUMAN_DECISION_RECORDED_RETIRED_FROM_PROGRESSION`
 
 **Goal**
 
-Preserve the governed four-review aggregate across the formal Sites and
-mainland Lambda entries, while keeping inconclusive package results explicit
-and every public, operational, and production action separately authorised.
+Record and enforce the human selection of option 1: stop A303.v1 development
+progression without deleting its review, exploratory, robustness, or guardrail
+evidence and without implying any deployed runtime or operational change.
 
 **Released story v2 experience**
 
@@ -163,6 +167,80 @@ and every public, operational, and production action separately authorised.
 - no AWS, operational Action, production, model, or Business Outcome Effect
   authority is added.
 
+**Corrected synthetic robustness evaluation**
+
+- the former 15-package bridge is preserved as
+  `EXPLORATORY_CONDITIONAL` evidence only. It selected packages using the human
+  preference result and therefore cannot enter a capability gate; its 14/0/1
+  modeled result must not be described as general A303 robustness;
+- Simulator v1, the five-parameter sensitivity protocol, and the capability
+  gate were frozen before the corrected run;
+- Human Decision Quality and simulated Outcome robustness now run in parallel:
+  all 16 verified A303-attributed changes enter the simulator regardless of
+  review preference, while all 14 unchanged packages act as negative controls;
+- every control remained exactly zero across all 243 parameter combinations
+  (`3,402` comparisons), so simulator integrity passes;
+- at the frozen base case, 2 packages favour A303-on, 7 favour A303-off, and 7
+  have no material difference. Across all `3,888` attributed package/parameter
+  combinations, 1,086 favour A303-on, 2,340 favour A303-off, and 462 are
+  immaterial; the global non-negative rate is `39.81%`;
+- stability is 0 stable-positive, 2 parameter-sensitive, and 14 stable-negative.
+  Thirteen packages have at least one one-at-a-time decision flip;
+- the pre-specified capability gate is therefore `NOT_ROBUST`. Real business
+  effect remains `NOT_EVALUATED`; there was no network access, AWS write,
+  operational mutation, readiness decision, or policy/model activation.
+
+**A303.v2 candidate screen**
+
+- the proposal and anti-abstention thresholds were frozen before running the
+  candidate screen. Because both candidates were designed from the v1 result,
+  every output is explicitly `POST_HOC_DEVELOPMENT_EVIDENCE` and can never
+  satisfy a confirmatory gate on this corpus;
+- `a303-v2-central-safe` acts only when the base case favours A303 and no central
+  one-at-a-time parameter change favours A303-off. It retains 2 of 16 action
+  opportunities across 2 scenarios. Within its 486 action-subset comparisons,
+  372 favour A303-on, 66 favour A303-off, and 48 are immaterial: `86.42%` are
+  non-negative, below the frozen `90%` threshold;
+- `a303-v2-stable-positive-only` retains zero action opportunities because v1
+  has no stable-positive packages. Its apparent `100%` full-set non-negative
+  result is entirely abstention and therefore fails the anti-abstention gate;
+- neither candidate passes the development gate. No A303.v2 rule version was
+  created or activated. This failure supplied the decision basis for the
+  subsequent human retirement choice recorded below.
+
+**A303.v1 retirement decision**
+
+- on `2026-08-22`, the human project owner explicitly selected option 1:
+  `RETIRE_A303_V1_FROM_PROGRESSION`;
+- A303.v1 threshold tuning, new holdout creation, prospective Outcome
+  collection, calibration, rule/policy activation, and production progression
+  are closed;
+- the four-review Decision Quality evidence, exploratory conditional run,
+  complete v1 robustness result, both guardrail candidate results, and original
+  reviews remain preserved and must not be deleted or rewritten;
+- A303.v1 was never deployed, so retirement creates no runtime rollback, AWS
+  write, operational Action, production mutation, or policy change;
+- A303.v1 cannot be reopened by ordinary drift. A fundamentally different
+  future rule would require a new version, new explicit human authorization,
+  and newly frozen development and holdout evidence.
+
+**Inactive Outcome calibration interface**
+
+- the input, policy, and report contracts are versioned and fail closed on
+  field, simulator-digest, evidence-class, timestamp, sample-count, attestation,
+  or authority drift;
+- `OBSERVED_FACTUAL` records may calibrate only the observed baseline level;
+  they cannot claim the result of an A303 action that was not taken;
+- treatment-effect calibration accepts only frozen, independently validated,
+  `ACTUAL_CALENDAR` / `PROSPECTIVE_CONTROLLED` pairs;
+- at least three eligible baseline observations and three controlled pairs are
+  required before calibration thresholds can pass or fail;
+- the repository currently contains zero eligible controlled pairs. A303.v1
+  calibration is `CLOSED_NOT_APPLICABLE`; the generic interface is retained as
+  inactive reusable infrastructure for a separately authorized future rule;
+- test fixtures validate software mechanics only and never become Outcome,
+  readiness, policy-activation, model-promotion, or production evidence.
+
 **Validation and release evidence**
 
 - reviewer-site lint passed;
@@ -170,13 +248,10 @@ and every public, operational, and production action separately authorised.
 - 23 site tests passed, including authentication, formal save/submit wiring,
   30-package completeness, bundle isolation, blind-key exclusion, and the
   development-only preview's future-information controls;
-- the GitHub Pages source now includes a public-safe Evaluation & Trust view;
-  17 focused demo tests and the 299-test repository suite pass, and the view
-  keeps the 2-of-3 review gate outside operational KPI and outcome claims;
-- GitHub commit `5819e5549afd4d4bae46a905b4bf4800c41320ec` is the exact
-  published source. CI run `31990342255` and Pages run `31990342232` completed
-  successfully; the live page returned the Evaluation navigation, `2 / 3`,
-  `NOT EVALUATED`, and the dated public-aggregate boundary;
+- the earlier GitHub Pages release introduced the public-safe Evaluation &
+  Trust view with a 2-of-3 snapshot outside operational KPI and outcome claims;
+  GitHub commit `5819e5549afd4d4bae46a905b4bf4800c41320ec`, CI run
+  `31990342255`, and Pages run `31990342232` preserve that historical evidence;
 - the API independently enforces per-story T0 -> T1 -> T2 commit order and
   immutable committed answers rather than trusting browser navigation;
 - Next.js was upgraded from `16.2.6` to `16.3.1` after the production-only
@@ -306,6 +381,10 @@ and every public, operational, and production action separately authorised.
   ties, and one 2:2 comparison. It contains no reviewer IDs, answers, notes,
   credentials, or private study artifacts. A post-publication read returned
   HTTP 200 and confirmed the earlier 2-of-3 and `NOT EVALUATED` markers are gone.
+- the formal Sites export now has a strict machine-readable v1 Schema. Its
+  existing finality rule remains reproducible from `submitted_at`, all three
+  attestations, and exactly 30 `ANSWER_LOCKED` answers; unversioned field drift
+  fails closed.
 
 **Definition of done**
 
@@ -326,8 +405,10 @@ and every public, operational, and production action separately authorised.
 
 **Next slice after completion**
 
-If the named study owner chooses adjudication, add a governed adjudication
-record for the one 2:2 package without overwriting the four original reviews.
+The bounded A303.v2 guardrail screen is complete, neither candidate passes, and
+the human project owner selected stop/retire. A303.v1 is closed. Any future
+evaluation slice should target a capability-neutral ablation or a separately
+authorized new rule, not another threshold tuned on this corpus.
 
 ## Pending validation
 
@@ -363,7 +444,17 @@ done.
   favour `glap-a303-on`; fourteen identical controls are unanimous ties and one
   non-identical package is split 2:2. Any adjudication remains a separate,
   human-owned step.
-- Business Outcome Effect: no counterfactual business result is established.
+- Business Outcome Effect: the complete, pre-specified synthetic robustness
+  run is `NOT_ROBUST`. It covers all 16 attributed changes and does not establish
+  observed factual, real-logistics, prospective controlled, or production-
+  measured effect.
+- Outcome-method calibration: the future contract and validator are
+  implemented, but progression is blocked both by the `NOT_ROBUST` synthetic
+  capability result and by zero eligible independently validated prospective
+  controlled pairs.
+- A303 continuation: closed. Both bounded A303.v2 guardrails failed, and the
+  human project owner selected option 1. A303.v1 is retired from progression;
+  a fundamentally new rule is not currently authorized.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient; the date-effective integrity correction does not
   clear this maturity gate.
@@ -377,6 +468,28 @@ done.
 
 - Evaluation Architecture separated System Correctness, Capability
   Attribution, Decision Quality, and Business Outcome Effect.
+- The former 15-package Decision-to-Outcome bridge is preserved and explicitly
+  reclassified as `EXPLORATORY_CONDITIONAL`; its selection-biased 14/0/1 result
+  is ineligible for the capability gate.
+- The corrected A303 robustness path freezes Simulator v1, a 243-combination
+  sensitivity protocol, and the gate before execution. It evaluates all 16
+  attributed changes independently of Decision Quality plus 14 exact-zero
+  controls. Simulator integrity passes, while the capability result is
+  `NOT_ROBUST` (2/7/7 at base; 39.81% non-negative across the full grid).
+- The A303.v2 candidate screen tests central-safe and stable-positive-only
+  guardrails with an anti-abstention gate. Central-safe retains only two action
+  opportunities and reaches 86.42% non-negative on its action subset; stable-
+  positive-only retains none. Both are rejected as post-hoc development
+  candidates and cannot claim confirmation or activation readiness.
+- The explicit human option-1 decision retires A303.v1 from further
+  progression while preserving every review and evaluation artifact. A
+  fail-closed validator and drift check prevent silent reactivation or evidence
+  deletion; no deployed runtime change was required because A303.v1 was never
+  deployed.
+- The future A303 Outcome calibration interface separates factual baseline calibration
+  from treatment-effect calibration, rejects future or simulated evidence,
+  requires three prospective controlled pairs, and reports
+  `BLOCKED_EVIDENCE` when no eligible evidence exists.
 - Decision Quality rubric, blind package, review schema, and fail-closed local
   aggregation mechanics were implemented without creating expert evidence.
 - Historical Replay expanded to ten frozen events, 30 cutoffs,
@@ -526,7 +639,13 @@ done.
   cutoffs, sixteen attributed changes, fourteen no-delta controls, and all
   structural gates met. Its fixture-only `NOT_MET` result predates the governed
   four-review aggregate and is not the current Decision Quality conclusion.
-- Project drift audit: 16 checks passed with zero drift.
+- Project drift audit: 21 checks passed with zero drift, including the governed
+  Action/simulated-Outcome claim boundary, the complete A303 robustness
+  boundary, and the future calibration authority boundary.
+- Current architecture, strict formal export contract, complete A303 robustness
+  evaluator, and simulator-bound calibration interface pass Python compilation
+  and all 363 repository tests. The strict review contract also accepts the
+  existing two private formal submissions at exactly 30 locked answers each.
 - Relative-link validation passed for 64 links across nine changed Markdown
   files.
 - Public-demo closeout validation passed all 299 repository tests, the 16-check
@@ -613,7 +732,11 @@ done.
 ### Pending validation
 
 - One 2:2 package result remains available for optional governed adjudication;
-  the aggregate-only public snapshot also awaits separate publication authority.
+  the four original reviews must remain unchanged.
+- Simulator v1 is deliberately synthetic and has not been calibrated against
+  an independently governed factual or prospective Outcome source. Because its
+  current capability result is `NOT_ROBUST`, prospective collection is not the
+  immediate next slice.
 
 ### Incomplete
 
@@ -627,11 +750,12 @@ done.
    `recover-failed-integration-date` action for only `2026-08-09`, then verify
    the persisted controller status and all 28 lifecycle checks. This is not a
    production, baseline-refresh, schedule, or Pages action.
-2. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
+2. Continue the Evaluation Architecture with a capability-neutral External
+   Evidence or Decision Memory ablation rather than another A303 threshold
+   variant. This is a recommendation only; no new experiment is yet approved.
+3. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
    owner separately approves a governed adjudication record; never overwrite
    the four original submissions.
-3. If the named study owner separately approves adjudication, add an immutable
-   adjudication record for the 2:2 package while preserving all four reviews.
 
 ## Current-week history
 

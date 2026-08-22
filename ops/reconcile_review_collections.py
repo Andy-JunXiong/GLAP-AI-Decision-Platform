@@ -34,6 +34,27 @@ EXPECTED_DIMENSIONS = {
     "authority_compliance",
 }
 CHOICES = {"OPTION_A", "OPTION_B", "TIE"}
+FORMAL_EXPORT_KEYS = frozenset({"schema_version", "collection_id", "submissions"})
+FORMAL_SUBMISSION_KEYS = frozenset({
+    "reviewer_id",
+    "submitted_at",
+    "collection_id",
+    "bundle_id",
+    "bundle_digest",
+    "attestations",
+    "answers",
+})
+FORMAL_ATTESTATION_KEYS = frozenset({"independent", "no_conflict", "no_blind_key"})
+FORMAL_ANSWER_KEYS = frozenset({
+    "review_id",
+    "package_digest",
+    "judgments",
+    "preferred",
+    "confidence",
+    "notes",
+    "committed_at",
+    "status",
+})
 
 
 class ReviewReconciliationError(ValueError):
@@ -58,6 +79,16 @@ _QUALITY = _load_module(
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ReviewReconciliationError(message)
+
+
+def _require_exact_keys(value: object, expected: frozenset[str], field: str) -> None:
+    _require(isinstance(value, dict), f"{field} must be an object")
+    actual = set(value)
+    _require(
+        actual == expected,
+        f"{field} fields changed: missing={sorted(expected - actual)}, "
+        f"unexpected={sorted(actual - expected)}",
+    )
 
 
 def _timestamp(value: object, field: str) -> datetime:
@@ -313,18 +344,25 @@ def normalize_formal_export(
     source_export: dict[str, Any], review_bundle: dict[str, Any]
 ) -> list[dict[str, Any]]:
     packages = _package_map(review_bundle)
+    _require_exact_keys(source_export, FORMAL_EXPORT_KEYS, "formal export v1")
     _require(source_export.get("schema_version") == FORMAL_EXPORT_VERSION, "unsupported formal Sites export")
     _require(source_export.get("collection_id") == FORMAL_COLLECTION, "formal Sites collection mismatch")
     submissions = source_export.get("submissions")
     _require(isinstance(submissions, list) and bool(submissions), "formal Sites export has no submissions")
     normalized_submissions: list[dict[str, Any]] = []
     for submission in submissions:
+        _require_exact_keys(submission, FORMAL_SUBMISSION_KEYS, "formal submission v1")
         reviewer_ref = _reviewer_ref(submission.get("reviewer_id"), "formal reviewer_id")
         _require(submission.get("collection_id") == FORMAL_COLLECTION, f"{reviewer_ref} formal collection mismatch")
         _require(
             submission.get("bundle_id") == review_bundle.get("bundle_id")
             and submission.get("bundle_digest") == review_bundle.get("bundle_digest"),
             f"{reviewer_ref} formal frozen bundle mismatch",
+        )
+        _require_exact_keys(
+            submission.get("attestations"),
+            FORMAL_ATTESTATION_KEYS,
+            f"{reviewer_ref} formal attestations",
         )
         _validate_attestations(submission.get("attestations"), reviewer_ref)
         reviewed_at = str(submission.get("submitted_at", ""))
@@ -336,6 +374,7 @@ def normalize_formal_export(
         _require(set(review_ids) == set(packages), f"{reviewer_ref} answer membership differs from v3")
         normalized: list[dict[str, Any]] = []
         for answer in answers:
+            _require_exact_keys(answer, FORMAL_ANSWER_KEYS, f"{reviewer_ref} formal answer v1")
             review_id = answer.get("review_id")
             _require(answer.get("status") == "ANSWER_LOCKED", f"{reviewer_ref}/{review_id} is not final")
             _require(answer.get("package_digest") == packages[review_id].get("package_digest"), f"{reviewer_ref}/{review_id} package digest mismatch")

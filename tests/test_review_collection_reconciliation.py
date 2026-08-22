@@ -138,6 +138,64 @@ def mainland_export(review_bundle, display_bundle, reviewer_refs):
 
 
 class ReviewCollectionReconciliationTests(unittest.TestCase):
+    def test_formal_export_v1_schema_matches_the_enforced_shape(self):
+        schema = load_json(ROOT / "docs" / "formal_story_review_export_v1.schema.json")
+        self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+        self.assertEqual(set(schema["required"]), set(reconcile.FORMAL_EXPORT_KEYS))
+        self.assertEqual(set(schema["properties"]), set(reconcile.FORMAL_EXPORT_KEYS))
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(
+            set(schema["$defs"]["submission"]["required"]),
+            set(reconcile.FORMAL_SUBMISSION_KEYS),
+        )
+        self.assertEqual(
+            set(schema["$defs"]["submission"]["properties"]),
+            set(reconcile.FORMAL_SUBMISSION_KEYS),
+        )
+        self.assertFalse(schema["$defs"]["submission"]["additionalProperties"])
+        self.assertEqual(
+            set(schema["$defs"]["attestations"]["required"]),
+            set(reconcile.FORMAL_ATTESTATION_KEYS),
+        )
+        self.assertEqual(
+            set(schema["$defs"]["attestations"]["properties"]),
+            set(reconcile.FORMAL_ATTESTATION_KEYS),
+        )
+        self.assertFalse(schema["$defs"]["attestations"]["additionalProperties"])
+        self.assertEqual(
+            set(schema["$defs"]["answer"]["required"]),
+            set(reconcile.FORMAL_ANSWER_KEYS),
+        )
+        self.assertEqual(
+            set(schema["$defs"]["answer"]["properties"]),
+            set(reconcile.FORMAL_ANSWER_KEYS),
+        )
+        self.assertFalse(schema["$defs"]["answer"]["additionalProperties"])
+        self.assertEqual(
+            schema["$defs"]["answer"]["properties"]["status"]["const"],
+            "ANSWER_LOCKED",
+        )
+        answers = schema["$defs"]["submission"]["properties"]["answers"]
+        self.assertEqual(answers["minItems"], 30)
+        self.assertEqual(answers["maxItems"], 30)
+
+    def test_formal_export_finality_is_locked_and_versioned(self):
+        review_bundle, _ = review_inputs()
+        unexpected_status = formal_export(review_bundle, ["reviewer-formal-one"])
+        unexpected_status["submissions"][0]["status"] = "SUBMITTED"
+        with self.assertRaisesRegex(
+            reconcile.ReviewReconciliationError,
+            "formal submission v1 fields changed",
+        ):
+            reconcile.normalize_formal_export(unexpected_status, review_bundle)
+
+        unlocked = formal_export(review_bundle, ["reviewer-formal-one"])
+        unlocked["submissions"][0]["answers"][0]["status"] = "DRAFT"
+        with self.assertRaisesRegex(
+            reconcile.ReviewReconciliationError, "is not final"
+        ):
+            reconcile.normalize_formal_export(unlocked, review_bundle)
+
     def test_four_cross_entry_reviewers_reconcile_and_aggregate(self):
         review_bundle, display_bundle = review_inputs()
         formal = reconcile.normalize_formal_export(

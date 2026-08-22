@@ -2,7 +2,9 @@
 
 **Contract version:** `evaluation-experiment.v1`
 **Business timezone:** `Australia/Sydney`
-**Current implementation:** local, deterministic, read-only A303 ablation only
+**Current implementation:** local, deterministic, read-only A303 ablation,
+four-review Decision Quality, pre-specified synthetic Outcome robustness, and
+post-hoc A303.v2 candidate screening with an anti-abstention gate
 
 ## Purpose
 
@@ -159,9 +161,12 @@ by the fixture; it does not claim runtime verification of the inspected AWS
 rule path. Current governed staging code for `SLA_BREACH` and `COST_ANOMALY`
 remains unchanged.
 
-The experiment evaluates only System Correctness and Capability Attribution.
-The Decision Quality rubric, v3 option-content contract, blinded package,
+The paired ablation experiment evaluates System Correctness and Capability
+Attribution. The Decision Quality rubric, v3 option-content contract, blinded package,
 independent-review contract, and aggregation gate are implemented. The
+formal Sites export also has an exact machine-readable v1 contract; its
+finality is derived from a submitted timestamp, attestations, and 30 locked
+answers, and any field change must use a new version. The
 ten-event corpus, rubric, and option contract are content-addressed, and
 deterministic blinded packages cover all 30 cutoffs. V1 and v2 collection is
 paused and preserved draft progress is ineligible. The corrected story-based,
@@ -174,11 +179,41 @@ entry passed the study-owner-approved compatibility/import check on
 `2026-08-22`. The four-review private aggregate contains 120 locked records:
 15 package results favour `glap-a303-on`, fourteen identical controls are
 unanimous ties, and one non-identical package remains split 2:2. Decision
-Quality is therefore evaluated with mixed package-level results. Business
-Outcome Effect remains `NOT_EVALUATED` until an eligible outcome method is
-attached. After explicit publication approval, the live aggregate-only
+Quality is therefore evaluated with mixed package-level results. Decision
+Quality remains parallel to, rather than an admission gate for, Business
+Outcome simulation. The corrected robustness path evaluates all 16 attributed
+decision changes and all 14 no-delta controls using the pre-frozen Simulator
+v1, 243-combination sensitivity protocol, and synthetic capability gate. All
+3,402 control comparisons are exact-zero, while the attributed result is
+`NOT_ROBUST`: base-case counts are 2 A303-on, 7 A303-off, and 7 immaterial;
+the full grid is 39.81% non-negative with 0 stable-positive, 2 parameter-
+sensitive, and 14 stable-negative packages. This is an engineering result
+about synthetic assumption robustness, not an observed factual outcome or
+measured business effect. After
+explicit publication approval, the live aggregate-only
 Evaluation & Trust view shows these counts without private review content. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
+
+Two bounded A303.v2 eligibility guardrails were then screened on the same
+frozen space as explicitly `POST_HOC_DEVELOPMENT_EVIDENCE`. The anti-abstention
+gate prevents a candidate from appearing robust merely by changing nearly all
+actions to `MONITOR`. `a303-v2-central-safe` retains two action opportunities
+and reaches 86.42% non-negative on that action subset; `a303-v2-stable-positive-
+only` retains no actions. Neither passes the development gate, neither is
+eligible for confirmation on the reused corpus, and no A303.v2 rule was created
+or activated. The human project owner selected stop/retire on `2026-08-22`.
+A303.v1 is closed from further threshold tuning, holdouts, prospective Outcome
+collection, calibration, activation, and production progression; all evidence
+remains preserved.
+
+The versioned future A303 calibration interface is also implemented. It can
+compare frozen simulated metrics with independently validated `OBSERVED_FACTUAL`
+baseline records and `PROSPECTIVE_CONTROLLED` treatment pairs. Factual history
+cannot be used to invent the outcome of an unchosen A303 action. Treatment-
+effect calibration therefore requires at least three frozen actual-calendar
+controlled pairs. No eligible pairs currently exist, and the preceding
+synthetic gate is `NOT_ROBUST`; prospective calibration is therefore not the
+active next slice.
 
 Run it locally with:
 
@@ -189,15 +224,19 @@ python ops/evaluate_decision_capabilities.py \
 
 ## Next increments
 
-1. Preserve the four integrity-valid submissions and mixed aggregate without
-   changing the frozen 10-scenario, 30-cutoff inputs or importing preserved
-   v1/v2 progress.
-2. If the study owner requires a resolved result for the one 2:2 package, add
+1. Keep A303.v1 retired and preserve its evidence. Continue evaluation-platform
+   development with a capability-neutral External Evidence or Decision Memory
+   ablation; any fundamentally new rule remains a separate human decision and
+   would need a new frozen holdout.
+2. If the study owner requires a resolved Decision Quality result for the one
+   2:2 package, add
    a separate adjudication record without changing original reviews; otherwise
    retain the package as inconclusive.
 3. Add External Evidence and Decision Memory ablations.
 4. Add a governed Agent Runtime adapter and compare hosts using identical
    tools, evidence, budgets, and authority.
-5. Introduce counterfactual outcome methods with explicit evidence classes.
+5. Only after a future rule passes its synthetic gate, compare eligible
+   independently governed Outcome evidence with its frozen simulator using the
+   calibration policy.
 6. Use prospective controlled or measured production evidence only after
    separate human approval and production-readiness gates.
