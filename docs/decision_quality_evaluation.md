@@ -4,15 +4,16 @@
 **Review submissions:** `decision-quality-review.v1` (absolute-score tooling)
 and `decision-quality-comparative-review.v1` (story-mode collection)
 **Option content:** `decision-option-contract.v3`
-**Current status:** public Sites v12 is the canary-verified story-v2 formal
-entry across ten cases and 30 cutoffs. Two invited reviewers completed separate
-server-saved 30-package submissions with all three attestations on 2026-08-17;
-the superseded story-v1 draft remains isolated and ineligible. The governed
-three-review minimum is not met, so Decision Quality remains `NOT_EVALUATED`.
-The multi-reviewer account extension is deployed with seven separate hosted
-accounts and pseudonymous persistence scopes; all six additional accounts
-passed zero-write login/isolation canaries and their credentials were delivered
-privately.
+**Current status:** four independent, pseudonymous submissions are reconciled
+across the formal Sites v12 and mainland Lambda entries. All four contain one
+locked answer for each of the same 30 frozen v3 packages and all required
+attestations. The private aggregate has 15 package results favouring
+`glap-a303-on` and 15 `REVIEWERS_DO_NOT_AGREE` results. This is controlled
+point-in-time Decision Quality evidence, not Business Outcome Effect, real
+logistics performance, model promotion, or production readiness. The existing
+repository now contains a public-safe four-review Evaluation & Trust candidate;
+the live Pages view still shows the earlier 2-of-3 snapshot until separate
+publication approval.
 
 ## Purpose
 
@@ -169,29 +170,52 @@ once as a shared plan requiring explicit confirmation. It stores comparative
 judgments under isolated collection `human-evaluation-story.v2`, aligned with
 `decision-quality-comparative-review.v1`; preview-local answers, questionnaire
 drafts, and story-v1 records are never migrated. Sites v12 passed a
-non-submitting production canary before Dylan was notified. The live
-database now contains two complete story-v2 submissions. Ming's and Dong's
+non-submitting production canary before Dylan was notified. The live database
+contains two complete story-v2 submissions. Ming's and Dong's
 sessions are locked and submitted with 30 committed answers and all three
 attestations each. The earlier story-v1 draft still contains only three
 ineligible answers and was not migrated. All six additional-account canaries,
 including the seventh hosted account released on 2026-08-20, created no
-session, attestation, answer, save, or submission.
-Two submissions are insufficient for the declared three-review interpretation
-gate, so Decision Quality remains
-`NOT_EVALUATED`. Unit tests exercise packaging and scoring
-mechanics with in-memory test reviews; those tests are not expert evidence and
-are never written to the scenario corpus.
+session, attestation, answer, save, or submission. Unit tests exercise
+packaging and scoring mechanics with in-memory test reviews; those tests are
+not expert evidence and are never written to the scenario corpus.
 
 The deployed and health-verified collection `glap-ten-story-review.v1` is a
 separate mainland-access fallback for the human-created Lambda Function URL.
 It reuses all ten frozen stories and 30 source package identifiers, and records
 the same five comparative judgments, overall preference, confidence, optional
 notes, and final attestations. Every moment is immutable and time-ordered. The
-collection and export remain separate, so they must not be imported, scored,
-or counted as the third `human-evaluation-story.v2` submission until a named
-study owner approves and passes a governed compatibility/import check. Its
-design and human-owned update procedure are documented in
+On 2026-08-22 the study owner approved combining the content-equivalent entry
+surfaces. Read-only source inspection found two complete mainland submissions.
+The compatibility/import check passed exact frozen-bundle identity, all 30
+review IDs and package digests, the five rubric dimensions, locked-answer and
+final-submission state, required attestations, and distinct pseudonymous
+reviewer references. The two mainland submissions and two Sites submissions
+therefore form four eligible reviews per package. No live database was changed.
+The mainland design and human-owned update procedure are documented in
 [`three_case_review_entry.md`](three_case_review_entry.md).
+
+## Cross-entry reconciliation
+
+[`reconcile_review_collections.py`](../ops/reconcile_review_collections.py)
+normalizes both exports to `decision-quality-comparative-review.v1`, fails
+closed on any compatibility or integrity mismatch, and optionally deblinds
+only the aggregate with the study-owner key. Its output is private because it
+retains pseudonymous review records; `artifacts/` is excluded from Git.
+
+The 2026-08-22 aggregate contains four reviewers, 30 packages, and 120 locked
+review records. Fifteen packages meet every interpretation gate and all favour
+`glap-a303-on`. Fourteen identical-option controls are unanimous ties. The
+remaining non-identical package, Cyclone Gabrielle T1, splits 2:2 with zero
+score delta and remains `REVIEWERS_DO_NOT_AGREE`. No adjudication was inferred.
+
+```bash
+python ops/reconcile_review_collections.py \
+  --formal-export artifacts/formal-review-export.json \
+  --mainland-export artifacts/mainland-review-export.json \
+  --key-bundle artifacts/review-key.json \
+  --output artifacts/combined-review-evidence.json
+```
 
 Use the tooling only after first producing an evaluation report:
 

@@ -235,14 +235,18 @@ python ops/run_historical_replay_corpus.py \
 The manifest requires at least 10 scenarios, four disruption types, three
 regions, two transport modes, two severity bands, and three independent
 blinded reviews per variant. The current corpus passes every structural coverage
-requirement, including scenario count. The hosted story-v2 collection contains
-two complete independent-review submissions, but the local runner has not been
-given a governed export and the three-review minimum is not met. It therefore
-still returns `eligible=false` and `status=NOT_MET`.
+requirement, including scenario count. On 2026-08-22, two formal Sites and two
+mainland Lambda submissions passed the governed cross-entry reconciliation,
+giving every cutoff four complete independent reviews. The private Decision
+Quality aggregate has 15 package results favouring `glap-a303-on` and 15
+`REVIEWERS_DO_NOT_AGREE` results. The existing corpus runner still reports its
+fixture-only `eligible=false` / `status=NOT_MET` result when no governed review
+export is supplied; that old no-review run must not override the new private
+aggregate.
 
-Decision Quality and Business Outcome Effect remain `NOT_EVALUATED`.
-Historical reveals do not identify the counterfactual result of an unchosen
-action.
+Decision Quality is evaluated with mixed package-level results. Business
+Outcome Effect remains `NOT_EVALUATED`. Historical reveals do not identify the
+counterfactual result of an unchosen action.
 
 ## Frozen blinded-review handoff
 
@@ -272,12 +276,14 @@ questionnaire and Sites v9's technical story-v1 presentation are superseded and
 ineligible. Sites v12 is the canary-verified formal story-v2 entry across all
 ten cases and 30 moments; the five-case preview remains a development-only
 browser-local artifact. Seven pseudonymous reviewer accounts isolate hosted
-sessions and answers. The database contains two complete story-v2 submissions
-and one isolated three-answer story-v1 draft; all six additional accounts'
-zero-write canaries created no review data. The two complete
-submissions do not satisfy the three-review minimum, reviewer independence
-still depends on truthful human attestation and study-owner enforcement, and
-benchmark status remains `NOT_MET`.
+sessions and answers. The Sites database contains two complete story-v2
+submissions and one isolated three-answer story-v1 draft; all six additional
+accounts' zero-write canaries created no review data. Two complete mainland
+submissions from the same frozen v3 source passed the study-owner-approved
+compatibility/import check. The resulting four-review aggregate meets the
+minimum count, while one non-identical package remains 2:2 and fourteen
+identical controls correctly retain no-winner results. Reviewer independence
+still depends on truthful human attestation and study-owner enforcement.
 
 Before calling the corpus a benchmark:
 

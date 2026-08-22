@@ -168,11 +168,17 @@ paused and preserved draft progress is ineligible. The corrected story-based,
 progressive A/B/Tie workflow is publicly released as Sites v12. It applies the
 full 30-package v3 bundle with attestations, server save/resume, per-story
 ordering, immutable submission, and isolated reviewer scopes. Seven hosted
-accounts exist and two eligible story-v2 submissions are complete, each with
-30 committed choices and all required attestations. The declared minimum is
-three valid independent reviews, so collection remains open and Decision
-Quality remains `NOT_EVALUATED`. Business Outcome Effect also remains
-`NOT_EVALUATED` until an eligible outcome method is attached. See
+Sites accounts exist, and two eligible story-v2 submissions are complete.
+Two additional complete submissions from the content-equivalent mainland
+entry passed the study-owner-approved compatibility/import check on
+`2026-08-22`. The four-review private aggregate contains 120 locked records:
+15 package results favour `glap-a303-on`, fourteen identical controls are
+unanimous ties, and one non-identical package remains split 2:2. Decision
+Quality is therefore evaluated with mixed package-level results. Business
+Outcome Effect remains `NOT_EVALUATED` until an eligible outcome method is
+attached. A repository-local aggregate-only Evaluation & Trust candidate shows
+these counts without private review content; the live Pages view remains on the
+earlier 2-of-3 snapshot pending separate publication approval. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
 
 Run it locally with:
@@ -184,13 +190,12 @@ python ops/evaluate_decision_capabilities.py \
 
 ## Next increments
 
-1. Collect no fewer than three genuinely independent blinded reviews per
-   variant from the publicly released v3 frozen handoff; the
-   10-scenario, 30-cutoff inputs remain unchanged; do not manufacture
-   repository labels or count preserved v1/v2 progress.
-2. Aggregate only integrity-valid submissions after the study owner confirms
-   reviewer independence and blind-key separation. Structural coverage and a
-   frozen handoff alone do not create an eligible benchmark.
+1. Preserve the four integrity-valid submissions and mixed aggregate without
+   changing the frozen 10-scenario, 30-cutoff inputs or importing preserved
+   v1/v2 progress.
+2. If the study owner requires a resolved result for the one 2:2 package, add
+   a separate adjudication record without changing original reviews; otherwise
+   retain the package as inconclusive.
 3. Add External Evidence and Decision Memory ablations.
 4. Add a governed Agent Runtime adapter and compare hosts using identical
    tools, evidence, budgets, and authority.

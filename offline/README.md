@@ -40,7 +40,7 @@ All operational records and values are synthetic. State is not persisted after t
 
 This file is the offline presentation layer, not the complete data platform. The full project documents an AWS reference architecture using S3, Glue, governed Iceberg tables, Athena models, Lambda/EventBridge automation, and decision-support outputs.
 
-The System page reflects a read-only AWS inspection performed on 6 August 2026. It separates deployed resources, validated execution, retained dashboard artifacts, synthetic records, and designed product behavior. The Evaluation page separately reports the 17 August 2026 Historical Replay and independent-review gate using aggregate counts only. Account identifiers, ARNs, bucket names, reviewer identities, credentials, answers, and notification subscribers are not embedded in the demo.
+The System page reflects a read-only AWS inspection performed on 6 August 2026. It separates deployed resources, validated execution, retained dashboard artifacts, synthetic records, and designed product behavior. The Evaluation page separately reports the 22 August 2026 four-review Historical Replay aggregate: 15 package results favour A303-on, fourteen controls are unanimous ties, and one package remains split 2:2. Account identifiers, ARNs, bucket names, reviewer identities, credentials, answers, notes, and notification subscribers are not embedded in the demo.
 
 ## Known limitations
 

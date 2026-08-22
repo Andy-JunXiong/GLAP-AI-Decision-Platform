@@ -65,6 +65,13 @@ Shipments, Outcomes, and Analytics. Decisions shows the existing published
 aggregate separately from a browser-only scenario lab. Scenario approval never
 writes AWS state, changes shipment data, or contributes an observed outcome.
 
+Evaluation & Trust remains separate from the OPS snapshot contract. Its dated
+public-safe review aggregate is maintained in the static page source and
+contains only case, cutoff, reviewer-total, record-total, package-result, and
+claim-boundary counts. It excludes reviewer IDs, entry credentials, individual
+answers, notes, blind keys, and private study artifacts, and it never contributes
+to operational KPIs or Business Outcome Effect.
+
 ## GitHub configuration
 
 The repository includes an idempotent PowerShell setup command for the current

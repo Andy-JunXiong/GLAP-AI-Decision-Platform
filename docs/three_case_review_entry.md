@@ -1,8 +1,8 @@
 # Ten-Story Mainland Review Entry
 
 **Collection:** `glap-ten-story-review.v1`
-**Status:** ten-story upgrade implemented, human-deployed, and health-verified
-**Evidence class:** separate evaluation collection using the frozen ten-story display bundle
+**Status:** ten-story upgrade deployed; two complete submissions reconciled
+**Evidence class:** compatible private review collection using the frozen ten-story display bundle
 **Operational authority:** none
 
 ## Purpose and experience
@@ -30,11 +30,18 @@ Action, production, or policy authority.
 The display bundle is generated from the repository's frozen ten-story,
 30-package source. It preserves every source `review_id` and `package_digest`,
 but this Lambda writes to collection `glap-ten-story-review.v1` and its own
-export schema. The result is therefore not automatically eligible for the
-existing `human-evaluation-story.v2` Decision Quality gate. Before it can be
-counted, a named study owner must approve a governed compatibility/import
-check; until then it must remain separate and cannot change Decision Quality,
-Business Outcome Effect, production readiness, or model readiness.
+export schema. It is therefore not automatically eligible for the existing
+`human-evaluation-story.v2` Decision Quality gate.
+
+On `2026-08-22`, the study owner approved combining the two content-equivalent
+entry surfaces. A read-only export contained two complete submissions with 30
+unique locked answers and all required attestations each. The governed local
+reconciler verified the exact source bundle, display bundle, review IDs,
+package digests, story positions, rubric dimensions, submission locks, and
+distinct pseudonymous reviewer references. Both submissions passed and were
+combined with two complete formal Sites submissions. This creates Decision
+Quality evidence only; it cannot establish Business Outcome Effect, real
+logistics performance, production readiness, or model readiness.
 
 ## Runtime design
 
@@ -117,6 +124,12 @@ private export bearer token against `/api/export`. The output contains only the
 pseudonymous reviewer ID, frozen identifiers, 30 locked judgments, confidence,
 optional notes, attestations, final timestamp, and the explicit claim boundary.
 It contains no username, password hash, source address, or operational entity.
+
+The exported file remains private and can be reconciled with a private formal
+Sites export by [`reconcile_review_collections.py`](../ops/reconcile_review_collections.py).
+The command writes only a local artifact and never writes Lambda, DynamoDB, or
+Sites data. Any blind-key input is study-owner-only and must never be given to
+reviewers or committed.
 
 To stop collection, a named human disables the Function URL while retaining
 the isolated table for evidence-preserving review. Disabling access does not

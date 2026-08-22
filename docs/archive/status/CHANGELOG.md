@@ -4,6 +4,21 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-22
+
+- Completed governed cross-entry Decision Quality reconciliation. Two formal
+  Sites submissions and two content-equivalent mainland Lambda submissions
+  passed exact frozen-bundle, package-digest, rubric, lock, attestation, and
+  reviewer-uniqueness checks, producing a private four-review/120-record
+  aggregate. Fifteen packages favour `glap-a303-on`; fourteen identical
+  controls are unanimous ties and one non-identical package remains 2:2. No
+  live database, public Pages view, operational Action, model, or production
+  state was changed.
+- Prepared a public-safe Evaluation & Trust candidate for that aggregate. The
+  existing page now presents four reviews, 120 locked records, the 15/15 mixed
+  result, control behavior, and the unresolved 2:2 comparison without private
+  review content. Publication remains a separate human-authorized action.
+
 ## 2026-08-21
 
 - Released the isolated staging lifecycle recovery controller after a bounded

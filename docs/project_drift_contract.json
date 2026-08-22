@@ -106,13 +106,15 @@
     },
     {
       "id": "decision_quality_review",
-      "state": "PARTIAL",
-      "boundary": "public Sites v12 is the canary-verified formal reviewer entry with ten plain-language three-moment cases, true controls rendered once as a confirmed shared plan, isolated human-evaluation-story.v2 persistence, and seven separate pseudonymous reviewer accounts; two invited reviewers completed all 30 story-v2 packages with three attestations each while the superseded story-v1 draft remains isolated and ineligible; all six additional accounts passed zero-write login and isolation canaries and received their credentials privately; one more eligible submission is required and no decision-quality result exists",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "four independent pseudonymous submissions from the formal Sites and content-equivalent mainland entries passed the study-owner-approved frozen-v3 compatibility check; the private 120-record aggregate has 15 package results favouring glap-a303-on and 15 REVIEWERS_DO_NOT_AGREE results; a public-safe four-review candidate is prepared while the live Pages view remains on 2-of-3 pending separate publication approval; no Business Outcome Effect, model, production, or operational claim is supported",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
+        "ops/reconcile_review_collections.py",
         "tests/test_decision_quality_evaluation.py",
         "tests/test_historical_replay_review_bundle.py",
+        "tests/test_review_collection_reconciliation.py",
         "tests/fixtures/historical_replay/review_freeze_v3.json",
         "blinded-review-survey/app/pilot/human-evaluation/page.tsx",
         "blinded-review-survey/app/account-auth.ts",
@@ -128,14 +130,15 @@
     },
     {
       "id": "mainland_ten_story_review_entry",
-      "state": "PARTIAL",
-      "boundary": "human-created isolated Lambda Function URL login surface exists; a named human deployed glap-ten-story-review.v1, and its public health contract matches the repository build, bundle digest, ten frozen stories, and 30 source package identifiers; no operational authority and not automatically eligible for the formal human-evaluation-story.v2 Decision Quality gate",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "human-created isolated Lambda Function URL login surface exists; a named human deployed glap-ten-story-review.v1, its public health contract matches the frozen ten-story source, and two complete submissions passed the study-owner-approved compatibility/import check into the private Decision Quality aggregate; no operational authority or business-outcome, model, or production claim is supported",
       "evidence_files": [
         "lambda/glap_three_case_review.py",
         "lambda/ten_story_review_bundle.json",
         "ops/generate_three_case_review_secrets.py",
         "ops/generate_ten_story_review_bundle.mjs",
         "ops/package_three_case_review_lambda.py",
+        "ops/reconcile_review_collections.py",
         "ops/verify_three_case_review_credentials.py",
         "tests/test_three_case_review_credentials.py",
         "tests/test_three_case_review_lambda.py",
@@ -145,7 +148,7 @@
     {
       "id": "historical_replay_corpus",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "ten-event AIR/OCEAN/RAIL/ROAD local hybrid corpus with HIGH/MEDIUM coverage; structural gates met; authoritative public facts plus controlled synthetic enterprise state; independent-review benchmark gate not met",
+      "boundary": "ten-event AIR/OCEAN/RAIL/ROAD local hybrid corpus with HIGH/MEDIUM coverage; structural gates and four-review minimum met in the private reconciled evidence; 15 package results favour glap-a303-on and 15 require no-winner treatment or adjudication; authoritative public facts plus controlled synthetic enterprise state",
       "evidence_files": [
         "ops/run_historical_replay.py",
         "ops/run_historical_replay_corpus.py",

@@ -59,11 +59,12 @@ value. It keeps expected and observed impact separate until reconciliation.
 
 ## 2:40–3:00 — Show the engineering evidence
 
-Open **Evaluation** first. Show the ten replay cases, 30 frozen cutoffs, two of
-three complete eligible reviews, and the explicit `NOT EVALUATED` state. Point
-out that the page contains only aggregate progress and withholds reviewer
-identities, answers, credentials, business-outcome claims, and production-
-readiness claims.
+Open **Evaluation** first. Show the ten replay cases, 30 frozen cutoffs, four
+complete reviews, and the mixed package-level result: 15 favour A303-on,
+fourteen identical controls are unanimous ties, and one comparison remains
+2:2. Point out that the page contains only aggregate evidence and withholds
+reviewer identities, answers, notes, credentials, business-outcome claims, and
+production-readiness claims.
 
 Then open **System** and briefly visit:
 

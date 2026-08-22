@@ -118,16 +118,33 @@ class OfflineDemoTests(unittest.TestCase):
             'data-page="evaluation"',
             "Historical Replay",
             "10</strong><small>cases · 30 frozen cutoffs",
-            "2 / 3",
-            "one more eligible review required",
+            "4 / 3",
+            "minimum met · two entry surfaces",
+            "120",
             "Decision Quality",
-            "NOT EVALUATED",
-            "No reviewer identities, account details, answers",
+            "MIXED",
+            "15 favour A303-on · 15 no winner",
+            "Fourteen control ties",
+            "Cyclone Gabrielle T1 is split 2:2",
+            "No reviewer identities, account details, answers, notes",
             "No operational or business-outcome claim",
             "repeat(8,minmax(60px,1fr))",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
+
+        for private_marker in (
+            "review_id",
+            "package_digest",
+            "bundle_digest",
+            "review_notes",
+            "submitted_at",
+            "glap-ten-story-review.v1",
+            "human-evaluation-story.v2",
+        ):
+            with self.subTest(private_marker=private_marker):
+                self.assertNotIn(private_marker, self.html)
+        self.assertNotRegex(self.html, r"reviewer-[a-z0-9]")
 
     def test_stale_claims_and_fake_actions_do_not_return(self):
         for forbidden in (
@@ -137,6 +154,10 @@ class OfflineDemoTests(unittest.TestCase):
             "Rolling 90-day accuracy",
             "23 Jul · 09:30 AEST",
             "Shipment and outcome records have been updated",
+            "one more eligible review required",
+            "NOT EVALUATED",
+            "IN PROGRESS · 2 / 3",
+            "BLOCKED BY THRESHOLD",
             "data-demo-action",
             'id="shipmentTable"',
         ):

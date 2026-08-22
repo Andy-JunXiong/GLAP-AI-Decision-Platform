@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-21`
+**Sydney as-of date:** `2026-08-22`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -21,10 +21,10 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
-| Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; structural gates met, independent-review gate not met |
-| Decision Quality review handoff | `TWO_COMPLETE_REVIEWS_SEVEN_ACCOUNTS_LIVE` | Sites v12 contains two complete 30-package story-v2 submissions and seven separate live reviewer accounts; the v9 story-v1 draft remains isolated and ineligible, and one more eligible submission is required |
-| Mainland ten-story review entry | `DEPLOYED_HEALTH_VERIFIED` | A named human uploaded the ten-story/30-moment package to the isolated Lambda surface; the public health contract reports the expected build, collection, bundle digest, ten cases, and 30 moments, while its separate collection remains ineligible for the formal story-v2 gate without an approved compatibility/import check |
-| Public evaluation evidence view | `PUBLISHED_VERIFIED` | GitHub Pages presents aggregate-only 2-of-3 review progress separately from AWS operations, reviewer identities, answers, and business outcomes |
+| Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; four compatible reviews per cutoff produce 15 results favouring A303-on, 14 expected control ties, and one 2:2 split |
+| Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Two formal Sites and two mainland Lambda submissions passed the governed cross-entry checks, creating 120 compatible locked review records; superseded drafts remain isolated and ineligible |
+| Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
+| Public evaluation evidence view | `PARTIAL` | A repository-local aggregate-only four-review candidate is prepared; the live GitHub Pages view still shows 2-of-3 because publication was not authorised or performed |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -67,7 +67,7 @@ create a schedule, or publish Pages. The next lifecycle action requires a new
 named-human approval to recover only `2026-08-09`, followed by verification of
 the controller status and all 28 lifecycle checks.
 
-The mainland-access review surface now has a human-created isolated DynamoDB
+The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
 Inspected runtime screenshots confirmed the health response and, after raising
 the Lambda timeout from the failing three-second configuration, successful
@@ -76,20 +76,23 @@ frozen stories and 30 package identifiers, locks each moment on the server,
 supports resume, and permits final submission only after all 30 judgments. A
 named human uploaded the repository package. A read-only health check then
 returned build `ten-story-review-2026-08-18.1`, the expected bundle digest, ten
-cases, 30 moments, and status `ok`. The separate collection must not be counted
-as the missing third formal
-`human-evaluation-story.v2` review until a governed compatibility/import check
-is approved and passed.
+cases, 30 moments, and status `ok`. On `2026-08-22`, the study owner approved
+combining this entry with the formal Sites entry because both render the same
+frozen v3 source. A read-only export found two complete mainland submissions.
+The new local reconciler proved exact source bundle, review-ID, package-digest,
+rubric, lock, attestation, and pseudonymous-reviewer compatibility before
+combining them with the two complete Sites submissions. The private result has
+four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Formal Human Evaluation entry
+## Active slice — Decision Quality aggregate and adjudication
 
-**Status:** `TWO_COMPLETE_REVIEWS_SEVEN_ACCOUNTS_LIVE_VERIFIED`
+**Status:** `FOUR_REVIEWS_AGGREGATED_ONE_POINT_PENDING_ADJUDICATION`
 
 **Goal**
 
-Collect at least three genuinely independent reviews through the frozen
-story-v2 experience without sharing credentials or allowing one reviewer's
-session, answers, or submitted state to affect another reviewer.
+Preserve the governed four-review aggregate across the formal Sites and
+mainland Lambda entries, while keeping inconclusive package results explicit
+and every public, operational, and production action separately authorised.
 
 **Released story v2 experience**
 
@@ -117,6 +120,10 @@ session, answers, or submitted state to affect another reviewer.
 - Ming completed all 30 story-v2 packages and submitted at `2026-08-17 09:16`
   Sydney time; a later read-only verification found Dong independently
   `SUBMITTED` with 30 committed answer rows and all three attestations;
+- the two complete formal submissions and two complete mainland submissions
+  are now normalized to the same comparative-review contract. All four retain
+  distinct pseudonymous reviewer references and one locked answer for each of
+  the same 30 frozen review IDs;
 - the earlier story-v1 draft remains isolated with three ineligible answers;
 - the multi-reviewer extension is locally implemented and verified: each
   configured account maps to a distinct pseudonymous reviewer ID, and that ID
@@ -149,8 +156,10 @@ session, answers, or submitted state to affect another reviewer.
 - only each invited independent human may make their own attestations or enter
   their own scores;
 - repository tests and agent actions never create expert evidence;
-- Decision Quality remains `NOT_EVALUATED` until eligible submissions are
-  collected and the governed minimum-review aggregation gate is met;
+- Decision Quality now has a private `HYBRID_HISTORICAL_REPLAY` aggregate:
+  15 packages meet the interpretation gate and favour `glap-a303-on`, while
+  15 remain `REVIEWERS_DO_NOT_AGREE`; this does not establish Business Outcome
+  Effect, real logistics performance, model promotion, or production readiness;
 - no AWS, operational Action, production, model, or Business Outcome Effect
   authority is added.
 
@@ -280,14 +289,30 @@ session, answers, or submitted state to affect another reviewer.
   or submission. Its bilingual credential notice was sent privately only after
   that check passed; no address or plaintext credential is stored in the
   repository.
+- on `2026-08-22`, read-only source inspection found two final Sites story-v2
+  submissions and two final mainland ten-story submissions, each complete at
+  30 unique locked answers with all required attestations;
+- `reconcile_review_collections.py` validated both entry contracts against the
+  exact frozen v3 bundle and generated a private four-review, 120-record
+  aggregate without writing either source. Fifteen packages met every
+  interpretation gate and favoured `glap-a303-on`; fourteen identical controls
+  were unanimous ties, and Cyclone Gabrielle T1 split 2:2 and remains pending
+  adjudication;
+- the current public Evaluation & Trust page was not republished and still
+  reflects the earlier 2-of-3 snapshot.
+- the repository-local Evaluation & Trust candidate now shows four complete
+  reviews, 120 locked records, 15 results favouring A303-on, fourteen control
+  ties, and one 2:2 comparison. It contains no reviewer IDs, answers, notes,
+  credentials, or private study artifacts and has not been published.
 
 **Definition of done**
 
-- two complete story-v2 human submissions are preserved and locked;
-- the multi-reviewer implementation, source release, Sites v12 publication,
-  all seven account configurations, non-submitting isolation canaries, and
-  credential delivery are complete;
-- the old-draft isolation and zero-agent-answer boundaries remain intact.
+- four complete human submissions are preserved and locked across two entry
+  surfaces;
+- the compatibility/import check and private blinded aggregate are repeatable
+  from pseudonymous exports without changing either live collection;
+- the old-draft isolation, reviewer privacy, and zero-agent-answer boundaries
+  remain intact.
 
 **Stop conditions**
 
@@ -299,9 +324,8 @@ session, answers, or submitted state to affect another reviewer.
 
 **Next slice after completion**
 
-Collect one more independently entered story-v2 review from any invited
-reviewer with a verified dedicated account so the governed minimum of three
-complete reviews can be evaluated.
+Add a governed adjudication record for the one 2:2 package and prepare a new
+aggregate-only public snapshot for separate human publication approval.
 
 ## Pending validation
 
@@ -316,16 +340,10 @@ complete reviews can be evaluated.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
-- Have Dylan personally enter only true attestations and judgments after his
-  dedicated account is live and verified.
-- Have Xiaoshan personally enter only true attestations and judgments after her
-  dedicated account is live and verified.
-- Have Linqi personally enter only true attestations and judgments after her
-  dedicated account is live and verified.
-- Have the seventh invited reviewer personally enter only true attestations and
-  judgments through the verified dedicated account.
-- Collect genuinely independent Decision Quality reviews only from the v3
-  scenario, rubric, and option-contract freeze.
+- Have the named study owner decide whether the Cyclone Gabrielle T1 2:2 split
+  should remain inconclusive or enter a separately governed adjudication step.
+- Obtain separate human authority before publishing a refreshed aggregate-only
+  Evaluation & Trust snapshot; the current public page still shows 2-of-3.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -337,12 +355,13 @@ done.
   28 no-mutation diagnostic checks pass, but the persisted `2026-08-09` status
   remains failed until a named human separately authorizes the bounded recovery
   action.
-- Historical Replay: ten scenarios meet the declared structural gate; the
-  independent-review gate remains unmet.
-- Decision Quality: two complete story-v2 submissions exist, earlier
-  questionnaire and story-v1 records remain isolated and ineligible, and one
-  more complete independent submission is required before the declared
-  minimum-review gate can be met.
+- Historical Replay: ten scenarios meet the structural gate and four reviews
+  per cutoff meet the minimum-review count; 15 package results remain
+  inconclusive and must not be presented as wins.
+- Decision Quality: the four-review aggregate is complete. Fifteen packages
+  favour `glap-a303-on`; fourteen identical controls are unanimous ties and one
+  non-identical package is split 2:2. Adjudication and public snapshot refresh
+  remain separate, human-owned steps.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient; the date-effective integrity correction does not
@@ -502,9 +521,10 @@ done.
   that would render identically. Sites v10 then passed root, formal-route,
   authentication, story/profile completeness, collection isolation, and D1
   zero-pollution canaries.
-- Deterministic corpus replay passed with ten scenarios, 30 cutoffs, sixteen
-  attributed changes, fourteen no-delta controls, all structural gates met,
-  and `NOT_MET` status because the three-review minimum is not met.
+- The pre-review deterministic corpus replay passed with ten scenarios, 30
+  cutoffs, sixteen attributed changes, fourteen no-delta controls, and all
+  structural gates met. Its fixture-only `NOT_MET` result predates the governed
+  four-review aggregate and is not the current Decision Quality conclusion.
 - Project drift audit: 16 checks passed with zero drift.
 - Relative-link validation passed for 64 links across nine changed Markdown
   files.
@@ -583,16 +603,22 @@ done.
   view to the public GitHub Pages demo. Commit `5819e55` was pushed directly to
   `main`; both CI and Pages completed successfully and the live markers were
   verified afterward.
+- On `2026-08-22`, the user reported Linqi's and Xiaoshan's reviews complete,
+  clarified that both used the mainland entry, and as study owner explicitly
+  approved combining that collection with the content-equivalent formal entry.
+  The source retains only pseudonymous reviewer IDs, so no individual name-to-
+  ID mapping was inferred or stored.
 
 ### Pending validation
 
-- One independently entered review from any invited reviewer with a verified
-  dedicated account remains listed above.
+- One 2:2 package result remains available for optional governed adjudication;
+  the aggregate-only public snapshot also awaits separate publication authority.
 
 ### Incomplete
 
-- At least one more complete independent blinded review remains before the
-  declared benchmark gate can be met.
+- Four complete reviews meet the declared minimum-review count. One package is
+  inconclusive by split preference, and fourteen identical controls correctly
+  remain no-winner results.
 
 ## Next Up
 
@@ -600,12 +626,11 @@ done.
    `recover-failed-integration-date` action for only `2026-08-09`, then verify
    the persisted controller status and all 28 lifecycle checks. This is not a
    production, baseline-refresh, schedule, or Pages action.
-2. Let any invited reviewer with a verified dedicated account personally
-   complete the story-v2 flow; do not create, edit, or attest to any answer on
-   a reviewer's behalf.
-3. Keep Decision Quality and benchmark eligibility `NOT_EVALUATED` / `NOT_MET`
-   until all three eligible reviews pass the governed checks, then run the
-   blinded aggregate without mixing superseded collections.
+2. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
+   owner separately approves a governed adjudication record; never overwrite
+   the four original submissions.
+3. Obtain separate human approval before publishing the prepared aggregate-only
+   four-review Evaluation & Trust snapshot to Pages.
 
 ## Current-week history
 

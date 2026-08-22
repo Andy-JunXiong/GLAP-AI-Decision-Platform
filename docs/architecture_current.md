@@ -30,9 +30,11 @@ and Capability Attribution only. It does not verify the deployed A303 runtime,
 score Decision Quality, measure Business Outcome Effect, or establish
 production readiness. A local Decision Quality rubric and blinded-review gate
 are implemented. Sites v12 provides seven isolated pseudonymous reviewer
-accounts; two complete story-v2 reviewer submissions are preserved in the Sites
-database, but the three-review minimum is not met and no quality result is
-claimed. See
+accounts and preserves two complete story-v2 submissions. Two complete
+mainland submissions passed the study-owner-approved frozen-v3 compatibility
+check on `2026-08-22`. The private four-review aggregate has 15 package results
+favouring `glap-a303-on`, fourteen unanimous control ties, and one 2:2 result.
+See
 [`evaluation_architecture.md`](evaluation_architecture.md) for the contract and
 evidence boundaries.
 
@@ -43,10 +45,9 @@ collection `glap-ten-story-review.v1` reuses the ten frozen stories and 30
 package identifiers, conditionally locks every moment, supports resume, and
 creates one final immutable submission. Its public health contract was
 read-only verified against the repository build and bundle digest. The surface
-has no operational authority, and
-its separate collection cannot be merged into or counted toward the frozen
-`human-evaluation-story.v2` Decision Quality gate without an approved
-compatibility/import check.
+has no operational authority. Its separate collection is not automatically
+eligible, but the `2026-08-22` governed compatibility/import check passed for
+its two complete submissions without changing either source.
 See [`three_case_review_entry.md`](three_case_review_entry.md).
 
 Historical Replay v0.9 adds a local ten-scenario hybrid corpus covering the
@@ -56,8 +57,9 @@ container-port congestion events plus the Rio Grande do Sul flood-damaged
 highway network. A version-frozen manifest runs 30 historical cutoffs across
 OCEAN, AIR, RAIL, and ROAD, preserves scenario-level
 attribution, and validates HIGH and MEDIUM severity bands. Structural coverage
-gates, including scenario count, now pass; benchmark eligibility remains blocked
-until the three-review minimum and governed aggregation are complete. Public facts remain paraphrased
+gates, including scenario count, now pass. Four compatible reviews per cutoff
+meet the minimum-review count; fifteen package results remain no-winner results
+and must not be filled or presented as wins. Public facts remain paraphrased
 and digested; enterprise state remains aggregate controlled synthetic. The
 corpus is evaluation-only and cannot enter operational views, readiness
 evidence, or production reporting.
@@ -65,9 +67,9 @@ evidence, or production reporting.
 A content-addressed review freeze now binds the exact corpus manifest, ten
 scenario bodies, and Decision Quality rubric. A deterministic local builder
 produces 30 reviewer-safe packages and a separately held study-owner key while
-excluding post-decision reveals. Two complete eligible human reviews now exist
-outside the repository, but the governed three-review minimum remains unmet and
-no Decision Quality result exists.
+excluding post-decision reveals. Four complete eligible human reviews now exist
+outside the repository, and the governed aggregate reports mixed package-level
+Decision Quality results without creating Business Outcome Effect evidence.
 
 ## AWS runtime and delivery architecture
 
