@@ -14,10 +14,12 @@ preserved handoffs.
   controls are unanimous ties and one non-identical package remains 2:2. No
   live database, public Pages view, operational Action, model, or production
   state was changed.
-- Prepared a public-safe Evaluation & Trust candidate for that aggregate. The
-  existing page now presents four reviews, 120 locked records, the 15/15 mixed
+- Published a public-safe Evaluation & Trust view for that aggregate after
+  explicit user approval. The live page presents four reviews, 120 locked
+  records, the 15/15 mixed
   result, control behavior, and the unresolved 2:2 comparison without private
-  review content. Publication remains a separate human-authorized action.
+  review content. CI, Pages deployment, and post-publication HTTP verification
+  all passed.
 
 ## 2026-08-21
 

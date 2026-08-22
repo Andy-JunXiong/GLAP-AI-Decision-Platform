@@ -10,10 +10,9 @@ locked answer for each of the same 30 frozen v3 packages and all required
 attestations. The private aggregate has 15 package results favouring
 `glap-a303-on` and 15 `REVIEWERS_DO_NOT_AGREE` results. This is controlled
 point-in-time Decision Quality evidence, not Business Outcome Effect, real
-logistics performance, model promotion, or production readiness. The existing
-repository now contains a public-safe four-review Evaluation & Trust candidate;
-the live Pages view still shows the earlier 2-of-3 snapshot until separate
-publication approval.
+logistics performance, model promotion, or production readiness. After explicit
+publication approval, the live aggregate-only Evaluation & Trust view now shows
+the four-review result without private review content.
 
 ## Purpose
 

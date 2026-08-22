@@ -24,7 +24,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; four compatible reviews per cutoff produce 15 results favouring A303-on, 14 expected control ties, and one 2:2 split |
 | Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Two formal Sites and two mainland Lambda submissions passed the governed cross-entry checks, creating 120 compatible locked review records; superseded drafts remain isolated and ineligible |
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
-| Public evaluation evidence view | `PARTIAL` | A repository-local aggregate-only four-review candidate is prepared; the live GitHub Pages view still shows 2-of-3 because publication was not authorised or performed |
+| Public evaluation evidence view | `PUBLISHED_VERIFIED` | The live aggregate-only GitHub Pages view shows four reviews, 120 locked records, and the mixed 15/15 package result without private review content |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -298,12 +298,14 @@ and every public, operational, and production action separately authorised.
   interpretation gate and favoured `glap-a303-on`; fourteen identical controls
   were unanimous ties, and Cyclone Gabrielle T1 split 2:2 and remains pending
   adjudication;
-- the current public Evaluation & Trust page was not republished and still
-  reflects the earlier 2-of-3 snapshot.
-- the repository-local Evaluation & Trust candidate now shows four complete
+- after explicit user approval, GitHub commit `ec70445c8ba66119ca8982dbdce37b73b470c6c4`
+  was pushed to `main`; CI run `32562246870` and Pages run `32562246843`
+  completed successfully;
+- the live Evaluation & Trust page now shows four complete
   reviews, 120 locked records, 15 results favouring A303-on, fourteen control
   ties, and one 2:2 comparison. It contains no reviewer IDs, answers, notes,
-  credentials, or private study artifacts and has not been published.
+  credentials, or private study artifacts. A post-publication read returned
+  HTTP 200 and confirmed the earlier 2-of-3 and `NOT EVALUATED` markers are gone.
 
 **Definition of done**
 
@@ -324,8 +326,8 @@ and every public, operational, and production action separately authorised.
 
 **Next slice after completion**
 
-Add a governed adjudication record for the one 2:2 package and prepare a new
-aggregate-only public snapshot for separate human publication approval.
+If the named study owner chooses adjudication, add a governed adjudication
+record for the one 2:2 package without overwriting the four original reviews.
 
 ## Pending validation
 
@@ -342,8 +344,6 @@ aggregate-only public snapshot for separate human publication approval.
 - Have a different named approver approve or reject the edited staging Action.
 - Have the named study owner decide whether the Cyclone Gabrielle T1 2:2 split
   should remain inconclusive or enter a separately governed adjudication step.
-- Obtain separate human authority before publishing a refreshed aggregate-only
-  Evaluation & Trust snapshot; the current public page still shows 2-of-3.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -358,10 +358,11 @@ done.
 - Historical Replay: ten scenarios meet the structural gate and four reviews
   per cutoff meet the minimum-review count; 15 package results remain
   inconclusive and must not be presented as wins.
-- Decision Quality: the four-review aggregate is complete. Fifteen packages
+- Decision Quality: the four-review aggregate and public-safe snapshot are
+  complete. Fifteen packages
   favour `glap-a303-on`; fourteen identical controls are unanimous ties and one
-  non-identical package is split 2:2. Adjudication and public snapshot refresh
-  remain separate, human-owned steps.
+  non-identical package is split 2:2. Any adjudication remains a separate,
+  human-owned step.
 - Business Outcome Effect: no counterfactual business result is established.
 - Provider/model readiness: eligible actual-calendar DHL/KN history and closed
   labels remain insufficient; the date-effective integrity correction does not
@@ -629,8 +630,8 @@ done.
 2. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
    owner separately approves a governed adjudication record; never overwrite
    the four original submissions.
-3. Obtain separate human approval before publishing the prepared aggregate-only
-   four-review Evaluation & Trust snapshot to Pages.
+3. If the named study owner separately approves adjudication, add an immutable
+   adjudication record for the 2:2 package while preserving all four reviews.
 
 ## Current-week history
 

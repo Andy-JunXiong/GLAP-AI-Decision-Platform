@@ -50,9 +50,8 @@ and keeps human approval, execution evidence and outcomes traceable.
 > attested reviews from the formal Sites and content-equivalent mainland entry
 > passed the frozen-v3 compatibility check. The private 120-record aggregate
 > has 15 package results favouring `glap-a303-on`, fourteen unanimous control
-> ties, and one 2:2 result. The repository contains a refreshed public-safe
-> Evaluation candidate; the live Pages site remains on its earlier snapshot
-> until separate publication approval.
+> ties, and one 2:2 result. The public-safe Evaluation & Trust view is now live
+> on GitHub Pages with those aggregate counts and no private review content.
 
 ## Explore the interactive product story
 

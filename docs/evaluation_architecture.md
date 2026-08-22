@@ -176,9 +176,8 @@ entry passed the study-owner-approved compatibility/import check on
 unanimous ties, and one non-identical package remains split 2:2. Decision
 Quality is therefore evaluated with mixed package-level results. Business
 Outcome Effect remains `NOT_EVALUATED` until an eligible outcome method is
-attached. A repository-local aggregate-only Evaluation & Trust candidate shows
-these counts without private review content; the live Pages view remains on the
-earlier 2-of-3 snapshot pending separate publication approval. See
+attached. After explicit publication approval, the live aggregate-only
+Evaluation & Trust view shows these counts without private review content. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
 
 Run it locally with:

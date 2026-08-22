@@ -107,7 +107,7 @@
     {
       "id": "decision_quality_review",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "four independent pseudonymous submissions from the formal Sites and content-equivalent mainland entries passed the study-owner-approved frozen-v3 compatibility check; the private 120-record aggregate has 15 package results favouring glap-a303-on and 15 REVIEWERS_DO_NOT_AGREE results; a public-safe four-review candidate is prepared while the live Pages view remains on 2-of-3 pending separate publication approval; no Business Outcome Effect, model, production, or operational claim is supported",
+      "boundary": "four independent pseudonymous submissions from the formal Sites and content-equivalent mainland entries passed the study-owner-approved frozen-v3 compatibility check; the private 120-record aggregate has 15 package results favouring glap-a303-on and 15 REVIEWERS_DO_NOT_AGREE results; the live Pages view publishes only the aggregate-safe four-review result; no Business Outcome Effect, model, production, or operational claim is supported",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
