@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/agent-runtime-adapter-package.v1.schema.json",
+  "title": "GLAP offline Agent Runtime adapter conformance package v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "package_id", "interface_version", "host_id", "adapter", "artifacts", "execution_boundary", "claim_boundary"],
+  "properties": {
+    "schema_version": {"const": "agent-runtime-adapter-package.v1"},
+    "package_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "interface_version": {"const": "agent-runtime.v1"},
+    "host_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "adapter": {"$ref": "#/$defs/adapter"},
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_bundle_path", "input_bundle_sha256", "host_trace_path", "host_trace_sha256"],
+      "properties": {
+        "input_bundle_path": {"const": "input_bundle.json"},
+        "input_bundle_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "host_trace_path": {"const": "host_trace.json"},
+        "host_trace_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "execution_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network_access_allowed", "operational_writes_allowed", "dynamic_dependency_install_allowed", "production_effect"],
+      "properties": {
+        "mode": {"const": "LOCAL_ISOLATED_REPLAY"},
+        "network_access_allowed": {"const": false},
+        "operational_writes_allowed": {"const": false},
+        "dynamic_dependency_install_allowed": {"const": false},
+        "production_effect": {"const": false}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported", "not_supported"],
+      "properties": {
+        "supported": {"const": ["SOURCE_INSPECTION", "FROZEN_BUNDLE_REPLAY_CONFORMANCE", "SUBMITTED_TRACE_INTEGRITY"]},
+        "not_supported": {"const": ["HOST_AUTHENTICATION", "MODEL_IDENTITY", "HOST_QUALITY_SUPERIORITY", "DECISION_QUALITY", "BUSINESS_OUTCOME_EFFECT", "OPERATIONAL_APPROVAL", "ACTION_CREATION", "DEPLOYED_RUNTIME_VERIFICATION", "PRODUCTION_READINESS"]}
+      }
+    }
+  },
+  "$defs": {
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_version", "implementation_id", "implementation_group", "module_path", "entrypoint", "source_sha256", "enabled_capabilities", "execution_boundary"],
+      "properties": {
+        "adapter_version": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{2,127}$"},
+        "implementation_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+        "implementation_group": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+        "module_path": {"const": "adapter.py"},
+        "entrypoint": {"const": "run_adapter"},
+        "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "enabled_capabilities": {"const": ["DECISION_MEMORY", "EXTERNAL_EVIDENCE"]},
+        "execution_boundary": {"const": "EVALUATION_NO_MUTATION"}
+      }
+    }
+  }
+}

@@ -57,6 +57,90 @@ export type OperationsOutcome = {
   action_status: ActionStatus | null;
 };
 
+export type ActionAuditEvent = {
+  event_id: string;
+  event_type: ActionOperation;
+  previous_status: ActionStatus;
+  new_status: ActionStatus;
+  actor: string;
+  reason: string;
+  occurred_at: string;
+  action_owner: string | null;
+  action_due_date: string | null;
+};
+
+export type ActionEvidence = {
+  schema_version: "operations-api.v1";
+  as_of_date: string;
+  source: {
+    execution_mode: "OPERATIONAL";
+    time_basis: "ACTUAL_CALENDAR";
+    evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_EVIDENCE";
+  };
+  chain_status: "ACTION_OPEN" | "ACTION_REJECTED" | "ACTION_COMPLETED_AWAITING_OUTCOME" | "OUTCOME_PENDING" | "OUTCOME_OBSERVED";
+  action: OperationsAction;
+  events: ActionAuditEvent[];
+  outcome: Pick<OperationsOutcome,
+    "outcome_id" | "action_id" | "observation_due_date" | "outcome_status" |
+    "observed_date" | "effect_pct" | "outcome_version" | "as_of_date" | "evidence_status"
+  > | null;
+  governance: {
+    proposal_immutable: true;
+    audit_append_only: true;
+    outcome_is_simulated: true;
+    real_logistics_performance: false;
+  };
+};
+
+export type LearningEvidence = {
+  schema_version: "operations-api.v1";
+  as_of_date: string;
+  status: "INSUFFICIENT_ELIGIBLE_OUTCOMES" | "ELIGIBLE_AWAITING_PROPOSAL" | "POLICY_PROPOSAL_RECORDED";
+  source: {
+    execution_mode: "OPERATIONAL";
+    time_basis: "ACTUAL_CALENDAR";
+    evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_LEARNING_EVIDENCE";
+  };
+  gate: {
+    minimum_observed_outcomes: number;
+    eligible_observed_outcomes: number;
+    remaining_outcomes: number;
+    gate_met: boolean;
+  };
+  outcome_summary: {
+    successful: number;
+    partially_successful: number;
+    failed: number;
+    inconclusive: number;
+    success_rate_pct: number | null;
+  };
+  proposal: {
+    proposal_id: string;
+    source_policy_version: string;
+    status: string;
+    observed_outcome_count: number;
+    success_rate_pct: number | null;
+    proposed_change: string;
+    simulation_config_change: boolean;
+    effective_date: string | null;
+    approved_by: string | null;
+    approved_policy_version: string | null;
+    rollback_policy_version: string;
+    provenance: string;
+    created_date: string;
+  } | null;
+  governance: {
+    eligibility_scope: "SYNTHETIC_POLICY_REVIEW_ONLY";
+    review_required: true;
+    automatic_activation: false;
+    deterministic_rules_replaced: false;
+    outcomes_are_simulated: true;
+    real_logistics_performance: false;
+    model_readiness: false;
+    production_readiness: false;
+  };
+};
+
 export type PipelineCheck = {
   name: string;
   status: "passed" | "failed";
@@ -246,6 +330,12 @@ export async function loadActionQueue(token: string, status?: ActionStatus) {
   return request<QueueResponse>(`/v1/actions${query}`, token);
 }
 
+export async function loadActionEvidence(token: string, actionId: string) {
+  return request<ActionEvidence>(
+    `/v1/actions/${encodeURIComponent(actionId)}/evidence`, token,
+  );
+}
+
 export async function loadRiskHotspots(token: string, status?: RiskStatus) {
   const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
   return request<RiskResponse>(`/v1/risks${query}`, token);
@@ -254,6 +344,10 @@ export async function loadRiskHotspots(token: string, status?: RiskStatus) {
 export async function loadOutcomeReview(token: string, status?: OutcomeStatus) {
   const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
   return request<OutcomeResponse>(`/v1/outcomes${query}`, token);
+}
+
+export async function loadLearningEvidence(token: string) {
+  return request<LearningEvidence>("/v1/learning", token);
 }
 
 export async function loadPipelineHealth(token: string) {

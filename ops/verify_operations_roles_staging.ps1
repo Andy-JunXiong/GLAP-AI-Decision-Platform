@@ -5,6 +5,8 @@ param(
     [string]$IdentityStackName = "glap-operations-identity-staging",
     [string]$ApiStackName = "glap-operations-api-staging",
     [switch]$RequireActionAssignment,
+    [switch]$RequireActionEvidence,
+    [switch]$RequireLearningEvidence,
     [switch]$Apply
 )
 
@@ -17,6 +19,8 @@ Write-Host "  Temporary users: viewer, operator, approver, administrator"
 Write-Host "  Email delivery: False"
 Write-Host "  Existing Action mutation: False (unguessable missing Action ID)"
 Write-Host "  Require Action assignment role checks: $RequireActionAssignment"
+Write-Host "  Require Action evidence role checks: $RequireActionEvidence"
+Write-Host "  Require Learning evidence role checks: $RequireLearningEvidence"
 Write-Host "  Test users deleted after verification: True"
 Write-Host "  Tokens or user identifiers printed: False"
 if (-not $Apply) {
@@ -141,6 +145,8 @@ try {
     $forecastReadStatuses = [ordered]@{}
     $networkReadStatuses = [ordered]@{}
     $shipmentReadStatuses = [ordered]@{}
+    $evidenceReadStatuses = [ordered]@{}
+    $learningReadStatuses = [ordered]@{}
     foreach ($role in $roles) {
         $readStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/actions?limit=1" $tokens[$role]
         $riskReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/risks?status=OPEN&limit=1" $tokens[$role]
@@ -149,6 +155,78 @@ try {
         $forecastReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/forecasts" $tokens[$role]
         $networkReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/network" $tokens[$role]
         $shipmentReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/shipments?limit=1" $tokens[$role]
+        if ($RequireActionEvidence) {
+            $evidenceReadStatuses[$role] = Invoke-ApiStatus `
+                "$endpoint/v1/actions/$missingAction/evidence" $tokens[$role]
+        }
+        if ($RequireLearningEvidence) {
+            $learningReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/learning" $tokens[$role]
+        }
+    }
+    $evidencePayload = $null
+    $evidenceBoundaryValid = $true
+    $evidenceOutcomeBoundaryValid = $true
+    if ($RequireActionEvidence) {
+        $queuePayload = Invoke-ApiJson "$endpoint/v1/actions?limit=1" $tokens.viewer
+        $queueItems = @($queuePayload.items)
+        if (-not $queueItems.Count) { throw "Action evidence verification requires one existing Action" }
+        $evidenceActionId = [uri]::EscapeDataString([string]$queueItems[0].action_id)
+        $evidencePayload = Invoke-ApiJson `
+            "$endpoint/v1/actions/$evidenceActionId/evidence" $tokens.viewer
+        $evidenceJson = $evidencePayload | ConvertTo-Json -Depth 10 -Compress
+        $evidenceBoundaryValid = `
+            $evidencePayload.as_of_date -eq $logicalDate -and `
+            $evidencePayload.source.execution_mode -eq "OPERATIONAL" -and `
+            $evidencePayload.source.time_basis -eq "ACTUAL_CALENDAR" -and `
+            $evidencePayload.governance.proposal_immutable -eq $true -and `
+            $evidencePayload.governance.audit_append_only -eq $true -and `
+            $evidencePayload.governance.outcome_is_simulated -eq $true -and `
+            $evidencePayload.governance.real_logistics_performance -eq $false -and `
+            $evidenceJson -notmatch 'request_id|execution_scenario_id|s3://|arn:'
+        $evidenceOutcomeBoundaryValid = `
+            -not $evidencePayload.outcome -or `
+            ($evidencePayload.outcome.evidence_status -eq "NOT_OBSERVED" -and `
+             -not $evidencePayload.outcome.observed_date -and `
+             -not $evidencePayload.outcome.effect_pct) -or `
+            ($evidencePayload.outcome.evidence_status -eq "OBSERVED_ACTUAL_CALENDAR" -and `
+             [datetime]$evidencePayload.outcome.observed_date -le [datetime]$logicalDate)
+    }
+    $learningPayload = $null
+    $learningBoundaryValid = $true
+    if ($RequireLearningEvidence) {
+        $learningPayload = Invoke-ApiJson "$endpoint/v1/learning" $tokens.viewer
+        $learningJson = $learningPayload | ConvertTo-Json -Depth 10 -Compress
+        $learningMinimum = [int]$learningPayload.gate.minimum_observed_outcomes
+        $learningEligible = [int]$learningPayload.gate.eligible_observed_outcomes
+        $learningExpectedStatus = if ($learningPayload.proposal) {
+            "POLICY_PROPOSAL_RECORDED"
+        } elseif ($learningEligible -ge $learningMinimum) {
+            "ELIGIBLE_AWAITING_PROPOSAL"
+        } else {
+            "INSUFFICIENT_ELIGIBLE_OUTCOMES"
+        }
+        $learningBoundaryValid = `
+            $learningPayload.as_of_date -eq $logicalDate -and `
+            $learningPayload.source.execution_mode -eq "OPERATIONAL" -and `
+            $learningPayload.source.time_basis -eq "ACTUAL_CALENDAR" -and `
+            $learningPayload.source.evidence_class -eq "SYNTHETIC_OPERATIONAL_CALENDAR_LEARNING_EVIDENCE" -and `
+            $learningEligible -ge 0 -and `
+            $learningMinimum -gt 0 -and `
+            [int]$learningPayload.gate.remaining_outcomes -eq [Math]::Max(0, $learningMinimum - $learningEligible) -and `
+            [bool]$learningPayload.gate.gate_met -eq ($learningEligible -ge $learningMinimum) -and `
+            $learningPayload.status -eq $learningExpectedStatus -and `
+            (-not $learningPayload.proposal -or `
+             ($learningPayload.proposal.provenance -eq "SIMULATED_LEARNING_EVIDENCE" -and `
+              $learningPayload.proposal.simulation_config_change -eq $false)) -and `
+            $learningPayload.governance.eligibility_scope -eq "SYNTHETIC_POLICY_REVIEW_ONLY" -and `
+            $learningPayload.governance.review_required -eq $true -and `
+            $learningPayload.governance.automatic_activation -eq $false -and `
+            $learningPayload.governance.deterministic_rules_replaced -eq $false -and `
+            $learningPayload.governance.outcomes_are_simulated -eq $true -and `
+            $learningPayload.governance.real_logistics_performance -eq $false -and `
+            $learningPayload.governance.model_readiness -eq $false -and `
+            $learningPayload.governance.production_readiness -eq $false -and `
+            $learningJson -notmatch 'shipment_id|alert_fingerprint|s3://|arn:'
     }
     $riskPayload = Invoke-ApiJson "$endpoint/v1/risks?status=OPEN&limit=100" $tokens.viewer
     $riskItems = @($riskPayload.items)
@@ -312,6 +390,25 @@ try {
         $checks["administrator edit allowed by role"] = `
             (Action-Status "administrator" "EDIT") -notin @(401, 403)
     }
+    if ($RequireActionEvidence) {
+        $checks["viewer Action evidence read allowed"] = $evidenceReadStatuses.viewer -eq 404
+        $checks["operator Action evidence read allowed"] = $evidenceReadStatuses.operator -eq 404
+        $checks["approver Action evidence read allowed"] = $evidenceReadStatuses.approver -eq 404
+        $checks["administrator Action evidence read allowed"] = $evidenceReadStatuses.administrator -eq 404
+        $checks["Action evidence response contract valid"] = `
+            $evidencePayload.schema_version -eq "operations-api.v1"
+        $checks["Action evidence governance boundary valid"] = $evidenceBoundaryValid
+        $checks["Action evidence Outcome boundary valid"] = $evidenceOutcomeBoundaryValid
+    }
+    if ($RequireLearningEvidence) {
+        $checks["viewer Learning evidence read allowed"] = $learningReadStatuses.viewer -eq 200
+        $checks["operator Learning evidence read allowed"] = $learningReadStatuses.operator -eq 200
+        $checks["approver Learning evidence read allowed"] = $learningReadStatuses.approver -eq 200
+        $checks["administrator Learning evidence read allowed"] = $learningReadStatuses.administrator -eq 200
+        $checks["Learning evidence response contract valid"] = `
+            $learningPayload.schema_version -eq "operations-api.v1"
+        $checks["Learning evidence governance boundary valid"] = $learningBoundaryValid
+    }
     Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
     Write-Host "Risk read HTTP statuses: viewer=$($riskReadStatuses.viewer), operator=$($riskReadStatuses.operator), approver=$($riskReadStatuses.approver), administrator=$($riskReadStatuses.administrator)"
     Write-Host "Outcome read HTTP statuses: viewer=$($outcomeReadStatuses.viewer), operator=$($outcomeReadStatuses.operator), approver=$($outcomeReadStatuses.approver), administrator=$($outcomeReadStatuses.administrator)"
@@ -319,6 +416,14 @@ try {
     Write-Host "Forecast read HTTP statuses: viewer=$($forecastReadStatuses.viewer), operator=$($forecastReadStatuses.operator), approver=$($forecastReadStatuses.approver), administrator=$($forecastReadStatuses.administrator)"
     Write-Host "Network read HTTP statuses: viewer=$($networkReadStatuses.viewer), operator=$($networkReadStatuses.operator), approver=$($networkReadStatuses.approver), administrator=$($networkReadStatuses.administrator)"
     Write-Host "Shipment entity read HTTP statuses: viewer=$($shipmentReadStatuses.viewer), operator=$($shipmentReadStatuses.operator), approver=$($shipmentReadStatuses.approver), administrator=$($shipmentReadStatuses.administrator)"
+    if ($RequireActionEvidence) {
+        Write-Host "Action evidence read HTTP statuses: viewer=$($evidenceReadStatuses.viewer), operator=$($evidenceReadStatuses.operator), approver=$($evidenceReadStatuses.approver), administrator=$($evidenceReadStatuses.administrator)"
+        Write-Host "Action evidence summary: chain_status=$($evidencePayload.chain_status), events=$(@($evidencePayload.events).Count), outcome_present=$([bool]$evidencePayload.outcome)"
+    }
+    if ($RequireLearningEvidence) {
+        Write-Host "Learning evidence read HTTP statuses: viewer=$($learningReadStatuses.viewer), operator=$($learningReadStatuses.operator), approver=$($learningReadStatuses.approver), administrator=$($learningReadStatuses.administrator)"
+        Write-Host "Learning evidence summary: status=$($learningPayload.status), eligible=$($learningPayload.gate.eligible_observed_outcomes)/$($learningPayload.gate.minimum_observed_outcomes), proposal_present=$([bool]$learningPayload.proposal)"
+    }
     Write-Host "Open operational Risk rows returned: $($riskItems.Count)"
     Write-Host "Operational Outcome rows returned: pending=$($pendingOutcomes.Count), observed=$($observedOutcomes.Count)"
     Write-Host "Pipeline Health summary: status=$($healthPayload.status), logical_run_date=$($healthPayload.logical_run_date), stages=$($healthPayload.stages_succeeded)/$($healthPayload.stage_count), quality_checks=$($healthPayload.quality_checks_succeeded)/$($healthPayload.quality_checks_total)"

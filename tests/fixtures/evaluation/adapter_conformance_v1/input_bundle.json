@@ -1,0 +1,67 @@
+{
+  "schema_version": "agent-runtime-input-bundle.v1",
+  "bundle_sha256": "c0f617f543cdd69750cb3276916a1332af020e2eb58b9d912fff8b20b63425d7",
+  "source_manifest_sha256": "ac1bcccb8fd8f70797871e9f5d3e3b83601227d1d344d81d2a880510c8753518",
+  "payload": {
+    "payload_version": "agent-runtime-input-payload.v1",
+    "experiment_id": "agent-runtime-parity-v1",
+    "scenario": {
+      "scenario_id": "controlled-agent-runtime-2025-03-07",
+      "scenario_mode": "CONTROLLED_SYNTHETIC_REPLAY",
+      "cutoff_at": "2025-03-07T09:00:00+11:00",
+      "evidence_classification": "SYNTHETIC_ENGINEERING_ONLY",
+      "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01"
+    },
+    "runtime_envelope": {
+      "interface_version": "agent-runtime.v1",
+      "authority_profile": "EVALUATION_NO_MUTATION",
+      "tools": {
+        "get_evidence": {"mode": "LOCAL_READ_ONLY", "max_calls": 1},
+        "get_similar_decisions": {"mode": "LOCAL_READ_ONLY", "max_calls": 1},
+        "propose_action": {"mode": "EVALUATION_PROPOSAL_ONLY", "max_calls": 1},
+        "request_approval": {"mode": "SIMULATED_NO_AUTHORITY", "max_calls": 1}
+      },
+      "budgets": {
+        "max_tool_calls": 4,
+        "max_evidence_items": 2,
+        "max_memory_items": 2,
+        "max_proposal_characters": 1024
+      },
+      "redaction": {
+        "entity_identifiers_allowed": false,
+        "credentials_allowed": false,
+        "private_origins_allowed": false
+      },
+      "enabled_capabilities": ["DECISION_MEMORY", "EXTERNAL_EVIDENCE"]
+    },
+    "cutoff_inputs": {
+      "evidence": [
+        {
+          "evidence_id": "external-disruption-v1",
+          "evidence_type": "EXTERNAL_EVENT",
+          "available_at": "2025-03-07T07:40:00+11:00",
+          "provenance": "CONTROLLED_SYNTHETIC",
+          "severity": "HIGH"
+        },
+        {
+          "evidence_id": "operational-watch-v1",
+          "evidence_type": "OPERATIONAL_SIGNAL",
+          "available_at": "2025-03-07T07:20:00+11:00",
+          "provenance": "CONTROLLED_SYNTHETIC",
+          "severity": "MEDIUM"
+        }
+      ],
+      "decision_memory": [
+        {
+          "memory_id": "matching-reviewed-memory-v1",
+          "available_at": "2025-02-07T08:05:00+11:00",
+          "provenance": "CONTROLLED_SYNTHETIC",
+          "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01",
+          "prior_recommendation": "REQUEST_BOUNDED_REVIEW",
+          "review_status": "SYNTHETIC_REVIEWED",
+          "outcome_evidence_class": "NOT_EVALUATED"
+        }
+      ]
+    }
+  }
+}

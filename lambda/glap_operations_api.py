@@ -25,8 +25,16 @@ DATABASE = os.getenv("ATHENA_SOURCE_DATABASE", "simulated_iceberg_m")
 WORKGROUP = os.getenv("ATHENA_WORKGROUP", "primary")
 OUTPUT = os.getenv("ATHENA_OUTPUT", "")
 ACTION_VIEW = os.getenv("LIFECYCLE_ACTION_CURRENT_VIEW", "vw_lifecycle_action_current_staging_v1")
+ACTION_AUDIT_TABLE = os.getenv(
+    "LIFECYCLE_ACTION_AUDIT_TABLE", "fact_lifecycle_action_audit_staging_v1"
+)
+ACTION_TABLE = os.getenv("LIFECYCLE_ACTION_TABLE", "fact_lifecycle_action_staging_v1")
 ALERT_TABLE = os.getenv("LIFECYCLE_ALERT_TABLE", "fact_lifecycle_alert_staging_v1")
 OUTCOME_TABLE = os.getenv("LIFECYCLE_OUTCOME_TABLE", "fact_lifecycle_outcome_staging_v1")
+POLICY_PROPOSAL_TABLE = os.getenv(
+    "POLICY_PROPOSAL_TABLE", "fact_policy_proposal_staging_v1"
+)
+MINIMUM_POLICY_OUTCOMES = int(os.getenv("MINIMUM_POLICY_OUTCOMES", "20"))
 FORECAST_SOURCE_TABLE = os.getenv(
     "FORECAST_SOURCE_TABLE", "vw_multimodal_forecast_feature_daily_v1"
 )
@@ -66,19 +74,20 @@ PIPELINE_RUNBOOK_URL = (
 ROLE_PERMISSIONS = {
     "viewer": {
         "risks:read", "actions:read", "outcomes:read", "health:read", "forecasts:read",
-        "network:read",
+        "network:read", "learning:read",
     },
     "operator": {
         "risks:read", "actions:read", "actions:edit", "actions:complete", "outcomes:read", "health:read",
-        "forecasts:read", "network:read", "shipments:read",
+        "forecasts:read", "network:read", "shipments:read", "learning:read",
     },
     "approver": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "outcomes:read",
-        "health:read", "forecasts:read", "network:read", "shipments:read",
+        "health:read", "forecasts:read", "network:read", "shipments:read", "learning:read",
     },
     "administrator": {
         "risks:read", "actions:read", "actions:edit", "actions:approve", "actions:reject", "actions:complete",
         "outcomes:read", "health:read", "forecasts:read", "network:read", "shipments:read",
+        "learning:read",
     },
 }
 OPERATION_PERMISSION = {
@@ -199,6 +208,206 @@ ORDER BY created_date DESC, action_id
 LIMIT {limit}"""
 
 
+def build_action_evidence_query(action_id: str, as_of_date: str) -> str:
+    """Read one bounded Action, its immutable audit trail, and latest Outcome."""
+
+    if not SAFE_ID.fullmatch(action_id):
+        raise ValueError("Invalid Action identifier")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    return f"""WITH ranked_actions AS (
+    SELECT action_id, alert_fingerprint, shipment_id, action_type,
+           alert_type, alert_severity, status, approval_required,
+           approved_by, approved_at, completed_at, created_date,
+           row_number() OVER (
+               PARTITION BY action_id
+               ORDER BY as_of_date DESC, created_date DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(ACTION_TABLE)}
+    WHERE action_id = '{action_id}'
+      AND temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND created_date <= DATE '{as_of_date}'
+), immutable_action AS (
+    SELECT * FROM ranked_actions WHERE row_rank = 1
+), ranked_audit_events AS (
+    SELECT event_id, event_type, previous_status, new_status, actor,
+           reason, occurred_at, approved_by, approved_at, completed_at,
+           action_owner, action_due_date,
+           row_number() OVER (
+               PARTITION BY action_id
+               ORDER BY occurred_at DESC,
+                        CASE event_type WHEN 'COMPLETE' THEN 4 WHEN 'REJECT' THEN 3
+                             WHEN 'APPROVE' THEN 2 WHEN 'EDIT' THEN 1 ELSE 0 END DESC,
+                        event_id DESC
+           ) AS event_rank,
+           action_id
+    FROM {_identifier(DATABASE)}.{_identifier(ACTION_AUDIT_TABLE)}
+    WHERE action_id = '{action_id}'
+      AND temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND created_date <= DATE '{as_of_date}'
+), audit_events AS (
+    SELECT * FROM ranked_audit_events
+), latest_audit_event AS (
+    SELECT * FROM ranked_audit_events WHERE event_rank = 1
+), current_action AS (
+    SELECT a.action_id, a.alert_fingerprint, a.shipment_id, a.action_type,
+           a.alert_type, a.alert_severity,
+           coalesce(e.new_status, a.status) AS status,
+           a.approval_required,
+           coalesce(e.approved_by, a.approved_by) AS approved_by,
+           coalesce(e.approved_at, a.approved_at) AS approved_at,
+           coalesce(e.completed_at, a.completed_at) AS completed_at,
+           e.action_owner, e.action_due_date, a.created_date
+    FROM immutable_action a
+    LEFT JOIN latest_audit_event e ON a.action_id = e.action_id
+), ranked_outcomes AS (
+    SELECT outcome_id, action_id, observation_due_date, status,
+           observed_date, effect_pct, outcome_version, as_of_date,
+           row_number() OVER (
+               PARTITION BY action_id
+               ORDER BY try_cast(dt AS date) DESC, as_of_date DESC,
+                        outcome_version DESC, outcome_id DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(OUTCOME_TABLE)}
+    WHERE action_id = '{action_id}'
+      AND temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND try_cast(dt AS date) <= DATE '{as_of_date}'
+      AND (
+          (status = 'PENDING' AND observed_date IS NULL AND effect_pct IS NULL)
+          OR (status IN ('SUCCESSFUL', 'PARTIALLY_SUCCESSFUL', 'FAILED', 'INCONCLUSIVE')
+              AND observed_date <= DATE '{as_of_date}')
+      )
+), current_outcome AS (
+    SELECT * FROM ranked_outcomes WHERE row_rank = 1
+)
+SELECT a.action_id, a.alert_fingerprint, a.shipment_id, a.action_type,
+       a.alert_type, a.alert_severity, a.status AS action_status,
+       CAST(a.approval_required AS varchar) AS approval_required,
+       a.approved_by, CAST(a.approved_at AS varchar) AS approved_at,
+       CAST(a.completed_at AS varchar) AS completed_at,
+       a.action_owner, CAST(a.action_due_date AS varchar) AS action_due_date,
+       CAST(a.created_date AS varchar) AS action_created_date,
+       e.event_id, e.event_type, e.previous_status, e.new_status, e.actor,
+       e.reason, CAST(e.occurred_at AS varchar) AS occurred_at,
+       e.action_owner AS event_action_owner,
+       CAST(e.action_due_date AS varchar) AS event_action_due_date,
+       o.outcome_id, CAST(o.observation_due_date AS varchar) AS observation_due_date,
+       o.status AS outcome_status, CAST(o.observed_date AS varchar) AS observed_date,
+       CAST(o.effect_pct AS varchar) AS effect_pct, o.outcome_version,
+       CAST(o.as_of_date AS varchar) AS outcome_as_of_date,
+       CASE WHEN o.status = 'PENDING' THEN 'NOT_OBSERVED'
+            WHEN o.status IS NOT NULL THEN 'OBSERVED_ACTUAL_CALENDAR'
+            ELSE NULL END AS evidence_status
+FROM current_action a
+LEFT JOIN audit_events e ON a.action_id = e.action_id
+LEFT JOIN current_outcome o ON a.action_id = o.action_id
+ORDER BY e.occurred_at, e.event_id
+LIMIT 100"""
+
+
+def build_action_evidence_contract(
+    rows: list[dict[str, str | None]], as_of_date: str
+) -> dict[str, Any] | None:
+    """Shape a joined Athena result into one reviewable Action evidence chain."""
+
+    if not rows:
+        return None
+    first = rows[0]
+    action_id = first.get("action_id")
+    if not action_id:
+        return None
+
+    action = {
+        "action_id": action_id,
+        "alert_fingerprint": first.get("alert_fingerprint"),
+        "shipment_id": first.get("shipment_id"),
+        "action_type": first.get("action_type"),
+        "alert_type": first.get("alert_type"),
+        "alert_severity": first.get("alert_severity"),
+        "status": first.get("action_status"),
+        "approval_required": first.get("approval_required"),
+        "approved_by": first.get("approved_by"),
+        "approved_at": first.get("approved_at"),
+        "completed_at": first.get("completed_at"),
+        "action_owner": first.get("action_owner"),
+        "action_due_date": first.get("action_due_date"),
+        "created_date": first.get("action_created_date"),
+    }
+    events = []
+    seen_events: set[str] = set()
+    for row in rows:
+        event_id = row.get("event_id")
+        if not event_id or event_id in seen_events:
+            continue
+        seen_events.add(event_id)
+        events.append({
+            "event_id": event_id,
+            "event_type": row.get("event_type"),
+            "previous_status": row.get("previous_status"),
+            "new_status": row.get("new_status"),
+            "actor": row.get("actor"),
+            "reason": row.get("reason"),
+            "occurred_at": row.get("occurred_at"),
+            "action_owner": row.get("event_action_owner"),
+            "action_due_date": row.get("event_action_due_date"),
+        })
+
+    outcome = None
+    if first.get("outcome_id"):
+        outcome = {
+            "outcome_id": first.get("outcome_id"),
+            "action_id": action_id,
+            "observation_due_date": first.get("observation_due_date"),
+            "outcome_status": first.get("outcome_status"),
+            "observed_date": first.get("observed_date"),
+            "effect_pct": first.get("effect_pct"),
+            "outcome_version": first.get("outcome_version"),
+            "as_of_date": first.get("outcome_as_of_date"),
+            "evidence_status": first.get("evidence_status"),
+        }
+
+    if action["status"] == "REJECTED":
+        chain_status = "ACTION_REJECTED"
+    elif outcome is None:
+        chain_status = (
+            "ACTION_COMPLETED_AWAITING_OUTCOME"
+            if action["status"] == "COMPLETED" else "ACTION_OPEN"
+        )
+    elif outcome["outcome_status"] == "PENDING":
+        chain_status = "OUTCOME_PENDING"
+    else:
+        chain_status = "OUTCOME_OBSERVED"
+
+    return {
+        "schema_version": "operations-api.v1",
+        "as_of_date": as_of_date,
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_EVIDENCE",
+        },
+        "chain_status": chain_status,
+        "action": action,
+        "events": events,
+        "outcome": outcome,
+        "governance": {
+            "proposal_immutable": True,
+            "audit_append_only": True,
+            "outcome_is_simulated": True,
+            "real_logistics_performance": False,
+        },
+    }
+
+
 def build_risk_hotspots_query(limit: int, status: str | None, as_of_date: str) -> str:
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
         raise ValueError("Invalid operational cutoff date")
@@ -279,6 +488,157 @@ WHERE 1 = 1{status_filter}
 ORDER BY CASE o.outcome_status WHEN 'PENDING' THEN 1 ELSE 2 END,
          o.observation_due_date, o.outcome_id
 LIMIT {limit}"""
+
+
+def build_learning_evidence_query(as_of_date: str) -> str:
+    """Aggregate eligible Outcomes and attach the latest governed proposal."""
+
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    return f"""WITH ranked_outcomes AS (
+    SELECT outcome_id, status, observed_date,
+           row_number() OVER (
+               PARTITION BY outcome_id
+               ORDER BY try_cast(dt AS date) DESC, as_of_date DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(OUTCOME_TABLE)}
+    WHERE temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND try_cast(dt AS date) <= DATE '{as_of_date}'
+      AND observed_date IS NOT NULL
+      AND observed_date <= DATE '{as_of_date}'
+      AND status IN ('SUCCESSFUL', 'PARTIALLY_SUCCESSFUL', 'FAILED', 'INCONCLUSIVE')
+), eligible_outcomes AS (
+    SELECT * FROM ranked_outcomes WHERE row_rank = 1
+), outcome_summary AS (
+    SELECT count(*) AS eligible_outcome_count,
+           count_if(status = 'SUCCESSFUL') AS successful_count,
+           count_if(status = 'PARTIALLY_SUCCESSFUL') AS partially_successful_count,
+           count_if(status = 'FAILED') AS failed_count,
+           count_if(status = 'INCONCLUSIVE') AS inconclusive_count,
+           CASE WHEN count(*) = 0 THEN NULL ELSE round(
+               100.0 * count_if(status IN ('SUCCESSFUL', 'PARTIALLY_SUCCESSFUL')) / count(*), 2
+           ) END AS success_rate_pct
+    FROM eligible_outcomes
+), ranked_proposals AS (
+    SELECT proposal_id, source_policy_version, status AS proposal_status,
+           observed_outcome_count, success_rate_pct AS proposal_success_rate_pct,
+           proposed_change, simulation_config_change, effective_date,
+           approved_by, approved_policy_version, rollback_policy_version,
+           provenance, created_date,
+           row_number() OVER (
+               ORDER BY created_date DESC, as_of_date DESC, proposal_id DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(POLICY_PROPOSAL_TABLE)}
+    WHERE temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND created_date <= DATE '{as_of_date}'
+)
+SELECT summary.eligible_outcome_count, summary.successful_count,
+       summary.partially_successful_count, summary.failed_count,
+       summary.inconclusive_count, summary.success_rate_pct,
+       proposal.proposal_id, proposal.source_policy_version,
+       proposal.proposal_status, proposal.observed_outcome_count,
+       proposal.proposal_success_rate_pct, proposal.proposed_change,
+       proposal.simulation_config_change, proposal.effective_date,
+       proposal.approved_by, proposal.approved_policy_version,
+       proposal.rollback_policy_version, proposal.provenance,
+       proposal.created_date
+FROM outcome_summary summary
+LEFT JOIN ranked_proposals proposal ON proposal.row_rank = 1"""
+
+
+def _count_value(row: dict[str, str | None], field: str) -> int:
+    value = row.get(field)
+    return int(str(value)) if value not in (None, "") else 0
+
+
+def build_learning_evidence_contract(
+    rows: list[dict[str, str | None]],
+    as_of_date: str,
+    minimum_observed: int = MINIMUM_POLICY_OUTCOMES,
+) -> dict[str, Any]:
+    """Shape the Outcome learning gate without granting policy authority."""
+
+    if minimum_observed < 1:
+        raise ValueError("Minimum observed Outcome count must be positive")
+    row = rows[0] if rows else {}
+    eligible = _count_value(row, "eligible_outcome_count")
+    successful = _count_value(row, "successful_count")
+    partial = _count_value(row, "partially_successful_count")
+    failed = _count_value(row, "failed_count")
+    inconclusive = _count_value(row, "inconclusive_count")
+    proposal = None
+    if row.get("proposal_id"):
+        proposal = {
+            "proposal_id": row.get("proposal_id"),
+            "source_policy_version": row.get("source_policy_version"),
+            "status": row.get("proposal_status"),
+            "observed_outcome_count": _count_value(row, "observed_outcome_count"),
+            "success_rate_pct": (
+                float(str(row["proposal_success_rate_pct"]))
+                if row.get("proposal_success_rate_pct") not in (None, "") else None
+            ),
+            "proposed_change": row.get("proposed_change"),
+            "simulation_config_change": str(
+                row.get("simulation_config_change") or "false"
+            ).lower() == "true",
+            "effective_date": row.get("effective_date"),
+            "approved_by": row.get("approved_by"),
+            "approved_policy_version": row.get("approved_policy_version"),
+            "rollback_policy_version": row.get("rollback_policy_version"),
+            "provenance": row.get("provenance"),
+            "created_date": row.get("created_date"),
+        }
+
+    gate_met = eligible >= minimum_observed
+    if proposal:
+        status = "POLICY_PROPOSAL_RECORDED"
+    elif gate_met:
+        status = "ELIGIBLE_AWAITING_PROPOSAL"
+    else:
+        status = "INSUFFICIENT_ELIGIBLE_OUTCOMES"
+    return {
+        "schema_version": "operations-api.v1",
+        "as_of_date": as_of_date,
+        "status": status,
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_LEARNING_EVIDENCE",
+        },
+        "gate": {
+            "minimum_observed_outcomes": minimum_observed,
+            "eligible_observed_outcomes": eligible,
+            "remaining_outcomes": max(0, minimum_observed - eligible),
+            "gate_met": gate_met,
+        },
+        "outcome_summary": {
+            "successful": successful,
+            "partially_successful": partial,
+            "failed": failed,
+            "inconclusive": inconclusive,
+            "success_rate_pct": (
+                float(str(row["success_rate_pct"]))
+                if row.get("success_rate_pct") not in (None, "") else None
+            ),
+        },
+        "proposal": proposal,
+        "governance": {
+            "eligibility_scope": "SYNTHETIC_POLICY_REVIEW_ONLY",
+            "review_required": True,
+            "automatic_activation": False,
+            "deterministic_rules_replaced": False,
+            "outcomes_are_simulated": True,
+            "real_logistics_performance": False,
+            "model_readiness": False,
+            "production_readiness": False,
+        },
+    }
 
 
 def build_forecast_series_query(as_of_date: str, history_days: int = 90) -> str:
@@ -848,6 +1208,16 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             )
             return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
 
+        if method == "GET" and path == "/v1/learning":
+            if "learning:read" not in permissions or "outcomes:read" not in permissions:
+                raise PermissionError("Role cannot read Learning evidence")
+            import boto3
+            cutoff = _sydney_date()
+            rows = _query_rows(
+                boto3.client("athena"), build_learning_evidence_query(cutoff)
+            )
+            return _response(200, build_learning_evidence_contract(rows, cutoff))
+
         if method == "GET" and path == "/v1/actions":
             if "actions:read" not in permissions:
                 raise PermissionError("Role cannot read Actions")
@@ -856,6 +1226,22 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             limit = min(max(int(params.get("limit", 50)), 1), 100)
             rows = _query_rows(boto3.client("athena"), build_action_queue_query(limit, params.get("status")))
             return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
+
+        evidence_match = re.fullmatch(r"/v1/actions/([^/]+)/evidence", path)
+        if method == "GET" and evidence_match:
+            if "actions:read" not in permissions or "outcomes:read" not in permissions:
+                raise PermissionError("Role cannot read Action evidence")
+            action_id = evidence_match.group(1)
+            cutoff = _sydney_date()
+            import boto3
+            rows = _query_rows(
+                boto3.client("athena"),
+                build_action_evidence_query(action_id, cutoff),
+            )
+            contract = build_action_evidence_contract(rows, cutoff)
+            if contract is None:
+                return _response(404, {"error": "not_found", "request_id": request_id})
+            return _response(200, contract)
 
         match = re.fullmatch(r"/v1/actions/([^/]+)/events", path)
         if method == "POST" and match:

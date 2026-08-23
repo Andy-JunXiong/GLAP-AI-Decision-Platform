@@ -179,6 +179,10 @@ jobs:
           aws sts get-caller-identity >/dev/null
           aws lambda get-function --function-name glap-lifecycle-action-mutation-staging >/dev/null
           aws glue get-table --database-name simulated_iceberg_m --name vw_lifecycle_action_current_staging_v1 >/dev/null
+          aws glue get-table --database-name simulated_iceberg_m --name fact_lifecycle_action_staging_v1 >/dev/null
+          aws glue get-table --database-name simulated_iceberg_m --name fact_lifecycle_action_audit_staging_v1 >/dev/null
+          aws glue get-table --database-name simulated_iceberg_m --name fact_lifecycle_outcome_staging_v1 >/dev/null
+          aws glue get-table --database-name simulated_iceberg_m --name fact_policy_proposal_staging_v1 >/dev/null
           aws glue get-table --database-name simulated_iceberg_m --name vw_multimodal_forecast_feature_daily_v1 >/dev/null
           aws glue get-table --database-name simulated_iceberg_m --name vw_multimodal_shipment_daily_v1 >/dev/null
 

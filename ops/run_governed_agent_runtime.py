@@ -29,6 +29,7 @@ HOST_REGISTRY_VERSION = "agent-runtime-host-registry.v1"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 HOST_REGISTRY_PATH = "docs/agent_runtime_host_registry_v1.json"
 CAPABILITIES = {"EXTERNAL_EVIDENCE", "DECISION_MEMORY"}
+ALLOWED_ADAPTER_CALLS = {"any", "bool", "enumerate", "len"}
 TOOL_MODES = {
     "get_evidence": "LOCAL_READ_ONLY",
     "get_similar_decisions": "LOCAL_READ_ONLY",
@@ -87,6 +88,98 @@ def _source_sha256(path: Path) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
+def validate_adapter_source(path: Path, display_path: str | None = None) -> None:
+    """Inspect one import-free adapter before any local execution."""
+
+    label = display_path or path.as_posix()
+    source = path.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=label)
+    _require(
+        all(
+            isinstance(node.func, ast.Name)
+            and node.func.id in ALLOWED_ADAPTER_CALLS
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+        ),
+        "adapter source contains a non-allowlisted call",
+    )
+    body = list(tree.body)
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
+        body = body[1:]
+    _require(
+        len(body) == 1
+        and isinstance(body[0], ast.FunctionDef)
+        and body[0].name == "run_adapter",
+        "adapter source must contain only the run_adapter entrypoint",
+    )
+    entrypoint = body[0]
+    _require(
+        len(entrypoint.args.posonlyargs) == 0
+        and len(entrypoint.args.args) == 1
+        and not entrypoint.args.vararg
+        and not entrypoint.args.kwonlyargs
+        and not entrypoint.args.kwarg
+        and not entrypoint.args.defaults,
+        "adapter run_adapter must accept exactly one request argument",
+    )
+    _require(
+        not entrypoint.decorator_list
+        and entrypoint.returns is None
+        and entrypoint.args.args[0].annotation is None,
+        "adapter run_adapter cannot use decorators or annotations",
+    )
+    forbidden_nodes = (
+        ast.AsyncFunctionDef,
+        ast.Attribute,
+        ast.Await,
+        ast.ClassDef,
+        ast.Delete,
+        ast.Global,
+        ast.Import,
+        ast.ImportFrom,
+        ast.Lambda,
+        ast.NamedExpr,
+        ast.Nonlocal,
+        ast.Raise,
+        ast.Try,
+        ast.With,
+        ast.Yield,
+        ast.YieldFrom,
+    )
+    _require(
+        not any(isinstance(node, forbidden_nodes) for node in ast.walk(tree)),
+        "adapter source contains an unsupported capability",
+    )
+    nested_functions = [
+        node for node in ast.walk(entrypoint) if isinstance(node, ast.FunctionDef)
+    ]
+    _require(
+        nested_functions == [entrypoint],
+        "adapter source cannot define nested entrypoints",
+    )
+    _require(
+        not any(
+            isinstance(node, ast.Name) and node.id.startswith("_")
+            for node in ast.walk(tree)
+        ),
+        "adapter source cannot access private or dunder names",
+    )
+    _require(
+        not any(
+            isinstance(node, ast.Name)
+            and isinstance(node.ctx, ast.Store)
+            and node.id in ALLOWED_ADAPTER_CALLS
+            for node in ast.walk(tree)
+        ),
+        "adapter source cannot shadow an allowlisted callable",
+    )
+
+
 def validate_adapter_registry(registry: dict[str, Any], root: Path) -> None:
     """Validate frozen registrations, source integrity, and local-only code paths."""
 
@@ -134,7 +227,6 @@ def validate_adapter_registry(registry: dict[str, Any], root: Path) -> None:
         "enabled_capabilities",
         "execution_boundary",
     }
-    allowed_calls = {"any", "bool", "enumerate", "len"}
     for index, registration in enumerate(registrations):
         _exact_keys(registration, registration_keys, f"adapter_registry.registrations[{index}]")
         _require(
@@ -178,19 +270,7 @@ def validate_adapter_registry(registry: dict[str, Any], root: Path) -> None:
             and digest == _source_sha256(source_path),
             "registered adapter source digest mismatch",
         )
-        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=module_path)
-        _require(
-            not any(isinstance(node, (ast.Import, ast.ImportFrom)) for node in ast.walk(tree)),
-            "registered adapter source cannot import external capabilities",
-        )
-        _require(
-            all(
-                isinstance(node.func, ast.Name) and node.func.id in allowed_calls
-                for node in ast.walk(tree)
-                if isinstance(node, ast.Call)
-            ),
-            "registered adapter source contains a non-allowlisted call",
-        )
+        validate_adapter_source(source_path, module_path)
 
     for field in (
         "adapter_version",
