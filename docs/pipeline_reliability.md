@@ -69,6 +69,14 @@ lifecycle contract preserves continuity without inventing an intermediate
 date. If the scope has no earlier populated snapshot, prior volume remains zero
 and the gate fails closed. The configured volume threshold is unchanged.
 
+On 24 August 2026 Sydney time, the protected isolated-staging sequence for
+commit `85fc2f2` completed plan, correction release, and a separately
+authorized retry of only `2026-08-09`. The controller completed 28 lifecycle,
+5 compatibility, and 8 analytics checks and persisted terminal success. This
+validates the lifecycle-specific cross-gap contract only; the generic
+production prior-calendar-day rule is unchanged. No seed, baseline refresh,
+production alias, schedule, Pages publication, or Action mutation occurred.
+
 The generated SQL was executed successfully in Athena on 4 August 2026:
 
 | Gate | Current tables | Aggregate rows | Duplicate keys | Shipments today / prior day |

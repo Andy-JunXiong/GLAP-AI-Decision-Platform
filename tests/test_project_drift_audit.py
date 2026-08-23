@@ -109,6 +109,29 @@ class ProjectDriftAuditTests(unittest.TestCase):
         self.assertEqual(report["overall_status"], "PASS")
         self.assertEqual(report["summary"]["drift"], 0)
 
+    def test_stateful_cross_gap_recovery_maturity_cannot_regress(self):
+        paths = (
+            "docs/project_drift_contract.json",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+            "docs/architecture_current.md",
+            "INFRASTRUCTURE.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            contract = AUDIT.load_contract(root)
+            current = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
+            self.assertEqual(current.status, "PASS")
+            status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
+            status_path.write_text(
+                status_path.read_text(encoding="utf-8").replace(
+                    "32671484061", "recovery-run-id-missing"
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_deployed_evidence_maturity_requires_release_run(self):
         paths = (
             "lambda/glap_operations_api.py",

@@ -4,6 +4,17 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-24
+
+- Completed the isolated staging cross-gap lifecycle recovery. After a
+  protected plan and separate correction release, one further named-human
+  authorization retried only the failed `2026-08-09` actual-calendar date.
+  The governed controller completed 28 lifecycle, 5 compatibility, and 8
+  analytics checks and persisted terminal success. The correction preserves
+  temporal-scope isolation, the 50% volume guardrail, and no-baseline
+  fail-closed behavior. No seed, baseline refresh, production change,
+  schedule, alias, Pages publication, or Action mutation was included.
+
 ## 2026-08-23
 
 - Completed the isolated staging Action-assignment canary through distinct

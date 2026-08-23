@@ -55,9 +55,13 @@ Consecutive dates still resolve to the immediately preceding day. A governed
 calendar gap resolves to the most recent earlier state in that scope; if no
 earlier state exists, the compatibility gate still fails closed.
 
-This is a repository correction only. It does not fabricate a missing calendar
-date, alter an evidence classification, clear the persisted failed status,
-deploy a Lambda, or authorize another recovery attempt.
+The correction was later released through protected isolated-staging plan and
+deployment runs. A separately authorized retry for only `2026-08-09` completed
+all four stages and 41 checks: 28 lifecycle, 5 compatibility, and 8 analytics.
+The controller persisted terminal success. This runtime evidence does not
+fabricate a missing calendar date, alter an evidence classification, refresh
+the operational baseline, or authorize production, schedules, aliases, Pages,
+or another recovery attempt.
 
 ## Decision summary
 

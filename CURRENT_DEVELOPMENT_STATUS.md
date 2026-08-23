@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-23`
+**Sydney as-of date:** `2026-08-24`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -15,7 +15,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Capability | Current state | Evidence boundary |
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
-| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Manual isolated staging; no production alias or schedule |
+| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Cross-gap correction released and the bounded `2026-08-09` recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks; no production alias or schedule |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
@@ -41,20 +41,23 @@ All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
-The persisted lifecycle status still records the failed `2026-08-09`
-operational run. The deployed provider-coverage correction passed all 28
-lifecycle checks in diagnostic run `32391364627`. Separately authorized
-recovery run `32634293552` then passed generation and those lifecycle checks,
-but failed closed at compatibility `input_validation` because the current
-volume was 17 and the exact `2026-08-08` baseline was zero. All six required
-tables were populated and current, with zero duplicate business keys.
+The earlier persisted `2026-08-09` failure is cleared. Recovery run
+`32634293552` had passed generation and all 28 lifecycle checks but failed
+closed at compatibility `input_validation` because the current volume was 17
+and the exact `2026-08-08` baseline was zero. All six required tables were
+populated and current, with zero duplicate business keys.
 
-A repository correction now uses the latest earlier populated snapshot in
-the same temporal scope for lifecycle continuation, prior-alert reconciliation,
-immutable-state validation, and compatibility volume comparison. It retains
-the 50% threshold and the no-baseline failure. The correction is implemented
-and locally verified but not deployed, and the persisted controller status
-remains failed.
+Commit `85fc2f2` corrected lifecycle continuation, prior-alert reconciliation,
+immutable-state validation, and compatibility volume comparison to use the
+latest earlier populated snapshot in the same temporal scope. It retains the
+50% threshold and the no-baseline failure. Plan run `32670942817` passed;
+separately approved release run `32671064789` deployed the correction to the
+isolated staging controller and quality gate. A further named-human
+authorization bounded recovery run `32671484061` to only `2026-08-09` in
+`OPERATIONAL` / `ACTUAL_CALENDAR` mode. The controller completed four stages
+and all 41 checks: 28 lifecycle, 5 compatibility, and 8 analytics. Its success
+response was emitted after the controller's append-through-final-status
+contract persisted the terminal success record.
 
 PRs #71 through #75 closed the deployment blockers without widening the
 staging boundary. They completed exact Glue-object coverage, migrated the
@@ -78,11 +81,10 @@ stack deployment, and the deployed temporal guard all passed. Direct read-only
 AWS inspection afterward found the stack at `UPDATE_COMPLETE` and the
 controller `Active`, with its last update successful and runtime `python3.14`.
 
-This release did not seed data, successfully recover the persisted failed date,
-refresh the operational baseline, deploy analytics, run replay, move a
-production alias, create a schedule, or publish Pages. The next lifecycle work
-is a separately authorized staging release of the cross-gap correction; any
-later retry for only `2026-08-09` remains another named-human action.
+The later correction release and failed-date recovery used no seed, refreshed
+no operational baseline, moved no production alias, created no schedule, and
+published no Pages artifact. The recovery exercised the already governed
+lifecycle, compatibility, and analytics stages only for the authorized date.
 
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -538,13 +540,10 @@ Outcome creation are not implied and remain separately owned.
 
 ## Pending validation
 
-- A named human must separately authorize the cross-gap correction's isolated
-  staging release before any new recovery attempt for only `2026-08-09`;
-  afterward verify the persisted status plus all lifecycle, compatibility, and
-  analytics checks.
-- After every lifecycle, compatibility, and analytics check passes, refresh the
-  operational-calendar baseline and publish the aggregate public snapshot only
-  through separately authorized runtime and Pages steps.
+- The cross-gap correction release and bounded failed-date recovery are
+  complete. Refresh the operational-calendar baseline only through a new,
+  separately authorized runtime step; any aggregate public snapshot remains a
+  further, separately authorized Pages step.
 - If end-to-end interaction evidence is required, obtain a separate named-human
   Action-mutation authorization before exercising the deployed Evidence-chain
   auto-refresh behavior. The release and read-only verifier did not mutate an
@@ -558,12 +557,6 @@ done.
 
 ## Incomplete or blocked
 
-- Lifecycle failed-date recovery: the deployed provider-coverage correction
-  passes 28 lifecycle checks, but authorized run `32634293552` exposed the
-  exact-prior-day zero-baseline failure at compatibility input validation. The
-  cross-gap correction is implemented and locally verified but not deployed;
-  the persisted status remains failed, and staging release and retry are still
-  pending.
 - Historical Replay: ten scenarios meet the structural gate and four reviews
   per cutoff meet the minimum-review count; 15 package results remain
   inconclusive and must not be presented as wins.
@@ -789,8 +782,18 @@ done.
   inspection found `UPDATE_COMPLETE` and an active Python 3.14 controller;
   no-mutation diagnostic run `32391364627` passed 28/28 checks. Recovery run
   `32634293552` later passed the lifecycle gate but failed compatibility input
-  validation on a 17/0 current/prior volume comparison; the persisted date is
-  still failed.
+  validation on a 17/0 current/prior volume comparison.
+- The cross-gap follow-up at `85fc2f2` then completed its protected sequence:
+  plan `32670942817`, isolated staging release `32671064789`, and separately
+  authorized one-date recovery `32671484061` all passed. The final run covered
+  only `2026-08-09` in `OPERATIONAL` / `ACTUAL_CALENDAR` mode and completed four
+  stages with 41/41 checks: 28 lifecycle, 5 compatibility, and 8 analytics.
+  The controller persisted terminal success before returning. No seed,
+  baseline refresh, production change, schedule, alias, Pages publication, or
+  Action mutation occurred.
+- The 2026-08-24 evidence synchronization passes Python compilation, all 438
+  repository tests, 21 focused project-drift tests, the expanded 31/31 drift
+  audit, machine-readable contract parsing, and `git diff --check`.
 - The repository cross-gap correction passes 55 focused adapter, quality-gate, and
   deployment-contract tests. The synchronized worktree passes Python
   compilation, all 437 repository tests, the 30/30 project drift audit, the
@@ -976,11 +979,10 @@ done.
 
 ## Next Up
 
-1. Separately authorize and execute the cross-gap lifecycle correction's
-   isolated staging release. Only after that release may a named human
-   separately authorize another
-   `recover-failed-integration-date` attempt for `2026-08-09`, followed by full
-   lifecycle, compatibility, analytics, and persisted-status verification.
+1. If a current aggregate operational baseline is required, separately
+   authorize a baseline refresh for the recovered `2026-08-09` actual-calendar
+   state and verify its aggregate-only contract. Any Pages publication remains
+   a second, separately authorized step.
 2. Only if interaction-level evidence is needed, authorize a bounded Action
    mutation canary to confirm that the deployed expanded Evidence chain
    refreshes after a successful mutation. This must exclude `COMPLETE` and

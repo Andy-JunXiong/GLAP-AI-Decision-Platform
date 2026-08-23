@@ -244,15 +244,18 @@ aggregate diagnostic reported 17 current shipments, zero in the exact prior-
 calendar-day baseline, six of six required tables populated and current, and
 zero duplicate business keys.
 
-The repository-only follow-up aligns the lifecycle adapter, prior-alert read,
+The repository follow-up aligns the lifecycle adapter, prior-alert read,
 immutable-state validation, and compatibility volume gate on the latest
 earlier populated date within the same temporal scope. It retains the 50%
 threshold and still fails when no earlier same-scope baseline exists. This
-follow-up is not deployed, and run `32634293552` did not clear the stored
-failure. Do not retry recovery until the correction is reviewed, delivered,
-and separately released to staging. Do not combine a later recovery with a
-seed, baseline refresh, analytics deployment, replay, production alias,
-schedule, or Pages publication.
+follow-up was delivered as commit `85fc2f2`. Protected plan `32670942817` and
+separately approved isolated-staging release `32671064789` passed. A further
+named-human authorization bounded recovery run `32671484061` to only
+`2026-08-09` in `OPERATIONAL` / `ACTUAL_CALENDAR` mode. It completed four
+stages and 41/41 checks: 28 lifecycle, 5 compatibility, and 8 analytics. The
+controller persisted terminal success before returning. The sequence used no
+seed and did not refresh the baseline, replay another date, move a production
+alias, create a schedule, publish Pages, or mutate an Action.
 
 Separately authorised deployment run `32379866761` then completed repository
 tests, isolated-target inspection, plan rendering, and the idempotent schema

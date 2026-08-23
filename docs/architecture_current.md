@@ -289,8 +289,11 @@ configured the role and protected staging variable; separately approved run
 `32390847334` completed the isolated stack update. Read-only inspection found
 the stack at `UPDATE_COMPLETE` and the controller active on Python 3.14.
 Diagnostic run `32391364627` passed all 28 checks for `2026-08-09` without
-mutation. Recovering the persisted failed-date status remains a separate
-named-human action.
+mutation. Cross-gap correction plan `32670942817` and isolated-staging release
+`32671064789` then passed. A separately authorized one-date recovery run
+`32671484061` completed 28 lifecycle, 5 compatibility, and 8 analytics checks
+and persisted terminal success. No seed, baseline refresh, production alias,
+schedule, Pages publication, or Action mutation was included.
 
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached

@@ -1,7 +1,7 @@
 {
   "schema_version": "project-drift-contract.v1",
   "business_timezone": "Australia/Sydney",
-  "baseline_date": "2026-08-23",
+  "baseline_date": "2026-08-24",
   "canonical_sources": [
     "docs/architecture_current.md",
     "INFRASTRUCTURE.md",
@@ -24,7 +24,7 @@
     {
       "id": "stateful_multimodal_lifecycle",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "manual isolated staging only",
+      "boundary": "manual isolated staging only; cross-gap correction and one-date 2026-08-09 recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks without seed, baseline refresh, production alias, schedule, Pages, or Action mutation",
       "evidence_files": [
         "lambda/glap_stateful_lifecycle_generator.py",
         "infrastructure/stateful-lifecycle-staging.yaml",

@@ -181,6 +181,69 @@ def check_manual_staging_boundary(root: Path) -> list[CheckResult]:
     return results
 
 
+def check_stateful_recovery_evidence_boundary(
+    root: Path, contract: dict[str, Any]
+) -> list[CheckResult]:
+    status_path = "CURRENT_DEVELOPMENT_STATUS.md"
+    architecture_path = "docs/architecture_current.md"
+    infrastructure_path = "INFRASTRUCTURE.md"
+    status = " ".join((root / status_path).read_text(encoding="utf-8").split())
+    architecture = " ".join(
+        (root / architecture_path).read_text(encoding="utf-8").split()
+    )
+    infrastructure = " ".join(
+        (root / infrastructure_path).read_text(encoding="utf-8").split()
+    )
+    capability = next(
+        (
+            item
+            for item in contract.get("capabilities", [])
+            if item.get("id") == "stateful_multimodal_lifecycle"
+        ),
+        {},
+    )
+    boundary = str(capability.get("boundary", "")).lower()
+    required_run_ids = ("32670942817", "32671064789", "32671484061")
+    stale_status = (
+        "persisted status remains failed",
+        "persisted controller status remains failed",
+        "cross-gap correction is implemented and locally verified but not deployed",
+    )
+    passed = (
+        capability.get("state") == "IMPLEMENTED_STAGING"
+        and all(run_id in status for run_id in required_run_ids)
+        and all(run_id in architecture for run_id in required_run_ids)
+        and all(run_id in infrastructure for run_id in required_run_ids)
+        and "41/41 checks" in status
+        and "terminal success" in status
+        and not any(marker in status.lower() for marker in stale_status)
+        and "28 lifecycle" in boundary
+        and "5 compatibility" in boundary
+        and "8 analytics" in boundary
+        and "without seed" in boundary
+        and "baseline refresh" in boundary
+        and "production alias" in boundary
+        and "schedule" in boundary
+        and "pages" in boundary
+        and "action mutation" in boundary
+    )
+    return [
+        _result(
+            "stateful_cross_gap_recovery_boundary",
+            "governance",
+            passed,
+            "The cross-gap staging release and one-date recovery evidence remain complete and authority bounded.",
+            "The cross-gap recovery evidence is stale, incomplete, or claims a wider authority boundary.",
+            (
+                "docs/project_drift_contract.json",
+                status_path,
+                architecture_path,
+                infrastructure_path,
+            ),
+        )
+    ]
+
+
 def check_public_private_boundary(root: Path) -> list[CheckResult]:
     workflow_path = ".github/workflows/pages.yml"
     workflow = (root / workflow_path).read_text(encoding="utf-8").upper()
@@ -1589,6 +1652,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks: list[CheckResult] = []
     checks.extend(check_contract(root, contract))
     checks.extend(check_manual_staging_boundary(root))
+    checks.extend(check_stateful_recovery_evidence_boundary(root, contract))
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
