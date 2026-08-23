@@ -53,13 +53,21 @@ decision stages and after the flywheel. It validates:
 - presence of the expected logical date in every required table;
 - non-empty input and output control totals;
 - duplicate counts at each table's documented business-key grain;
-- shipment-volume change against the previous logical day;
+- shipment-volume change against the contract's governed prior baseline;
 - exact alignment of every required table's latest date.
 
 Both gates use `simulated_iceberg_m.fact_shipment_v2` as their volume baseline,
 because that table drives the current AI path. The public
 `fact_shipment_events_extended_iceberg` contract is a separate display source
 and is not used for this gate.
+
+The generic production pipeline contract compares with the previous calendar
+day. The isolated lifecycle compatibility contract instead compares with the
+latest earlier populated snapshot in the same `temporal_scope_id`. On
+consecutive dates these are identical; across an explicit calendar gap the
+lifecycle contract preserves continuity without inventing an intermediate
+date. If the scope has no earlier populated snapshot, prior volume remains zero
+and the gate fails closed. The configured volume threshold is unchanged.
 
 The generated SQL was executed successfully in Athena on 4 August 2026:
 

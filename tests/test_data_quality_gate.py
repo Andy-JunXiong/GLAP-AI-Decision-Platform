@@ -92,6 +92,27 @@ class DataQualityGateTests(unittest.TestCase):
             self.assertIn(view, query)
         self.assertNotIn("fact_shipment_v2", query)
 
+    def test_lifecycle_volume_baseline_uses_latest_prior_same_scope_snapshot(self):
+        module = load_module()
+        query = module.build_input_quality_query(
+            "2026-08-09",
+            quality_contract="lifecycle_compat_v2",
+            scope_id="OPERATIONAL",
+        )
+        self.assertIn(
+            "max(try_cast(prior_shipment.dt AS date)) AS comparison_date", query
+        )
+        self.assertIn("< DATE '2026-08-09'", query)
+        self.assertIn("prior_shipment.temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertIn("current_shipment.temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertNotIn("date_add('day', -1, DATE '2026-08-09')", query)
+
+    def test_pipeline_volume_baseline_remains_previous_calendar_day(self):
+        module = load_module()
+        query = module.build_input_quality_query("2026-08-09")
+        self.assertIn("date_add('day', -1, DATE '2026-08-09')", query)
+        self.assertNotIn("comparison_date", query)
+
     def test_rejects_unsafe_database_and_invalid_date(self):
         module = load_module()
         with self.assertRaises(ValueError):

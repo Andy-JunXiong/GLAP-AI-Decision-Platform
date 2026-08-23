@@ -325,6 +325,23 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             with self.subTest(check=check):
                 self.assertIn(check, validation)
 
+    def test_validation_compares_with_latest_prior_same_scope_snapshot(self):
+        validation = (ROOT / "sql" / "06_stateful_lifecycle_validation.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("max(try_cast(prior_snapshot.dt AS date))", validation)
+        self.assertIn(
+            "try_cast(prior_snapshot.dt AS date) < DATE '{{LOGICAL_RUN_DATE}}'",
+            validation,
+        )
+        self.assertIn(
+            "prior_snapshot.temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'",
+            validation,
+        )
+        self.assertNotIn(
+            "date_add('day', -1, DATE '{{LOGICAL_RUN_DATE}}')", validation
+        )
+
     def test_provider_coverage_tracks_only_effective_active_configuration(self):
         validation = (ROOT / "sql" / "06_stateful_lifecycle_validation.sql").read_text(
             encoding="utf-8"

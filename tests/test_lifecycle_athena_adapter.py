@@ -48,14 +48,18 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertEqual(snapshot["gross_weight_kg"], 48000.0)
         self.assertEqual(snapshot["piece_count"], 200)
 
-    def test_active_snapshot_reads_only_previous_non_terminal_population(self):
+    def test_active_snapshot_reads_latest_prior_non_terminal_population(self):
         query = adapter.build_active_snapshot_query(
             date(2026, 8, 4), "SIMULATION:capacity-shock"
         )
-        self.assertIn("DATE '2026-08-03'", query)
+        self.assertIn("max(try_cast(prior_snapshot.dt AS date))", query)
+        self.assertIn("< DATE '2026-08-04'", query)
         self.assertIn("terminal_state = false", query)
         self.assertIn("lifecycle_status = 'OPEN'", query)
-        self.assertIn("temporal_scope_id = 'SIMULATION:capacity-shock'", query)
+        self.assertEqual(
+            query.count("temporal_scope_id = 'SIMULATION:capacity-shock'"), 2
+        )
+        self.assertNotIn("DATE '2026-08-03'", query)
         self.assertNotIn("SELECT *", query.upper())
 
     def test_closed_loop_state_queries_are_scope_and_date_bounded(self):
@@ -65,7 +69,11 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertEqual(
             set(queries), {"previous_alerts", "actions", "outcomes", "proposals"}
         )
-        self.assertIn("DATE '2026-08-05'", queries["previous_alerts"])
+        self.assertIn(
+            "max(try_cast(prior_alert.dt AS date))", queries["previous_alerts"]
+        )
+        self.assertIn("< DATE '2026-08-06'", queries["previous_alerts"])
+        self.assertNotIn("DATE '2026-08-05'", queries["previous_alerts"])
         for query in queries.values():
             self.assertIn("SIMULATION:capacity-shock", query)
             self.assertNotIn("SELECT *", query.upper())

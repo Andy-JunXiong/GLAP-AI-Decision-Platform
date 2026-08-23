@@ -236,10 +236,23 @@ last update.
 
 Diagnostic run `32391364627` checked the persisted failed `2026-08-09` date
 without mutation and passed all 28 lifecycle checks. The stored status remains
-failed until a named human separately approves
-`action=recover-failed-integration-date` for only that date. Do not combine that
-recovery with a seed, baseline refresh, analytics deployment, replay,
-production alias, schedule, or Pages publication.
+failed. A named human subsequently authorized recovery run `32634293552` from
+commit `adfd2a5`. Repository tests, OIDC and isolated-target checks, plan
+rendering, generation, and the 28-check lifecycle gate passed; the controller
+then failed closed at `input_validation` on `abnormal_volume_change`. A bounded
+aggregate diagnostic reported 17 current shipments, zero in the exact prior-
+calendar-day baseline, six of six required tables populated and current, and
+zero duplicate business keys.
+
+The repository-only follow-up aligns the lifecycle adapter, prior-alert read,
+immutable-state validation, and compatibility volume gate on the latest
+earlier populated date within the same temporal scope. It retains the 50%
+threshold and still fails when no earlier same-scope baseline exists. This
+follow-up is not deployed, and run `32634293552` did not clear the stored
+failure. Do not retry recovery until the correction is reviewed, delivered,
+and separately released to staging. Do not combine a later recovery with a
+seed, baseline refresh, analytics deployment, replay, production alias,
+schedule, or Pages publication.
 
 Separately authorised deployment run `32379866761` then completed repository
 tests, isolated-target inspection, plan rendering, and the idempotent schema

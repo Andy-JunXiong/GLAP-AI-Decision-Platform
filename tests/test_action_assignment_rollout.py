@@ -88,6 +88,16 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
             errors,
         )
 
+    def test_frontend_release_cannot_claim_an_unrun_refresh_interaction_canary(self):
+        contract = copy.deepcopy(validator.load_contract())
+        contract["verified_release_evidence"][
+            "evidence_refresh_interaction_canary_executed"
+        ] = True
+        self.assertIn(
+            "verified mutation release evidence is incomplete or expands authority",
+            validator.validate_contract(contract),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

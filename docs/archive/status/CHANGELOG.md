@@ -14,18 +14,22 @@ preserved handoffs.
   `APPROVE`, two named actors, and the original assignment. `COMPLETE`, Outcome
   creation, production, schedules, aliases, policy activation, and Pages were
   not authorized or executed.
-- Completed a repository-only cockpit correction for stale expanded evidence
-  after an Action mutation. Successful writes now refresh the Board and reload
-  the selected Action Evidence chain, while failed writes leave the evidence
-  untouched. The correction is locally verified and not deployed.
+- Completed and privately released the cockpit correction for stale expanded
+  evidence after an Action mutation. Successful writes now refresh the Board
+  and reload the selected Action Evidence chain, while failed writes leave the
+  evidence untouched. A named human published the clean frontend tree at
+  `adfd2a5`, and the read-only staging verifier passed all Action assignment,
+  Action evidence, and Learning evidence gates. No mutation was performed, so
+  the refresh interaction itself remains without an end-to-end runtime canary.
 - Completed and merged the repository Outcome-to-Learning evidence gate. An
   authenticated,
   read-only endpoint and private Learning Review now count only cutoff-eligible
   observed Outcomes toward the existing 20-record threshold and expose the
   latest governed policy proposal only as review-required. Pending and future
   evidence is excluded; no approval, activation, deterministic-rule
-  replacement, AWS deployment, real-performance, model-readiness, or
-  production-readiness claim was added.
+  replacement, real-performance, model-readiness, production-readiness, or
+  standing deployment authority was added. The capability was subsequently
+  released to private staging and passed its explicit read-only verifier gate.
 
 - Completed and merged the repository authenticated Action–Outcome evidence
   chain. A bounded
@@ -33,14 +37,16 @@ preserved handoffs.
   proposal to its chronological append-only human audit events and latest
   cutoff-eligible simulated Outcome. The contract fails closed on unsafe IDs,
   later or non-operational evidence, and pending Outcomes; it adds no mutation
-  authority and remains undeployed pending a separate staging release. Its
-  release path now preflights all three source tables, verifies the private UI
-  fingerprint, and activates new runtime assertions only through an explicit
-  post-release flag.
+  authority. Its release path preflights all three source tables, verifies the
+  private UI fingerprint, and activates new runtime assertions only through an
+  explicit post-release flag. It was subsequently released to private staging
+  and passed both read-only and four-role verification.
 - PR #76 delivered both read-only closed-loop capabilities to `main` as
   `c4f367fb`; Python 3.13/3.14 CI and the Operations API staging plan passed.
-  The deploy step was skipped and no Pages publication occurred, so both
-  capabilities remain undeployed and runtime-unverified.
+  The merge-triggered deploy step was skipped and no Pages publication
+  occurred. A later separately authorized staging workflow and named-human
+  private-frontend release deployed both capabilities and passed their explicit
+  runtime verifiers.
 - Completed capability-neutral External Evidence v2 and Decision Memory v3
   ablations. Each paired experiment changes only the named capability, passes
   System Correctness and Capability Attribution, excludes post-cutoff inputs,

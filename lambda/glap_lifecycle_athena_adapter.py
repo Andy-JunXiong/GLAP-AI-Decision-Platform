@@ -157,25 +157,40 @@ WHERE effective_date = (
 
 
 def build_active_snapshot_query(logical_date: date, scope_id: str = "OPERATIONAL") -> str:
-    previous = (logical_date.fromordinal(logical_date.toordinal() - 1)).isoformat()
+    day = logical_date.isoformat()
     columns = ", ".join(SNAPSHOT_COLUMNS)
+    database = _identifier(DATABASE, "database")
+    snapshot_table = _identifier(SNAPSHOT_TABLE, "snapshot table")
+    scope = _sql_literal(scope_id)
     return f"""SELECT {columns}
-FROM {_identifier(DATABASE, 'database')}.{_identifier(SNAPSHOT_TABLE, 'snapshot table')}
-WHERE try_cast(dt AS date) = DATE '{previous}'
-  AND temporal_scope_id = {_sql_literal(scope_id)}
+FROM {database}.{snapshot_table} AS current_snapshot
+WHERE try_cast(current_snapshot.dt AS date) = (
+    SELECT max(try_cast(prior_snapshot.dt AS date))
+    FROM {database}.{snapshot_table} AS prior_snapshot
+    WHERE try_cast(prior_snapshot.dt AS date) < DATE '{day}'
+      AND prior_snapshot.temporal_scope_id = {scope}
+  )
+  AND current_snapshot.temporal_scope_id = {scope}
   AND lifecycle_status = 'OPEN' AND terminal_state = false"""
 
 
 def build_closed_loop_state_queries(logical_date: date, scope_id: str) -> dict[str, str]:
     """Read only the private state required to advance the governed loop."""
 
-    previous = logical_date.fromordinal(logical_date.toordinal() - 1).isoformat()
+    day = logical_date.isoformat()
     database = _identifier(DATABASE, "database")
     scope = _sql_literal(scope_id)
+    alert_table = _identifier(ALERT_TABLE, "alert table")
     return {
         "previous_alerts": f"""SELECT {', '.join(ALERT_COLUMNS)}
-FROM {database}.{_identifier(ALERT_TABLE, 'alert table')}
-WHERE try_cast(dt AS date) = DATE '{previous}' AND temporal_scope_id = {scope}""",
+FROM {database}.{alert_table} AS current_alert
+WHERE try_cast(current_alert.dt AS date) = (
+    SELECT max(try_cast(prior_alert.dt AS date))
+    FROM {database}.{alert_table} AS prior_alert
+    WHERE try_cast(prior_alert.dt AS date) < DATE '{day}'
+      AND prior_alert.temporal_scope_id = {scope}
+  )
+  AND current_alert.temporal_scope_id = {scope}""",
         "actions": f"""SELECT {', '.join(ACTION_COLUMNS)}
 FROM {database}.{_identifier(ACTION_CURRENT_VIEW, 'action current view')}
 WHERE temporal_scope_id = {scope}""",

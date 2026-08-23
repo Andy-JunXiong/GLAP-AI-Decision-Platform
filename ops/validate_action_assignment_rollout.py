@@ -166,6 +166,11 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "approver_distinct_named_actor_count": 2,
         "approver_current_approved_count": 1,
         "approver_assignment_match_count": 1,
+        "evidence_refresh_frontend_git_commit": "adfd2a5656a217f2eac792853d8fd2d947741732",
+        "evidence_refresh_frontend_deployed": True,
+        "evidence_refresh_frontend_observed_on_sydney_date": "2026-08-23",
+        "evidence_refresh_read_only_verifier_passed": True,
+        "evidence_refresh_interaction_canary_executed": False,
         "operator_global_sign_out_completed": True,
         "operator_group_membership_operator_only": True,
         "production_effect": False,
@@ -236,7 +241,11 @@ def main() -> int:
         for error in errors:
             print(f"DRIFT: {error}")
         return 1
-    print("PASS: response fix, stable retry, and separate approver decision are verified; COMPLETE remains pending")
+    print(
+        "PASS: response fix, stable retry, separate approver decision, and "
+        "private frontend refresh release are verified; interaction canary "
+        "and COMPLETE remain pending"
+    )
     return 0
 
 

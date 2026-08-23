@@ -147,12 +147,20 @@ only Maersk Ocean; future DHL/KN simulation rows were not used to manufacture
 operational coverage.
 
 On 17 August, read-only diagnosis confirmed that the persisted `2026-08-09`
-controller status still failed only that check. The repository recovery
-correction now compares the booking cohort with providers whose active route
+controller status still failed only that check. The deployed recovery
+controller now compares the booking cohort with providers whose active route
 configuration is effective on the logical date, rather than requiring the later
 three-provider roadmap on every earlier date. This does not rewrite the
-historical failure, add provider rows, or establish provider/model readiness;
-deployment and runtime recovery remain pending human actions.
+historical failure, add provider rows, or establish provider/model readiness.
+
+On 23 August, separately authorized recovery run `32634293552` passed that
+28-check lifecycle gate, then failed closed at compatibility input validation:
+the current volume was 17 and the exact prior-calendar-day volume was zero.
+The repository follow-up makes lifecycle continuation, prior-alert reconciliation,
+immutable-state validation, and volume comparison select the latest earlier
+populated date in the same temporal scope. It does not relax the threshold,
+fabricate a missing date, clear the failed status, or authorize deployment or
+another recovery attempt.
 
 This deployment does not enable a recurring schedule, create a production
 alias, expose entity records publicly, complete an Action automatically, or

@@ -217,7 +217,26 @@ def build_input_quality_query(
         if context_aware else contract["shipment_table"]
     )
     scope_filter = f"\nWHERE temporal_scope_id = '{scope_id}'" if context_aware else ""
-    volume_sql = f"""
+    if context_aware:
+        volume_sql = f"""
+SELECT
+    count(DISTINCT IF(
+        try_cast(current_shipment.dt AS date) = DATE '{logical_run_date}', shipment_id
+    )) AS observed_volume,
+    count(DISTINCT IF(
+        try_cast(current_shipment.dt AS date) = baseline.comparison_date, shipment_id
+    )) AS previous_volume
+FROM {source_database}.{shipment_table} AS current_shipment
+CROSS JOIN (
+    SELECT max(try_cast(prior_shipment.dt AS date)) AS comparison_date
+    FROM {source_database}.{shipment_table} AS prior_shipment
+    WHERE try_cast(prior_shipment.dt AS date) < DATE '{logical_run_date}'
+      AND prior_shipment.temporal_scope_id = '{scope_id}'
+) AS baseline
+WHERE current_shipment.temporal_scope_id = '{scope_id}'
+""".strip()
+    else:
+        volume_sql = f"""
 SELECT
     count(DISTINCT IF(try_cast(dt AS date) = DATE '{logical_run_date}', shipment_id))
         AS observed_volume,

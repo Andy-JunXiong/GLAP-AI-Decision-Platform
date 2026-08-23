@@ -42,12 +42,19 @@ synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
 described as operational evidence.
 
 The persisted lifecycle status still records the failed `2026-08-09`
-operational run. Generation succeeded and only `missing_provider_coverage`
-failed. The deployed correction now evaluates coverage only for providers whose
-route configuration was effective on the logical date. Diagnostic run
-`32391364627` exercised that date without mutation and passed all 28 checks;
-the status remains failed because no `recover-failed-integration-date` action
-has yet been approved or executed.
+operational run. The deployed provider-coverage correction passed all 28
+lifecycle checks in diagnostic run `32391364627`. Separately authorized
+recovery run `32634293552` then passed generation and those lifecycle checks,
+but failed closed at compatibility `input_validation` because the current
+volume was 17 and the exact `2026-08-08` baseline was zero. All six required
+tables were populated and current, with zero duplicate business keys.
+
+A repository correction now uses the latest earlier populated snapshot in
+the same temporal scope for lifecycle continuation, prior-alert reconciliation,
+immutable-state validation, and compatibility volume comparison. It retains
+the 50% threshold and the no-baseline failure. The correction is implemented
+and locally verified but not deployed, and the persisted controller status
+remains failed.
 
 PRs #71 through #75 closed the deployment blockers without widening the
 staging boundary. They completed exact Glue-object coverage, migrated the
@@ -71,11 +78,11 @@ stack deployment, and the deployed temporal guard all passed. Direct read-only
 AWS inspection afterward found the stack at `UPDATE_COMPLETE` and the
 controller `Active`, with its last update successful and runtime `python3.14`.
 
-This release did not seed data, recover the persisted failed date, refresh the
-operational baseline, deploy analytics, run replay, move a production alias,
-create a schedule, or publish Pages. The next lifecycle action requires a new
-named-human approval to recover only `2026-08-09`, followed by verification of
-the controller status and all 28 lifecycle checks.
+This release did not seed data, successfully recover the persisted failed date,
+refresh the operational baseline, deploy analytics, run replay, move a
+production alias, create a schedule, or publish Pages. The next lifecycle work
+is a separately authorized staging release of the cross-gap correction; any
+later retry for only `2026-08-09` remains another named-human action.
 
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -177,13 +184,15 @@ activating, or allowing it to replace deterministic rules.
   reconciliation returned one `EDIT`, one `APPROVE`, zero `REJECT`, zero
   `COMPLETE`, two distinct named actors, one current `APPROVED` row, and one
   assignment match. No Outcome was created.
-- Corrected the private cockpit's post-mutation evidence behavior locally. A
-  successful Action mutation now returns an explicit success result and, when
-  that Action's Evidence chain is expanded, reloads the chain after refreshing
-  the Board. Frontend lint, the Vinext build and three rendered-client tests,
-  the internal static-export Next.js build, Python compilation, all 433
-  repository tests, the rollout validator, and the 30/30 drift audit pass. The
-  correction is not deployed and grants no new mutation or role authority.
+- Corrected the private cockpit's post-mutation evidence behavior. A successful
+  Action mutation now returns an explicit success result and, when that
+  Action's Evidence chain is expanded, reloads the chain after refreshing the
+  Board. A named human published the clean frontend tree at commit `adfd2a5`
+  to private staging, and the read-only verifier passed with
+  `-RequireActionAssignment`, `-RequireActionEvidence`, and
+  `-RequireLearningEvidence`. This verifies the deployed bundle and governance
+  controls, not the mutation-triggered interaction: no Action was mutated, no
+  Outcome was created, and no production or Pages authority was exercised.
 
 **Retained completed context from the earlier 2026-08-23 slice**
 
@@ -521,22 +530,25 @@ activating, or allowing it to replace deterministic rules.
 
 The evidence chain is released and runtime-verified through the protected
 staging API/frontend paths, and the separately governed Action assignment
-canary now ends at `APPROVED`. The immediate repository follow-up is the local
-post-mutation Evidence-chain refresh correction. Publishing that correction to
-private staging requires a new named-human frontend release decision. Action
-`COMPLETE` and Outcome creation are not implied and remain separately owned.
+canary now ends at `APPROVED`. The post-mutation Evidence-chain refresh bundle
+is also published and passed the read-only staging verifier. No mutation was
+performed during that verification, so an end-to-end refresh interaction
+canary remains optional and separately human-authorized. Action `COMPLETE` and
+Outcome creation are not implied and remain separately owned.
 
 ## Pending validation
 
-- Obtain a separate named-human approval to recover only the persisted failed
-  `2026-08-09` date, then verify the controller status and all 28 lifecycle
-  checks. The no-mutation diagnosis has passed, but it did not change status.
+- A named human must separately authorize the cross-gap correction's isolated
+  staging release before any new recovery attempt for only `2026-08-09`;
+  afterward verify the persisted status plus all lifecycle, compatibility, and
+  analytics checks.
 - After every lifecycle, compatibility, and analytics check passes, refresh the
   operational-calendar baseline and publish the aggregate public snapshot only
   through separately authorized runtime and Pages steps.
-- Review and, only with a new named-human authorization, publish the locally
-  verified private-cockpit Evidence-chain auto-refresh correction. Until then,
-  reopening Evidence chain manually remains the runtime workaround.
+- If end-to-end interaction evidence is required, obtain a separate named-human
+  Action-mutation authorization before exercising the deployed Evidence-chain
+  auto-refresh behavior. The release and read-only verifier did not mutate an
+  Action and do not authorize `COMPLETE` or Outcome creation.
 - Have the named study owner decide whether the Cyclone Gabrielle T1 2:2 split
   should remain inconclusive or enter a separately governed adjudication step.
 
@@ -546,10 +558,12 @@ done.
 
 ## Incomplete or blocked
 
-- Lifecycle failed-date recovery: the corrected controller is deployed and all
-  28 no-mutation diagnostic checks pass, but the persisted `2026-08-09` status
-  remains failed until a named human separately authorizes the bounded recovery
-  action.
+- Lifecycle failed-date recovery: the deployed provider-coverage correction
+  passes 28 lifecycle checks, but authorized run `32634293552` exposed the
+  exact-prior-day zero-baseline failure at compatibility input validation. The
+  cross-gap correction is implemented and locally verified but not deployed;
+  the persisted status remains failed, and staging release and retry are still
+  pending.
 - Historical Replay: ten scenarios meet the structural gate and four reviews
   per cutoff meet the minimum-review count; 15 package results remain
   inconclusive and must not be presented as wins.
@@ -707,6 +721,19 @@ done.
 
 ### Codex-run validation
 
+- The private-frontend release evidence synchronization passes Python
+  compilation, all 434 repository tests, the updated fail-closed rollout
+  contract validator, the 30/30 project drift audit, JSON contract parsing,
+  and `git diff --check`.
+- A named human published the clean private-frontend tree at commit `adfd2a5`.
+  The explicit read-only staging verifier then passed every check with
+  `-RequireActionAssignment`, `-RequireActionEvidence`, and
+  `-RequireLearningEvidence`: both stacks were stable, the API Lambda was
+  active, the site and static assets were reachable, all required controls were
+  present, nine unauthenticated routes returned `401`, exact-origin CORS
+  passed, alarms were `OK`, and the redacted log and throttle filter were
+  present. This performed no Action mutation and did not verify the refresh
+  interaction end to end.
 - Authorized staging workflow-dispatch run `32621697316` deployed commit
   `9d50b7d` successfully. The named-human private cockpit release succeeded,
   the redacted staging verifier passed both explicit evidence gates, and the
@@ -760,8 +787,16 @@ done.
   `32390302719` and `32390677045` passed, rollback-recovery run `32390505373`
   skipped no resources, and deployment run `32390847334` completed. Read-only
   inspection found `UPDATE_COMPLETE` and an active Python 3.14 controller;
-  no-mutation diagnostic run `32391364627` passed 28/28 checks. The persisted
-  failed date remains pending separate human-authorized recovery.
+  no-mutation diagnostic run `32391364627` passed 28/28 checks. Recovery run
+  `32634293552` later passed the lifecycle gate but failed compatibility input
+  validation on a 17/0 current/prior volume comparison; the persisted date is
+  still failed.
+- The repository cross-gap correction passes 55 focused adapter, quality-gate, and
+  deployment-contract tests. The synchronized worktree passes Python
+  compilation, all 437 repository tests, the 30/30 project drift audit, the
+  existing Action rollout validator, machine-readable contract parsing, and
+  `git diff --check`. No AWS write, deployment, recovery retry, baseline
+  refresh, production change, schedule, or Pages publication occurred.
 - The incident-record closeout passes Python compilation, all 301 repository
   tests, `git diff --check`, and the 16-check project drift audit. It performed
   no AWS write, deployment retry, IAM change, data recovery, baseline refresh,
@@ -941,14 +976,15 @@ done.
 
 ## Next Up
 
-1. Review the local Evidence-chain auto-refresh correction and, only under a
-   new named-human private-frontend release authorization, publish it and rerun
-   the explicit staging verifier. This does not authorize `COMPLETE` or Outcome
-   creation.
-2. With separate named-human approval, run the isolated staging
-   `recover-failed-integration-date` action for only `2026-08-09`, then verify
-   the persisted controller status and all 28 lifecycle checks. This is not a
-   production, baseline-refresh, schedule, or Pages action.
+1. Separately authorize and execute the cross-gap lifecycle correction's
+   isolated staging release. Only after that release may a named human
+   separately authorize another
+   `recover-failed-integration-date` attempt for `2026-08-09`, followed by full
+   lifecycle, compatibility, analytics, and persisted-status verification.
+2. Only if interaction-level evidence is needed, authorize a bounded Action
+   mutation canary to confirm that the deployed expanded Evidence chain
+   refreshes after a successful mutation. This must exclude `COMPLETE` and
+   Outcome creation unless separately approved.
 3. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
    owner separately approves a governed adjudication record; never overwrite
    the four original submissions.

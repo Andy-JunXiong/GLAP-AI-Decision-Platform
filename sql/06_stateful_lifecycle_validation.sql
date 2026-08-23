@@ -9,9 +9,14 @@ WITH current_snapshot AS (
 ),
 previous_snapshot AS (
     SELECT *
-    FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1
-    WHERE try_cast(dt AS date) = date_add('day', -1, DATE '{{LOGICAL_RUN_DATE}}')
-      AND temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1 AS selected_snapshot
+    WHERE try_cast(selected_snapshot.dt AS date) = (
+        SELECT max(try_cast(prior_snapshot.dt AS date))
+        FROM {{SOURCE_DATABASE}}.fact_shipment_lifecycle_staging_v1 AS prior_snapshot
+        WHERE try_cast(prior_snapshot.dt AS date) < DATE '{{LOGICAL_RUN_DATE}}'
+          AND prior_snapshot.temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
+    )
+      AND selected_snapshot.temporal_scope_id = '{{TEMPORAL_SCOPE_ID}}'
 ),
 current_metrics AS (
     SELECT *

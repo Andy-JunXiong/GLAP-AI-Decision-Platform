@@ -38,6 +38,27 @@ controlled recovery of the failed `2026-08-09` status, later actual-calendar
 continuation, operational-baseline refresh, and public publication remain
 separate runtime steps requiring human authority.
 
+## Cross-gap prior-state correction -- 23 August 2026
+
+The first separately authorized recovery attempt for `2026-08-09` passed the
+28-check lifecycle gate but failed closed at compatibility input validation.
+The current snapshot contained 17 shipments, while an exact `2026-08-08`
+lookup found zero; all six required tables were populated and current, and no
+duplicate business keys were present. The failure was therefore
+`abnormal_volume_change`, not missing tables or duplicate data.
+
+The repository correction keeps the volume threshold and missing-baseline
+failure intact. For lifecycle continuation only, the generator, prior-alert
+reconciliation, immutable-state validation, and compatibility volume gate now
+use the latest earlier populated snapshot in the same `temporal_scope_id`.
+Consecutive dates still resolve to the immediately preceding day. A governed
+calendar gap resolves to the most recent earlier state in that scope; if no
+earlier state exists, the compatibility gate still fails closed.
+
+This is a repository correction only. It does not fabricate a missing calendar
+date, alter an evidence classification, clear the persisted failed status,
+deploy a Lambda, or authorize another recovery attempt.
+
 ## Decision summary
 
 GLAP will evolve from generating an independent batch of roughly 400--500

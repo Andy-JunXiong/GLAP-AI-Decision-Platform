@@ -84,17 +84,25 @@ does not create standing authority for `COMPLETE` or any other mutation.
     returned one `EDIT`, one `APPROVE`, zero `REJECT`, zero `COMPLETE`, two
     distinct named actors, one current `APPROVED` row, and one assignment
     match.
+12. Publish the post-mutation Evidence-chain refresh correction only through
+    the separately governed private-frontend path, then run the read-only
+    staging verifier with all Action assignment, Action evidence, and Learning
+    evidence gates enabled. Completed on 2026-08-23: a named human published
+    the clean frontend tree at commit `adfd2a5`, and every reported verifier
+    check passed. No Action mutation was performed, so this verifies the
+    deployed bundle and governance controls but not the refresh interaction end
+    to end.
 
-Steps 3-11 are complete. The original operator identity was independently
+Steps 3-12 are complete. The original operator identity was independently
 confirmed as operator-only, and the decision used a different named approver.
 The Action remains `APPROVED`; no `COMPLETE`, Outcome creation, production
 mutation, Pages publication, schedule activation, alias movement, or policy
 activation occurred.
 
 The agent may prepare and validate these artifacts but may not perform steps
-3, 6-7, 9, or 11, or any future release write. Temporary role-test users in step 8
-also require explicit human approval because that verifier writes to Cognito
-before cleaning them up.
+3, 6-7, 9, 11-12, or any future release write. Temporary role-test users in
+step 8 also require explicit human approval because that verifier writes to
+Cognito before cleaning them up.
 
 ## Rollback decision
 

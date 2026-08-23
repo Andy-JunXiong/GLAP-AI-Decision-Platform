@@ -31,10 +31,14 @@ five-field temporal identity:
 - the system-derived `as_of_date`; and
 - `execution_scenario_id`, which is null for operational rows.
 
-`temporal_scope_id` is part of every Iceberg MERGE key and previous-day lookup.
-As a result, the same shipment and logical date may exist in multiple explicit
-scenarios without overwriting or continuing one another. Quality validation
-also selects one scope and rejects internally inconsistent temporal labels.
+`temporal_scope_id` is part of every Iceberg MERGE key and prior-snapshot
+lookup. Lifecycle continuation selects the latest earlier populated snapshot
+inside that same scope; it never bridges an operational/simulation boundary or
+invents a row for a missing calendar date. As a result, the same shipment and
+logical date may exist in multiple explicit scenarios without overwriting or
+continuing one another. Quality validation also selects one scope and rejects
+internally inconsistent temporal labels. Absence of any earlier same-scope
+baseline remains a fail-closed condition.
 
 Default compatibility, OPS, forecast-feature, and outcome-label views expose
 only `OPERATIONAL` / `ACTUAL_CALENDAR` rows. Their explicitly named
