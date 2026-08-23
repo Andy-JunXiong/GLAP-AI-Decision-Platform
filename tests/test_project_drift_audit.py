@@ -109,7 +109,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
         self.assertEqual(report["overall_status"], "PASS")
         self.assertEqual(report["summary"]["drift"], 0)
 
-    def test_merged_evidence_maturity_cannot_claim_runtime_verification(self):
+    def test_deployed_evidence_maturity_requires_release_run(self):
         paths = (
             "lambda/glap_operations_api.py",
             "infrastructure/operations-api-staging.yaml",
@@ -127,8 +127,8 @@ class ProjectDriftAuditTests(unittest.TestCase):
             status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
             status_path.write_text(
                 status_path.read_text(encoding="utf-8").replace(
-                    "MERGED_VERIFIED_UNDEPLOYED",
-                    "MERGED_VERIFIED_RUNTIME",
+                    "32621697316",
+                    "release-run-id-missing",
                 ),
                 encoding="utf-8",
             )

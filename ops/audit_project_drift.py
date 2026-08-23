@@ -1339,7 +1339,10 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
         marker in normalized_status
         for marker in (
             "Action–Outcome evidence chain",
-            "MERGED_VERIFIED_UNDEPLOYED",
+            "run `32621697316` deployed commit `9d50b7d` successfully",
+            "`-RequireActionEvidence`",
+            "All four temporary role-check users were removed",
+            "No real Action was mutated",
             "No new write, role, table, or production path was added.",
         )
     )
@@ -1349,7 +1352,7 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
             "architecture",
             api_bounded and route_bounded and client_bounded and release_bounded
             and maturity_bounded,
-            "The Action–Outcome evidence chain remains authenticated, cutoff-bounded, synthetic, read-only, and explicitly undeployed.",
+            "The Action–Outcome evidence chain remains authenticated, cutoff-bounded, synthetic, read-only, and runtime-verified in private staging.",
             "The Action–Outcome evidence chain lost a temporal, governance, JWT, UI-disclosure, or deployment-maturity boundary.",
             (
                 api_path, template_path, client_path, page_path, workflow_path,
@@ -1432,7 +1435,9 @@ def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
         marker in " ".join(text["status"].split())
         for marker in (
             "Outcome–Learning evidence gate",
-            "MERGED_VERIFIED_UNDEPLOYED",
+            "run `32621697316` deployed commit `9d50b7d` successfully",
+            "`-RequireLearningEvidence`",
+            "`INSUFFICIENT_ELIGIBLE_OUTCOMES` at `1/20` with no proposal present",
             "no proposal approval or activation endpoint",
         )
     )
@@ -1442,7 +1447,7 @@ def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
             "architecture",
             api_bounded and route_bounded and client_bounded and release_bounded
             and maturity_bounded,
-            "The Outcome-to-Learning gate remains cutoff-bounded, synthetic, read-only, review-required, and explicitly undeployed.",
+            "The Outcome-to-Learning gate remains cutoff-bounded, synthetic, read-only, review-required, and runtime-verified in private staging.",
             "The Outcome-to-Learning gate lost an eligibility, JWT, no-activation, deterministic-rule, or maturity boundary.",
             tuple(paths.values()),
         )

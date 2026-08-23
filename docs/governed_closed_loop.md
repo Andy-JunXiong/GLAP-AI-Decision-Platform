@@ -4,7 +4,8 @@
 **Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06;
 Action assignment application chain verified in staging; operator EDIT recorded,
 response fix release and separate approver decision pending; read-only
-Action–Outcome and Outcome–Learning review source merged to `main` but undeployed
+Action–Outcome and Outcome–Learning reviews deployed and runtime-verified in
+private staging on 2026-08-23
 
 The governed closed loop connects lifecycle evidence without allowing synthetic
 learning to change either the generator or an effective policy automatically:
@@ -48,8 +49,9 @@ current Action state, and the latest cutoff-eligible Outcome. The chain uses
 only operational actual-calendar rows through the current Sydney date. It
 labels pending Outcomes as not observed and all closed-loop effects as
 synthetic; it creates no mutation, approval, real-performance, or production
-claim. The endpoint and cockpit timeline are merged and source-verified but remain
-undeployed pending a separately authorized staging release.
+claim. After separate named-human authorization, the endpoint and cockpit
+timeline were deployed to private staging and passed both the staging and
+four-role runtime verifiers. This release created no Action mutation.
 
 The repository extension uses `PROPOSED -> EDITED` to record a named owner and
 due date without approving the Action. `EDITED` then requires a separate
@@ -81,8 +83,9 @@ contract. It de-duplicates closed Outcomes, applies the Sydney cutoff and the
 cannot approve or activate that proposal, cannot replace deterministic safety
 rules, and labels all summarized effects as synthetic rather than real
 logistics performance. Passing this synthetic policy-review threshold is not
-model readiness or production readiness. The implementation is merged and
-source-verified but remains undeployed and runtime-unverified.
+model readiness or production readiness. The implementation is deployed in
+private staging and passed both explicit Learning runtime gates; the inspected
+state remained blocked at `1/20` eligible Outcomes with no proposal present.
 
 Operational model-readiness inputs must satisfy every condition below:
 

@@ -272,10 +272,10 @@ bootstrap is reviewed and reapplied.
 The Action evidence route is another `AWS::ApiGatewayV2::Route` inside the
 already discovered private API ID, so the existing API-scoped execution policy
 can create it without granting Lambda, queue, schedule, alias, or production
-resource creation. Release preflight now verifies the immutable Action table,
-Action audit table, and Outcome table explicitly. Until the feature is actually
-deployed, the staging and four-role verifiers retain the prior deployed
-baseline; a post-release verifier must opt in with `-RequireActionEvidence`.
+resource creation. Release preflight verifies the immutable Action table,
+Action audit table, and Outcome table explicitly. Before the authorized release,
+the staging and four-role verifiers retained the prior deployed baseline; the
+current post-release verification opts in with `-RequireActionEvidence`.
 The private frontend packager also rejects a build that lacks the evidence-chain
 controls or synthetic-performance disclosure.
 
@@ -283,9 +283,10 @@ The Learning route uses the same existing API-scoped route permission and adds
 only exact read metadata access for the already governed policy-proposal table.
 The plan workflow preflights that fourth closed-loop table, and the discovery
 and Lake Formation helpers name it explicitly without write or grant-option
-permission. Until a separately authorized release, verification remains on the
-older baseline; after release, add `-RequireLearningEvidence` to both staging
-verifiers. The frontend packager rejects an internal build that omits the
+permission. Before the separately authorized release, verification remained on
+the older baseline; the current deployed baseline requires
+`-RequireLearningEvidence` in both staging verifiers. The frontend packager
+rejects an internal build that omits the
 Learning Review or its named-human activation disclosure.
 
 ## Current implementation boundary
@@ -399,15 +400,18 @@ was reconciled to the operator group only. No access token or private Action
 identifier is retained in repository evidence. Do not resume the canary until
 the narrow response-fix release is separately approved and deployed.
 
-The Action–Outcome evidence endpoint and cockpit timeline are merged to `main`
-and source-verified as of `2026-08-23`. They are not yet
-deployed or runtime-verified. Deployment would update the existing private
-Operations API stack and frontend and therefore requires a separate authorized
-staging release; the merge-triggered workflow rendered a successful plan and
-explicitly skipped deployment, and no Action was mutated.
+The Action–Outcome evidence endpoint and cockpit timeline were merged to `main`
+and source-verified on `2026-08-23`. After separate named-human staging release
+authorization, workflow run `32621697316` deployed the private Operations API
+successfully and the named human deployed the matching private Amplify
+cockpit. Both explicit post-release verifiers passed. The four-role check
+returned the expected read access, retained viewer shipment-entity denial,
+returned `404` for an unguessable missing Action, and removed all four temporary
+users. No real Action was mutated.
 
-The Outcome-to-Learning evidence endpoint and private Learning Review are also
-merged and source-verified as of `2026-08-23`. They expose the existing governed
-threshold and policy-proposal record read-only; they do not approve or activate
-a proposal. They remain undeployed and require the same separate staging
-release plus explicit `-RequireLearningEvidence` runtime verification.
+The Outcome-to-Learning evidence endpoint and private Learning Review were
+released in the same staging-only change and passed explicit
+`-RequireLearningEvidence` checks in both verifiers. Runtime evidence reported
+`INSUFFICIENT_ELIGIBLE_OUTCOMES`, `1/20` eligible observed Outcomes, and no
+proposal present. The endpoint exposes the governed threshold and
+policy-proposal record read-only; it neither approves nor activates a proposal.

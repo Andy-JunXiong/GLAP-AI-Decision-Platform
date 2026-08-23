@@ -19,8 +19,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `PARTIAL` | Operator `EDIT` recorded; response fix release, stable retry, and separate approver decision remain |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
-| Action–Outcome evidence chain | `MERGED_VERIFIED_UNDEPLOYED` | Private read-only proposal/audit/Outcome timeline; source and plan verified, no deployment or Action mutation |
-| Outcome–Learning evidence gate | `MERGED_VERIFIED_UNDEPLOYED` | Private read-only eligible-Outcome threshold and review-only policy proposal; source and plan verified, no activation authority |
+| Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private read-only proposal/audit/Outcome timeline; deployed and runtime-verified, with no Action mutation |
+| Outcome–Learning evidence gate | `IMPLEMENTED_STAGING` | Private read-only eligible-Outcome threshold and review-only policy proposal; deployed and runtime-verified, with no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
 | Governed Agent Runtime parity | `IMPLEMENTED_VERIFIED` | One reference adapter and one independently implemented registered local adapter run from distinct source paths under the same content-addressed cutoff bundle and no-mutation envelope; this proves local implementation and interface mechanics only |
@@ -96,15 +96,15 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Action–Outcome–Learning evidence chain
 
-**Status:** `MERGED_VERIFIED_UNDEPLOYED`
+**Status:** `IMPLEMENTED_STAGING`
 
 **Goal**
 
 Return the product focus to the governed Action–Outcome loop by making one
 Action's immutable proposal, human audit history, current state, and latest
 eligible simulated Outcome reviewable as one authenticated chain. Preserve the
-Sydney actual-calendar cutoff, RBAC, and synthetic evidence boundary without
-performing an AWS deployment or operational Action mutation.
+Sydney actual-calendar cutoff, RBAC, and synthetic evidence boundary through a
+separately authorized staging release without an operational Action mutation.
 
 Continue that same loop from Outcome into Learning by showing the governed
 20-observation gate and latest eligible policy proposal without approving,
@@ -126,8 +126,8 @@ activating, or allowing it to replace deterministic rules.
 - Closed local release-readiness gaps: the API workflow now preflights all
   three evidence tables, the private frontend packager verifies the evidence
   UI/disclosure fingerprint, and both staging verifiers require explicit
-  `-RequireActionEvidence` opt-in so the currently deployed older baseline is
-  not falsely reported as broken before an authorized release.
+  `-RequireActionEvidence` opt-in so the older pre-release baseline was not
+  falsely reported as broken before authorization.
 - Added `GET /v1/learning` and a private Learning Review. They de-duplicate only
   closed operational actual-calendar Outcomes through the Sydney cutoff,
   report progress toward the existing 20-Outcome gate, and attach the latest
@@ -141,13 +141,29 @@ activating, or allowing it to replace deterministic rules.
   authoritative.
 - Added an independent `-RequireLearningEvidence` post-release gate to both
   staging verifiers and a Learning disclosure fingerprint to the internal
-  frontend packager, so the undeployed baseline remains truthful.
+  frontend packager, so pre-release and post-release maturity remain distinct.
 - PR #76 merged the complete source slice to `main` as commit `c4f367fb`.
   Push CI run `32619843180` passed on Python 3.13 and 3.14. Push-triggered
   Operations API run `32619843145` passed contract tests, protected
   configuration and dependency checks, and plan rendering; its deploy step
   was explicitly skipped. No Pages workflow, staging deployment, runtime
   verification, Action mutation, or policy activation occurred.
+- After separate named-human staging release authorization, workflow-dispatch
+  run `32621697316` deployed commit `9d50b7d` successfully. A named human then
+  deployed the matching private Amplify cockpit through the repository's
+  staging-only packager.
+- The explicit post-release staging verifier passed with both
+  `-RequireActionEvidence` and `-RequireLearningEvidence`: the private site and
+  assets returned successfully, unauthenticated API routes returned `401`,
+  exact-origin CORS passed, and the Action/Learning controls were present.
+- The four-role verifier also passed both gates. All four read roles received
+  the expected read access; viewer shipment-entity access remained denied; an
+  unguessable missing Action returned `404`; the inspected chain was
+  `OUTCOME_OBSERVED` with two audit events and an Outcome; Learning remained
+  `INSUFFICIENT_ELIGIBLE_OUTCOMES` at `1/20` with no proposal present. All four
+  temporary role-check users were removed. No real Action was mutated, no
+  policy was approved or activated, and no production, schedule, alias, or
+  Pages authority was exercised.
 
 **Retained completed context from the earlier 2026-08-23 slice**
 
@@ -483,13 +499,11 @@ activating, or allowing it to replace deterministic rules.
 
 **Next slice after completion**
 
-Release and runtime-verify the evidence chain through the existing protected
-staging API/frontend paths only after separate human authorization. That
-runtime step should verify all four read roles, a missing-Action 404, event
-ordering, pending/observed boundaries, and absence of protected identifiers.
-It must not be combined with the pending Action response-fix release, stable
-retry, or separate approver decision unless those actions receive their own
-explicit approvals.
+The evidence chain is now released and runtime-verified through the protected
+staging API/frontend paths. The next product slice remains the separately
+governed Action response-fix release, stable retry, and different-approver
+decision; none of those Action mutations were authorized by or combined with
+this read-only release.
 
 ## Pending validation
 
@@ -500,7 +514,10 @@ explicit approvals.
   operational-calendar baseline and publish the aggregate public snapshot only
   through separately authorized runtime and Pages steps.
 - Release the Action response-serialization fix only through separately
-  authorized narrow Prepare and Execute phases.
+  authorized narrow Prepare and Execute phases. The release contract, 31
+  focused tests, local no-write package plan, commit ancestry, and read-only AWS
+  ownership/stability inspection pass; artifact upload, change-set creation,
+  Lambda update, and AWS write-authority approval remain false.
 - Retry the original Action request ID after that release and confirm the audit
   event remains idempotent.
 - Have a different named approver approve or reject the edited staging Action.
@@ -548,9 +565,9 @@ done.
 ## Recently completed — current seven-day window
 
 - The Action–Outcome evidence chain now makes the main governed loop reviewable
-  from one Action without rewriting the proposal or audit history. Its source
-  is merged to `main` and verified, remains undeployed, and does not establish
-  real logistics performance or grant Action authority.
+  from one Action without rewriting the proposal or audit history. Its source,
+  protected staging API, and private cockpit are deployed and runtime-verified;
+  it does not establish real logistics performance or grant Action authority.
 - Capability-neutral External Evidence v2 and Decision Memory v3 ablations now
   hold every non-target input constant and show only capability attribution.
   Both remain local, controlled-synthetic, read-only, and explicitly do not
@@ -668,7 +685,19 @@ done.
 
 ### Codex-run validation
 
-- The post-merge documentation and fact synchronization passes Python
+- Authorized staging workflow-dispatch run `32621697316` deployed commit
+  `9d50b7d` successfully. The named-human private cockpit release succeeded,
+  the redacted staging verifier passed both explicit evidence gates, and the
+  four-role verifier passed its complete allow/deny matrix before reporting
+  all four temporary users removed. The inspected Action chain was
+  `OUTCOME_OBSERVED`; Learning remained blocked at `1/20` with no proposal.
+  No Action mutation, policy activation, production change, schedule, alias,
+  or Pages publication occurred.
+- The runtime-evidence documentation sync passes Python compilation, all 433
+  repository tests, all 20 focused project-drift tests, the 30/30 project drift
+  audit, machine-readable contract parsing, and `git diff --check`.
+- Before that authorized release, the post-merge documentation and fact
+  synchronization passed Python
   compilation, all 433 repository tests, all 20 focused project-drift tests,
   the 30/30 project drift audit, and `git diff --check`. The synchronized
   machine-readable boundary now distinguishes merged and plan-verified source
@@ -679,18 +708,19 @@ done.
   conformance source to `main` as `c4f367fb`. Push CI run `32619843180` passed
   on Python 3.13 and 3.14. Operations API staging run `32619843145` completed
   the read-only plan path successfully and explicitly skipped deployment. No
-  Pages run was associated with the merge commit; no staging runtime evidence,
-  Action mutation, policy activation, schedule, alias, or production authority
-  was created.
+  Pages run was associated with the merge commit; that merge-time run created
+  no staging runtime evidence, Action mutation, policy activation, schedule,
+  alias, or production authority.
 - The 2026-08-23 Action–Outcome–Learning evidence-chain slice passes focused API and
   infrastructure tests, private frontend lint/build/rendered tests, PowerShell
   parser checks for both staging verifiers and the frontend packager, an actual
   internal static export with the Action and Learning evidence fingerprints
   present, Python compilation, all 432
   repository tests, 19 focused drift tests, the expanded 30/30 project drift
-  audit, and `git diff --check`. This is local implementation evidence only;
-  no AWS call, staging deployment, runtime verification, Action mutation,
-  schedule, production change, or Pages publication occurred.
+  audit, and `git diff --check`. Before the separate release, this established
+  local implementation evidence only and performed no AWS call, staging
+  deployment, Action mutation, schedule, production change, or Pages
+  publication.
 - The 2026-08-23 capability-neutral evaluation, registered Agent Runtime,
   offline adapter conformance, and drift-reconciliation slice passes Python
   compilation, all 422 repository tests, 17 focused project-drift tests, and
@@ -889,20 +919,15 @@ done.
 
 ## Next Up
 
-1. With separate staging release authorization, deploy and runtime-verify the
-   read-only Action–Outcome evidence endpoint, Outcome–Learning gate, and their
-   private cockpit views. Run both explicit post-release verifier gates. Keep
-   this distinct from any Action mutation release, policy activation, or
-   named-human canary step.
-2. Release the Action response-serialization fix only through separately
+1. Release the Action response-serialization fix only through separately
    authorized narrow Prepare and Execute phases; then retry the original
    request ID and have a different named approver approve or reject the edited
    Action under separate operational authority.
-3. With separate named-human approval, run the isolated staging
+2. With separate named-human approval, run the isolated staging
    `recover-failed-integration-date` action for only `2026-08-09`, then verify
    the persisted controller status and all 28 lifecycle checks. This is not a
    production, baseline-refresh, schedule, or Pages action.
-4. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
+3. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
    owner separately approves a governed adjudication record; never overwrite
    the four original submissions.
 

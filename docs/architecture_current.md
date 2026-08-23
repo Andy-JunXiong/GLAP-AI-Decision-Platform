@@ -234,18 +234,22 @@ Action–Outcome evidence chain to that same boundary. One Action detail request
 proposal, chronological append-only audit events, and latest eligible simulated
 Outcome under the Sydney actual-calendar cutoff. The cockpit renders this as a
 review timeline without exposing request IDs, scenario IDs, infrastructure
-identifiers, or future simulations. This extension is merged to `main` and
-source-verified; it has not been deployed or runtime-verified and adds no
-mutation or approval authority.
+identifiers, or future simulations. After separate named-human authorization,
+workflow run `32621697316` deployed the private API and the matching private
+cockpit was deployed manually. Both post-release verifiers passed, including
+all four read roles and temporary-user cleanup. The extension adds no mutation
+or approval authority.
 
 The same merged revision continues the closed loop from Outcome to Learning.
 An authenticated `GET /v1/learning` aggregate counts only cutoff-eligible
 observed Outcomes and reads the existing policy-proposal table. Its private
 Learning Review shows whether the minimum evidence gate remains blocked and,
 when present, exposes a proposal only as review-required. There is no policy
-activation endpoint, deterministic rules remain authoritative, and the
-extension is not deployed or runtime-verified. The merge-triggered staging
-workflow rendered a successful plan and explicitly skipped deployment.
+activation endpoint and deterministic rules remain authoritative. The same
+staging release passed both explicit Learning evidence gates and reported the
+gate still blocked at `1/20`, with no proposal present. The earlier
+merge-triggered run remained plan-only; the later separately authorized
+workflow dispatch performed the deployment.
 
 The repository implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a
