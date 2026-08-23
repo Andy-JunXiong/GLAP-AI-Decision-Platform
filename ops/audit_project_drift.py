@@ -203,7 +203,12 @@ def check_stateful_recovery_evidence_boundary(
         {},
     )
     boundary = str(capability.get("boundary", "")).lower()
-    required_run_ids = ("32670942817", "32671064789", "32671484061")
+    required_run_ids = (
+        "32670942817",
+        "32671064789",
+        "32671484061",
+        "32672560594",
+    )
     stale_status = (
         "persisted status remains failed",
         "persisted controller status remains failed",
@@ -215,13 +220,18 @@ def check_stateful_recovery_evidence_boundary(
         and all(run_id in architecture for run_id in required_run_ids)
         and all(run_id in infrastructure for run_id in required_run_ids)
         and "41/41 checks" in status
+        and "10/10 fail-closed checks" in status
         and "terminal success" in status
+        and "real_world_evidence=false" in status
         and not any(marker in status.lower() for marker in stale_status)
         and "28 lifecycle" in boundary
         and "5 compatibility" in boundary
         and "8 analytics" in boundary
+        and "operational baseline view" in boundary
+        and "10 fail-closed checks" in boundary
+        and "real-world evidence false" in boundary
         and "without seed" in boundary
-        and "baseline refresh" in boundary
+        and "replay" in boundary
         and "production alias" in boundary
         and "schedule" in boundary
         and "pages" in boundary
@@ -232,8 +242,8 @@ def check_stateful_recovery_evidence_boundary(
             "stateful_cross_gap_recovery_boundary",
             "governance",
             passed,
-            "The cross-gap staging release and one-date recovery evidence remain complete and authority bounded.",
-            "The cross-gap recovery evidence is stale, incomplete, or claims a wider authority boundary.",
+            "The cross-gap recovery and operational-baseline evidence remain complete, synthetic, and authority bounded.",
+            "The lifecycle recovery or operational-baseline evidence is stale, incomplete, or claims a wider authority boundary.",
             (
                 "docs/project_drift_contract.json",
                 status_path,

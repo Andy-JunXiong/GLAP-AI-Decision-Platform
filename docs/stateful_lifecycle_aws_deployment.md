@@ -700,8 +700,8 @@ no schedule was created and no production alias was changed.
 
 ### Operational-calendar baseline contract
 
-Use the manual `deploy-operational-baseline` action with
-`integration_logical_date=2026-08-06` to create and validate
+Use the manual `deploy-operational-baseline` action with a separately approved,
+non-future `integration_logical_date` to create and validate
 `vw_multimodal_operational_baseline_v1`. The view freezes the operational scope
 at that Sydney as-of date and provides one overall row plus transport-mode,
 provider, and market-lane breakdowns for shipment volume, delivery performance,
@@ -722,6 +722,22 @@ until at least one delivery exists, and the Control Tower remains `NOT_READY`
 until 200 delivered outcomes plus observable delivery and cost measures are
 available. Even then, synthetic evidence can become engineering-ready only;
 real-world decision use remains blocked.
+
+### Operational-calendar baseline evidence -- 24 August 2026
+
+After the bounded `2026-08-09` lifecycle recovery completed, a separate named
+human authorized workflow run `32672560594` from commit `d368b4a` with
+`action=deploy-operational-baseline`, `execution_mode=OPERATIONAL`, and
+`integration_logical_date=2026-08-09`. The run rendered and applied exactly
+one `CREATE OR REPLACE VIEW` statement and all 10 fail-closed validation rows
+returned zero failures. The result remains
+`SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, `ENGINEERING_EVALUATION_ONLY`, and
+`real_world_evidence=false`.
+
+The run did not load a seed, recover or replay another date, deploy analytics
+or a lifecycle stack, change production, schedules, or aliases, publish Pages,
+or mutate an Action. Any public aggregate publication remains a separately
+authorized step.
 
 ## Future-scenario extension AWS evidence -- 5 August 2026
 

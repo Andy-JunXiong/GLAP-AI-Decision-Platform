@@ -198,8 +198,10 @@ active on Python 3.14 with a successful last update. Diagnostic run
 cross-gap correction then passed protected plan `32670942817`, separately
 approved isolated-staging release `32671064789`, and one-date recovery
 `32671484061`. The recovery completed 28 lifecycle, 5 compatibility, and 8
-analytics checks and persisted terminal success. Baseline refresh, production
-alias, Scheduler, and Pages remain unchanged and human-owned.
+analytics checks and persisted terminal success. Separately authorized
+baseline run `32672560594` then created or replaced one cutoff-bounded
+aggregate view and passed 10/10 fail-closed checks. Production alias,
+Scheduler, and Pages remain unchanged and human-owned.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and

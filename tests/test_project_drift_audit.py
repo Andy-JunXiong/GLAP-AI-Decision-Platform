@@ -123,10 +123,15 @@ class ProjectDriftAuditTests(unittest.TestCase):
             current = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
             self.assertEqual(current.status, "PASS")
             status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
+            original_status = status_path.read_text(encoding="utf-8")
             status_path.write_text(
-                status_path.read_text(encoding="utf-8").replace(
-                    "32671484061", "recovery-run-id-missing"
-                ),
+                original_status.replace("32671484061", "recovery-run-id-missing"),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            status_path.write_text(
+                original_status.replace("32672560594", "baseline-run-id-missing"),
                 encoding="utf-8",
             )
             detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]

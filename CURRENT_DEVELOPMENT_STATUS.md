@@ -15,7 +15,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Capability | Current state | Evidence boundary |
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
-| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Cross-gap correction released and the bounded `2026-08-09` recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks; no production alias or schedule |
+| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Cross-gap recovery passed 41 checks and the `2026-08-09` aggregate operational baseline passed 10 fail-closed checks; synthetic engineering evidence only, with no production alias or schedule |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
@@ -81,10 +81,14 @@ stack deployment, and the deployed temporal guard all passed. Direct read-only
 AWS inspection afterward found the stack at `UPDATE_COMPLETE` and the
 controller `Active`, with its last update successful and runtime `python3.14`.
 
-The later correction release and failed-date recovery used no seed, refreshed
-no operational baseline, moved no production alias, created no schedule, and
-published no Pages artifact. The recovery exercised the already governed
-lifecycle, compatibility, and analytics stages only for the authorized date.
+The correction release and failed-date recovery themselves used no seed and
+refreshed no baseline. A later, separately authorized run `32672560594` used
+the manual `deploy-operational-baseline` action from commit `d368b4a` to create
+or replace exactly one aggregate view at cutoff `2026-08-09`. All 10
+fail-closed checks passed. The view remains
+`SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, `real_world_evidence=false`, and
+`ENGINEERING_EVALUATION_ONLY`. None of these runs moved a production alias,
+created a schedule, published Pages, or mutated an Action.
 
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -540,10 +544,10 @@ Outcome creation are not implied and remain separately owned.
 
 ## Pending validation
 
-- The cross-gap correction release and bounded failed-date recovery are
-  complete. Refresh the operational-calendar baseline only through a new,
-  separately authorized runtime step; any aggregate public snapshot remains a
-  further, separately authorized Pages step.
+- The cross-gap correction, bounded failed-date recovery, and aggregate
+  operational-calendar baseline are complete. Any public aggregate snapshot
+  remains a separately authorized Pages step and must preserve the public-safe
+  contract.
 - If end-to-end interaction evidence is required, obtain a separate named-human
   Action-mutation authorization before exercising the deployed Evidence-chain
   auto-refresh behavior. The release and read-only verifier did not mutate an
@@ -791,9 +795,15 @@ done.
   The controller persisted terminal success before returning. No seed,
   baseline refresh, production change, schedule, alias, Pages publication, or
   Action mutation occurred.
-- The 2026-08-24 evidence synchronization passes Python compilation, all 438
-  repository tests, 21 focused project-drift tests, the expanded 31/31 drift
-  audit, machine-readable contract parsing, and `git diff --check`.
+- The 2026-08-24 recovery and baseline evidence synchronization passes Python
+  compilation, all 438 repository tests, 21 focused project-drift tests, the
+  expanded 31/31 drift audit, machine-readable contract parsing, and
+  `git diff --check`.
+- Separately authorized operational-baseline run `32672560594` then created or
+  replaced exactly one view at the recovered `2026-08-09` cutoff and passed
+  10/10 fail-closed checks. It retained synthetic provenance, engineering-only
+  decision use, and `real_world_evidence=false`; no Pages, production,
+  schedule, alias, recovery, replay, seed, or Action mutation was included.
 - The repository cross-gap correction passes 55 focused adapter, quality-gate, and
   deployment-contract tests. The synchronized worktree passes Python
   compilation, all 437 repository tests, the 30/30 project drift audit, the
@@ -979,10 +989,9 @@ done.
 
 ## Next Up
 
-1. If a current aggregate operational baseline is required, separately
-   authorize a baseline refresh for the recovered `2026-08-09` actual-calendar
-   state and verify its aggregate-only contract. Any Pages publication remains
-   a second, separately authorized step.
+1. If a refreshed aggregate public snapshot is required, separately authorize
+   the existing Pages publication path and verify that it exposes only the
+   public-safe aggregate contract. The baseline run itself did not publish.
 2. Only if interaction-level evidence is needed, authorize a bounded Action
    mutation canary to confirm that the deployed expanded Evidence chain
    refreshes after a successful mutation. This must exclude `COMPLETE` and

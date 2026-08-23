@@ -6,6 +6,13 @@ preserved handoffs.
 
 ## 2026-08-24
 
+- Completed the separately authorized `2026-08-09` operational-calendar
+  baseline refresh in isolated staging. The manual workflow created or
+  replaced one aggregate view and passed 10/10 fail-closed checks while
+  retaining synthetic provenance, engineering-only decision use, and
+  `real_world_evidence=false`. It did not seed or replay lifecycle data,
+  recover another date, publish Pages, change production, schedules, or
+  aliases, or mutate an Action.
 - Completed the isolated staging cross-gap lifecycle recovery. After a
   protected plan and separate correction release, one further named-human
   authorization retried only the failed `2026-08-09` actual-calendar date.

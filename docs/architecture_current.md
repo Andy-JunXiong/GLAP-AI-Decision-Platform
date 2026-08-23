@@ -292,8 +292,11 @@ Diagnostic run `32391364627` passed all 28 checks for `2026-08-09` without
 mutation. Cross-gap correction plan `32670942817` and isolated-staging release
 `32671064789` then passed. A separately authorized one-date recovery run
 `32671484061` completed 28 lifecycle, 5 compatibility, and 8 analytics checks
-and persisted terminal success. No seed, baseline refresh, production alias,
-schedule, Pages publication, or Action mutation was included.
+and persisted terminal success. Separately authorized baseline run
+`32672560594` then created or replaced one aggregate view for cutoff
+`2026-08-09` and passed 10/10 fail-closed checks. It remains synthetic,
+engineering-only evidence with `real_world_evidence=false`. No seed,
+production alias, schedule, Pages publication, or Action mutation was included.
 
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached

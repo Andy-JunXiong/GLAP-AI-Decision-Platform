@@ -35,8 +35,10 @@ become effective, the same fail-closed check requires them as well.
 This correction does not relabel future simulations, manufacture historical
 KN/DHL rows, or clear provider/model readiness. The AWS quality-gate update,
 controlled recovery of the failed `2026-08-09` status, later actual-calendar
-continuation, operational-baseline refresh, and public publication remain
-separate runtime steps requiring human authority.
+continuation, operational-baseline refresh, and public publication were
+defined as separate runtime steps requiring human authority. The recovery and
+baseline refresh were later separately authorized and completed; public
+publication remains separate and unauthorized.
 
 ## Cross-gap prior-state correction -- 23 August 2026
 
@@ -58,9 +60,11 @@ earlier state exists, the compatibility gate still fails closed.
 The correction was later released through protected isolated-staging plan and
 deployment runs. A separately authorized retry for only `2026-08-09` completed
 all four stages and 41 checks: 28 lifecycle, 5 compatibility, and 8 analytics.
-The controller persisted terminal success. This runtime evidence does not
-fabricate a missing calendar date, alter an evidence classification, refresh
-the operational baseline, or authorize production, schedules, aliases, Pages,
+The controller persisted terminal success. A later separately authorized
+baseline run created or replaced one aggregate view at cutoff `2026-08-09`
+and passed 10/10 fail-closed checks. Both runtime results remain synthetic
+engineering evidence; they do not fabricate a missing calendar date, alter an
+evidence classification, or authorize production, schedules, aliases, Pages,
 or another recovery attempt.
 
 ## Decision summary

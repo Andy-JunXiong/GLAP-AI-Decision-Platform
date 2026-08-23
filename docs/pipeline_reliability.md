@@ -77,6 +77,13 @@ validates the lifecycle-specific cross-gap contract only; the generic
 production prior-calendar-day rule is unchanged. No seed, baseline refresh,
 production alias, schedule, Pages publication, or Action mutation occurred.
 
+A later, separately authorized isolated-staging run `32672560594` refreshed
+the operational-calendar baseline at cutoff `2026-08-09`. It created or
+replaced one aggregate view and passed all 10 fail-closed checks. The view is
+still `SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, engineering evaluation only,
+and not real-world evidence. The run did not seed, recover, or replay lifecycle
+data and did not change production, schedules, aliases, Pages, or Actions.
+
 The generated SQL was executed successfully in Athena on 4 August 2026:
 
 | Gate | Current tables | Aggregate rows | Duplicate keys | Shipments today / prior day |
