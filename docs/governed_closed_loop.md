@@ -41,6 +41,15 @@ Valid transitions are fail closed, and stable request IDs make retries
 idempotent. A view overlays the latest audit event to expose current Action
 state without erasing its history.
 
+The repository now also exposes that relationship as one authenticated,
+read-only evidence chain: immutable proposal, chronological audit events,
+current Action state, and the latest cutoff-eligible Outcome. The chain uses
+only operational actual-calendar rows through the current Sydney date. It
+labels pending Outcomes as not observed and all closed-loop effects as
+synthetic; it creates no mutation, approval, real-performance, or production
+claim. The endpoint and cockpit timeline are locally verified but remain
+undeployed pending a separately authorized staging release.
+
 The repository extension uses `PROPOSED -> EDITED` to record a named owner and
 due date without approving the Action. `EDITED` then requires a separate
 approver to approve or reject it. Assignment is carried forward into later
@@ -63,6 +72,16 @@ Learning may create a `PENDING_HUMAN_REVIEW` policy proposal after the configure
 minimum observed-outcome count. A proposal cannot modify simulation
 configuration, has no effective date before approval, and retains the current
 policy version as its rollback target.
+
+The authenticated Learning Review now exposes this gate as a read-only
+contract. It de-duplicates closed Outcomes, applies the Sydney cutoff and the
+`OPERATIONAL` / `ACTUAL_CALENDAR` eligibility rules, reports progress toward the
+20-Outcome minimum, and attaches only the latest eligible stored proposal. It
+cannot approve or activate that proposal, cannot replace deterministic safety
+rules, and labels all summarized effects as synthetic rather than real
+logistics performance. Passing this synthetic policy-review threshold is not
+model readiness or production readiness. The implementation is locally
+verified and undeployed.
 
 Operational model-readiness inputs must satisfy every condition below:
 

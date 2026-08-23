@@ -53,6 +53,10 @@ must always be queried with one `temporal_scope_id`.
 - Operational backtest and label-readiness defaults end at the current Sydney
   date. A later cutoff requires the explicit future-simulation mode and remains
   scenario evidence.
+- Closed staging Action Outcomes with `OPERATIONAL` / `ACTUAL_CALENDAR` labels
+  may count only toward the synthetic, review-only policy-proposal gate. Meeting
+  that gate is not factual treatment-effect evidence, model readiness,
+  production readiness, or authority to activate a policy.
 
 ## Historical evaluation replay
 

@@ -46,6 +46,64 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_governed_action_outcome_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_action_outcome_evidence_chain_authority_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "infrastructure/operations-api-staging.yaml",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            ".github/workflows/deploy-operations-api-staging.yml",
+            "ops/deploy_internal_operations_frontend.ps1",
+            "ops/verify_operations_staging.ps1",
+            "ops/verify_operations_roles_staging.ps1",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            template_path = root / "infrastructure" / "operations-api-staging.yaml"
+            template_path.write_text(
+                template_path.read_text(encoding="utf-8").replace(
+                    "RouteKey: GET /v1/actions/{action_id}/evidence",
+                    "RouteKey: POST /v1/actions/{action_id}/evidence",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_learning_activation_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "infrastructure/operations-api-staging.yaml",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            ".github/workflows/deploy-operations-api-staging.yml",
+            "ops/configure_operations_api_discovery.ps1",
+            "ops/configure_operations_api_data_access.ps1",
+            "ops/deploy_internal_operations_frontend.ps1",
+            "ops/verify_operations_staging.ps1",
+            "ops/verify_operations_roles_staging.ps1",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_learning_evidence_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda" / "glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"automatic_activation": False',
+                    '"automatic_activation": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_learning_evidence_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_repository_baseline_has_no_detected_drift(self):
         report = AUDIT.run_audit(ROOT)
         self.assertEqual(report["overall_status"], "PASS")
@@ -62,6 +120,9 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 "agent_runtime_host_registry",
                 "agent_runtime_input_bundle",
                 "agent_runtime_host_trace",
+                "agent_runtime_adapter_conformance",
+                "action_outcome_evidence_chain",
+                "outcome_learning_evidence_gate",
             }
             <= capability_ids
         )
@@ -139,6 +200,30 @@ class ProjectDriftAuditTests(unittest.TestCase):
             if item.check_id == "agent_runtime_host_registry_boundary"
         )
         self.assertEqual(registry.status, "DRIFT")
+
+    def test_adapter_conformance_authority_drift_is_detected(self):
+        paths = (
+            "ops/verify_agent_runtime_adapter_package.py",
+            "ops/run_governed_agent_runtime.py",
+            "tests/test_agent_runtime_adapter_conformance.py",
+            "tests/fixtures/evaluation/adapter_conformance_v1/package.json",
+            "tests/fixtures/evaluation/adapter_conformance_v1/adapter.py",
+            "tests/fixtures/evaluation/adapter_conformance_v1/input_bundle.json",
+            "tests/fixtures/evaluation/adapter_conformance_v1/host_trace.json",
+            "docs/agent_runtime_adapter_package_v1.schema.json",
+            "docs/agent_runtime_input_bundle_v1.schema.json",
+            "docs/agent_runtime_host_trace_v1.schema.json",
+            "docs/evaluation_architecture.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            manifest_path = root / paths[3]
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["execution_boundary"]["network_access_allowed"] = True
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            result = AUDIT.check_adapter_conformance_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
 
     def test_action_operation_change_is_detected(self):
         contract = AUDIT.load_contract(ROOT)

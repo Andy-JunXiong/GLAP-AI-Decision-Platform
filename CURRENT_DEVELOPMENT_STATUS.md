@@ -19,11 +19,14 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `PARTIAL` | Operator `EDIT` recorded; response fix release, stable retry, and separate approver decision remain |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
+| Action–Outcome evidence chain | `IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED` | Private read-only proposal/audit/Outcome timeline; no AWS or Action mutation |
+| Outcome–Learning evidence gate | `IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED` | Private read-only eligible-Outcome threshold and review-only policy proposal; no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
 | Governed Agent Runtime parity | `IMPLEMENTED_VERIFIED` | One reference adapter and one independently implemented registered local adapter run from distinct source paths under the same content-addressed cutoff bundle and no-mutation envelope; this proves local implementation and interface mechanics only |
 | Agent Runtime host registry | `IMPLEMENTED_VERIFIED` | Exactly two import-free local adapters are bound to distinct implementation IDs, groups, modules, and source digests; no host authentication, model identity, network, package-install, file-write, approval, or Action claim |
 | Agent Runtime input bundle and host trace | `IMPLEMENTED_VERIFIED` | Canonical SHA-256 bundle and bundle-bound traces support offline integrity verification; they establish neither host/model identity nor approval, Action, quality, outcome, deployment, or production readiness |
+| Offline adapter conformance package | `IMPLEMENTED_VERIFIED` | A fixed four-file package binds inspected import-free source to the frozen input bundle and an exact deterministic replay trace; it grants no registration, network, dependency-install, host/model identity, quality, Outcome, approval, Action, deployment, or production claim |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; four compatible reviews per cutoff produce 15 results favouring A303-on, 14 expected control ties, and one 2:2 split |
 | Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Two formal Sites and two mainland Lambda submissions passed the governed cross-entry checks, creating 120 compatible locked review records; superseded drafts remain isolated and ineligible |
 | A303 synthetic Outcome robustness | `IMPLEMENTED_VERIFIED_NOT_ROBUST` | Pre-specified local evaluation covers all 16 attributed changes and 14 controls independently of human preference; controls pass exact-zero, but only 39.81% of 3,888 attributed grid results are non-negative and the frozen gate is `NOT_ROBUST` |
@@ -91,18 +94,56 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — capability-neutral evaluation and governed Agent Runtime
+## Active slice — Action–Outcome–Learning evidence chain
 
-**Status:** `IMPLEMENTED_VERIFIED_LOCAL_READ_ONLY`
+**Status:** `IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED`
 
 **Goal**
 
-Extend the frozen Evaluation Architecture beyond A303 by isolating External
-Evidence and Decision Memory, then prove that both can travel through a bounded,
-content-addressed Agent Runtime interface without gaining network, approval,
-Action-mutation, AWS, deployment, or production authority.
+Return the product focus to the governed Action–Outcome loop by making one
+Action's immutable proposal, human audit history, current state, and latest
+eligible simulated Outcome reviewable as one authenticated chain. Preserve the
+Sydney actual-calendar cutoff, RBAC, and synthetic evidence boundary without
+performing an AWS deployment or operational Action mutation.
+
+Continue that same loop from Outcome into Learning by showing the governed
+20-observation gate and latest eligible policy proposal without approving,
+activating, or allowing it to replace deterministic rules.
 
 **Completed current slice**
+
+- Added `GET /v1/actions/{action_id}/evidence`, backed by one bounded Athena
+  query over the immutable Action table, cutoff-eligible audit events, and
+  Outcome table. It rejects unsafe identifiers and excludes non-operational,
+  non-actual-calendar, or later-dated rows.
+- Added a private cockpit evidence timeline that shows the immutable proposal,
+  named human transitions and reasons, and whether the simulated Outcome is
+  absent, pending, or observed.
+- Extended the explicit JWT route, existing exact read-only table bindings,
+  unauthenticated-route check, four-role verifier, API tests, frontend tests,
+  and evidence documentation. No new write, role, table, or production path was
+  added.
+- Closed local release-readiness gaps: the API workflow now preflights all
+  three evidence tables, the private frontend packager verifies the evidence
+  UI/disclosure fingerprint, and both staging verifiers require explicit
+  `-RequireActionEvidence` opt-in so the currently deployed older baseline is
+  not falsely reported as broken before an authorized release.
+- Added `GET /v1/learning` and a private Learning Review. They de-duplicate only
+  closed operational actual-calendar Outcomes through the Sydney cutoff,
+  report progress toward the existing 20-Outcome gate, and attach the latest
+  eligible policy proposal only as review-required.
+- Classified that threshold as `SYNTHETIC_POLICY_REVIEW_ONLY`: meeting it is
+  neither model readiness nor production readiness and cannot establish real
+  business effect.
+- Added exact read-only policy-proposal table bindings and plan-first discovery
+  and Lake Formation inventory. There is no proposal approval or activation
+  endpoint, no automatic policy change, and deterministic safety rules remain
+  authoritative.
+- Added an independent `-RequireLearningEvidence` post-release gate to both
+  staging verifiers and a Learning disclosure fingerprint to the internal
+  frontend packager, so the undeployed baseline remains truthful.
+
+**Retained completed context from the earlier 2026-08-23 slice**
 
 - External Evidence v2 and Decision Memory v3 paired ablations pass System
   Correctness and Capability Attribution under controlled synthetic inputs;
@@ -118,9 +159,14 @@ Action-mutation, AWS, deployment, or production authority.
 - A canonical content-addressed input bundle excludes post-cutoff evidence and
   memory. Two content-addressed host traces replay against the same bundle and
   explicitly grant no approval or operational Action.
-- The project drift contract now names all six capabilities. Six executable
+- A fixed four-file conformance package binds a separately supplied adapter's
+  inspected source digest to the complete frozen input bundle and submitted
+  trace. The verifier runs it twice in an isolated local subprocess and requires
+  deterministic output plus an exact replay-trace match.
+- The project drift contract now names all seven capabilities. Seven executable
   checks rerun their contracts, and mutation tests prove that source drift,
-  operational-write, network, or approval-authority expansion fails closed.
+  unexpected code, input/trace tampering, operational-write, network, or
+  approval-authority expansion fails closed.
 - No AWS call, network access, operational mutation, deployment, schedule,
   policy activation, model promotion, or Pages publication occurred.
 
@@ -431,10 +477,13 @@ Action-mutation, AWS, deployment, or production authority.
 
 **Next slice after completion**
 
-The bounded A303.v2 guardrail screen is complete, neither candidate passes, and
-the human project owner selected stop/retire. A303.v1 is closed. Any future
-evaluation slice should target a capability-neutral ablation or a separately
-authorized new rule, not another threshold tuned on this corpus.
+Release and runtime-verify the evidence chain through the existing protected
+staging API/frontend paths only after separate human authorization. That
+runtime step should verify all four read roles, a missing-Action 404, event
+ordering, pending/observed boundaries, and absence of protected identifiers.
+It must not be combined with the pending Action response-fix release, stable
+retry, or separate approver decision unless those actions receive their own
+explicit approvals.
 
 ## Pending validation
 
@@ -492,6 +541,10 @@ done.
 
 ## Recently completed — current seven-day window
 
+- The Action–Outcome evidence chain now makes the main governed loop reviewable
+  from one Action without rewriting the proposal or audit history. It is
+  locally implemented and verified, remains undeployed, and does not establish
+  real logistics performance or grant Action authority.
 - Capability-neutral External Evidence v2 and Decision Memory v3 ablations now
   hold every non-target input constant and show only capability attribution.
   Both remain local, controlled-synthetic, read-only, and explicitly do not
@@ -506,7 +559,13 @@ done.
 - The content-addressed host registry freezes distinct implementation IDs,
   groups, modules, source digests, a four-builtin call allowlist, and the
   no-network/no-write boundary.
-- Project drift coverage now declares those six capabilities and executes
+- Offline adapter conformance now packages `package.json`, inspected
+  `adapter.py`, the frozen input bundle, and a submitted host trace. It rejects
+  extra artifacts, path or source drift, unsafe syntax/calls, widened authority,
+  nondeterminism, and any difference between the submitted and replayed trace.
+  Passing proves local System Correctness only; it neither registers the
+  adapter nor authenticates a host/model or establishes quality or Outcome.
+- Project drift coverage now declares those seven capabilities and executes
   their frozen manifests on every audit. Authority-expansion mutation tests
   prevent a write-enabled ablation or operational approval mode from passing.
 - Evaluation Architecture separated System Correctness, Capability
@@ -603,16 +662,27 @@ done.
 
 ### Codex-run validation
 
-- The 2026-08-23 capability-neutral evaluation, registered Agent Runtime, and
-  drift-reconciliation slice passes Python compilation, all 411 repository
-  tests, 16 focused project-drift tests, and the expanded 27/27 project drift
-  audit. The host registry digest is
+- The 2026-08-23 Action–Outcome–Learning evidence-chain slice passes focused API and
+  infrastructure tests, private frontend lint/build/rendered tests, PowerShell
+  parser checks for both staging verifiers and the frontend packager, an actual
+  internal static export with the Action and Learning evidence fingerprints
+  present, Python compilation, all 432
+  repository tests, 19 focused drift tests, the expanded 30/30 project drift
+  audit, and `git diff --check`. This is local implementation evidence only;
+  no AWS call, staging deployment, runtime verification, Action mutation,
+  schedule, production change, or Pages publication occurred.
+- The 2026-08-23 capability-neutral evaluation, registered Agent Runtime,
+  offline adapter conformance, and drift-reconciliation slice passes Python
+  compilation, all 422 repository tests, 17 focused project-drift tests, and
+  the expanded 28/28 project drift audit. The host registry digest is
   `0f11befc5aacde015bf4fb6ec195c40da757954461af876928fdae49c95aa942`.
   The canonical input bundle digest is
   `c0f617f543cdd69750cb3276916a1332af020e2eb58b9d912fff8b20b63425d7`;
-  both host traces verify against it. This evidence is local and synthetic;
-  no network, AWS, operational mutation, deployment, schedule, policy/model
-  promotion, or Pages publication occurred.
+  both registered host traces and the separately supplied conformance fixture
+  verify against it. The fixture's submitted and replayed trace digest is
+  `e22517345c2fb69842c0597a57209f56dc11cef7c6f5c797274fad0f8872d235`.
+  This evidence is local and synthetic; no network, AWS, operational mutation,
+  deployment, schedule, policy/model promotion, or Pages publication occurred.
 - The final lifecycle release chain is source- and runtime-verified: PR #75
   merged as `1f602c5d`, post-merge CI run `32389801911` passed, plan runs
   `32390302719` and `32390677045` passed, rollback-recovery run `32390505373`
@@ -799,16 +869,20 @@ done.
 
 ## Next Up
 
-1. With separate named-human approval, run the isolated staging
+1. With separate staging release authorization, deploy and runtime-verify the
+   read-only Action–Outcome evidence endpoint, Outcome–Learning gate, and their
+   private cockpit views. Run both explicit post-release verifier gates. Keep
+   this distinct from any Action mutation release, policy activation, or
+   named-human canary step.
+2. Release the Action response-serialization fix only through separately
+   authorized narrow Prepare and Execute phases; then retry the original
+   request ID and have a different named approver approve or reject the edited
+   Action under separate operational authority.
+3. With separate named-human approval, run the isolated staging
    `recover-failed-integration-date` action for only `2026-08-09`, then verify
    the persisted controller status and all 28 lifecycle checks. This is not a
    production, baseline-refresh, schedule, or Pages action.
-2. Recommended next local feature: define an offline adapter conformance
-   package so a separately supplied implementation can be inspected and
-   replayed through the frozen registry, bundle, and trace contracts without
-   granting network, dynamic package installation, AWS, approval, Action, or
-   production authority. This is recommended, not yet approved or built.
-3. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
+4. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
    owner separately approves a governed adjudication record; never overwrite
    the four original submissions.
 

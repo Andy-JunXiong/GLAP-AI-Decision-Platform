@@ -125,6 +125,14 @@ The values are deliberately omitted because they identify environment-specific r
   CloudFormation-only service role holds the exact function update capability,
   exact template-role reads, and both the candidate and retained rollback
   artifact reads required to finish or recover the one-resource update
+- the repository Operations API extension reads the already allow-listed
+  immutable Action table, Action audit table, and Outcome table in one bounded
+  query to assemble a private Action–Outcome evidence chain; its explicit JWT
+  route and environment binding are implemented locally but not deployed
+- the local Outcome-to-Learning extension adds one authenticated read route
+  over the existing Outcome and policy-proposal tables; IAM and Lake Formation
+  inventories name the policy table exactly and grant no write, grant-option,
+  activation, schedule, alias, or production capability
 
 The deployed CloudWatch alarms publish both alarm and recovery transitions to
 the existing `glap-pipeline-alerts` SNS topic. Subscriber endpoints are managed

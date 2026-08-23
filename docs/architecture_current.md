@@ -48,6 +48,16 @@ bundle's expected tool sequence, result IDs, proposal, simulated approval, and
 empty mutation list. This proves local trace integrity, not host identity,
 model provenance, or host quality.
 
+A fixed four-file offline adapter package now lets a separately supplied Python
+implementation be inspected and replayed against the same bundle and trace
+contracts. Source digest and AST checks reject imports, attribute/private-name
+access, unexpected calls, decorators, annotations, and builtin shadowing before
+two deterministic executions in an isolated local subprocess. The submitted
+trace must exactly match the reconstructed trace. Package conformance does not
+register the adapter or prove host/model identity, Decision Quality, Outcome
+effect, deployment, or production readiness, and grants no network, dependency-
+install, approval, Action, AWS, or operational-write authority.
+
 The first controlled synthetic experiment holds the scenario, point-in-time
 evidence, policy version, authority profile, and seed fixed while toggling the
 versioned `A303_HIGH_RISK_ROUTE` rule contract. Its paired replay evaluates
@@ -218,6 +228,23 @@ They support the governed Decision Queue, Action Board, `APPROVE` / `REJECT` /
 `COMPLETE` mutations, Risk Hotspots, Outcome Review, Pipeline Health, Forecast
 Accuracy, and authorised Network Drill-down. Public GitHub Pages remains
 aggregate-only and read-only, with no private API or Cognito configuration.
+
+The next repository revision adds a private read-only Action–Outcome evidence
+chain to that same boundary. One Action detail request joins its immutable
+proposal, chronological append-only audit events, and latest eligible simulated
+Outcome under the Sydney actual-calendar cutoff. The cockpit renders this as a
+review timeline without exposing request IDs, scenario IDs, infrastructure
+identifiers, or future simulations. This extension is implemented and locally
+verified only; it has not been deployed or runtime-verified and adds no
+mutation or approval authority.
+
+The same local revision continues the closed loop from Outcome to Learning.
+An authenticated `GET /v1/learning` aggregate counts only cutoff-eligible
+observed Outcomes and reads the existing policy-proposal table. Its private
+Learning Review shows whether the minimum evidence gate remains blocked and,
+when present, exposes a proposal only as review-required. There is no policy
+activation endpoint, deterministic rules remain authoritative, and the local
+extension is not deployed or runtime-verified.
 
 The repository implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a

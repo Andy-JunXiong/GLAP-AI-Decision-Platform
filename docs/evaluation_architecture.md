@@ -210,6 +210,36 @@ python ops/verify_agent_runtime_host_trace.py \
   artifacts/agent-runtime-host-trace-v1.json
 ```
 
+Separately supplied implementations now have a fixed offline conformance
+package governed by
+[`agent_runtime_adapter_package_v1.schema.json`](agent_runtime_adapter_package_v1.schema.json).
+The package contains exactly four governed artifacts: `package.json`, one
+import-free `adapter.py`, the complete content-addressed `input_bundle.json`,
+and the submitted bundle-bound `host_trace.json`. Python bytecode cache created
+by local validation is ignored and is never a package artifact.
+
+The verifier checks the adapter source digest and a strict AST policy before
+execution. The source may define only `run_adapter(request)`, cannot import,
+use decorators or annotations, access attributes/private names, shadow the
+four allowed pure builtins, or call anything outside that allowlist. It then
+runs the adapter twice in an isolated `-I -S -B` Python subprocess with a
+three-second limit, reconstructs the trace from the frozen bundle, and requires
+the submitted and replayed traces to be byte-for-byte equivalent as canonical
+JSON structures. Extra package files, path escape, symlinks, authority drift,
+input tampering, nondeterminism, trace tampering, proposal drift, approval, or
+operational mutation fail closed.
+
+Passing this package proves only offline source inspection, deterministic
+frozen-bundle replay, and submitted-trace integrity. It does not amend the host
+registry, authenticate an operator or host, identify a model, compare quality,
+establish an Outcome, or grant network, dependency-install, AWS, approval,
+Action, deployment, or production authority. Verify a package with:
+
+```bash
+python ops/verify_agent_runtime_adapter_package.py \
+  tests/fixtures/evaluation/adapter_conformance_v1
+```
+
 Run the local parity fixture with:
 
 ```bash
@@ -342,16 +372,16 @@ python ops/evaluate_decision_memory_capability.py \
 ## Next increments
 
 1. Keep A303.v1 retired and preserve its evidence. Accept no real-host
-   comparison until its submitted adapter package passes the frozen registry,
-   bundle, trace, redaction, and budget contracts.
+   comparison until its submitted adapter package passes the frozen source,
+   bundle, trace, redaction, budget, and no-authority contracts.
 2. If the study owner requires a resolved Decision Quality result for the one
    2:2 package, add
    a separate adjudication record without changing original reviews; otherwise
    retain the package as inconclusive.
-3. Add an offline adapter conformance package format so a separately supplied
-   implementation can be inspected and replayed without granting network,
-   package-install, AWS, approval, or Action authority.
-4. Compare real host adapters only after their registry source digest, input
+3. Accept a separately supplied real adapter package only through the offline
+   conformance verifier; registration or comparison remains a separate human-
+   authorized decision.
+4. Compare real host adapters only after their package source digest, input
    bundle, tool trace, redaction, and budget digests pass the v1 contracts.
 5. Only after a future rule passes its synthetic gate, compare eligible
    independently governed Outcome evidence with its frozen simulator using the

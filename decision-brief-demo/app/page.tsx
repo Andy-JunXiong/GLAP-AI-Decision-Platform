@@ -2,20 +2,24 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActionEvidence,
   ActionOperation,
   OperationsAction,
   OperationsOutcome,
   PipelineHealth as PipelineHealthData,
   ForecastContract,
+  LearningEvidence,
   NetworkResponse,
   NetworkSummary,
   OperationsRisk,
   ShipmentEntity,
   internalOperationsEnabled,
   loadActionQueue,
+  loadActionEvidence,
   loadOutcomeReview,
   loadPipelineHealth,
   loadForecastAccuracy,
+  loadLearningEvidence,
   loadNetworkSummary,
   loadRiskHotspots,
   loadShipmentDrilldown,
@@ -31,18 +35,19 @@ import {
 } from "./operations-auth";
 import "./operations.css";
 
-type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "forecasts" | "health" | "brief";
+type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "learning" | "forecasts" | "health" | "brief";
 type OperationsLoadState = "demo" | "loading" | "connected" | "auth_required" | "error";
 type ShipmentLoadState = "idle" | "loading" | "connected" | "partial" | "error";
 type DataStateKind = "loading" | "empty" | "stale" | "partial" | "failed" | "auth_required" | "idle";
 
-const navItems: { id: View; label: string; icon: string }[] = [
+const navItems: { id: View; label: string; icon: string; internalOnly?: boolean }[] = [
   { id: "overview", label: "Control Tower", icon: "⌂" },
   { id: "signals", label: "Signals", icon: "⌁" },
   { id: "decisions", label: "Decisions", icon: "◇" },
   { id: "shipments", label: "Shipments", icon: "▣" },
   { id: "outcomes", label: "Outcomes", icon: "↗" },
   { id: "actions", label: "Action Board", icon: "A" },
+  { id: "learning", label: "Learning Review", icon: "L", internalOnly: true },
   { id: "health", label: "Pipeline Health", icon: "H" },
   { id: "forecasts", label: "Forecast Accuracy", icon: "F" },
 ];
@@ -81,6 +86,7 @@ export default function Home() {
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
   const [pipelineHealth, setPipelineHealth] = useState<PipelineHealthData | null>(null);
   const [forecastContract, setForecastContract] = useState<ForecastContract | null>(null);
+  const [learningContract, setLearningContract] = useState<LearningEvidence | null>(null);
   const [networkContract, setNetworkContract] = useState<NetworkResponse | null>(null);
   const [shipmentEntities, setShipmentEntities] = useState<ShipmentEntity[]>([]);
   const [shipmentNextToken, setShipmentNextToken] = useState<string | null>(null);
@@ -97,6 +103,10 @@ export default function Home() {
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [forecastMessage, setForecastMessage] = useState("");
+  const [learningState, setLearningState] = useState<OperationsLoadState>(
+    internalOperationsEnabled() ? "loading" : "demo",
+  );
+  const [learningMessage, setLearningMessage] = useState("");
   const [networkState, setNetworkState] = useState<OperationsLoadState>(
     internalOperationsEnabled() ? "loading" : "demo",
   );
@@ -168,6 +178,25 @@ export default function Home() {
     }
   }, []);
 
+  const refreshLearning = useCallback(async () => {
+    if (!internalOperationsEnabled()) return;
+    const token = readOperationsToken();
+    if (!token) {
+      setLearningState("auth_required");
+      setLearningMessage("Sign in through the approved internal identity provider.");
+      return;
+    }
+    setLearningState("loading");
+    try {
+      setLearningContract(await loadLearningEvidence(token));
+      setLearningState("connected");
+      setLearningMessage("");
+    } catch (error) {
+      setLearningState("error");
+      setLearningMessage(error instanceof Error ? error.message : "Unable to load Learning evidence");
+    }
+  }, []);
+
   const refreshNetwork = useCallback(async () => {
     if (!internalOperationsEnabled()) return;
     const token = readOperationsToken();
@@ -235,7 +264,7 @@ export default function Home() {
       void finishOperationsSignIn()
         .then(() => {
           setSignedIn(operationsSignedIn());
-          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts(), refreshNetwork()]);
+          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts(), refreshLearning(), refreshNetwork()]);
         })
         .catch((error) => {
           const signInMessage = error instanceof Error ? error.message : "Internal sign-in failed";
@@ -245,12 +274,14 @@ export default function Home() {
           setHealthMessage(signInMessage);
           setForecastState("error");
           setForecastMessage(signInMessage);
+          setLearningState("error");
+          setLearningMessage(signInMessage);
           setNetworkState("error");
           setNetworkMessage(signInMessage);
         });
     }, 0);
     return () => window.clearTimeout(initialLoad);
-  }, [refreshOperations, refreshPipelineHealth, refreshForecasts, refreshNetwork]);
+  }, [refreshOperations, refreshPipelineHealth, refreshForecasts, refreshLearning, refreshNetwork]);
 
   const submitOperation = useCallback(async (
     actionId: string, operation: ActionOperation, reason: string,
@@ -288,7 +319,7 @@ export default function Home() {
         </button>
         <nav aria-label="Product navigation">
           <p>Workspace</p>
-          {navItems.map((item) => (
+          {navItems.filter((item) => !item.internalOnly || internalOperationsEnabled()).map((item) => (
             <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => go(item.id)}>
               <i>{item.icon}</i>{item.label}
               {item.id === "decisions" && <b>3</b>}
@@ -330,6 +361,7 @@ export default function Home() {
           refresh={refreshNetwork} openGroup={openShipmentGroup} loadMore={loadMoreShipments}
         />}
         {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
+        {view === "learning" && <LearningReview contract={learningContract} state={learningState} message={learningMessage} refresh={refreshLearning} />}
         {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
         {view === "forecasts" && <ForecastAccuracy contract={forecastContract} state={forecastState} message={forecastMessage} refresh={refreshForecasts} />}
         {view === "brief" && (
@@ -494,6 +526,29 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
   const [actionOwner, setActionOwner] = useState("");
   const [actionDueDate, setActionDueDate] = useState("");
   const [busyAction, setBusyAction] = useState("");
+  const [selectedEvidence, setSelectedEvidence] = useState("");
+  const [evidence, setEvidence] = useState<ActionEvidence | null>(null);
+  const [evidenceState, setEvidenceState] = useState<"idle" | "loading" | "connected" | "error">("idle");
+  const [evidenceMessage, setEvidenceMessage] = useState("");
+  const reviewEvidence = async (actionId: string) => {
+    if (selectedEvidence === actionId && evidenceState === "connected") {
+      setSelectedEvidence("");
+      setEvidence(null);
+      setEvidenceState("idle");
+      return;
+    }
+    setSelectedEvidence(actionId);
+    setEvidence(null);
+    setEvidenceState("loading");
+    try {
+      setEvidence(await loadActionEvidence(readOperationsToken(), actionId));
+      setEvidenceState("connected");
+      setEvidenceMessage("");
+    } catch (error) {
+      setEvidenceState("error");
+      setEvidenceMessage(error instanceof Error ? error.message : "Unable to load the Action evidence chain");
+    }
+  };
   const run = async (action: OperationsAction, operation: ActionOperation) => {
     setBusyAction(action.action_id);
     try {
@@ -520,11 +575,28 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
         <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span><span>Owner: {item.action_owner ?? "Unassigned"} · Due: {item.action_due_date ?? "Not set"}</span></div>
         <div className="decision-value"><small>Status</small><strong>{item.status}</strong></div>
         <div className="decision-buttons">
+          <button disabled={evidenceState === "loading" && selectedEvidence === item.action_id} onClick={() => void reviewEvidence(item.action_id)}>{selectedEvidence === item.action_id && evidenceState === "connected" ? "Hide evidence" : "Evidence chain"}</button>
           {item.status === "PROPOSED" && <><button disabled={busyAction === item.action_id || reason.trim().length < 3 || actionOwner.trim().length < 2 || !actionDueDate} onClick={() => void run(item, "EDIT")}>Assign &amp; edit</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "REJECT")}>Reject</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "APPROVE")}>Approve</button></>}
           {item.status === "EDITED" && <><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "REJECT")}>Reject</button><button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "APPROVE")}>Approve</button></>}
           {item.status === "APPROVED" && <button disabled={busyAction === item.action_id || reason.trim().length < 3} onClick={() => void run(item, "COMPLETE")}>Mark complete</button>}
           {(item.status === "REJECTED" || item.status === "COMPLETED") && <span className="status-button">Closed</span>}
         </div>
+        {selectedEvidence === item.action_id && <section className="action-evidence" aria-live="polite" aria-busy={evidenceState === "loading"}>
+          {evidenceState === "loading" && <DataState kind="loading" title="Loading Action evidence" message="Joining the immutable proposal, append-only audit events, and eligible Outcome." />}
+          {evidenceState === "error" && <DataState kind="failed" title="Action evidence unavailable" message={evidenceMessage} onRetry={() => reviewEvidence(item.action_id)} />}
+          {evidenceState === "connected" && evidence && <>
+            <header><div><small>Action–Outcome evidence chain</small><strong>{evidence.chain_status.replaceAll("_", " ")}</strong></div><span>Sydney cutoff {evidence.as_of_date}</span></header>
+            <div className="action-evidence-flow">
+              <article><small>Immutable proposal</small><strong>{evidence.action.action_type.replaceAll("_", " ")}</strong><span>{evidence.action.created_date} · {evidence.action.status}</span></article>
+              <div className="action-audit-events">{evidence.events.length
+                ? evidence.events.map((event) => <article key={event.event_id}><i /><div><small>{event.occurred_at}</small><strong>{event.event_type}: {event.previous_status} → {event.new_status}</strong><span>{event.actor} · {event.reason}</span></div></article>)
+                : <p>No human mutation has been recorded; the proposal remains unchanged.</p>}
+              </div>
+              <article className={evidence.outcome?.evidence_status === "OBSERVED_ACTUAL_CALENDAR" ? "observed" : "pending"}><small>Simulated Outcome</small><strong>{evidence.outcome ? evidence.outcome.outcome_status.replaceAll("_", " ") : "Not created"}</strong><span>{evidence.outcome?.evidence_status === "OBSERVED_ACTUAL_CALENDAR" ? `Observed ${evidence.outcome.observed_date} · ${evidence.outcome.effect_pct}% effect` : evidence.outcome ? `Due ${evidence.outcome.observation_due_date} · not observed` : "Requires an approved, completed Action"}</span></article>
+            </div>
+            <p className="data-disclaimer">The proposal is immutable and audit events are append-only. Outcomes are reproducible synthetic staging evidence, never real logistics performance.</p>
+          </>}
+        </section>}
       </article>)}</div></>}
     </>}
   </div>;
@@ -761,6 +833,38 @@ function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
         <span className="status-button">{item.evidence_status === "NOT_OBSERVED" ? "Pending" : "Actual calendar"}</span>
       </article>)}</div>
       {outcomes.length === 0 && <DataState kind="empty" title="No operational Outcomes" message="No operational Outcomes are available at the current Sydney cutoff." />}
+    </>}
+  </div>;
+}
+
+function LearningReview({ contract, state, message, refresh }: {
+  contract: LearningEvidence | null;
+  state: OperationsLoadState;
+  message: string;
+  refresh: () => Promise<void>;
+}) {
+  return <div className="page">
+    <PageTitle eyebrow="LEARN" title="Learning Review" copy="See whether cutoff-eligible Outcomes support a review-only policy proposal without activating or replacing deterministic rules." action={<button className="outline-button" onClick={() => void refresh()}>Refresh learning evidence</button>} />
+    <OperationsState state={state} message={message} label="Learning Review" onRetry={refresh} />
+    {state === "connected" && contract && <>
+      <section className="metric-grid compact">
+        <Metric label="Eligible Outcomes" value={String(contract.gate.eligible_observed_outcomes)} note={`Minimum ${contract.gate.minimum_observed_outcomes}`} />
+        <Metric label="Remaining to gate" value={String(contract.gate.remaining_outcomes)} note={contract.gate.gate_met ? "Evidence gate met" : "Learning remains blocked"} tone={contract.gate.gate_met ? "green" : "amber"} />
+        <Metric label="Synthetic success rate" value={contract.outcome_summary.success_rate_pct === null ? "—" : `${contract.outcome_summary.success_rate_pct}%`} note="Successful + partially successful" />
+        <Metric label="Proposal state" value={contract.proposal?.status.replaceAll("_", " ") ?? "Not created"} note="Human review is always required" />
+      </section>
+      {!contract.gate.gate_met && <DataState kind="partial" title="Learning evidence is not yet eligible" message={`${contract.gate.remaining_outcomes} more observed actual-calendar Outcomes are required. Pending Outcomes and future simulations do not count.`} />}
+      {contract.gate.gate_met && !contract.proposal && <DataState kind="idle" title="Evidence gate met; proposal not recorded" message="The lifecycle generator has not yet recorded a governed policy proposal for this cutoff. No policy has changed." />}
+      {contract.proposal && <article className="card learning-proposal">
+        <CardHead title="Review-only policy proposal" copy={contract.proposal.proposed_change.replaceAll("_", " ")} />
+        <dl>
+          <div><dt>Status</dt><dd>{contract.proposal.status.replaceAll("_", " ")}</dd></div>
+          <div><dt>Source policy</dt><dd>{contract.proposal.source_policy_version}</dd></div>
+          <div><dt>Observed Outcomes</dt><dd>{contract.proposal.observed_outcome_count}</dd></div>
+          <div><dt>Rollback target</dt><dd>{contract.proposal.rollback_policy_version}</dd></div>
+        </dl>
+      </article>}
+      <p className="data-disclaimer">Sydney cutoff {contract.as_of_date}. This gate is synthetic policy-review evidence only; it is not model or production readiness. Policy activation always requires a separate named-human approval. These simulated Outcomes are never real logistics performance, and deterministic safety rules remain in force.</p>
     </>}
   </div>;
 }

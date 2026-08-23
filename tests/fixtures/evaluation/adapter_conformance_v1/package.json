@@ -1,0 +1,33 @@
+{
+  "schema_version": "agent-runtime-adapter-package.v1",
+  "package_id": "offline-candidate-fixture-v1",
+  "interface_version": "agent-runtime.v1",
+  "host_id": "offline-candidate-host",
+  "adapter": {
+    "adapter_version": "offline-candidate-adapter.v1",
+    "implementation_id": "offline-candidate-python-v1",
+    "implementation_group": "separately-supplied-fixture-v1",
+    "module_path": "adapter.py",
+    "entrypoint": "run_adapter",
+    "source_sha256": "ff86a737b875fd0326836cedf79afd22eba6f5a588c3286a62e87c5760e63522",
+    "enabled_capabilities": ["DECISION_MEMORY", "EXTERNAL_EVIDENCE"],
+    "execution_boundary": "EVALUATION_NO_MUTATION"
+  },
+  "artifacts": {
+    "input_bundle_path": "input_bundle.json",
+    "input_bundle_sha256": "c0f617f543cdd69750cb3276916a1332af020e2eb58b9d912fff8b20b63425d7",
+    "host_trace_path": "host_trace.json",
+    "host_trace_sha256": "e22517345c2fb69842c0597a57209f56dc11cef7c6f5c797274fad0f8872d235"
+  },
+  "execution_boundary": {
+    "mode": "LOCAL_ISOLATED_REPLAY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "dynamic_dependency_install_allowed": false,
+    "production_effect": false
+  },
+  "claim_boundary": {
+    "supported": ["SOURCE_INSPECTION", "FROZEN_BUNDLE_REPLAY_CONFORMANCE", "SUBMITTED_TRACE_INTEGRITY"],
+    "not_supported": ["HOST_AUTHENTICATION", "MODEL_IDENTITY", "HOST_QUALITY_SUPERIORITY", "DECISION_QUALITY", "BUSINESS_OUTCOME_EFFECT", "OPERATIONAL_APPROVAL", "ACTION_CREATION", "DEPLOYED_RUNTIME_VERIFICATION", "PRODUCTION_READINESS"]
+  }
+}

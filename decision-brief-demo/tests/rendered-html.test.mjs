@@ -40,6 +40,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /sessionStorage\.getItem/);
   assert.match(client, /authorization: `Bearer \$\{token\}`/);
   assert.match(client, /\/v1\/actions\/\$\{encodeURIComponent\(actionId\)\}\/events/);
+  assert.match(client, /\/v1\/actions\/\$\{encodeURIComponent\(actionId\)\}\/evidence/);
+  assert.match(client, /export async function loadActionEvidence/);
   assert.match(client, /"EDIT" \| "APPROVE" \| "REJECT" \| "COMPLETE"/);
   assert.match(client, /action_owner: assignment\.actionOwner/);
   assert.match(client, /action_due_date: assignment\.actionDueDate/);
@@ -47,6 +49,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /export async function loadRiskHotspots/);
   assert.match(client, /\/v1\/outcomes\$\{query\}/);
   assert.match(client, /export async function loadOutcomeReview/);
+  assert.match(client, /\/v1\/learning/);
+  assert.match(client, /export async function loadLearningEvidence/);
   assert.match(client, /\/v1\/pipeline-health/);
   assert.match(client, /export async function loadPipelineHealth/);
   assert.match(client, /\/v1\/forecasts/);
@@ -88,6 +92,14 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /Some shipment evidence is still available/);
   assert.match(page, /Assign &amp; edit/);
   assert.match(page, /item\.status === "EDITED"/);
+  assert.match(page, /Action–Outcome evidence chain/);
+  assert.match(page, /The proposal is immutable and audit events are append-only/);
+  assert.match(page, /never real logistics performance/);
+  assert.match(page, /title="Learning Review"/);
+  assert.match(page, /Learning evidence is not yet eligible/);
+  assert.match(page, /Policy activation always requires a separate named-human approval/);
+  assert.match(page, /synthetic policy-review evidence only/);
+  assert.match(page, /deterministic safety rules remain in force/);
   assert.match(page, /Try again/);
 
   const operationsCss = await readFile(new URL("../app/operations.css", import.meta.url), "utf8");
@@ -95,4 +107,6 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(operationsCss, /\.data-state\.stale, \.data-state\.partial/);
   assert.match(operationsCss, /\.data-state\.failed/);
   assert.match(operationsCss, /prefers-reduced-motion: reduce/);
+  assert.match(operationsCss, /\.action-evidence-flow/);
+  assert.match(operationsCss, /\.learning-proposal/);
 });

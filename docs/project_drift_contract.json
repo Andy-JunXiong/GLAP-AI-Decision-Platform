@@ -84,6 +84,44 @@
       ]
     },
     {
+      "id": "action_outcome_evidence_chain",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "authenticated local read-only implementation; staging deployment and runtime verification pending",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "infrastructure/operations-api-staging.yaml",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        ".github/workflows/deploy-operations-api-staging.yml",
+        "ops/deploy_internal_operations_frontend.ps1",
+        "ops/verify_operations_staging.ps1",
+        "ops/verify_operations_roles_staging.ps1",
+        "docs/operations_api_v1.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_learning_evidence_gate",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "authenticated local read-only Outcome aggregation and review-only policy-proposal evidence; staging deployment and runtime verification pending, with no approval or activation authority",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "infrastructure/operations-api-staging.yaml",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        ".github/workflows/deploy-operations-api-staging.yml",
+        "ops/configure_operations_api_discovery.ps1",
+        "ops/configure_operations_api_data_access.ps1",
+        "ops/deploy_internal_operations_frontend.ps1",
+        "ops/verify_operations_staging.ps1",
+        "ops/verify_operations_roles_staging.ps1",
+        "docs/governed_closed_loop.md",
+        "docs/temporal_truthfulness.md",
+        "docs/operations_api_v1.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "forecast_backtest_framework",
       "state": "IMPLEMENTED_STAGING",
       "boundary": "private advisory evaluation only",
@@ -181,6 +219,24 @@
         "ops/verify_agent_runtime_host_trace.py",
         "ops/run_governed_agent_runtime.py",
         "tests/test_governed_agent_runtime.py",
+        "docs/agent_runtime_host_trace_v1.schema.json",
+        "docs/evaluation_architecture.md"
+      ]
+    },
+    {
+      "id": "agent_runtime_adapter_conformance",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "fixed four-file offline package with inspected import-free source, frozen content-addressed input, deterministic isolated replay, and an exact matching bundle-bound trace; system correctness only, with no network, package-install, host/model identity, quality, outcome, approval, action, deployment, or production claim",
+      "evidence_files": [
+        "ops/verify_agent_runtime_adapter_package.py",
+        "ops/run_governed_agent_runtime.py",
+        "tests/test_agent_runtime_adapter_conformance.py",
+        "tests/fixtures/evaluation/adapter_conformance_v1/package.json",
+        "tests/fixtures/evaluation/adapter_conformance_v1/adapter.py",
+        "tests/fixtures/evaluation/adapter_conformance_v1/input_bundle.json",
+        "tests/fixtures/evaluation/adapter_conformance_v1/host_trace.json",
+        "docs/agent_runtime_adapter_package_v1.schema.json",
+        "docs/agent_runtime_input_bundle_v1.schema.json",
         "docs/agent_runtime_host_trace_v1.schema.json",
         "docs/evaluation_architecture.md"
       ]

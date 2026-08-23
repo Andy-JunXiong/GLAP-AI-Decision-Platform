@@ -6,6 +6,23 @@ preserved handoffs.
 
 ## 2026-08-23
 
+- Completed the local Outcome-to-Learning evidence gate. An authenticated,
+  read-only endpoint and private Learning Review now count only cutoff-eligible
+  observed Outcomes toward the existing 20-record threshold and expose the
+  latest governed policy proposal only as review-required. Pending and future
+  evidence is excluded; no approval, activation, deterministic-rule
+  replacement, AWS deployment, real-performance, model-readiness, or
+  production-readiness claim was added.
+
+- Completed the local, authenticated Action–Outcome evidence chain. A bounded
+  read endpoint and private cockpit timeline now connect one immutable Action
+  proposal to its chronological append-only human audit events and latest
+  cutoff-eligible simulated Outcome. The contract fails closed on unsafe IDs,
+  later or non-operational evidence, and pending Outcomes; it adds no mutation
+  authority and remains undeployed pending a separate staging release. Its
+  release path now preflights all three source tables, verifies the private UI
+  fingerprint, and activates new runtime assertions only through an explicit
+  post-release flag.
 - Completed capability-neutral External Evidence v2 and Decision Memory v3
   ablations. Each paired experiment changes only the named capability, passes
   System Correctness and Capability Attribution, excludes post-cutoff inputs,
@@ -20,9 +37,17 @@ preserved handoffs.
   network/write authority and dynamic dependency installation. This proves
   inspectable local implementation separation, not host authentication or
   model identity.
-- Expanded the project drift baseline from generic evaluation coverage to six
-  named capabilities and six executable checks. The audit now reruns the
-  ablations, registry, and runtime contracts and fails closed on source drift,
+- Completed a fixed four-file offline adapter conformance package. It inspects
+  separately supplied import-free source, binds it to the canonical input
+  bundle, runs two isolated deterministic replays, and requires the submitted
+  host trace to match the reconstructed trace exactly. It proves local System
+  Correctness only and grants no registration, network, package-install,
+  identity, quality, Outcome, approval, Action, AWS, deployment, or production
+  authority.
+- Expanded the project drift baseline from generic evaluation coverage to seven
+  named capabilities and seven executable checks. The audit now reruns the
+  ablations, registry, runtime, and package-conformance contracts and fails
+  closed on source drift, unsafe package code, input/trace tampering,
   operational-write, network, or approval-authority expansion.
 
 ## 2026-08-22

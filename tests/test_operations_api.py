@@ -102,6 +102,7 @@ class OperationsApiTests(unittest.TestCase):
             self.assertIn("health:read", role)
             self.assertIn("forecasts:read", role)
             self.assertIn("network:read", role)
+            self.assertIn("learning:read", role)
         self.assertNotIn("shipments:read", api.ROLE_PERMISSIONS["viewer"])
         self.assertIn("shipments:read", api.ROLE_PERMISSIONS["operator"])
         self.assertIn("shipments:read", api.ROLE_PERMISSIONS["approver"])
@@ -120,6 +121,88 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("action_owner", query)
         self.assertIn("action_due_date", query)
         self.assertIn("status = 'EDITED'", api.build_action_queue_query(50, "EDITED"))
+
+    def test_action_evidence_query_joins_only_bounded_operational_history(self):
+        query = api.build_action_evidence_query("action-123", "2026-08-07")
+        self.assertIn("fact_lifecycle_action_staging_v1", query)
+        self.assertIn("fact_lifecycle_action_audit_staging_v1", query)
+        self.assertIn("fact_lifecycle_outcome_staging_v1", query)
+        self.assertEqual(query.count("action_id = 'action-123'"), 3)
+        self.assertEqual(query.count("temporal_scope_id = 'OPERATIONAL'"), 3)
+        self.assertEqual(query.count("execution_mode = 'OPERATIONAL'"), 3)
+        self.assertEqual(query.count("time_basis = 'ACTUAL_CALENDAR'"), 3)
+        self.assertIn("as_of_date <= DATE '2026-08-07'", query)
+        self.assertIn("created_date <= DATE '2026-08-07'", query)
+        self.assertIn("try_cast(dt AS date) <= DATE '2026-08-07'", query)
+        self.assertIn("status = 'PENDING' AND observed_date IS NULL AND effect_pct IS NULL", query)
+        self.assertIn("ORDER BY e.occurred_at, e.event_id", query)
+        self.assertIn("coalesce(e.new_status, a.status)", query)
+        self.assertIn("latest_audit_event", query)
+        self.assertNotIn("FUTURE_SIMULATION", query)
+
+    def test_action_evidence_query_rejects_unsafe_identifier_and_cutoff(self):
+        with self.assertRaises(ValueError):
+            api.build_action_evidence_query("action' OR 1=1", "2026-08-07")
+        with self.assertRaises(ValueError):
+            api.build_action_evidence_query("action-123", "tomorrow")
+
+    def test_action_evidence_contract_preserves_audit_and_pending_boundary(self):
+        base = {
+            "action_id": "action-123", "alert_fingerprint": "alert-123",
+            "shipment_id": "shipment-123", "action_type": "EXPEDITE",
+            "alert_type": "SLA_BREACH", "alert_severity": "HIGH",
+            "action_status": "COMPLETED", "approval_required": "true",
+            "approved_by": "Approver", "approved_at": "2026-08-06 10:00:00.000",
+            "completed_at": "2026-08-06 11:00:00.000", "action_owner": "Operator",
+            "action_due_date": "2026-08-07", "action_created_date": "2026-08-05",
+            "outcome_id": "outcome-123", "observation_due_date": "2026-08-09",
+            "outcome_status": "PENDING", "observed_date": None, "effect_pct": None,
+            "outcome_version": "outcome-v1", "outcome_as_of_date": "2026-08-07",
+            "evidence_status": "NOT_OBSERVED",
+        }
+        rows = [
+            {**base, "event_id": "event-edit", "event_type": "EDIT",
+             "previous_status": "PROPOSED", "new_status": "EDITED",
+             "actor": "Operator", "reason": "Assigned", "occurred_at": "2026-08-05 09:00:00.000",
+             "event_action_owner": "Operator", "event_action_due_date": "2026-08-07"},
+            {**base, "event_id": "event-complete", "event_type": "COMPLETE",
+             "previous_status": "APPROVED", "new_status": "COMPLETED",
+             "actor": "Operator", "reason": "Executed", "occurred_at": "2026-08-06 11:00:00.000",
+             "event_action_owner": "Operator", "event_action_due_date": "2026-08-07"},
+        ]
+        contract = api.build_action_evidence_contract(rows, "2026-08-07")
+        self.assertEqual(contract["chain_status"], "OUTCOME_PENDING")
+        self.assertEqual([event["event_type"] for event in contract["events"]], ["EDIT", "COMPLETE"])
+        self.assertEqual(contract["outcome"]["evidence_status"], "NOT_OBSERVED")
+        self.assertTrue(contract["governance"]["proposal_immutable"])
+        self.assertTrue(contract["governance"]["outcome_is_simulated"])
+        self.assertFalse(contract["governance"]["real_logistics_performance"])
+
+    def test_viewer_can_read_one_action_evidence_chain_and_missing_is_404(self):
+        rows = [{
+            "action_id": "action-123", "action_status": "EDITED",
+            "event_id": "event-edit", "event_type": "EDIT",
+            "previous_status": "PROPOSED", "new_status": "EDITED",
+        }]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(
+                request(path="/v1/actions/action-123/evidence", groups="viewer"), None
+            )
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(body["chain_status"], "ACTION_OPEN")
+        self.assertEqual(body["source"]["time_basis"], "ACTUAL_CALENDAR")
+
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=[]), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            missing = api.lambda_handler(
+                request(path="/v1/actions/action-404/evidence", groups="viewer"), None
+            )
+        self.assertEqual(missing["statusCode"], 404)
 
     def test_risk_query_is_operational_actual_calendar_and_sydney_bounded(self):
         query = api.build_risk_hotspots_query(25, "OPEN", "2026-08-07")
@@ -159,6 +242,73 @@ class OperationsApiTests(unittest.TestCase):
             api.build_outcome_review_query(50, "OBSERVED", "2026-08-07")
         with self.assertRaises(ValueError):
             api.build_outcome_review_query(50, "PENDING", "tomorrow")
+
+    def test_learning_query_uses_only_cutoff_eligible_operational_outcomes(self):
+        query = api.build_learning_evidence_query("2026-08-07")
+        self.assertIn("fact_lifecycle_outcome_staging_v1", query)
+        self.assertIn("fact_policy_proposal_staging_v1", query)
+        self.assertEqual(query.count("temporal_scope_id = 'OPERATIONAL'"), 2)
+        self.assertEqual(query.count("execution_mode = 'OPERATIONAL'"), 2)
+        self.assertEqual(query.count("time_basis = 'ACTUAL_CALENDAR'"), 2)
+        self.assertIn("observed_date <= DATE '2026-08-07'", query)
+        self.assertIn("created_date <= DATE '2026-08-07'", query)
+        self.assertIn("row_rank = 1", query)
+        self.assertNotIn("FUTURE_SIMULATION", query)
+        with self.assertRaises(ValueError):
+            api.build_learning_evidence_query("tomorrow")
+
+    def test_learning_contract_fails_closed_below_gate(self):
+        contract = api.build_learning_evidence_contract([{
+            "eligible_outcome_count": "1", "successful_count": "1",
+            "partially_successful_count": "0", "failed_count": "0",
+            "inconclusive_count": "0", "success_rate_pct": "100.0",
+        }], "2026-08-07", minimum_observed=20)
+        self.assertEqual(contract["status"], "INSUFFICIENT_ELIGIBLE_OUTCOMES")
+        self.assertEqual(contract["gate"]["remaining_outcomes"], 19)
+        self.assertFalse(contract["gate"]["gate_met"])
+        self.assertIsNone(contract["proposal"])
+        self.assertTrue(contract["governance"]["review_required"])
+        self.assertEqual(
+            contract["governance"]["eligibility_scope"],
+            "SYNTHETIC_POLICY_REVIEW_ONLY",
+        )
+        self.assertFalse(contract["governance"]["automatic_activation"])
+        self.assertFalse(contract["governance"]["real_logistics_performance"])
+        self.assertFalse(contract["governance"]["model_readiness"])
+        self.assertFalse(contract["governance"]["production_readiness"])
+
+    def test_learning_contract_exposes_review_only_proposal(self):
+        contract = api.build_learning_evidence_contract([{
+            "eligible_outcome_count": "20", "successful_count": "12",
+            "partially_successful_count": "4", "failed_count": "3",
+            "inconclusive_count": "1", "success_rate_pct": "80.0",
+            "proposal_id": "proposal-123", "source_policy_version": "policy-v1",
+            "proposal_status": "PENDING_HUMAN_REVIEW",
+            "observed_outcome_count": "20", "proposal_success_rate_pct": "80.0",
+            "proposed_change": "REVIEW_ACTION_RANKING_THRESHOLDS",
+            "simulation_config_change": "false", "effective_date": None,
+            "approved_by": None, "approved_policy_version": None,
+            "rollback_policy_version": "policy-v1",
+            "provenance": "SIMULATED_LEARNING_EVIDENCE",
+            "created_date": "2026-08-07",
+        }], "2026-08-07", minimum_observed=20)
+        self.assertEqual(contract["status"], "POLICY_PROPOSAL_RECORDED")
+        self.assertTrue(contract["gate"]["gate_met"])
+        self.assertEqual(contract["proposal"]["status"], "PENDING_HUMAN_REVIEW")
+        self.assertFalse(contract["proposal"]["simulation_config_change"])
+        self.assertFalse(contract["governance"]["automatic_activation"])
+
+    def test_viewer_can_read_learning_evidence(self):
+        rows = [{"eligible_outcome_count": "1", "successful_count": "1"}]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(request(path="/v1/learning", groups="viewer"), None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(body["status"], "INSUFFICIENT_ELIGIBLE_OUTCOMES")
+        self.assertEqual(body["source"]["time_basis"], "ACTUAL_CALENDAR")
 
     def test_forecast_query_is_operational_actual_calendar_and_sydney_bounded(self):
         query = api.build_forecast_series_query("2026-08-07")

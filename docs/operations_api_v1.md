@@ -1,14 +1,14 @@
 # Internal Operations API v1
 
 This is the authenticated, staging-only boundary between the internal Risk
-Hotspots / Decision Queue / Action Board / Outcome Review / Network Drill-down / Forecast Accuracy
+Hotspots / Decision Queue / Action Board / Outcome Review / Learning Review / Network Drill-down / Forecast Accuracy
 journey and the
 governed lifecycle tables plus private append-only Action mutation function.
 Public GitHub Pages is not an API client and receives no write permission.
 
 ## Roles and permissions
 
-| Role | Read risks/queue/outcomes | Read forecasts/health | Read network aggregate | Read shipment entities | Edit assignment | Approve | Reject | Complete |
+| Role | Read risks/queue/outcomes/learning | Read forecasts/health | Read network aggregate | Read shipment entities | Edit assignment | Approve | Reject | Complete |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `viewer` | yes | yes | yes | no | no | no | no | no |
 | `operator` | yes | yes | yes | yes | yes | no | no | yes |
@@ -41,6 +41,23 @@ actual-calendar Action records. The v1 response is
 Supported states include `PROPOSED`, `EDITED`, `APPROVED`, `REJECTED`, and
 `COMPLETED`; assignment fields are `action_owner` and `action_due_date`.
 
+`GET /v1/actions/{action_id}/evidence` returns one authenticated, read-only
+Action–Outcome evidence chain. It joins the immutable Action table to its
+append-only `EDIT` / `APPROVE` / `REJECT` / `COMPLETE` audit events and the
+latest eligible Outcome in one bounded Athena query. All three sources must be
+`OPERATIONAL`, `ACTUAL_CALENDAR`, and dated on or before the current Sydney
+cutoff. Missing Actions return 404; unsafe identifiers fail before entering
+SQL. Every internal role may read this chain because every role already has
+both `actions:read` and `outcomes:read`.
+
+The response distinguishes `ACTION_OPEN`, `ACTION_REJECTED`,
+`ACTION_COMPLETED_AWAITING_OUTCOME`, `OUTCOME_PENDING`, and
+`OUTCOME_OBSERVED`. A pending Outcome remains `NOT_OBSERVED` with no observation
+date or effect. The governance block states that the proposal is immutable,
+the audit is append-only, and every Outcome is synthetic rather than real
+logistics performance. Request IDs, scenario IDs, infrastructure identifiers,
+and future-simulation rows are not returned.
+
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
 Outcome version for each completed Action, bounded by the current Sydney date.
 Pending rows must have no `observed_date` or `effect_pct` and are labelled
@@ -48,6 +65,24 @@ Pending rows must have no `observed_date` or `effect_pct` and are labelled
 before the cutoff and are labelled `OBSERVED_ACTUAL_CALENDAR`. Supported status
 filters are `PENDING`, `SUCCESSFUL`, `PARTIALLY_SUCCESSFUL`, `FAILED`, and
 `INCONCLUSIVE`.
+
+`GET /v1/learning` returns the governed bridge from observed Outcomes to a
+review-only policy proposal. One bounded Athena query de-duplicates Outcomes,
+counts only closed `OPERATIONAL` / `ACTUAL_CALENDAR` records observed on or
+before the current Sydney cutoff, and attaches the latest cutoff-eligible row
+from `fact_policy_proposal_staging_v1`. Pending Outcomes, future simulations,
+and post-cutoff observations never count toward the configured 20-Outcome
+gate.
+
+Below the gate, the response is `INSUFFICIENT_ELIGIBLE_OUTCOMES` and reports
+the remaining count. Meeting the count without a stored proposal is
+`ELIGIBLE_AWAITING_PROPOSAL`; an existing proposal is
+`POLICY_PROPOSAL_RECORDED`. The governance contract always states that human
+review is required, automatic activation is false, deterministic rules remain
+in force, and the synthetic Outcome summary is not real logistics performance.
+The 20-record threshold is `SYNTHETIC_POLICY_REVIEW_ONLY`; meeting it proves
+neither model readiness nor production readiness. This endpoint has no approval
+or activation mutation.
 
 `GET /v1/pipeline-health` returns the sanitized six-stage controller status and
 ten quality checks without S3 paths, Lambda names, ARNs, or raw errors. A
@@ -234,6 +269,25 @@ resource access, or ability to modify the GitHub role. A physical resource
 replacement or new top-level resource type therefore fails closed until this
 bootstrap is reviewed and reapplied.
 
+The Action evidence route is another `AWS::ApiGatewayV2::Route` inside the
+already discovered private API ID, so the existing API-scoped execution policy
+can create it without granting Lambda, queue, schedule, alias, or production
+resource creation. Release preflight now verifies the immutable Action table,
+Action audit table, and Outcome table explicitly. Until the feature is actually
+deployed, the staging and four-role verifiers retain the prior deployed
+baseline; a post-release verifier must opt in with `-RequireActionEvidence`.
+The private frontend packager also rejects a build that lacks the evidence-chain
+controls or synthetic-performance disclosure.
+
+The Learning route uses the same existing API-scoped route permission and adds
+only exact read metadata access for the already governed policy-proposal table.
+The plan workflow preflights that fourth closed-loop table, and the discovery
+and Lake Formation helpers name it explicitly without write or grant-option
+permission. Until a separately authorized release, verification remains on the
+older baseline; after release, add `-RequireLearningEvidence` to both staging
+verifiers. The frontend packager rejects an internal build that omits the
+Learning Review or its named-human activation disclosure.
+
 ## Current implementation boundary
 
 The contract, adapter, API and identity infrastructure templates, plan-first
@@ -344,3 +398,15 @@ operator session was globally signed out during containment, and the identity
 was reconciled to the operator group only. No access token or private Action
 identifier is retained in repository evidence. Do not resume the canary until
 the narrow response-fix release is separately approved and deployed.
+
+The Action–Outcome evidence endpoint and cockpit timeline are implemented and
+locally verified in the repository as of `2026-08-23`. They are not yet
+deployed or runtime-verified. Deployment would update the existing private
+Operations API stack and frontend and therefore requires a separate authorized
+staging release; this repository work did not call AWS or mutate an Action.
+
+The Outcome-to-Learning evidence endpoint and private Learning Review are also
+implemented locally as of `2026-08-23`. They expose the existing governed
+threshold and policy-proposal record read-only; they do not approve or activate
+a proposal. They remain undeployed and require the same separate staging
+release plus explicit `-RequireLearningEvidence` runtime verification.

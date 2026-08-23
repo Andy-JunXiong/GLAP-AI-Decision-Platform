@@ -61,6 +61,19 @@ $out = Join-Path $frontend "out"
 if (-not (Test-Path -LiteralPath (Join-Path $out "index.html"))) {
     throw "Static export did not produce index.html"
 }
+$builtJavaScript = @(
+    Get-ChildItem -LiteralPath $out -Recurse -File -Filter "*.js" |
+        ForEach-Object { [System.IO.File]::ReadAllText($_.FullName) }
+) -join "`n"
+if (-not $builtJavaScript.Contains("Evidence chain") -or
+    -not $builtJavaScript.Contains("never real logistics performance")) {
+    throw "Internal frontend build is missing the Action evidence contract"
+}
+if (-not $builtJavaScript.Contains("Learning Review") -or
+    -not $builtJavaScript.Contains("Policy activation always requires a separate named-human approval") -or
+    -not $builtJavaScript.Contains("synthetic policy-review evidence only")) {
+    throw "Internal frontend build is missing the Learning evidence contract"
+}
 New-Item -ItemType Directory -Path (Split-Path $archive -Parent) -Force | Out-Null
 if (Test-Path -LiteralPath $archive) {
     Remove-Item -LiteralPath $archive -Force

@@ -4,7 +4,9 @@ param(
     [string]$Region = "us-east-1",
     [string]$IdentityStackName = "glap-operations-identity-staging",
     [string]$ApiStackName = "glap-operations-api-staging",
-    [switch]$RequireActionAssignment
+    [switch]$RequireActionAssignment,
+    [switch]$RequireActionEvidence,
+    [switch]$RequireLearningEvidence
 )
 
 $ErrorActionPreference = "Stop"
@@ -95,6 +97,23 @@ try {
 } catch {
     $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
 }
+if ($RequireActionEvidence) {
+    try {
+        Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/actions/unauthenticated-check/evidence") `
+            -UseBasicParsing -TimeoutSec 20 | Out-Null
+    } catch {
+        $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
+    }
+}
+if ($RequireLearningEvidence) {
+    try {
+        Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/learning") `
+            -UseBasicParsing -TimeoutSec 20 | Out-Null
+    } catch {
+        $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
+    }
+}
+$expectedUnauthorizedCount = 7 + [int][bool]$RequireActionEvidence + [int][bool]$RequireLearningEvidence
 $preflight = Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/actions") `
     -Method Options -Headers @{
         Origin = $origin
@@ -129,7 +148,16 @@ $checks = [ordered]@{
         -not $RequireActionAssignment -or `
         ($deployedJavaScript.Contains("Assign & edit") -and `
          $deployedJavaScript.Contains("EDITED"))
-    "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq 7 -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
+    "Action evidence controls deployed when required" = `
+        -not $RequireActionEvidence -or `
+        ($deployedJavaScript.Contains("Evidence chain") -and `
+         $deployedJavaScript.Contains("never real logistics performance"))
+    "Learning evidence controls deployed when required" = `
+        -not $RequireLearningEvidence -or `
+        ($deployedJavaScript.Contains("Learning Review") -and `
+         $deployedJavaScript.Contains("Policy activation always requires a separate named-human approval") -and `
+         $deployedJavaScript.Contains("synthetic policy-review evidence only"))
+    "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq $expectedUnauthorizedCount -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
     "CORS preflight successful" = $preflight.StatusCode -ge 200 -and $preflight.StatusCode -lt 300
     "CORS origin exact match" = $preflight.Headers["access-control-allow-origin"] -eq $origin
     "API alarms present" = [int]$alarmCount -ge 2

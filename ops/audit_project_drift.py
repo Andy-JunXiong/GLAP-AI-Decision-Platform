@@ -1271,6 +1271,258 @@ def check_agent_runtime_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult]:
+    api_path = "lambda/glap_operations_api.py"
+    template_path = "infrastructure/operations-api-staging.yaml"
+    client_path = "decision-brief-demo/app/operations-api.ts"
+    page_path = "decision-brief-demo/app/page.tsx"
+    workflow_path = ".github/workflows/deploy-operations-api-staging.yml"
+    frontend_deploy_path = "ops/deploy_internal_operations_frontend.ps1"
+    staging_verifier_path = "ops/verify_operations_staging.ps1"
+    role_verifier_path = "ops/verify_operations_roles_staging.ps1"
+    status_path = "CURRENT_DEVELOPMENT_STATUS.md"
+    api = (root / api_path).read_text(encoding="utf-8")
+    template = (root / template_path).read_text(encoding="utf-8")
+    client = (root / client_path).read_text(encoding="utf-8")
+    page = (root / page_path).read_text(encoding="utf-8")
+    workflow = (root / workflow_path).read_text(encoding="utf-8")
+    frontend_deploy = (root / frontend_deploy_path).read_text(encoding="utf-8")
+    staging_verifier = (root / staging_verifier_path).read_text(encoding="utf-8")
+    role_verifier = (root / role_verifier_path).read_text(encoding="utf-8")
+    status = (root / status_path).read_text(encoding="utf-8")
+    normalized_status = " ".join(status.split())
+    api_bounded = all(
+        marker in api
+        for marker in (
+            "def build_action_evidence_query",
+            "fact_lifecycle_action_staging_v1",
+            "fact_lifecycle_action_audit_staging_v1",
+            "fact_lifecycle_outcome_staging_v1",
+            "status = 'PENDING' AND observed_date IS NULL AND effect_pct IS NULL",
+            '"proposal_immutable": True',
+            '"audit_append_only": True',
+            '"outcome_is_simulated": True',
+            '"real_logistics_performance": False',
+        )
+    ) and api.count("time_basis = 'ACTUAL_CALENDAR'") >= 3
+    route_bounded = all(
+        marker in template
+        for marker in (
+            "RouteKey: GET /v1/actions/{action_id}/evidence",
+            "AuthorizationType: JWT",
+            "LIFECYCLE_ACTION_TABLE: fact_lifecycle_action_staging_v1",
+            "LIFECYCLE_ACTION_AUDIT_TABLE: fact_lifecycle_action_audit_staging_v1",
+        )
+    )
+    client_bounded = (
+        "export async function loadActionEvidence" in client
+        and "/evidence`" in client
+        and "Action–Outcome evidence chain" in page
+        and "never real logistics performance" in page
+    )
+    release_bounded = all(
+        table in workflow
+        for table in (
+            "fact_lifecycle_action_staging_v1",
+            "fact_lifecycle_action_audit_staging_v1",
+            "fact_lifecycle_outcome_staging_v1",
+        )
+    ) and all(
+        marker in source
+        for source, marker in (
+            (frontend_deploy, "Internal frontend build is missing the Action evidence contract"),
+            (staging_verifier, "[switch]$RequireActionEvidence"),
+            (role_verifier, "[switch]$RequireActionEvidence"),
+        )
+    )
+    maturity_bounded = all(
+        marker in normalized_status
+        for marker in (
+            "Action–Outcome evidence chain",
+            "IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED",
+            "No new write, role, table, or production path was added.",
+        )
+    )
+    return [
+        _result(
+            "action_outcome_evidence_chain_boundary",
+            "architecture",
+            api_bounded and route_bounded and client_bounded and release_bounded
+            and maturity_bounded,
+            "The Action–Outcome evidence chain remains authenticated, cutoff-bounded, synthetic, read-only, and explicitly undeployed.",
+            "The Action–Outcome evidence chain lost a temporal, governance, JWT, UI-disclosure, or deployment-maturity boundary.",
+            (
+                api_path, template_path, client_path, page_path, workflow_path,
+                frontend_deploy_path, staging_verifier_path, role_verifier_path,
+                status_path,
+            ),
+        )
+    ]
+
+
+def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "template": "infrastructure/operations-api-staging.yaml",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "workflow": ".github/workflows/deploy-operations-api-staging.yml",
+        "discovery": "ops/configure_operations_api_discovery.ps1",
+        "data_access": "ops/configure_operations_api_data_access.ps1",
+        "frontend_deploy": "ops/deploy_internal_operations_frontend.ps1",
+        "staging_verifier": "ops/verify_operations_staging.ps1",
+        "role_verifier": "ops/verify_operations_roles_staging.ps1",
+        "status": "CURRENT_DEVELOPMENT_STATUS.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            "def build_learning_evidence_query",
+            "fact_policy_proposal_staging_v1",
+            "observed_date <= DATE",
+            'path == "/v1/learning"',
+            '"review_required": True',
+            '"eligibility_scope": "SYNTHETIC_POLICY_REVIEW_ONLY"',
+            '"automatic_activation": False',
+            '"deterministic_rules_replaced": False',
+            '"outcomes_are_simulated": True',
+            '"real_logistics_performance": False',
+            '"model_readiness": False',
+            '"production_readiness": False',
+        )
+    )
+    route_bounded = all(
+        marker in text["template"]
+        for marker in (
+            "RouteKey: GET /v1/learning",
+            "AuthorizationType: JWT",
+            "POLICY_PROPOSAL_TABLE: fact_policy_proposal_staging_v1",
+            "MINIMUM_POLICY_OUTCOMES: '20'",
+        )
+    )
+    client_bounded = all(
+        marker in (text["client"] + text["page"])
+        for marker in (
+            "export async function loadLearningEvidence",
+            "Learning Review",
+            "Policy activation always requires a separate named-human approval",
+            "synthetic policy-review evidence only",
+            "deterministic safety rules remain in force",
+        )
+    )
+    release_bounded = all(
+        marker in text[source]
+        for source, marker in (
+            ("workflow", "fact_policy_proposal_staging_v1"),
+            ("discovery", "fact_policy_proposal_staging_v1"),
+            ("data_access", "fact_policy_proposal_staging_v1"),
+            ("frontend_deploy", "Internal frontend build is missing the Learning evidence contract"),
+            ("staging_verifier", "[switch]$RequireLearningEvidence"),
+            ("role_verifier", "[switch]$RequireLearningEvidence"),
+        )
+    ) and all(
+        forbidden not in text["template"]
+        for forbidden in ("AWS::Scheduler::Schedule", "AWS::Lambda::Alias")
+    )
+    maturity_bounded = all(
+        marker in " ".join(text["status"].split())
+        for marker in (
+            "Outcome–Learning evidence gate",
+            "IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED",
+            "no proposal approval or activation endpoint",
+        )
+    )
+    return [
+        _result(
+            "outcome_learning_evidence_boundary",
+            "architecture",
+            api_bounded and route_bounded and client_bounded and release_bounded
+            and maturity_bounded,
+            "The Outcome-to-Learning gate remains cutoff-bounded, synthetic, read-only, review-required, and explicitly undeployed.",
+            "The Outcome-to-Learning gate lost an eligibility, JWT, no-activation, deterministic-rule, or maturity boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_adapter_conformance_boundary(root: Path) -> list[CheckResult]:
+    """Execute the offline package fixture and verify its fail-closed claims."""
+
+    runner_path = "ops/verify_agent_runtime_adapter_package.py"
+    fixture_root = "tests/fixtures/evaluation/adapter_conformance_v1"
+    evidence = (
+        runner_path,
+        "ops/run_governed_agent_runtime.py",
+        "tests/test_agent_runtime_adapter_conformance.py",
+        f"{fixture_root}/package.json",
+        f"{fixture_root}/adapter.py",
+        f"{fixture_root}/input_bundle.json",
+        f"{fixture_root}/host_trace.json",
+        "docs/agent_runtime_adapter_package_v1.schema.json",
+        "docs/agent_runtime_input_bundle_v1.schema.json",
+        "docs/agent_runtime_host_trace_v1.schema.json",
+        "docs/evaluation_architecture.md",
+    )
+    passed = False
+    failure = "The offline adapter conformance package or its evidence is invalid."
+    try:
+        if not all((root / path).is_file() for path in evidence):
+            raise FileNotFoundError("offline adapter conformance evidence is incomplete")
+        module = _load_repository_module(root, runner_path)
+        report = module.verify_package(root / fixture_root)
+        expected_boundary = {
+            "mode": "LOCAL_ISOLATED_REPLAY",
+            "network_access_allowed": False,
+            "operational_writes_allowed": False,
+            "dynamic_dependency_install_allowed": False,
+            "production_effect": False,
+        }
+        unsupported = set(report["claim_boundary"]["not_supported"])
+        passed = (
+            report["status"] == "PASS"
+            and all(value == "PASS" for value in report["checks"].values())
+            and report["submitted_trace_sha256"] == report["replay_trace_sha256"]
+            and report["execution_boundary"] == expected_boundary
+            and report["operational_mutations"] == []
+            and report["evaluation_layers"]["system_correctness"]["status"]
+            == "PASS"
+            and all(
+                report["evaluation_layers"][name]["status"] == "NOT_EVALUATED"
+                for name in (
+                    "capability_attribution",
+                    "decision_quality",
+                    "business_outcome_effect",
+                )
+            )
+            and {
+                "HOST_AUTHENTICATION",
+                "MODEL_IDENTITY",
+                "DECISION_QUALITY",
+                "BUSINESS_OUTCOME_EFFECT",
+                "OPERATIONAL_APPROVAL",
+                "ACTION_CREATION",
+                "PRODUCTION_READINESS",
+            }
+            <= unsupported
+        )
+    except Exception as error:
+        failure = f"The offline adapter conformance boundary drifted: {error}."
+    return [
+        _result(
+            "agent_runtime_adapter_conformance_boundary",
+            "agent_runtime",
+            passed,
+            "A separately supplied four-file adapter package passes inspected, deterministic, bundle-bound offline replay without operational authority.",
+            failure,
+            evidence,
+        )
+    ]
+
+
 def run_audit(root: Path) -> dict[str, Any]:
     contract = load_contract(root)
     checks: list[CheckResult] = []
@@ -1278,6 +1530,8 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_manual_staging_boundary(root))
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_governed_action_outcome_boundary(root))
+    checks.extend(check_action_outcome_evidence_chain_boundary(root))
+    checks.extend(check_outcome_learning_evidence_boundary(root))
     checks.extend(check_audit_automation(root))
     checks.extend(check_documentation_operating_model(root))
     checks.extend(check_action_contract(root, contract))
@@ -1291,6 +1545,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_a303_v1_retirement_boundary(root))
     checks.extend(check_capability_neutral_evaluation_boundary(root))
     checks.extend(check_agent_runtime_boundary(root))
+    checks.extend(check_adapter_conformance_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     sydney_date = sydney_business_date().isoformat()

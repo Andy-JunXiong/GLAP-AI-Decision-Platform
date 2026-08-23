@@ -9,6 +9,7 @@ param(
     [string]$CurrentActionTable = "fact_lifecycle_action_staging_v1",
     [string]$AlertTable = "fact_lifecycle_alert_staging_v1",
     [string]$OutcomeTable = "fact_lifecycle_outcome_staging_v1",
+    [string]$PolicyProposalTable = "fact_policy_proposal_staging_v1",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
     [string]$NetworkSourceView = "vw_multimodal_shipment_daily_v1",
     [switch]$Apply
@@ -36,6 +37,9 @@ if ($AlertTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 if ($OutcomeTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "Invalid Glue Outcome table name"
 }
+if ($PolicyProposalTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "Invalid Glue policy proposal table name"
+}
 if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "Invalid Glue Forecast source table name"
 }
@@ -58,6 +62,7 @@ Write-Host "  Action view permissions: SELECT, DESCRIBE"
 Write-Host "  Two backing Action tables: SELECT, DESCRIBE"
 Write-Host "  Operational Alert table: SELECT, DESCRIBE"
 Write-Host "  Operational Outcome table: SELECT, DESCRIBE"
+Write-Host "  Operational policy proposal table: SELECT, DESCRIBE"
 Write-Host "  Operational Forecast source table: SELECT, DESCRIBE"
 Write-Host "  Operational Network source view: SELECT, DESCRIBE"
 Write-Host "  Other tables or views: False"
@@ -156,6 +161,9 @@ $null = Invoke-AwsJson @(
 $null = Invoke-AwsJson @(
     "glue", "get-table", "--database-name", $SourceDatabase, "--name", $OutcomeTable
 )
+$null = Invoke-AwsJson @(
+    "glue", "get-table", "--database-name", $SourceDatabase, "--name", $PolicyProposalTable
+)
 foreach ($analyticsDependency in $analyticsDependencies) {
     $null = Invoke-AwsJson @(
         "glue", "get-table", "--database-name", $SourceDatabase, "--name", $analyticsDependency
@@ -181,6 +189,9 @@ $alertTablePath = Write-TemporaryJson @{
 $outcomeTablePath = Write-TemporaryJson @{
     Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $OutcomeTable}
 }
+$policyProposalTablePath = Write-TemporaryJson @{
+    Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $PolicyProposalTable}
+}
 $analyticsTablePaths = @($analyticsDependencies | ForEach-Object {
     Write-TemporaryJson @{
         Table = @{CatalogId = $catalogId; DatabaseName = $SourceDatabase; Name = $_}
@@ -189,7 +200,8 @@ $analyticsTablePaths = @($analyticsDependencies | ForEach-Object {
 try {
     if ($iamAllowedPrincipals) {
         $databaseChanged = $tableChanged = $baseTableChanged = $currentTableChanged = $false
-        $alertTableChanged = $outcomeTableChanged = $analyticsTablesChanged = $false
+        $alertTableChanged = $outcomeTableChanged = $policyProposalTableChanged = $false
+        $analyticsTablesChanged = $false
     } else {
         $databaseChanged = Grant-MissingPermissions $principalPath $databasePath @("DESCRIBE")
         $tableChanged = Grant-MissingPermissions $principalPath $tablePath @("SELECT", "DESCRIBE")
@@ -197,6 +209,7 @@ try {
         $currentTableChanged = Grant-MissingPermissions $principalPath $currentTablePath @("SELECT", "DESCRIBE")
         $alertTableChanged = Grant-MissingPermissions $principalPath $alertTablePath @("SELECT", "DESCRIBE")
         $outcomeTableChanged = Grant-MissingPermissions $principalPath $outcomeTablePath @("SELECT", "DESCRIBE")
+        $policyProposalTableChanged = Grant-MissingPermissions $principalPath $policyProposalTablePath @("SELECT", "DESCRIBE")
         $analyticsTablesChanged = $false
         foreach ($analyticsTablePath in $analyticsTablePaths) {
             $analyticsTablesChanged = (
@@ -208,7 +221,7 @@ try {
 } finally {
     $cleanupPaths = @(
         $principalPath, $databasePath, $tablePath, $baseTablePath,
-        $currentTablePath, $alertTablePath, $outcomeTablePath
+        $currentTablePath, $alertTablePath, $outcomeTablePath, $policyProposalTablePath
     ) + $analyticsTablePaths
     Remove-Item -LiteralPath $cleanupPaths -Force -ErrorAction SilentlyContinue
 }
@@ -218,9 +231,10 @@ Write-Host "Governed Action view permissions configured: True"
 Write-Host "Governed backing Action table permissions configured: True"
 Write-Host "Governed operational Alert table permissions configured: True"
 Write-Host "Governed operational Outcome table permissions configured: True"
+Write-Host "Governed operational policy proposal table permissions configured: True"
 Write-Host "Governed operational Forecast source table permissions configured: True"
 Write-Host "Governed operational Network source view permissions configured: True"
 Write-Host "Lake Formation IAM allowed-principals mode: $iamAllowedPrincipals"
 Write-Host "Exact table access enforced by Lambda IAM policy: True"
-Write-Host "Permissions changed in this run: $([bool]($databaseChanged -or $tableChanged -or $baseTableChanged -or $currentTableChanged -or $alertTableChanged -or $outcomeTableChanged -or $analyticsTablesChanged))"
+Write-Host "Permissions changed in this run: $([bool]($databaseChanged -or $tableChanged -or $baseTableChanged -or $currentTableChanged -or $alertTableChanged -or $outcomeTableChanged -or $policyProposalTableChanged -or $analyticsTablesChanged))"
 Write-Host "No account IDs, ARNs, database names, view names, or paths were printed"

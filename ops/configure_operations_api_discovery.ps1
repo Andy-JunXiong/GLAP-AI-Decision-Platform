@@ -9,6 +9,10 @@ param(
     [string]$OperationsApiStackName = "glap-operations-api-staging",
     [string]$ActionMutationFunctionName = "glap-lifecycle-action-mutation-staging",
     [string]$SourceDatabase = "simulated_iceberg_m",
+    [string]$ActionTable = "fact_lifecycle_action_staging_v1",
+    [string]$ActionAuditTable = "fact_lifecycle_action_audit_staging_v1",
+    [string]$OutcomeTable = "fact_lifecycle_outcome_staging_v1",
+    [string]$PolicyProposalTable = "fact_policy_proposal_staging_v1",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
     [string]$NetworkSourceView = "vw_multimodal_shipment_daily_v1",
     [switch]$Apply
@@ -27,6 +31,11 @@ foreach ($name in @(
 }
 if ($SourceDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "SourceDatabase must be a safe Glue identifier"
+}
+foreach ($tableName in @($ActionTable, $ActionAuditTable, $OutcomeTable, $PolicyProposalTable)) {
+    if ($tableName -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+        throw "Governed table names must be safe Glue identifiers"
+    }
 }
 if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "ForecastSourceTable must be a safe Glue identifier"
@@ -89,13 +98,17 @@ $policy = @{
             Resource = "arn:aws:lambda:${Region}:${accountId}:function:${ActionMutationFunctionName}"
         },
         @{
-            Sid = "VerifyOperationsQueueViewDependency"
+            Sid = "VerifyOperationsReadDependencies"
             Effect = "Allow"
             Action = "glue:GetTable"
             Resource = @(
                 "arn:aws:glue:${Region}:${accountId}:catalog",
                 "arn:aws:glue:${Region}:${accountId}:database/${SourceDatabase}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${ActionTable}",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${ActionAuditTable}",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${OutcomeTable}",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${PolicyProposalTable}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${ForecastSourceTable}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${NetworkSourceView}"
             )

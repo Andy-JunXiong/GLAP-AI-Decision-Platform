@@ -1,0 +1,54 @@
+{
+  "schema_version": "agent-runtime-host-trace.v1",
+  "trace_sha256": "e22517345c2fb69842c0597a57209f56dc11cef7c6f5c797274fad0f8872d235",
+  "payload": {
+    "input_bundle_sha256": "c0f617f543cdd69750cb3276916a1332af020e2eb58b9d912fff8b20b63425d7",
+    "host": {
+      "host_id": "offline-candidate-host",
+      "adapter_version": "offline-candidate-adapter.v1",
+      "implementation_id": "offline-candidate-python-v1",
+      "implementation_group": "separately-supplied-fixture-v1",
+      "source_sha256": "ff86a737b875fd0326836cedf79afd22eba6f5a588c3286a62e87c5760e63522",
+      "enabled_capabilities": ["DECISION_MEMORY", "EXTERNAL_EVIDENCE"]
+    },
+    "tool_calls": [
+      {
+        "sequence": 1,
+        "tool": "get_evidence",
+        "mode": "LOCAL_READ_ONLY",
+        "result_ids": ["external-disruption-v1", "operational-watch-v1"]
+      },
+      {
+        "sequence": 2,
+        "tool": "get_similar_decisions",
+        "mode": "LOCAL_READ_ONLY",
+        "result_ids": ["matching-reviewed-memory-v1"]
+      },
+      {
+        "sequence": 3,
+        "tool": "propose_action",
+        "mode": "EVALUATION_PROPOSAL_ONLY",
+        "result_ids": []
+      },
+      {
+        "sequence": 4,
+        "tool": "request_approval",
+        "mode": "SIMULATED_NO_AUTHORITY",
+        "result_ids": []
+      }
+    ],
+    "proposal": {
+      "status": "EVALUATION_PROPOSAL_ONLY",
+      "recommendation": "REQUEST_BOUNDED_REVIEW",
+      "priority": "HIGH",
+      "human_review_required": true,
+      "rationale": "Cutoff-eligible controlled evidence or reviewed memory supports a bounded simulated review request."
+    },
+    "approval_result": {
+      "status": "SIMULATED_PENDING_HUMAN_REVIEW",
+      "authority_granted": false,
+      "operational_action_created": false
+    },
+    "operational_mutations": []
+  }
+}
