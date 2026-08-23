@@ -3,7 +3,8 @@
 **Business-date boundary:** Australia/Sydney
 **Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06;
 Action assignment application chain verified in staging; operator EDIT recorded,
-response fix release and separate approver decision pending
+response fix release and separate approver decision pending; read-only
+Action–Outcome and Outcome–Learning review source merged to `main` but undeployed
 
 The governed closed loop connects lifecycle evidence without allowing synthetic
 learning to change either the generator or an effective policy automatically:
@@ -47,7 +48,7 @@ current Action state, and the latest cutoff-eligible Outcome. The chain uses
 only operational actual-calendar rows through the current Sydney date. It
 labels pending Outcomes as not observed and all closed-loop effects as
 synthetic; it creates no mutation, approval, real-performance, or production
-claim. The endpoint and cockpit timeline are locally verified but remain
+claim. The endpoint and cockpit timeline are merged and source-verified but remain
 undeployed pending a separately authorized staging release.
 
 The repository extension uses `PROPOSED -> EDITED` to record a named owner and
@@ -80,8 +81,8 @@ contract. It de-duplicates closed Outcomes, applies the Sydney cutoff and the
 cannot approve or activate that proposal, cannot replace deterministic safety
 rules, and labels all summarized effects as synthetic rather than real
 logistics performance. Passing this synthetic policy-review threshold is not
-model readiness or production readiness. The implementation is locally
-verified and undeployed.
+model readiness or production readiness. The implementation is merged and
+source-verified but remains undeployed and runtime-unverified.
 
 Operational model-readiness inputs must satisfy every condition below:
 

@@ -1339,7 +1339,7 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
         marker in normalized_status
         for marker in (
             "Action–Outcome evidence chain",
-            "IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED",
+            "MERGED_VERIFIED_UNDEPLOYED",
             "No new write, role, table, or production path was added.",
         )
     )
@@ -1432,7 +1432,7 @@ def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
         marker in " ".join(text["status"].split())
         for marker in (
             "Outcome–Learning evidence gate",
-            "IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED",
+            "MERGED_VERIFIED_UNDEPLOYED",
             "no proposal approval or activation endpoint",
         )
     )

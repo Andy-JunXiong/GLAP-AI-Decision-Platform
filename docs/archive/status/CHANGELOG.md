@@ -6,7 +6,8 @@ preserved handoffs.
 
 ## 2026-08-23
 
-- Completed the local Outcome-to-Learning evidence gate. An authenticated,
+- Completed and merged the repository Outcome-to-Learning evidence gate. An
+  authenticated,
   read-only endpoint and private Learning Review now count only cutoff-eligible
   observed Outcomes toward the existing 20-record threshold and expose the
   latest governed policy proposal only as review-required. Pending and future
@@ -14,7 +15,8 @@ preserved handoffs.
   replacement, AWS deployment, real-performance, model-readiness, or
   production-readiness claim was added.
 
-- Completed the local, authenticated Action–Outcome evidence chain. A bounded
+- Completed and merged the repository authenticated Action–Outcome evidence
+  chain. A bounded
   read endpoint and private cockpit timeline now connect one immutable Action
   proposal to its chronological append-only human audit events and latest
   cutoff-eligible simulated Outcome. The contract fails closed on unsafe IDs,
@@ -23,6 +25,10 @@ preserved handoffs.
   release path now preflights all three source tables, verifies the private UI
   fingerprint, and activates new runtime assertions only through an explicit
   post-release flag.
+- PR #76 delivered both read-only closed-loop capabilities to `main` as
+  `c4f367fb`; Python 3.13/3.14 CI and the Operations API staging plan passed.
+  The deploy step was skipped and no Pages publication occurred, so both
+  capabilities remain undeployed and runtime-unverified.
 - Completed capability-neutral External Evidence v2 and Decision Memory v3
   ablations. Each paired experiment changes only the named capability, passes
   System Correctness and Capability Attribution, excludes post-cutoff inputs,

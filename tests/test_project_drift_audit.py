@@ -109,6 +109,32 @@ class ProjectDriftAuditTests(unittest.TestCase):
         self.assertEqual(report["overall_status"], "PASS")
         self.assertEqual(report["summary"]["drift"], 0)
 
+    def test_merged_evidence_maturity_cannot_claim_runtime_verification(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "infrastructure/operations-api-staging.yaml",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            ".github/workflows/deploy-operations-api-staging.yml",
+            "ops/deploy_internal_operations_frontend.ps1",
+            "ops/verify_operations_staging.ps1",
+            "ops/verify_operations_roles_staging.ps1",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
+            status_path.write_text(
+                status_path.read_text(encoding="utf-8").replace(
+                    "MERGED_VERIFIED_UNDEPLOYED",
+                    "MERGED_VERIFIED_RUNTIME",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_new_evaluation_and_runtime_capabilities_are_declared(self):
         contract = AUDIT.load_contract(ROOT)
         capability_ids = {item["id"] for item in contract["capabilities"]}

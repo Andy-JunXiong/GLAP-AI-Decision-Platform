@@ -86,7 +86,7 @@
     {
       "id": "action_outcome_evidence_chain",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "authenticated local read-only implementation; staging deployment and runtime verification pending",
+      "boundary": "authenticated read-only source merged to main and plan-verified; staging deployment and runtime verification pending",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",
@@ -103,7 +103,7 @@
     {
       "id": "outcome_learning_evidence_gate",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "authenticated local read-only Outcome aggregation and review-only policy-proposal evidence; staging deployment and runtime verification pending, with no approval or activation authority",
+      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal source merged to main and plan-verified; staging deployment and runtime verification pending, with no approval or activation authority",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",

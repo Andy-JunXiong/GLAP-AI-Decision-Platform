@@ -50,12 +50,14 @@ checks that:
 - the Action–Outcome evidence chain remains an authenticated read-only `GET`
   route over the immutable Action, cutoff-eligible audit, and eligible Outcome
   sources; its UI retains the synthetic-performance disclosure and its maturity
-  remains local and undeployed; release preflight must inspect all three Glue
-  sources and runtime verification remains opt-in until deployment;
+  remains merged and plan-verified but undeployed; release preflight must
+  inspect all three Glue sources and runtime verification remains opt-in until
+  deployment;
 - the Outcome-to-Learning gate counts only cutoff-eligible observed Outcomes,
   reads the exact governed policy-proposal table, keeps policy activation and
   deterministic-rule replacement false, preserves named-human review, and
-  remains behind independent opt-in post-release verification;
+  remains merged but undeployed behind independent opt-in post-release
+  verification;
 - capability-neutral External Evidence and Decision Memory experiments remain
   local, controlled-synthetic, read-only ablations with higher evaluation
   layers explicitly unevaluated;

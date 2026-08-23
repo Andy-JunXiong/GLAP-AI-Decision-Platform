@@ -399,14 +399,15 @@ was reconciled to the operator group only. No access token or private Action
 identifier is retained in repository evidence. Do not resume the canary until
 the narrow response-fix release is separately approved and deployed.
 
-The Action–Outcome evidence endpoint and cockpit timeline are implemented and
-locally verified in the repository as of `2026-08-23`. They are not yet
+The Action–Outcome evidence endpoint and cockpit timeline are merged to `main`
+and source-verified as of `2026-08-23`. They are not yet
 deployed or runtime-verified. Deployment would update the existing private
 Operations API stack and frontend and therefore requires a separate authorized
-staging release; this repository work did not call AWS or mutate an Action.
+staging release; the merge-triggered workflow rendered a successful plan and
+explicitly skipped deployment, and no Action was mutated.
 
 The Outcome-to-Learning evidence endpoint and private Learning Review are also
-implemented locally as of `2026-08-23`. They expose the existing governed
+merged and source-verified as of `2026-08-23`. They expose the existing governed
 threshold and policy-proposal record read-only; they do not approve or activate
 a proposal. They remain undeployed and require the same separate staging
 release plus explicit `-RequireLearningEvidence` runtime verification.

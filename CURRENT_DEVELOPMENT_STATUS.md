@@ -19,8 +19,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `PARTIAL` | Operator `EDIT` recorded; response fix release, stable retry, and separate approver decision remain |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
-| Action–Outcome evidence chain | `IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED` | Private read-only proposal/audit/Outcome timeline; no AWS or Action mutation |
-| Outcome–Learning evidence gate | `IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED` | Private read-only eligible-Outcome threshold and review-only policy proposal; no activation authority |
+| Action–Outcome evidence chain | `MERGED_VERIFIED_UNDEPLOYED` | Private read-only proposal/audit/Outcome timeline; source and plan verified, no deployment or Action mutation |
+| Outcome–Learning evidence gate | `MERGED_VERIFIED_UNDEPLOYED` | Private read-only eligible-Outcome threshold and review-only policy proposal; source and plan verified, no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
 | Governed Agent Runtime parity | `IMPLEMENTED_VERIFIED` | One reference adapter and one independently implemented registered local adapter run from distinct source paths under the same content-addressed cutoff bundle and no-mutation envelope; this proves local implementation and interface mechanics only |
@@ -96,7 +96,7 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Action–Outcome–Learning evidence chain
 
-**Status:** `IMPLEMENTED_VERIFIED_LOCAL_UNDEPLOYED`
+**Status:** `MERGED_VERIFIED_UNDEPLOYED`
 
 **Goal**
 
@@ -142,6 +142,12 @@ activating, or allowing it to replace deterministic rules.
 - Added an independent `-RequireLearningEvidence` post-release gate to both
   staging verifiers and a Learning disclosure fingerprint to the internal
   frontend packager, so the undeployed baseline remains truthful.
+- PR #76 merged the complete source slice to `main` as commit `c4f367fb`.
+  Push CI run `32619843180` passed on Python 3.13 and 3.14. Push-triggered
+  Operations API run `32619843145` passed contract tests, protected
+  configuration and dependency checks, and plan rendering; its deploy step
+  was explicitly skipped. No Pages workflow, staging deployment, runtime
+  verification, Action mutation, or policy activation occurred.
 
 **Retained completed context from the earlier 2026-08-23 slice**
 
@@ -542,8 +548,8 @@ done.
 ## Recently completed — current seven-day window
 
 - The Action–Outcome evidence chain now makes the main governed loop reviewable
-  from one Action without rewriting the proposal or audit history. It is
-  locally implemented and verified, remains undeployed, and does not establish
+  from one Action without rewriting the proposal or audit history. Its source
+  is merged to `main` and verified, remains undeployed, and does not establish
   real logistics performance or grant Action authority.
 - Capability-neutral External Evidence v2 and Decision Memory v3 ablations now
   hold every non-target input constant and show only capability attribution.
@@ -662,6 +668,20 @@ done.
 
 ### Codex-run validation
 
+- The post-merge documentation and fact synchronization passes Python
+  compilation, all 433 repository tests, all 20 focused project-drift tests,
+  the 30/30 project drift audit, and `git diff --check`. The synchronized
+  machine-readable boundary now distinguishes merged and plan-verified source
+  from deployment and runtime evidence. No AWS write, staging deployment,
+  Action mutation, policy activation, schedule, production change, or Pages
+  publication occurred.
+- PR #76 merged the Action–Outcome–Learning evidence chain and offline adapter
+  conformance source to `main` as `c4f367fb`. Push CI run `32619843180` passed
+  on Python 3.13 and 3.14. Operations API staging run `32619843145` completed
+  the read-only plan path successfully and explicitly skipped deployment. No
+  Pages run was associated with the merge commit; no staging runtime evidence,
+  Action mutation, policy activation, schedule, alias, or production authority
+  was created.
 - The 2026-08-23 Action–Outcome–Learning evidence-chain slice passes focused API and
   infrastructure tests, private frontend lint/build/rendered tests, PowerShell
   parser checks for both staging verifiers and the frontend packager, an actual

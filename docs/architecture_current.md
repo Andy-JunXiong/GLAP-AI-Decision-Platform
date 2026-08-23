@@ -229,22 +229,23 @@ They support the governed Decision Queue, Action Board, `APPROVE` / `REJECT` /
 Accuracy, and authorised Network Drill-down. Public GitHub Pages remains
 aggregate-only and read-only, with no private API or Cognito configuration.
 
-The next repository revision adds a private read-only Action–Outcome evidence
-chain to that same boundary. One Action detail request joins its immutable
+The repository revision merged through PR #76 adds a private read-only
+Action–Outcome evidence chain to that same boundary. One Action detail request joins its immutable
 proposal, chronological append-only audit events, and latest eligible simulated
 Outcome under the Sydney actual-calendar cutoff. The cockpit renders this as a
 review timeline without exposing request IDs, scenario IDs, infrastructure
-identifiers, or future simulations. This extension is implemented and locally
-verified only; it has not been deployed or runtime-verified and adds no
+identifiers, or future simulations. This extension is merged to `main` and
+source-verified; it has not been deployed or runtime-verified and adds no
 mutation or approval authority.
 
-The same local revision continues the closed loop from Outcome to Learning.
+The same merged revision continues the closed loop from Outcome to Learning.
 An authenticated `GET /v1/learning` aggregate counts only cutoff-eligible
 observed Outcomes and reads the existing policy-proposal table. Its private
 Learning Review shows whether the minimum evidence gate remains blocked and,
 when present, exposes a proposal only as review-required. There is no policy
-activation endpoint, deterministic rules remain authoritative, and the local
-extension is not deployed or runtime-verified.
+activation endpoint, deterministic rules remain authoritative, and the
+extension is not deployed or runtime-verified. The merge-triggered staging
+workflow rendered a successful plan and explicitly skipped deployment.
 
 The repository implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a

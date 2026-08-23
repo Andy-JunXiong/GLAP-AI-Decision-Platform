@@ -128,11 +128,17 @@ The values are deliberately omitted because they identify environment-specific r
 - the repository Operations API extension reads the already allow-listed
   immutable Action table, Action audit table, and Outcome table in one bounded
   query to assemble a private Action–Outcome evidence chain; its explicit JWT
-  route and environment binding are implemented locally but not deployed
-- the local Outcome-to-Learning extension adds one authenticated read route
+  route and environment binding are merged to `main` but not deployed
+- the repository Outcome-to-Learning extension adds one authenticated read route
   over the existing Outcome and policy-proposal tables; IAM and Lake Formation
   inventories name the policy table exactly and grant no write, grant-option,
   activation, schedule, alias, or production capability
+
+PR #76 merged both read-only extensions as `c4f367fb`. The merge-triggered
+Operations API workflow passed its protected configuration, dependency, and
+deployment-plan checks, while the deploy step was explicitly skipped. This is
+delivery-plan evidence only; the existing staging stack and private frontend
+were not updated or runtime-verified by that run.
 
 The deployed CloudWatch alarms publish both alarm and recovery transitions to
 the existing `glap-pipeline-alerts` SNS topic. Subscriber endpoints are managed
