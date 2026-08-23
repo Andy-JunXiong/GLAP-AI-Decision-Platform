@@ -17,9 +17,9 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Manual isolated staging; no production alias or schedule |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
-| Action assignment canary | `PARTIAL` | Operator `EDIT` recorded; response fix release, stable retry, and separate approver decision remain |
+| Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
-| Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private read-only proposal/audit/Outcome timeline; deployed and runtime-verified, with no Action mutation |
+| Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed and runtime-verified; later canary mutations remained separately authorized |
 | Outcome–Learning evidence gate | `IMPLEMENTED_STAGING` | Private read-only eligible-Outcome threshold and review-only policy proposal; deployed and runtime-verified, with no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
@@ -164,6 +164,26 @@ activating, or allowing it to replace deterministic rules.
   temporary role-check users were removed. No real Action was mutated, no
   policy was approved or activated, and no production, schedule, alias, or
   Pages authority was exercised.
+- Separately authorized Action-mutation release Prepare run `32623784739` and
+  Execute run `32624244648` deployed the response-only date-serialization fix
+  from pushed commit `08b21e3`. The change set modified only the non-replacing
+  Action mutation Lambda, the stack returned to `UPDATE_COMPLETE`, and direct
+  read-only inspection found the Python 3.14 function active with a successful
+  last update. Production effect remained false.
+- The same named operator replayed the original request ID. The API returned
+  HTTP 200 with `idempotent_replay=true`; reconciliation retained one audit
+  row, one current `EDITED` row, the original assignment, and zero approval
+  events. A different named approver then selected `APPROVE`. Final
+  reconciliation returned one `EDIT`, one `APPROVE`, zero `REJECT`, zero
+  `COMPLETE`, two distinct named actors, one current `APPROVED` row, and one
+  assignment match. No Outcome was created.
+- Corrected the private cockpit's post-mutation evidence behavior locally. A
+  successful Action mutation now returns an explicit success result and, when
+  that Action's Evidence chain is expanded, reloads the chain after refreshing
+  the Board. Frontend lint, the Vinext build and three rendered-client tests,
+  the internal static-export Next.js build, Python compilation, all 433
+  repository tests, the rollout validator, and the 30/30 drift audit pass. The
+  correction is not deployed and grants no new mutation or role authority.
 
 **Retained completed context from the earlier 2026-08-23 slice**
 
@@ -499,11 +519,12 @@ activating, or allowing it to replace deterministic rules.
 
 **Next slice after completion**
 
-The evidence chain is now released and runtime-verified through the protected
-staging API/frontend paths. The next product slice remains the separately
-governed Action response-fix release, stable retry, and different-approver
-decision; none of those Action mutations were authorized by or combined with
-this read-only release.
+The evidence chain is released and runtime-verified through the protected
+staging API/frontend paths, and the separately governed Action assignment
+canary now ends at `APPROVED`. The immediate repository follow-up is the local
+post-mutation Evidence-chain refresh correction. Publishing that correction to
+private staging requires a new named-human frontend release decision. Action
+`COMPLETE` and Outcome creation are not implied and remain separately owned.
 
 ## Pending validation
 
@@ -513,14 +534,9 @@ this read-only release.
 - After every lifecycle, compatibility, and analytics check passes, refresh the
   operational-calendar baseline and publish the aggregate public snapshot only
   through separately authorized runtime and Pages steps.
-- Release the Action response-serialization fix only through separately
-  authorized narrow Prepare and Execute phases. The release contract, 31
-  focused tests, local no-write package plan, commit ancestry, and read-only AWS
-  ownership/stability inspection pass; artifact upload, change-set creation,
-  Lambda update, and AWS write-authority approval remain false.
-- Retry the original Action request ID after that release and confirm the audit
-  event remains idempotent.
-- Have a different named approver approve or reject the edited staging Action.
+- Review and, only with a new named-human authorization, publish the locally
+  verified private-cockpit Evidence-chain auto-refresh correction. Until then,
+  reopening Evidence chain manually remains the runtime workaround.
 - Have the named study owner decide whether the Cyclone Gabrielle T1 2:2 split
   should remain inconclusive or enter a separately governed adjudication step.
 
@@ -564,6 +580,12 @@ done.
 
 ## Recently completed — current seven-day window
 
+- The Action assignment canary now has bounded end-to-end staging evidence:
+  the response fix is deployed, the original request ID replayed with HTTP 200
+  without duplicating its audit row, and a different named approver moved the
+  Action to `APPROVED`. One `EDIT`, one `APPROVE`, two named actors, and the
+  unchanged assignment were reconciled; no `COMPLETE`, Outcome, production,
+  schedule, alias, policy, or Pages action followed.
 - The Action–Outcome evidence chain now makes the main governed loop reviewable
   from one Action without rewriting the proposal or audit history. Its source,
   protected staging API, and private cockpit are deployed and runtime-verified;
@@ -919,10 +941,10 @@ done.
 
 ## Next Up
 
-1. Release the Action response-serialization fix only through separately
-   authorized narrow Prepare and Execute phases; then retry the original
-   request ID and have a different named approver approve or reject the edited
-   Action under separate operational authority.
+1. Review the local Evidence-chain auto-refresh correction and, only under a
+   new named-human private-frontend release authorization, publish it and rerun
+   the explicit staging verifier. This does not authorize `COMPLETE` or Outcome
+   creation.
 2. With separate named-human approval, run the isolated staging
    `recover-failed-integration-date` action for only `2026-08-09`, then verify
    the persisted controller status and all 28 lifecycle checks. This is not a

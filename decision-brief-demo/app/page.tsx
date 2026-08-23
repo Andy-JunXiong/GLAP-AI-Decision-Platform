@@ -290,9 +290,11 @@ export default function Home() {
     try {
       await mutateAction(readOperationsToken(), actionId, operation, reason, assignment);
       await refreshOperations();
+      return true;
     } catch (error) {
       setOperationsState("error");
       setOperationsMessage(error instanceof Error ? error.message : "Action update failed");
+      return false;
     }
   }, [refreshOperations]);
 
@@ -519,7 +521,7 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
   actions: OperationsAction[];
   operationsState: OperationsLoadState;
   operationsMessage: string;
-  submitOperation: (actionId: string, operation: ActionOperation, reason: string, assignment?: { actionOwner?: string; actionDueDate?: string }) => Promise<void>;
+  submitOperation: (actionId: string, operation: ActionOperation, reason: string, assignment?: { actionOwner?: string; actionDueDate?: string }) => Promise<boolean>;
   refresh: () => Promise<void>;
 }) {
   const [reason, setReason] = useState("Reviewed current operational evidence");
@@ -530,8 +532,8 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
   const [evidence, setEvidence] = useState<ActionEvidence | null>(null);
   const [evidenceState, setEvidenceState] = useState<"idle" | "loading" | "connected" | "error">("idle");
   const [evidenceMessage, setEvidenceMessage] = useState("");
-  const reviewEvidence = async (actionId: string) => {
-    if (selectedEvidence === actionId && evidenceState === "connected") {
+  const reviewEvidence = async (actionId: string, forceRefresh = false) => {
+    if (!forceRefresh && selectedEvidence === actionId && evidenceState === "connected") {
       setSelectedEvidence("");
       setEvidence(null);
       setEvidenceState("idle");
@@ -552,10 +554,13 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
   const run = async (action: OperationsAction, operation: ActionOperation) => {
     setBusyAction(action.action_id);
     try {
-      await submitOperation(
+      const succeeded = await submitOperation(
         action.action_id, operation, reason,
         operation === "EDIT" ? { actionOwner, actionDueDate } : {},
       );
+      if (succeeded && selectedEvidence === action.action_id) {
+        await reviewEvidence(action.action_id, true);
+      }
     }
     finally { setBusyAction(""); }
   };

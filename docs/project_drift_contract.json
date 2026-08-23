@@ -47,8 +47,8 @@
     },
     {
       "id": "action_edit_owner_due_date",
-      "state": "PARTIAL",
-      "boundary": "staging operator EDIT recorded; response fix release, stable retry, and separate approver decision pending",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "staging response fix, stable same-request replay, and distinct named-approver APPROVE verified; COMPLETE remains separate and unauthorized",
       "evidence_files": [
         "lambda/glap_action_mutation.py",
         "lambda/glap_operations_api.py",
@@ -86,7 +86,7 @@
     {
       "id": "action_outcome_evidence_chain",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "authenticated read-only staging API and private cockpit deployed and runtime-verified; no Action mutation or production authority",
+      "boundary": "authenticated read-only staging API and private cockpit deployed and runtime-verified; later canary mutations separately authorized; no production authority",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",

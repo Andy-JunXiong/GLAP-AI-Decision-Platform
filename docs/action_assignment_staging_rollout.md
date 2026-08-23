@@ -1,7 +1,7 @@
 # Action assignment staging rollout
 
-**Status:** canary partially complete; response fix release, stable retry, and
-separate approver decision pending
+**Status:** canary approved and runtime-verified; Action completion remains a
+separate named-human decision
 
 This package governs the repository implementation of Action `EDIT`, owner,
 due date, and `EDITED` review state for private staging. The Action mutation
@@ -10,8 +10,9 @@ The additive schema migration was separately reviewed and applied by a named
 human on 2026-08-13. The Operations API and private frontend were then released
 through their separately approved plan-first paths. This document does not
 authorize another deployment, persistent user creation, or an operational
-Action mutation. One separately authorised named-human canary `EDIT` has since
-been recorded; it does not create standing authority for another mutation.
+Action mutation. The separately authorised named-human canary now covers the
+operator `EDIT`, stable request-ID retry, and different-person `APPROVE`; it
+does not create standing authority for `COMPLETE` or any other mutation.
 
 ## Preflight and release order
 
@@ -65,22 +66,30 @@ been recorded; it does not create standing authority for another mutation.
    Read-only reconciliation found one event, one Action, one request ID, valid
    assignment fields, and one row for that request ID.
 10. Release the response-only serialization fix through the same narrow,
-    separately approved mutation-Lambda Prepare/Execute path. Implementation
-    commit `763a817` is pushed to `main`, passes 240 local tests, and is not
-    deployed. Prepare must target the later clean, pushed `main` commit that
-    contains both `763a817` and this synchronized evidence, not the earlier
-    stale-document snapshot. Do not use the whole lifecycle stack or a direct
-    Lambda update.
+    separately approved mutation-Lambda Prepare/Execute path. Completed on
+    2026-08-23. Prepare run `32623784739` and Execute run `32624244648`
+    selected pushed commit `08b21e3`, changed only the non-replacing Action
+    mutation Lambda, and finished with the stack at `UPDATE_COMPLETE`. Direct
+    read-only inspection found the Python 3.14 Lambda active with its last
+    update successful. Production effect remained false. The whole lifecycle
+    stack and direct Lambda update path were not used.
 11. After the fix is deployed and the prior operator token has expired, the
     same named operator retries the original request ID and confirms the audit
     row count remains one. A different named approver may then approve or reject
-    the `EDITED` Action.
+    the `EDITED` Action. Completed on 2026-08-23 under two separately confirmed
+    named-human identities. The stable retry returned HTTP 200 with
+    `idempotent_replay=true`; reconciliation retained one request-ID row, one
+    current `EDITED` row, matching assignment, and zero approval events. The
+    different named approver then selected `APPROVE`. Final reconciliation
+    returned one `EDIT`, one `APPROVE`, zero `REJECT`, zero `COMPLETE`, two
+    distinct named actors, one current `APPROVED` row, and one assignment
+    match.
 
-Steps 3-8 and the first write in step 9 are complete. The operator session used
-during diagnosis was globally signed out, and the identity was independently
-confirmed as operator-only. Steps 10-11 remain blocked on separate release and
-human authority. No retry, approver decision, production mutation, Pages
-publication, or schedule activation occurred.
+Steps 3-11 are complete. The original operator identity was independently
+confirmed as operator-only, and the decision used a different named approver.
+The Action remains `APPROVED`; no `COMPLETE`, Outcome creation, production
+mutation, Pages publication, schedule activation, alias movement, or policy
+activation occurred.
 
 The agent may prepare and validate these artifacts but may not perform steps
 3, 6-7, 9, or 11, or any future release write. Temporary role-test users in step 8

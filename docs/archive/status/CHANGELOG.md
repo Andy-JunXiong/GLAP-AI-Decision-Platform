@@ -6,6 +6,18 @@ preserved handoffs.
 
 ## 2026-08-23
 
+- Completed the isolated staging Action-assignment canary through distinct
+  named-human roles. The response-only serialization fix was released through
+  the protected narrow Lambda path; the original operator request replayed
+  with HTTP 200 and no duplicate audit row; and a different named approver
+  moved the Action to `APPROVED`. Reconciliation retained one `EDIT`, one
+  `APPROVE`, two named actors, and the original assignment. `COMPLETE`, Outcome
+  creation, production, schedules, aliases, policy activation, and Pages were
+  not authorized or executed.
+- Completed a repository-only cockpit correction for stale expanded evidence
+  after an Action mutation. Successful writes now refresh the Board and reload
+  the selected Action Evidence chain, while failed writes leave the evidence
+  untouched. The correction is locally verified and not deployed.
 - Completed and merged the repository Outcome-to-Learning evidence gate. An
   authenticated,
   read-only endpoint and private Learning Review now count only cutoff-eligible

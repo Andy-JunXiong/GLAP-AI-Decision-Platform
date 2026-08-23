@@ -92,9 +92,11 @@ Durable capabilities:
 - observed Outcome reconciliation separated from expected impact;
 - policy proposals that remain `PENDING_HUMAN_REVIEW`.
 
-Progression gate: the current staging assignment canary requires the
+Progression gate: the staging assignment canary is complete only after a
 response-fix release, stable same-request retry, and a different named human's
-approval or rejection before it is complete. This does not authorize
+approval or rejection are reconciled. Any later `COMPLETE` and Outcome
+generation require a new named-operator decision and preserve the same
+immutable proposal and append-only audit boundary. This does not authorize
 production.
 
 ## P2 — Governed operational data and analytics

@@ -2,8 +2,8 @@
 
 **Business-date boundary:** Australia/Sydney
 **Implementation status:** private AWS staging persistence deployed and verified on 2026-08-06;
-Action assignment application chain verified in staging; operator EDIT recorded,
-response fix release and separate approver decision pending; read-only
+Action assignment application chain verified in staging through distinct
+operator EDIT and approver APPROVE identities; stable retry verified; read-only
 Action–Outcome and Outcome–Learning reviews deployed and runtime-verified in
 private staging on 2026-08-23
 
@@ -59,9 +59,13 @@ approver to approve or reject it. Assignment is carried forward into later
 audit events, while the source proposal remains unchanged. The additive staging
 schema migration was applied by a named human on 2026-08-13 and passed all five
 read-only checks with zero failures. The migration itself executed no Action
-mutation. A later named-human canary recorded one `EDIT`; it remains at
-`EDITED` pending a response-fix release, stable retry, and a separate approver
-decision.
+mutation. The named-human canary completed on 2026-08-23. The response fix was
+released through the protected narrow path, the same operator replayed the
+original request ID with HTTP 200 and no duplicate audit row, and a different
+named approver selected `APPROVE`. Reconciliation found one `EDIT`, one
+`APPROVE`, zero `REJECT`, zero `COMPLETE`, two distinct named actors, one
+current `APPROVED` row, and an unchanged assignment. This authorizes neither
+`COMPLETE` nor Outcome creation.
 
 Outcomes remain `PENDING` until their observation lag expires. Once due, the
 result is reproducible from stable entity/version identifiers and depends on

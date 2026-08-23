@@ -92,6 +92,11 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /Some shipment evidence is still available/);
   assert.match(page, /Assign &amp; edit/);
   assert.match(page, /item\.status === "EDITED"/);
+  assert.match(page, /const succeeded = await submitOperation/);
+  assert.match(page, /reviewEvidence = async \(actionId: string, forceRefresh = false\)/);
+  assert.match(page, /!forceRefresh && selectedEvidence === actionId/);
+  assert.match(page, /succeeded && selectedEvidence === action\.action_id/);
+  assert.match(page, /await reviewEvidence\(action\.action_id, true\)/);
   assert.match(page, /Action–Outcome evidence chain/);
   assert.match(page, /The proposal is immutable and audit events are append-only/);
   assert.match(page, /never real logistics performance/);

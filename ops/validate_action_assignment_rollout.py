@@ -1,4 +1,4 @@
-"""Validate the partially completed Action assignment staging canary package."""
+"""Validate the completed Action assignment staging canary package."""
 
 from __future__ import annotations
 
@@ -49,8 +49,8 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     if contract.get("schema_version") != "action-assignment-rollout.v1":
         errors.append("unsupported schema_version")
-    if contract.get("status") != "CANARY_PARTIAL_BLOCKED_RESPONSE_FIX_RELEASE":
-        errors.append("rollout must expose the partial canary release blocker")
+    if contract.get("status") != "CANARY_APPROVED_VERIFIED":
+        errors.append("rollout must expose the verified approved canary state")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -94,9 +94,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     ):
         errors.append("verified mutation release or future approval boundary is hidden")
     if release_paths.get("response_serialization_fix") != (
-        "COMMIT_763A817_PUSHED_NOT_DEPLOYED"
+        "DEPLOYED_VERIFIED_2026_08_23_FUTURE_WRITES_REQUIRE_APPROVAL"
     ):
-        errors.append("response fix must remain pushed but not deployed")
+        errors.append("response fix deployment evidence or future approval boundary is hidden")
     if release_paths.get("candidate_design_contract") != (
         "docs/action_mutation_staging_release_contract.json"
     ):
@@ -145,7 +145,27 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "canary_edit_failure_category": "DATE_RESPONSE_SERIALIZATION",
         "response_serialization_fix_git_commit": "763a817d578b0d50ca555d53f2609f0c1192b9c1",
         "response_serialization_fix_pushed_to_main": True,
-        "response_serialization_fix_deployed": False,
+        "response_serialization_fix_deployed": True,
+        "response_serialization_fix_observed_on_sydney_date": "2026-08-23",
+        "response_serialization_fix_release_git_commit": "08b21e378aa2dedd51fef5c98009c9f482cb2d1b",
+        "response_serialization_fix_prepare_run_id": 32623784739,
+        "response_serialization_fix_execute_run_id": 32624244648,
+        "response_serialization_fix_stack_final_status": "UPDATE_COMPLETE",
+        "stable_retry_http_status": 200,
+        "stable_retry_idempotent_replay": True,
+        "stable_retry_request_id_row_count": 1,
+        "stable_retry_current_edited_count": 1,
+        "stable_retry_assignment_match_count": 1,
+        "stable_retry_approver_event_count": 0,
+        "approver_decision_observed_on_sydney_date": "2026-08-23",
+        "approver_decision": "APPROVE",
+        "approver_edit_event_count": 1,
+        "approver_approve_event_count": 1,
+        "approver_reject_event_count": 0,
+        "approver_complete_event_count": 0,
+        "approver_distinct_named_actor_count": 2,
+        "approver_current_approved_count": 1,
+        "approver_assignment_match_count": 1,
         "operator_global_sign_out_completed": True,
         "operator_group_membership_operator_only": True,
         "production_effect": False,
@@ -176,12 +196,18 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("canary must retain named-human separation and stable retries")
     if canary.get("operator_edit_completed") is not True:
         errors.append("canary must retain the completed operator EDIT evidence")
-    if canary.get("stable_request_id_retry_completed") is not False:
-        errors.append("stable request-ID retry must remain pending until verified")
-    if canary.get("named_approver_decision_completed") is not False:
-        errors.append("separate approver decision must remain pending until verified")
-    if canary.get("current_blocker") != "RESPONSE_SERIALIZATION_FIX_NOT_DEPLOYED":
-        errors.append("canary must expose the undeployed response-fix blocker")
+    if canary.get("stable_request_id_retry_completed") is not True:
+        errors.append("verified stable request-ID retry evidence is hidden")
+    if canary.get("named_approver_decision_completed") is not True:
+        errors.append("verified separate approver decision evidence is hidden")
+    if canary.get("named_approver_decision") != "APPROVE":
+        errors.append("verified approver decision must remain APPROVE")
+    if canary.get("current_action_status") != "APPROVED":
+        errors.append("verified current Action status must remain APPROVED")
+    if canary.get("action_complete_completed") is not False:
+        errors.append("Action COMPLETE must remain pending and separately authorized")
+    if canary.get("current_blocker") != "NONE":
+        errors.append("completed canary must not retain the response-fix blocker")
 
     role_script = (root / "ops" / "verify_operations_roles_staging.ps1").read_text(
         encoding="utf-8"
@@ -210,7 +236,7 @@ def main() -> int:
         for error in errors:
             print(f"DRIFT: {error}")
         return 1
-    print("PASS: operator EDIT is recorded; response-fix release, retry, and approver remain blocked")
+    print("PASS: response fix, stable retry, and separate approver decision are verified; COMPLETE remains pending")
     return 0
 
 

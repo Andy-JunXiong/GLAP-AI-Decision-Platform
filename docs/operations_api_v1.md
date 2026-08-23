@@ -149,9 +149,13 @@ private frontend were subsequently released through separately approved
 staging-only paths. Assignment runtime and four-role checks passed. A named
 operator subsequently recorded one real staging `EDIT`; the Action resolved to
 `EDITED`, but the HTTP response was 503 because the mutation Lambda returned a
-non-JSON-serializable Python `date`. Commit `763a817` fixes only the response
-boundary and is pushed but not deployed. Stable retry and separate approval
-remain pending.
+non-JSON-serializable Python `date`. Commit `763a817` fixed only the response
+boundary. The fix was released through the protected narrow path on
+2026-08-23; the original request-ID retry returned HTTP 200 with
+`idempotent_replay=true` and retained one audit row. A different named
+approver then selected `APPROVE`. Read-only reconciliation found one `EDIT`,
+one `APPROVE`, two distinct named actors, one current `APPROVED` row, and an
+unchanged assignment. No `COMPLETE` or Outcome creation occurred.
 
 The ordered release, validation, role-check, canary, and evidence-preserving
 rollback boundary is defined in
@@ -397,8 +401,19 @@ confirmed exactly one valid `EDIT`, one request ID, one affected Action, and one
 current `EDITED` match. The failed response did not add a duplicate. The
 operator session was globally signed out during containment, and the identity
 was reconciled to the operator group only. No access token or private Action
-identifier is retained in repository evidence. Do not resume the canary until
-the narrow response-fix release is separately approved and deployed.
+identifier is retained in repository evidence. On `2026-08-23`, separately
+approved Prepare run `32623784739` and Execute run `32624244648` released the
+response fix with the stack at `UPDATE_COMPLETE` and no production effect. The
+same named operator's stable retry returned HTTP 200 and reused the original
+event; a different named approver then approved the `EDITED` Action. Final
+reconciliation retained one `EDIT`, one `APPROVE`, zero `REJECT`, zero
+`COMPLETE`, two named actors, and the original assignment.
+
+The cockpit previously refreshed the Action Board after a successful mutation
+but left an already expanded Evidence chain in its pre-mutation local state.
+The repository frontend now treats mutation success explicitly and reloads the
+selected Action evidence after the Board refresh. This correction is locally
+implemented and verified only; it has not been published to private staging.
 
 The Action–Outcome evidence endpoint and cockpit timeline were merged to `main`
 and source-verified on `2026-08-23`. After separate named-human staging release

@@ -375,8 +375,8 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
         marker in status
         for marker in (
             "Action assignment canary",
-            "Operator `EDIT` recorded",
-            "response fix release, stable retry, and separate approver decision remain",
+            "stable retry and distinct named-approver `APPROVE` runtime-verified",
+            "`COMPLETE` remains separate",
         )
     )
     return [
@@ -415,7 +415,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
     schema = rollout.get("schema", {})
     bounded = (
         rollout.get("status")
-        == "CANARY_PARTIAL_BLOCKED_RESPONSE_FIX_RELEASE"
+        == "CANARY_APPROVED_VERIFIED"
         and rollout.get("business_timezone") == "Australia/Sydney"
         and rollout.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and all(authority.get(field) is False for field in protected_authority)
@@ -426,7 +426,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and rollout.get("release_paths", {}).get("action_mutation_lambda")
         == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
         and rollout.get("release_paths", {}).get("response_serialization_fix")
-        == "COMMIT_763A817_PUSHED_NOT_DEPLOYED"
+        == "DEPLOYED_VERIFIED_2026_08_23_FUTURE_WRITES_REQUIRE_APPROVAL"
         and rollout.get("release_paths", {}).get("operations_api")
         == "STAGING_RELEASE_VERIFIED_FUTURE_WRITES_REQUIRE_APPROVAL"
         and rollout.get("release_paths", {}).get("internal_frontend")
@@ -492,7 +492,59 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and rollout.get("verified_release_evidence", {}).get(
             "response_serialization_fix_deployed"
         )
-        is False
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "response_serialization_fix_stack_final_status"
+        )
+        == "UPDATE_COMPLETE"
+        and rollout.get("verified_release_evidence", {}).get(
+            "stable_retry_http_status"
+        )
+        == 200
+        and rollout.get("verified_release_evidence", {}).get(
+            "stable_retry_idempotent_replay"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "stable_retry_request_id_row_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "stable_retry_current_edited_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "stable_retry_assignment_match_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_edit_event_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_approve_event_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_reject_event_count"
+        )
+        == 0
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_complete_event_count"
+        )
+        == 0
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_distinct_named_actor_count"
+        )
+        == 2
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_current_approved_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "approver_assignment_match_count"
+        )
+        == 1
         and rollout.get("verified_release_evidence", {}).get(
             "operator_global_sign_out_completed"
         )
@@ -513,16 +565,20 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         is True
         and rollout.get("canary", {}).get("agent_execution_allowed") is False
         and rollout.get("canary", {}).get("operator_edit_completed") is True
-        and rollout.get("canary", {}).get("stable_request_id_retry_completed") is False
-        and rollout.get("canary", {}).get("named_approver_decision_completed") is False
+        and rollout.get("canary", {}).get("stable_request_id_retry_completed") is True
+        and rollout.get("canary", {}).get("named_approver_decision_completed") is True
+        and rollout.get("canary", {}).get("named_approver_decision") == "APPROVE"
+        and rollout.get("canary", {}).get("current_action_status") == "APPROVED"
+        and rollout.get("canary", {}).get("action_complete_completed") is False
+        and rollout.get("canary", {}).get("current_blocker") == "NONE"
     )
     return [
         _result(
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment operator EDIT is recorded; the response-fix release, stable retry, and separate approver decision remain blocked.",
-            "Action assignment rollout hides its blocker or expands deployment, mutation, or scheduling authority.",
+            "Action assignment response fix, stable retry, and separate approver decision are verified; COMPLETE remains pending.",
+            "Action assignment rollout hides verified evidence or expands deployment, mutation, completion, or scheduling authority.",
             (
                 contract_path,
                 "docs/action_assignment_staging_rollout.md",
