@@ -1,10 +1,13 @@
 # GLAP Evaluation Architecture
 
-**Contract version:** `evaluation-experiment.v1`
+**Contract versions:** `evaluation-experiment.v1` (frozen A303 evidence),
+`evaluation-experiment.v2` (capability-neutral External Evidence ablation), and
+`evaluation-experiment.v3` (capability-neutral Decision Memory ablation)
 **Business timezone:** `Australia/Sydney`
-**Current implementation:** local, deterministic, read-only A303 ablation,
-four-review Decision Quality, pre-specified synthetic Outcome robustness, and
-post-hoc A303.v2 candidate screening with an anti-abstention gate
+**Current implementation:** local, deterministic, read-only A303, External
+Evidence, and Decision Memory ablations; four-review Decision Quality;
+pre-specified synthetic Outcome robustness; and post-hoc A303.v2 candidate
+screening with an anti-abstention gate
 
 ## Purpose
 
@@ -55,8 +58,13 @@ effect” can be mistaken for a causal outcome claim.
 
 ## Experiment boundary
 
-Every experiment is a paired comparison described by
-[`evaluation_experiment_v1.schema.json`](evaluation_experiment_v1.schema.json).
+Every experiment is a paired comparison. The frozen A303 experiment is
+described by
+[`evaluation_experiment_v1.schema.json`](evaluation_experiment_v1.schema.json),
+while capability-neutral External Evidence experiments use
+[`evaluation_experiment_v2.schema.json`](evaluation_experiment_v2.schema.json)
+and Decision Memory experiments use
+[`evaluation_experiment_v3.schema.json`](evaluation_experiment_v3.schema.json).
 The baseline and challenger receive the same scenario, cutoff, evidence
 snapshot, operational state, authority profile, random seed, and policy/tool
 versions. Only declared capability flags may differ.
@@ -127,24 +135,87 @@ measured effect.
 
 ## Agent Runtime Interface
 
-Agent hosts are replaceable adapters. A future host may use governed,
-point-in-time tools such as:
+Agent hosts now have a local v1 replaceable-adapter contract. The implemented
+subset exposes these governed point-in-time tools:
 
 ```text
-get_shipment(as_of)
 get_evidence(as_of)
-get_carrier_performance(as_of)
 get_similar_decisions(as_of)
 propose_action()
 request_approval()
-submit_outcome_evidence()
 ```
 
-The interface fixes the evidence, tools, authority, redaction, and budget so
-agent comparisons remain paired. `request_approval()` is simulated inside an
-evaluation sandbox. An agent may submit outcome evidence, but it may not define
-or validate the result of its own recommendation; an independent evaluator or
-authorised human owns Outcome acceptance.
+[`agent_runtime_experiment_v1.schema.json`](agent_runtime_experiment_v1.schema.json)
+fixes the evidence, memory, tools, authority, redaction, and budget so local
+host comparisons remain paired. One reference adapter and one separately
+registered local implementation receive identical cutoff-eligible inputs and
+execute the same four-call sequence from distinct source paths.
+`propose_action()` creates only an `EVALUATION_PROPOSAL_ONLY` object, while
+`request_approval()` always returns `SIMULATED_PENDING_HUMAN_REVIEW` with no
+authority and no operational Action. The interface has no network or AWS path.
+
+The versioned
+[`agent_runtime_host_registry_v1.json`](agent_runtime_host_registry_v1.json)
+and its [Schema](agent_runtime_host_registry_v1.schema.json) bind exactly two
+adapter versions to distinct implementation IDs, implementation groups,
+repository-local modules, and normalized source digests. Validation rejects
+path escape, digest drift, imports, and any call outside the four pure builtins
+used by the frozen implementations. The registry also denies network authority,
+operational writes, and dynamic dependency installation.
+This proves inspectable local implementation separation; it does not
+authenticate an external host or identify a model.
+
+The v1 parity report evaluates System Correctness only. Equivalent registered
+outputs prove adapter-envelope mechanics across distinct local implementations,
+not host quality or model parity.
+Capability Attribution, Decision Quality, and Business Outcome Effect remain
+`NOT_EVALUATED`. `get_shipment`, `get_carrier_performance`, and
+`submit_outcome_evidence` remain future interface candidates and are not
+allowed by v1.
+
+The adapter now builds a content-addressed input freeze under
+[`agent_runtime_input_bundle_v1.schema.json`](agent_runtime_input_bundle_v1.schema.json).
+Its canonical payload contains the complete cutoff-eligible synthetic evidence
+and Decision Memory records plus the exact tools, budgets, capabilities,
+authority, and redaction envelope. Records are sorted by stable ID before
+SHA-256 calculation, so source-array order does not create false drift. The
+source-manifest digest remains separate from the host-shared bundle digest.
+Both hosts bind their trace to that same bundle digest, and an independent
+verifier rejects structural, authority, post-cutoff, ordering, or payload-
+digest drift.
+
+Build the standalone freeze with:
+
+```bash
+python ops/build_agent_runtime_input_bundle.py \
+  tests/fixtures/evaluation/agent_runtime_parity_v1.json
+```
+
+Each host execution now also emits a content-addressed submission governed by
+[`agent_runtime_host_trace_v1.schema.json`](agent_runtime_host_trace_v1.schema.json).
+The trace binds the host identity, enabled capabilities, ordered tool calls,
+result IDs, proposal, simulated approval result, and empty mutation list to the
+input-bundle digest. The offline replay verifier reconstructs the expected
+visible IDs and proposal from the bundle, then rejects order, mode, budget,
+result-set, approval, mutation, or digest drift.
+
+This is an integrity and replay contract, not host authentication. A safe new
+adapter identity may submit a structurally valid trace, but v1 does not prove
+who operated it, whether it used a particular model, or whether its output is
+better. Verify a saved submission with:
+
+```bash
+python ops/verify_agent_runtime_host_trace.py \
+  artifacts/agent-runtime-input-bundle-v1.json \
+  artifacts/agent-runtime-host-trace-v1.json
+```
+
+Run the local parity fixture with:
+
+```bash
+python ops/run_governed_agent_runtime.py \
+  tests/fixtures/evaluation/agent_runtime_parity_v1.json
+```
 
 ## v0.1 A303 experiment
 
@@ -222,19 +293,66 @@ python ops/evaluate_decision_capabilities.py \
   tests/fixtures/evaluation/a303_high_risk_route_v1.json
 ```
 
+## External Evidence ablation
+
+The v2 contract varies `EXTERNAL_EVIDENCE` without changing or extending a
+business rule. Both variants receive the same controlled synthetic source
+snapshot and cutoff. The baseline cannot use `EXTERNAL_EVENT` records in its
+decision context; the challenger can use only those records that were
+available by the cutoff. Operational signals remain visible to both variants,
+and post-cutoff evidence remains invisible to both.
+
+The frozen `external-evidence-review.v1` procedure produces evaluation-only
+proposals so the harness can test whether this single capability changes a
+decision. It is not an operational rule, an A303 successor, a quality result,
+or an Outcome claim. The report therefore supports only local harness
+mechanics and External Evidence capability attribution. Decision Quality and
+Business Outcome Effect remain `NOT_EVALUATED`.
+
+Run the controlled fixture locally with:
+
+```bash
+python ops/evaluate_external_evidence_capability.py \
+  tests/fixtures/evaluation/external_evidence_ablation_v1.json
+```
+
+## Decision Memory ablation
+
+The v3 contract varies `DECISION_MEMORY` without reading an operational
+Decision, Action, audit, Outcome, or Learning store. Both variants receive the
+same controlled synthetic operational evidence, state, memory source snapshot,
+and cutoff. The baseline cannot use memory records in its decision context;
+the challenger can use only reviewed synthetic records that were available by
+the cutoff. Post-cutoff evidence and memory remain invisible to both.
+
+The frozen `decision-memory-review.v1` procedure matches only the controlled
+context key and produces evaluation-only proposals. Every memory explicitly
+uses `outcome_evidence_class=NOT_EVALUATED`; a prior decision therefore cannot
+be treated as an Outcome, a learned policy, or evidence that a new decision is
+better. The report supports only local harness mechanics and Decision Memory
+capability attribution.
+
+Run the controlled fixture locally with:
+
+```bash
+python ops/evaluate_decision_memory_capability.py \
+  tests/fixtures/evaluation/decision_memory_ablation_v1.json
+```
+
 ## Next increments
 
-1. Keep A303.v1 retired and preserve its evidence. Continue evaluation-platform
-   development with a capability-neutral External Evidence or Decision Memory
-   ablation; any fundamentally new rule remains a separate human decision and
-   would need a new frozen holdout.
+1. Keep A303.v1 retired and preserve its evidence. Accept no real-host
+   comparison until its submitted adapter package passes the frozen registry,
+   bundle, trace, redaction, and budget contracts.
 2. If the study owner requires a resolved Decision Quality result for the one
    2:2 package, add
    a separate adjudication record without changing original reviews; otherwise
    retain the package as inconclusive.
-3. Add External Evidence and Decision Memory ablations.
-4. Add a governed Agent Runtime adapter and compare hosts using identical
-   tools, evidence, budgets, and authority.
+3. Add an offline adapter conformance package format so a separately supplied
+   implementation can be inspected and replayed without granting network,
+   package-install, AWS, approval, or Action authority.
+4. Compare real host adapters only after their registry source digest, input
+   bundle, tool trace, redaction, and budget digests pass the v1 contracts.
 5. Only after a future rule passes its synthetic gate, compare eligible
    independently governed Outcome evidence with its frozen simulator using the
    calibration policy.

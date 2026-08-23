@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import sys
@@ -63,6 +64,18 @@ def _result(
 def load_contract(root: Path) -> dict[str, Any]:
     path = root / "docs/project_drift_contract.json"
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_repository_module(root: Path, relative_path: str) -> Any:
+    path = root / relative_path
+    module_name = f"glap_drift_{path.stem}_{abs(hash(path.resolve()))}"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {relative_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def check_contract(root: Path, contract: dict[str, Any]) -> list[CheckResult]:
@@ -993,6 +1006,271 @@ def check_a303_v1_retirement_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_capability_neutral_evaluation_boundary(root: Path) -> list[CheckResult]:
+    """Execute the two capability ablations and enforce their claim boundaries."""
+
+    definitions = (
+        {
+            "check_id": "external_evidence_ablation_boundary",
+            "runner": "ops/evaluate_external_evidence_capability.py",
+            "fixture": "tests/fixtures/evaluation/external_evidence_ablation_v1.json",
+            "schema": "docs/evaluation_experiment_v2.schema.json",
+            "capability": "EXTERNAL_EVIDENCE",
+            "attribution": "ATTRIBUTED_TO_EXTERNAL_EVIDENCE",
+            "required_exclusions": {
+                "NEW_BUSINESS_RULE",
+                "DECISION_QUALITY_IMPROVEMENT",
+                "BUSINESS_OUTCOME_IMPROVEMENT",
+                "DEPLOYED_RUNTIME_VERIFICATION",
+                "PRODUCTION_READINESS",
+            },
+        },
+        {
+            "check_id": "decision_memory_ablation_boundary",
+            "runner": "ops/evaluate_decision_memory_capability.py",
+            "fixture": "tests/fixtures/evaluation/decision_memory_ablation_v1.json",
+            "schema": "docs/evaluation_experiment_v3.schema.json",
+            "capability": "DECISION_MEMORY",
+            "attribution": "ATTRIBUTED_TO_DECISION_MEMORY",
+            "required_exclusions": {
+                "NEW_BUSINESS_RULE",
+                "AUTONOMOUS_LEARNING",
+                "DECISION_QUALITY_IMPROVEMENT",
+                "BUSINESS_OUTCOME_IMPROVEMENT",
+                "DEPLOYED_RUNTIME_VERIFICATION",
+                "PRODUCTION_READINESS",
+            },
+        },
+    )
+    expected_boundary = {
+        "mode": "LOCAL_READ_ONLY",
+        "network_access_allowed": False,
+        "operational_writes_allowed": False,
+        "production_effect": False,
+    }
+    results: list[CheckResult] = []
+    for definition in definitions:
+        evidence = (
+            definition["runner"],
+            definition["fixture"],
+            definition["schema"],
+            "docs/evaluation_architecture.md",
+            "docs/temporal_truthfulness.md",
+        )
+        try:
+            if not all((root / path).is_file() for path in evidence):
+                raise FileNotFoundError("capability-neutral evaluation evidence is incomplete")
+            module = _load_repository_module(root, definition["runner"])
+            manifest = json.loads((root / definition["fixture"]).read_text(encoding="utf-8"))
+            report = module.run_experiment(manifest)
+            layers = report["evaluation_layers"]
+            bounded = (
+                report["execution_boundary"] == expected_boundary
+                and report["comparison"]["changed_capability"] == definition["capability"]
+                and report["comparison"]["attribution"] == definition["attribution"]
+                and layers["system_correctness"]["status"] == "PASS"
+                and layers["capability_attribution"]["status"] == "PASS"
+                and layers["decision_quality"]["status"] == "NOT_EVALUATED"
+                and layers["business_outcome_effect"]["status"] == "NOT_EVALUATED"
+                and layers["business_outcome_effect"]["outcome_evidence_class"] == "NOT_EVALUATED"
+                and report["operational_mutations"] == []
+                and definition["required_exclusions"]
+                <= set(report["claim_boundary"]["not_supported"])
+                and "A303" not in json.dumps(report, sort_keys=True)
+            )
+        except (FileNotFoundError, KeyError, TypeError, ValueError, RuntimeError) as error:
+            bounded = False
+            failure = f"The executable {definition['capability']} boundary drifted: {error}."
+        else:
+            failure = (
+                f"The executable {definition['capability']} boundary permits an unsupported "
+                "claim, mutation, temporal leak, or execution mode."
+            )
+        results.append(
+            _result(
+                definition["check_id"],
+                "evaluation",
+                bounded,
+                f"{definition['capability']} remains a local read-only capability attribution with higher evaluation layers explicitly unevaluated.",
+                failure,
+                evidence,
+            )
+        )
+    return results
+
+
+def check_agent_runtime_boundary(root: Path) -> list[CheckResult]:
+    """Execute Agent Runtime v1 and verify parity, bundle, and trace boundaries."""
+
+    runner_path = "ops/run_governed_agent_runtime.py"
+    fixture_path = "tests/fixtures/evaluation/agent_runtime_parity_v1.json"
+    shared_evidence = (
+        runner_path,
+        fixture_path,
+        "docs/agent_runtime_experiment_v1.schema.json",
+        "docs/agent_runtime_host_registry_v1.json",
+        "docs/agent_runtime_host_registry_v1.schema.json",
+        "docs/agent_runtime_input_bundle_v1.schema.json",
+        "docs/agent_runtime_host_trace_v1.schema.json",
+        "ops/agent_runtime_adapters/reference_adapter_v1.py",
+        "ops/agent_runtime_adapters/independent_adapter_v1.py",
+        "docs/evaluation_architecture.md",
+        "docs/architecture_current.md",
+    )
+    registry_ok = runtime_ok = bundle_ok = trace_ok = False
+    failure = "The Agent Runtime executable contract or its declared evidence is invalid."
+    try:
+        if not all((root / path).is_file() for path in shared_evidence):
+            raise FileNotFoundError("Agent Runtime evidence is incomplete")
+        module = _load_repository_module(root, runner_path)
+        manifest = json.loads((root / fixture_path).read_text(encoding="utf-8"))
+        report = module.run_experiment(manifest)
+        bundle = report["input_bundle"]
+        traces = report["host_traces"]
+        module.verify_input_bundle(bundle, expected_sha256=bundle["bundle_sha256"])
+        for trace in traces:
+            module.verify_host_trace(bundle, trace, expected_trace_sha256=trace["trace_sha256"])
+
+        expected_boundary = {
+            "mode": "LOCAL_READ_ONLY",
+            "network_access_allowed": False,
+            "operational_writes_allowed": False,
+            "production_effect": False,
+        }
+        layers = report["evaluation_layers"]
+        hosts = report["hosts"]
+        architecture = (root / "docs/architecture_current.md").read_text(encoding="utf-8")
+        evaluation = (root / "docs/evaluation_architecture.md").read_text(encoding="utf-8")
+        normalized_architecture = " ".join(architecture.split())
+        normalized_evaluation = " ".join(evaluation.split())
+        precise_implementation_maturity = (
+            "one deterministic reference adapter and one independently implemented "
+            "registered local adapter"
+            in normalized_architecture
+            and "One reference adapter and one separately registered local "
+            "implementation receive identical cutoff-eligible inputs"
+            in normalized_evaluation
+        )
+        registrations = report["adapter_registry"]["registrations"]
+        registry_ok = (
+            report["adapter_registry"]["schema_version"]
+            == "agent-runtime-host-registry.v1"
+            and report["host_parity"]["registry_source_integrity"] is True
+            and report["host_parity"]["distinct_implementation_paths"] is True
+            and len({item["implementation_id"] for item in registrations}) == 2
+            and len({item["implementation_group"] for item in registrations}) == 2
+            and len({item["module_path"] for item in registrations}) == 2
+            and len({item["source_sha256"] for item in registrations}) == 2
+            and {
+                "HOST_AUTHENTICATION",
+                "MODEL_IDENTITY",
+                "OPERATIONAL_APPROVAL",
+                "ACTION_CREATION",
+                "PRODUCTION_READINESS",
+            }
+            <= set(report["adapter_registry"]["claim_boundary"]["not_supported"])
+        )
+        runtime_ok = (
+            report["execution_boundary"] == expected_boundary
+            and len(hosts) == 2
+            and len({item["host_id"] for item in hosts}) == 2
+            and report["host_parity"]["status"] == "PASS"
+            and layers["system_correctness"]["status"] == "PASS"
+            and all(
+                layers[name]["status"] == "NOT_EVALUATED"
+                for name in ("capability_attribution", "decision_quality", "business_outcome_effect")
+            )
+            and report["operational_mutations"] == []
+            and all(item["operational_mutations"] == [] for item in hosts)
+            and all(
+                item["approval_result"]
+                == {
+                    "status": "SIMULATED_PENDING_HUMAN_REVIEW",
+                    "authority_granted": False,
+                    "operational_action_created": False,
+                }
+                for item in hosts
+            )
+            and precise_implementation_maturity
+            and registry_ok
+        )
+        cutoff_inputs = bundle["payload"]["cutoff_inputs"]
+        included_ids = {
+            item.get("evidence_id", item.get("memory_id"))
+            for group in cutoff_inputs.values()
+            for item in group
+        }
+        excluded_ids = set(report["input_window"]["post_cutoff_evidence_ids"]) | set(
+            report["input_window"]["post_cutoff_memory_ids"]
+        )
+        bundle_ok = (
+            report["host_parity"]["identical_inputs"] is True
+            and len({item["input_bundle_sha256"] for item in hosts}) == 1
+            and hosts[0]["input_bundle_sha256"] == bundle["bundle_sha256"]
+            and not included_ids.intersection(excluded_ids)
+            and bundle["payload"]["runtime_envelope"]["authority_profile"]
+            == "EVALUATION_NO_MUTATION"
+        )
+        trace_ok = (
+            len(traces) == 2
+            and len({item["trace_sha256"] for item in traces}) == 2
+            and all(
+                item["payload"]["input_bundle_sha256"] == bundle["bundle_sha256"]
+                and item["payload"]["host"]["source_sha256"]
+                in {registration["source_sha256"] for registration in registrations}
+                and item["payload"]["approval_result"]["authority_granted"] is False
+                and item["payload"]["approval_result"]["operational_action_created"] is False
+                and item["payload"]["operational_mutations"] == []
+                for item in traces
+            )
+            and {
+                "HOST_QUALITY_SUPERIORITY",
+                "MODEL_COMPARISON",
+                "OPERATIONAL_APPROVAL",
+                "ACTION_CREATION",
+                "PRODUCTION_READINESS",
+            }
+            <= set(report["claim_boundary"]["not_supported"])
+        )
+    except Exception as error:
+        failure = f"The Agent Runtime executable boundary drifted: {error}."
+
+    return [
+        _result(
+            "agent_runtime_host_registry_boundary",
+            "agent_runtime",
+            registry_ok,
+            "The local registry binds two distinct import-free implementation paths and source digests without expanding authority or identity claims.",
+            failure,
+            shared_evidence,
+        ),
+        _result(
+            "agent_runtime_parity_boundary",
+            "agent_runtime",
+            runtime_ok,
+            "A reference adapter and a separately registered local implementation remain paired with no operational authority.",
+            failure,
+            shared_evidence,
+        ),
+        _result(
+            "agent_runtime_input_bundle_boundary",
+            "agent_runtime",
+            bundle_ok,
+            "The canonical content-addressed bundle is shared across hosts and excludes post-cutoff inputs and operational authority.",
+            failure,
+            shared_evidence,
+        ),
+        _result(
+            "agent_runtime_host_trace_boundary",
+            "agent_runtime",
+            trace_ok,
+            "Both host traces replay against the shared bundle and grant no identity, quality, approval, action, or production claim.",
+            failure,
+            shared_evidence,
+        ),
+    ]
+
+
 def run_audit(root: Path) -> dict[str, Any]:
     contract = load_contract(root)
     checks: list[CheckResult] = []
@@ -1011,6 +1289,8 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_a303_outcome_calibration_boundary(root))
     checks.extend(check_a303_v2_guardrail_boundary(root))
     checks.extend(check_a303_v1_retirement_boundary(root))
+    checks.extend(check_capability_neutral_evaluation_boundary(root))
+    checks.extend(check_agent_runtime_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     sydney_date = sydney_business_date().isoformat()

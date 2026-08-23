@@ -1,0 +1,48 @@
+{
+  "schema_version": "agent-runtime-host-registry.v1",
+  "interface_version": "agent-runtime.v1",
+  "execution_boundary": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "dynamic_dependency_install_allowed": false
+  },
+  "registrations": [
+    {
+      "adapter_version": "deterministic-reference-adapter-a.v1",
+      "implementation_id": "reference-python-v1",
+      "implementation_group": "reference-implementation-v1",
+      "module_path": "ops/agent_runtime_adapters/reference_adapter_v1.py",
+      "entrypoint": "run_adapter",
+      "source_sha256": "3f8539be5bcba5ae3721583885638684408df1de1a5a785d42a82515103799ea",
+      "enabled_capabilities": ["EXTERNAL_EVIDENCE", "DECISION_MEMORY"],
+      "execution_boundary": "EVALUATION_NO_MUTATION"
+    },
+    {
+      "adapter_version": "independent-registered-adapter.v1",
+      "implementation_id": "independent-python-v1",
+      "implementation_group": "independent-implementation-v1",
+      "module_path": "ops/agent_runtime_adapters/independent_adapter_v1.py",
+      "entrypoint": "run_adapter",
+      "source_sha256": "4d7154caf6fdd65782b44f24de3838811a2a12e46c6922083f111eaf23b002fc",
+      "enabled_capabilities": ["EXTERNAL_EVIDENCE", "DECISION_MEMORY"],
+      "execution_boundary": "EVALUATION_NO_MUTATION"
+    }
+  ],
+  "claim_boundary": {
+    "supported": [
+      "REGISTERED_SOURCE_INTEGRITY",
+      "DISTINCT_LOCAL_IMPLEMENTATION_PATHS",
+      "FROZEN_BUNDLE_REPLAY_PARITY"
+    ],
+    "not_supported": [
+      "HOST_AUTHENTICATION",
+      "MODEL_IDENTITY",
+      "HOST_QUALITY_SUPERIORITY",
+      "OPERATIONAL_APPROVAL",
+      "ACTION_CREATION",
+      "DEPLOYED_RUNTIME_VERIFICATION",
+      "PRODUCTION_READINESS"
+    ]
+  }
+}

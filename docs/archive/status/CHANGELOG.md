@@ -4,6 +4,27 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-23
+
+- Completed capability-neutral External Evidence v2 and Decision Memory v3
+  ablations. Each paired experiment changes only the named capability, passes
+  System Correctness and Capability Attribution, excludes post-cutoff inputs,
+  and keeps Decision Quality and Business Outcome Effect `NOT_EVALUATED`.
+- Completed governed Agent Runtime v1 with a frozen four-tool no-mutation
+  envelope, content-addressed cutoff input bundle, and bundle-bound host traces.
+  One reference adapter and one independently implemented registered local
+  adapter now execute from distinct source paths under the same bundle.
+- Completed the content-addressed local host registry. It binds distinct
+  implementation IDs, groups, modules, and source digests and rejects path
+  escape, imports, and calls outside four pure builtins, while denying
+  network/write authority and dynamic dependency installation. This proves
+  inspectable local implementation separation, not host authentication or
+  model identity.
+- Expanded the project drift baseline from generic evaluation coverage to six
+  named capabilities and six executable checks. The audit now reruns the
+  ablations, registry, and runtime contracts and fails closed on source drift,
+  operational-write, network, or approval-authority expansion.
+
 ## 2026-08-22
 
 - Recorded the human project owner's option-1 decision to retire A303.v1 from

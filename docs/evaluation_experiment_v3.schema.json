@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/evaluation-experiment.v3.schema.json",
+  "title": "GLAP capability-neutral Decision Memory experiment v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "purpose",
+    "business_timezone",
+    "execution_boundary",
+    "scenario",
+    "fixed_context",
+    "variants",
+    "hypothesis",
+    "evaluation_layers"
+  ],
+  "properties": {
+    "schema_version": {"const": "evaluation-experiment.v3"},
+    "experiment_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "purpose": {"const": "CAPABILITY_ATTRIBUTION"},
+    "business_timezone": {"const": "Australia/Sydney"},
+    "execution_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network_access_allowed", "operational_writes_allowed", "production_effect"],
+      "properties": {
+        "mode": {"const": "LOCAL_READ_ONLY"},
+        "network_access_allowed": {"const": false},
+        "operational_writes_allowed": {"const": false},
+        "production_effect": {"const": false}
+      }
+    },
+    "scenario": {"$ref": "#/$defs/scenario"},
+    "fixed_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_procedure_version", "authority_profile", "random_seed"],
+      "properties": {
+        "decision_procedure_version": {"const": "decision-memory-review.v1"},
+        "authority_profile": {"const": "EVALUATION_NO_MUTATION"},
+        "random_seed": {"type": "integer", "minimum": 0}
+      }
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/variant"}
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changed_capability", "expected_decision_change", "primary_comparison_fields"],
+      "properties": {
+        "changed_capability": {"const": "DECISION_MEMORY"},
+        "expected_decision_change": {"const": true},
+        "primary_comparison_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["recommendation", "priority", "human_review_required"]}
+        }
+      }
+    },
+    "evaluation_layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system_correctness", "capability_attribution", "decision_quality", "business_outcome_effect"],
+      "properties": {
+        "system_correctness": {"const": "EVALUATE"},
+        "capability_attribution": {"const": "EVALUATE"},
+        "decision_quality": {"const": "NOT_EVALUATED"},
+        "business_outcome_effect": {"const": "NOT_EVALUATED"}
+      }
+    }
+  },
+  "$defs": {
+    "timestamp": {"type": "string", "format": "date-time"},
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenario_id", "scenario_mode", "cutoff_at", "evidence_classification", "operational_state", "evidence", "decision_memory"],
+      "properties": {
+        "scenario_id": {"type": "string", "minLength": 1},
+        "scenario_mode": {"const": "CONTROLLED_SYNTHETIC_REPLAY"},
+        "cutoff_at": {"$ref": "#/$defs/timestamp"},
+        "evidence_classification": {"const": "SYNTHETIC_ENGINEERING_ONLY"},
+        "operational_state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["as_of_at", "shipment_scope", "context_key", "state_provenance"],
+          "properties": {
+            "as_of_at": {"$ref": "#/$defs/timestamp"},
+            "shipment_scope": {"type": "string", "minLength": 1},
+            "context_key": {"type": "string", "minLength": 1},
+            "state_provenance": {"const": "CONTROLLED_SYNTHETIC"}
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/evidence"}
+        },
+        "decision_memory": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/memory"}
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "evidence_type", "event_time", "available_at", "revision_version", "provenance", "facts"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "evidence_type": {"const": "OPERATIONAL_SIGNAL"},
+        "event_time": {"$ref": "#/$defs/timestamp"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "revision_version": {"type": "string", "minLength": 1},
+        "provenance": {"const": "CONTROLLED_SYNTHETIC"},
+        "facts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal_type", "severity"],
+          "properties": {
+            "signal_type": {"type": "string", "minLength": 1},
+            "severity": {"enum": ["LOW", "MEDIUM", "HIGH"]}
+          }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memory_id", "decided_at", "available_at", "revision_version", "provenance", "context_key", "prior_recommendation", "review_status", "outcome_evidence_class"],
+      "properties": {
+        "memory_id": {"type": "string", "minLength": 1},
+        "decided_at": {"$ref": "#/$defs/timestamp"},
+        "available_at": {"$ref": "#/$defs/timestamp"},
+        "revision_version": {"type": "string", "minLength": 1},
+        "provenance": {"const": "CONTROLLED_SYNTHETIC"},
+        "context_key": {"type": "string", "minLength": 1},
+        "prior_recommendation": {"enum": ["MONITOR_EVIDENCE", "REQUEST_BOUNDED_REVIEW"]},
+        "review_status": {"const": "SYNTHETIC_REVIEWED"},
+        "outcome_evidence_class": {"const": "NOT_EVALUATED"}
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant_id", "role", "capabilities"],
+      "properties": {
+        "variant_id": {"type": "string", "minLength": 1},
+        "role": {"enum": ["BASELINE", "CHALLENGER"]},
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["DECISION_MEMORY"],
+          "properties": {"DECISION_MEMORY": {"type": "boolean"}}
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -17,6 +18,13 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class ProjectDriftAuditTests(unittest.TestCase):
+    @staticmethod
+    def _copy_paths(root: Path, paths: tuple[str, ...]) -> None:
+        for relative_path in paths:
+            target = root / relative_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative_path, target)
+
     def test_current_architecture_does_not_claim_external_action_execution(self):
         current = AUDIT.check_governed_action_outcome_boundary(ROOT)[0]
         self.assertEqual(current.status, "PASS")
@@ -42,6 +50,95 @@ class ProjectDriftAuditTests(unittest.TestCase):
         report = AUDIT.run_audit(ROOT)
         self.assertEqual(report["overall_status"], "PASS")
         self.assertEqual(report["summary"]["drift"], 0)
+
+    def test_new_evaluation_and_runtime_capabilities_are_declared(self):
+        contract = AUDIT.load_contract(ROOT)
+        capability_ids = {item["id"] for item in contract["capabilities"]}
+        self.assertTrue(
+            {
+                "external_evidence_ablation",
+                "decision_memory_ablation",
+                "governed_agent_runtime_parity",
+                "agent_runtime_host_registry",
+                "agent_runtime_input_bundle",
+                "agent_runtime_host_trace",
+            }
+            <= capability_ids
+        )
+
+    def test_external_evidence_operational_authority_drift_is_detected(self):
+        paths = (
+            "ops/evaluate_external_evidence_capability.py",
+            "tests/fixtures/evaluation/external_evidence_ablation_v1.json",
+            "docs/evaluation_experiment_v2.schema.json",
+            "docs/evaluation_architecture.md",
+            "docs/temporal_truthfulness.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            manifest_path = root / paths[1]
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["execution_boundary"]["operational_writes_allowed"] = True
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            result = AUDIT.check_capability_neutral_evaluation_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_agent_runtime_approval_authority_drift_is_detected(self):
+        paths = (
+            "ops/run_governed_agent_runtime.py",
+            "tests/fixtures/evaluation/agent_runtime_parity_v1.json",
+            "docs/agent_runtime_experiment_v1.schema.json",
+            "docs/agent_runtime_host_registry_v1.json",
+            "docs/agent_runtime_host_registry_v1.schema.json",
+            "docs/agent_runtime_input_bundle_v1.schema.json",
+            "docs/agent_runtime_host_trace_v1.schema.json",
+            "ops/agent_runtime_adapters/reference_adapter_v1.py",
+            "ops/agent_runtime_adapters/independent_adapter_v1.py",
+            "docs/evaluation_architecture.md",
+            "docs/architecture_current.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            manifest_path = root / paths[1]
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["runtime_contract"]["tools"]["request_approval"]["mode"] = (
+                "OPERATIONAL_APPROVAL"
+            )
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            results = AUDIT.check_agent_runtime_boundary(root)
+        self.assertTrue(all(item.status == "DRIFT" for item in results))
+
+    def test_agent_runtime_registry_source_drift_is_detected(self):
+        paths = (
+            "ops/run_governed_agent_runtime.py",
+            "tests/fixtures/evaluation/agent_runtime_parity_v1.json",
+            "docs/agent_runtime_experiment_v1.schema.json",
+            "docs/agent_runtime_host_registry_v1.json",
+            "docs/agent_runtime_host_registry_v1.schema.json",
+            "docs/agent_runtime_input_bundle_v1.schema.json",
+            "docs/agent_runtime_host_trace_v1.schema.json",
+            "ops/agent_runtime_adapters/reference_adapter_v1.py",
+            "ops/agent_runtime_adapters/independent_adapter_v1.py",
+            "docs/evaluation_architecture.md",
+            "docs/architecture_current.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            adapter = root / "ops/agent_runtime_adapters/independent_adapter_v1.py"
+            adapter.write_text(
+                adapter.read_text(encoding="utf-8") + "\n# unregistered drift\n",
+                encoding="utf-8",
+            )
+            results = AUDIT.check_agent_runtime_boundary(root)
+        registry = next(
+            item
+            for item in results
+            if item.check_id == "agent_runtime_host_registry_boundary"
+        )
+        self.assertEqual(registry.status, "DRIFT")
 
     def test_action_operation_change_is_detected(self):
         contract = AUDIT.load_contract(ROOT)

@@ -1,0 +1,50 @@
+{
+  "schema_version": "agent-runtime-experiment.v1",
+  "experiment_id": "agent-runtime-parity-v1",
+  "purpose": "HOST_PARITY_VALIDATION",
+  "business_timezone": "Australia/Sydney",
+  "execution_boundary": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "scenario": {
+    "scenario_id": "controlled-agent-runtime-2025-03-07",
+    "scenario_mode": "CONTROLLED_SYNTHETIC_REPLAY",
+    "cutoff_at": "2025-03-07T09:00:00+11:00",
+    "evidence_classification": "SYNTHETIC_ENGINEERING_ONLY",
+    "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01",
+    "evidence": [
+      {"evidence_id": "operational-watch-v1", "evidence_type": "OPERATIONAL_SIGNAL", "available_at": "2025-03-07T07:20:00+11:00", "provenance": "CONTROLLED_SYNTHETIC", "severity": "MEDIUM"},
+      {"evidence_id": "external-disruption-v1", "evidence_type": "EXTERNAL_EVENT", "available_at": "2025-03-07T07:40:00+11:00", "provenance": "CONTROLLED_SYNTHETIC", "severity": "HIGH"},
+      {"evidence_id": "post-cutoff-recovery-v1", "evidence_type": "EXTERNAL_EVENT", "available_at": "2025-03-07T10:15:00+11:00", "provenance": "CONTROLLED_SYNTHETIC", "severity": "LOW"}
+    ],
+    "decision_memory": [
+      {"memory_id": "matching-reviewed-memory-v1", "available_at": "2025-02-07T08:05:00+11:00", "provenance": "CONTROLLED_SYNTHETIC", "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01", "prior_recommendation": "REQUEST_BOUNDED_REVIEW", "review_status": "SYNTHETIC_REVIEWED", "outcome_evidence_class": "NOT_EVALUATED"},
+      {"memory_id": "post-cutoff-memory-v1", "available_at": "2025-03-07T09:15:00+11:00", "provenance": "CONTROLLED_SYNTHETIC", "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01", "prior_recommendation": "REQUEST_BOUNDED_REVIEW", "review_status": "SYNTHETIC_REVIEWED", "outcome_evidence_class": "NOT_EVALUATED"}
+    ]
+  },
+  "runtime_contract": {
+    "interface_version": "agent-runtime.v1",
+    "authority_profile": "EVALUATION_NO_MUTATION",
+    "tools": {
+      "get_evidence": {"mode": "LOCAL_READ_ONLY", "max_calls": 1},
+      "get_similar_decisions": {"mode": "LOCAL_READ_ONLY", "max_calls": 1},
+      "propose_action": {"mode": "EVALUATION_PROPOSAL_ONLY", "max_calls": 1},
+      "request_approval": {"mode": "SIMULATED_NO_AUTHORITY", "max_calls": 1}
+    },
+    "budgets": {"max_tool_calls": 4, "max_evidence_items": 2, "max_memory_items": 2, "max_proposal_characters": 1024},
+    "redaction": {"entity_identifiers_allowed": false, "credentials_allowed": false, "private_origins_allowed": false}
+  },
+  "hosts": [
+    {"host_id": "reference-host-a", "adapter_version": "deterministic-reference-adapter-a.v1", "enabled_capabilities": ["EXTERNAL_EVIDENCE", "DECISION_MEMORY"]},
+    {"host_id": "registered-host-b", "adapter_version": "independent-registered-adapter.v1", "enabled_capabilities": ["EXTERNAL_EVIDENCE", "DECISION_MEMORY"]}
+  ],
+  "evaluation_layers": {
+    "system_correctness": "EVALUATE",
+    "capability_attribution": "NOT_EVALUATED",
+    "decision_quality": "NOT_EVALUATED",
+    "business_outcome_effect": "NOT_EVALUATED"
+  }
+}

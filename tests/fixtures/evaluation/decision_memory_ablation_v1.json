@@ -1,0 +1,113 @@
+{
+  "schema_version": "evaluation-experiment.v3",
+  "experiment_id": "decision-memory-ablation-v1",
+  "purpose": "CAPABILITY_ATTRIBUTION",
+  "business_timezone": "Australia/Sydney",
+  "execution_boundary": {
+    "mode": "LOCAL_READ_ONLY",
+    "network_access_allowed": false,
+    "operational_writes_allowed": false,
+    "production_effect": false
+  },
+  "scenario": {
+    "scenario_id": "controlled-decision-memory-2025-03-07",
+    "scenario_mode": "CONTROLLED_SYNTHETIC_REPLAY",
+    "cutoff_at": "2025-03-07T09:00:00+11:00",
+    "evidence_classification": "SYNTHETIC_ENGINEERING_ONLY",
+    "operational_state": {
+      "as_of_at": "2025-03-07T09:00:00+11:00",
+      "shipment_scope": "CONTROLLED_COHORT_DECISION_MEMORY_01",
+      "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01",
+      "state_provenance": "CONTROLLED_SYNTHETIC"
+    },
+    "evidence": [
+      {
+        "evidence_id": "current-operational-watch-v1",
+        "evidence_type": "OPERATIONAL_SIGNAL",
+        "event_time": "2025-03-07T07:10:00+11:00",
+        "available_at": "2025-03-07T07:20:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "facts": {
+          "signal_type": "ROUTE_WATCH",
+          "severity": "MEDIUM"
+        }
+      },
+      {
+        "evidence_id": "post-cutoff-operational-update-v1",
+        "evidence_type": "OPERATIONAL_SIGNAL",
+        "event_time": "2025-03-07T09:20:00+11:00",
+        "available_at": "2025-03-07T09:30:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "facts": {
+          "signal_type": "ROUTE_UPDATE",
+          "severity": "LOW"
+        }
+      }
+    ],
+    "decision_memory": [
+      {
+        "memory_id": "matching-reviewed-memory-v1",
+        "decided_at": "2025-02-07T08:00:00+11:00",
+        "available_at": "2025-02-07T08:05:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01",
+        "prior_recommendation": "REQUEST_BOUNDED_REVIEW",
+        "review_status": "SYNTHETIC_REVIEWED",
+        "outcome_evidence_class": "NOT_EVALUATED"
+      },
+      {
+        "memory_id": "nonmatching-reviewed-memory-v1",
+        "decided_at": "2025-02-08T08:00:00+11:00",
+        "available_at": "2025-02-08T08:05:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "context_key": "CONTROLLED_CONTEXT_OTHER_02",
+        "prior_recommendation": "MONITOR_EVIDENCE",
+        "review_status": "SYNTHETIC_REVIEWED",
+        "outcome_evidence_class": "NOT_EVALUATED"
+      },
+      {
+        "memory_id": "post-cutoff-matching-memory-v1",
+        "decided_at": "2025-03-07T09:10:00+11:00",
+        "available_at": "2025-03-07T09:15:00+11:00",
+        "revision_version": "1",
+        "provenance": "CONTROLLED_SYNTHETIC",
+        "context_key": "CONTROLLED_CONTEXT_ROUTE_WATCH_01",
+        "prior_recommendation": "REQUEST_BOUNDED_REVIEW",
+        "review_status": "SYNTHETIC_REVIEWED",
+        "outcome_evidence_class": "NOT_EVALUATED"
+      }
+    ]
+  },
+  "fixed_context": {
+    "decision_procedure_version": "decision-memory-review.v1",
+    "authority_profile": "EVALUATION_NO_MUTATION",
+    "random_seed": 402
+  },
+  "variants": [
+    {
+      "variant_id": "baseline-decision-memory-off",
+      "role": "BASELINE",
+      "capabilities": {"DECISION_MEMORY": false}
+    },
+    {
+      "variant_id": "challenger-decision-memory-on",
+      "role": "CHALLENGER",
+      "capabilities": {"DECISION_MEMORY": true}
+    }
+  ],
+  "hypothesis": {
+    "changed_capability": "DECISION_MEMORY",
+    "expected_decision_change": true,
+    "primary_comparison_fields": ["recommendation", "priority", "human_review_required"]
+  },
+  "evaluation_layers": {
+    "system_correctness": "EVALUATE",
+    "capability_attribution": "EVALUATE",
+    "decision_quality": "NOT_EVALUATED",
+    "business_outcome_effect": "NOT_EVALUATED"
+  }
+}

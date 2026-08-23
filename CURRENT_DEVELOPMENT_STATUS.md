@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-22`
+**Sydney as-of date:** `2026-08-23`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -20,7 +20,10 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Action assignment canary | `PARTIAL` | Operator `EDIT` recorded; response fix release, stable retry, and separate approver decision remain |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
-| Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation only |
+| Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
+| Governed Agent Runtime parity | `IMPLEMENTED_VERIFIED` | One reference adapter and one independently implemented registered local adapter run from distinct source paths under the same content-addressed cutoff bundle and no-mutation envelope; this proves local implementation and interface mechanics only |
+| Agent Runtime host registry | `IMPLEMENTED_VERIFIED` | Exactly two import-free local adapters are bound to distinct implementation IDs, groups, modules, and source digests; no host authentication, model identity, network, package-install, file-write, approval, or Action claim |
+| Agent Runtime input bundle and host trace | `IMPLEMENTED_VERIFIED` | Canonical SHA-256 bundle and bundle-bound traces support offline integrity verification; they establish neither host/model identity nor approval, Action, quality, outcome, deployment, or production readiness |
 | Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; four compatible reviews per cutoff produce 15 results favouring A303-on, 14 expected control ties, and one 2:2 split |
 | Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Two formal Sites and two mainland Lambda submissions passed the governed cross-entry checks, creating 120 compatible locked review records; superseded drafts remain isolated and ineligible |
 | A303 synthetic Outcome robustness | `IMPLEMENTED_VERIFIED_NOT_ROBUST` | Pre-specified local evaluation covers all 16 attributed changes and 14 controls independently of human preference; controls pass exact-zero, but only 39.81% of 3,888 attributed grid results are non-negative and the frozen gate is `NOT_ROBUST` |
@@ -88,17 +91,40 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — A303.v1 retirement closeout
+## Active slice — capability-neutral evaluation and governed Agent Runtime
 
-**Status:** `HUMAN_DECISION_RECORDED_RETIRED_FROM_PROGRESSION`
+**Status:** `IMPLEMENTED_VERIFIED_LOCAL_READ_ONLY`
 
 **Goal**
 
-Record and enforce the human selection of option 1: stop A303.v1 development
-progression without deleting its review, exploratory, robustness, or guardrail
-evidence and without implying any deployed runtime or operational change.
+Extend the frozen Evaluation Architecture beyond A303 by isolating External
+Evidence and Decision Memory, then prove that both can travel through a bounded,
+content-addressed Agent Runtime interface without gaining network, approval,
+Action-mutation, AWS, deployment, or production authority.
 
-**Released story v2 experience**
+**Completed current slice**
+
+- External Evidence v2 and Decision Memory v3 paired ablations pass System
+  Correctness and Capability Attribution under controlled synthetic inputs;
+  Decision Quality and Business Outcome Effect remain `NOT_EVALUATED`.
+- Agent Runtime v1 freezes tools, budgets, redaction, cutoff inputs, and
+  no-mutation authority. One reference adapter and one independently
+  implemented registered local adapter produce equivalent proposals from
+  distinct source paths.
+- The v1 host registry binds both implementations to distinct IDs, groups,
+  modules, and normalized source digests. It rejects path escape, source drift,
+  imports, and any call outside four pure builtins, while denying network or
+  write authority and dynamic dependency installation.
+- A canonical content-addressed input bundle excludes post-cutoff evidence and
+  memory. Two content-addressed host traces replay against the same bundle and
+  explicitly grant no approval or operational Action.
+- The project drift contract now names all six capabilities. Six executable
+  checks rerun their contracts, and mutation tests prove that source drift,
+  operational-write, network, or approval-authority expansion fails closed.
+- No AWS call, network access, operational mutation, deployment, schedule,
+  policy activation, model promotion, or Pages publication occurred.
+
+**Retained current-week context — released story v2 experience**
 
 - `/pilot/human-evaluation` now renders the authenticated formal client;
 - the formal flow covers all ten cases and 30 point-in-time packages;
@@ -466,6 +492,23 @@ done.
 
 ## Recently completed — current seven-day window
 
+- Capability-neutral External Evidence v2 and Decision Memory v3 ablations now
+  hold every non-target input constant and show only capability attribution.
+  Both remain local, controlled-synthetic, read-only, and explicitly do not
+  establish a new business rule, Decision Quality, Outcome effect, learning,
+  deployment, or production readiness.
+- Governed Agent Runtime v1 now supplies those capabilities through a fixed
+  four-tool interface, canonical cutoff bundle, bounded budgets and redaction,
+  simulated approval, and bundle-bound host traces. A reference adapter and a
+  separately registered implementation now run through distinct inspected
+  source paths while remaining local and import-free. Parity still does not
+  establish host authentication, model identity, or Decision Quality.
+- The content-addressed host registry freezes distinct implementation IDs,
+  groups, modules, source digests, a four-builtin call allowlist, and the
+  no-network/no-write boundary.
+- Project drift coverage now declares those six capabilities and executes
+  their frozen manifests on every audit. Authority-expansion mutation tests
+  prevent a write-enabled ablation or operational approval mode from passing.
 - Evaluation Architecture separated System Correctness, Capability
   Attribution, Decision Quality, and Business Outcome Effect.
 - The former 15-package Decision-to-Outcome bridge is preserved and explicitly
@@ -560,6 +603,16 @@ done.
 
 ### Codex-run validation
 
+- The 2026-08-23 capability-neutral evaluation, registered Agent Runtime, and
+  drift-reconciliation slice passes Python compilation, all 411 repository
+  tests, 16 focused project-drift tests, and the expanded 27/27 project drift
+  audit. The host registry digest is
+  `0f11befc5aacde015bf4fb6ec195c40da757954461af876928fdae49c95aa942`.
+  The canonical input bundle digest is
+  `c0f617f543cdd69750cb3276916a1332af020e2eb58b9d912fff8b20b63425d7`;
+  both host traces verify against it. This evidence is local and synthetic;
+  no network, AWS, operational mutation, deployment, schedule, policy/model
+  promotion, or Pages publication occurred.
 - The final lifecycle release chain is source- and runtime-verified: PR #75
   merged as `1f602c5d`, post-merge CI run `32389801911` passed, plan runs
   `32390302719` and `32390677045` passed, rollback-recovery run `32390505373`
@@ -750,9 +803,11 @@ done.
    `recover-failed-integration-date` action for only `2026-08-09`, then verify
    the persisted controller status and all 28 lifecycle checks. This is not a
    production, baseline-refresh, schedule, or Pages action.
-2. Continue the Evaluation Architecture with a capability-neutral External
-   Evidence or Decision Memory ablation rather than another A303 threshold
-   variant. This is a recommendation only; no new experiment is yet approved.
+2. Recommended next local feature: define an offline adapter conformance
+   package so a separately supplied implementation can be inspected and
+   replayed through the frozen registry, bundle, and trace contracts without
+   granting network, dynamic package installation, AWS, approval, Action, or
+   production authority. This is recommended, not yet approved or built.
 3. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
    owner separately approves a governed adjudication record; never overwrite
    the four original submissions.

@@ -22,10 +22,31 @@ reproducible, and `SIMULATED`, not a measurement of real business performance.
 ## Cross-cutting evaluation boundary
 
 The repository now includes a local, deterministic, read-only Evaluation
-Harness v0.1. It wraps the decision flow for paired capability-ablation
-experiments; it is not another operational pipeline stage and has no AWS,
-network, Action-mutation, approval, Outcome-write, production, or scheduling
-authority.
+Harness. It wraps the decision flow for paired capability-ablation and Agent
+Runtime parity experiments; it is not another operational pipeline stage and
+has no AWS, network, Action-mutation, approval, Outcome-write, production, or
+scheduling authority.
+
+Capability-neutral External Evidence and Decision Memory contracts now isolate
+those inputs without extending A303. A governed local Agent Runtime v1 envelope
+then supplies both capabilities to one deterministic reference adapter and one
+independently implemented registered local adapter under identical tools,
+cutoff-eligible inputs, budgets, redaction, and no-mutation authority. A frozen
+registry binds each adapter to a distinct implementation ID, group, module, and
+source digest, rejects imports and path escape, and permits calls only to four
+pure builtins used by the frozen implementations. Its `propose_action()` output
+is evaluation-only and
+`request_approval()` is simulated; neither creates an Action or grants human
+authority. Registered-host parity proves distinct local implementation and
+interface mechanics only, not host authentication, model identity, or host
+quality. The full shared input envelope is now content-addressed: a
+canonical SHA-256 bundle freezes cutoff-eligible synthetic evidence and memory,
+tools, budgets, capabilities, authority, and redaction. Both registered traces
+bind to the same digest, while post-cutoff inputs remain outside the bundle.
+Each host trace is separately content-addressed and replay-verified against the
+bundle's expected tool sequence, result IDs, proposal, simulated approval, and
+empty mutation list. This proves local trace integrity, not host identity,
+model provenance, or host quality.
 
 The first controlled synthetic experiment holds the scenario, point-in-time
 evidence, policy version, authority profile, and seed fixed while toggling the

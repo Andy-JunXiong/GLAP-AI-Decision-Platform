@@ -1,7 +1,7 @@
 {
   "schema_version": "project-drift-contract.v1",
   "business_timezone": "Australia/Sydney",
-  "baseline_date": "2026-08-14",
+  "baseline_date": "2026-08-23",
   "canonical_sources": [
     "docs/architecture_current.md",
     "INFRASTRUCTURE.md",
@@ -102,6 +102,87 @@
         "tests/fixtures/evaluation/a303_high_risk_route_v1.json",
         "docs/evaluation_architecture.md",
         "docs/evaluation_experiment_v1.schema.json"
+      ]
+    },
+    {
+      "id": "external_evidence_ablation",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local read-only controlled-synthetic capability attribution only; no new business rule, decision-quality, outcome, deployed-runtime, or production claim",
+      "evidence_files": [
+        "ops/evaluate_external_evidence_capability.py",
+        "tests/test_external_evidence_evaluation.py",
+        "tests/fixtures/evaluation/external_evidence_ablation_v1.json",
+        "docs/evaluation_experiment_v2.schema.json",
+        "docs/evaluation_architecture.md",
+        "docs/temporal_truthfulness.md"
+      ]
+    },
+    {
+      "id": "decision_memory_ablation",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local read-only controlled-synthetic capability attribution only; accepts no Outcome evidence and grants no learning, quality, deployed-runtime, or production claim",
+      "evidence_files": [
+        "ops/evaluate_decision_memory_capability.py",
+        "tests/test_decision_memory_evaluation.py",
+        "tests/fixtures/evaluation/decision_memory_ablation_v1.json",
+        "docs/evaluation_experiment_v3.schema.json",
+        "docs/evaluation_architecture.md",
+        "docs/temporal_truthfulness.md"
+      ]
+    },
+    {
+      "id": "governed_agent_runtime_parity",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "one reference adapter and one separately registered local implementation execute from distinct source paths under an identical no-mutation envelope; source integrity and system correctness only, with no host identity, model-quality, approval, action, deployment, or production claim",
+      "evidence_files": [
+        "ops/run_governed_agent_runtime.py",
+        "ops/agent_runtime_adapters/reference_adapter_v1.py",
+        "ops/agent_runtime_adapters/independent_adapter_v1.py",
+        "tests/test_governed_agent_runtime.py",
+        "tests/fixtures/evaluation/agent_runtime_parity_v1.json",
+        "docs/agent_runtime_experiment_v1.schema.json",
+        "docs/agent_runtime_host_registry_v1.json",
+        "docs/agent_runtime_host_registry_v1.schema.json",
+        "docs/evaluation_architecture.md",
+        "docs/architecture_current.md"
+      ]
+    },
+    {
+      "id": "agent_runtime_host_registry",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local content-addressed registration of exactly two import-free adapter implementations with distinct IDs, groups, modules, and source digests; no dynamic dependency, network, file-write, host-authentication, model-identity, or operational authority claim",
+      "evidence_files": [
+        "docs/agent_runtime_host_registry_v1.json",
+        "docs/agent_runtime_host_registry_v1.schema.json",
+        "ops/run_governed_agent_runtime.py",
+        "ops/agent_runtime_adapters/reference_adapter_v1.py",
+        "ops/agent_runtime_adapters/independent_adapter_v1.py",
+        "tests/test_governed_agent_runtime.py",
+        "docs/evaluation_architecture.md"
+      ]
+    },
+    {
+      "id": "agent_runtime_input_bundle",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "content-addressed canonical cutoff input and runtime envelope for local replay only; post-cutoff inputs and operational authority remain excluded",
+      "evidence_files": [
+        "ops/build_agent_runtime_input_bundle.py",
+        "ops/run_governed_agent_runtime.py",
+        "tests/test_governed_agent_runtime.py",
+        "docs/agent_runtime_input_bundle_v1.schema.json",
+        "docs/evaluation_architecture.md"
+      ]
+    },
+    {
+      "id": "agent_runtime_host_trace",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "content-addressed bundle-bound offline replay and integrity verification only; trace integrity does not establish host identity, model identity, decision quality, approval, action creation, or production readiness",
+      "evidence_files": [
+        "ops/verify_agent_runtime_host_trace.py",
+        "ops/run_governed_agent_runtime.py",
+        "tests/test_governed_agent_runtime.py",
+        "docs/agent_runtime_host_trace_v1.schema.json",
+        "docs/evaluation_architecture.md"
       ]
     },
     {

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/agent-runtime-host-trace.v1.schema.json",
+  "title": "GLAP Agent Runtime host trace v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "trace_sha256", "payload"],
+  "properties": {
+    "schema_version": {"const": "agent-runtime-host-trace.v1"},
+    "trace_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_bundle_sha256", "host", "tool_calls", "proposal", "approval_result", "operational_mutations"],
+      "properties": {
+        "input_bundle_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "host": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host_id", "adapter_version", "implementation_id", "implementation_group", "source_sha256", "enabled_capabilities"],
+          "properties": {
+            "host_id": {"type": "string", "minLength": 1},
+            "adapter_version": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{2,127}$"},
+            "implementation_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+            "implementation_group": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+            "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "enabled_capabilities": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "items": {"enum": ["DECISION_MEMORY", "EXTERNAL_EVIDENCE"]}
+            }
+          }
+        },
+        "tool_calls": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sequence", "tool", "mode", "result_ids"],
+            "properties": {
+              "sequence": {"type": "integer", "minimum": 1, "maximum": 4},
+              "tool": {"enum": ["get_evidence", "get_similar_decisions", "propose_action", "request_approval"]},
+              "mode": {"enum": ["LOCAL_READ_ONLY", "EVALUATION_PROPOSAL_ONLY", "SIMULATED_NO_AUTHORITY"]},
+              "result_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "proposal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "recommendation", "priority", "human_review_required", "rationale"],
+          "properties": {
+            "status": {"const": "EVALUATION_PROPOSAL_ONLY"},
+            "recommendation": {"enum": ["MONITOR_EVIDENCE", "REQUEST_BOUNDED_REVIEW"]},
+            "priority": {"enum": ["MEDIUM", "HIGH"]},
+            "human_review_required": {"type": "boolean"},
+            "rationale": {"type": "string", "minLength": 1, "maxLength": 1024}
+          }
+        },
+        "approval_result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "authority_granted", "operational_action_created"],
+          "properties": {
+            "status": {"const": "SIMULATED_PENDING_HUMAN_REVIEW"},
+            "authority_granted": {"const": false},
+            "operational_action_created": {"const": false}
+          }
+        },
+        "operational_mutations": {"type": "array", "maxItems": 0}
+      }
+    }
+  }
+}
