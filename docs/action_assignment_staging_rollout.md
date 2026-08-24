@@ -1,7 +1,7 @@
 # Action assignment staging rollout
 
-**Status:** canary approved and runtime-verified; Action completion remains a
-separate named-human decision
+**Status:** assignment canary and Evidence-chain refresh interaction
+runtime-verified; Action completion remains a separate named-human decision
 
 This package governs the repository implementation of Action `EDIT`, owner,
 due date, and `EDITED` review state for private staging. The Action mutation
@@ -91,9 +91,22 @@ does not create standing authority for `COMPLETE` or any other mutation.
     the clean frontend tree at commit `adfd2a5`, and every reported verifier
     check passed. No Action mutation was performed, so this verifies the
     deployed bundle and governance controls but not the refresh interaction end
-    to end.
+    to end. On `2026-08-24`, a separately authorized named operator opened an
+    eligible `PROPOSED` Action's Evidence chain, submitted one `EDIT`, and
+    reported that the Board changed to `EDITED` while the already expanded
+    chain automatically displayed the new event. The bounded aggregate-only
+    reconciler then confirmed exactly one matching `EDIT`, one Action, one
+    request ID, one named actor, a valid assignment, one current `EDITED` row,
+    and one matching current assignment. It printed no protected identifiers:
 
-Steps 3-12 are complete. The original operator identity was independently
+    ```powershell
+    .\ops\reconcile_action_evidence_refresh_staging.ps1 `
+      -Profile codex-readonly `
+      -ObservationDate 2026-08-24
+    ```
+
+Steps 3-12 and the later refresh interaction reconciliation are complete. The
+original operator identity was independently
 confirmed as operator-only, and the decision used a different named approver.
 The Action remains `APPROVED`; no `COMPLETE`, Outcome creation, production
 mutation, Pages publication, schedule activation, alias movement, or policy

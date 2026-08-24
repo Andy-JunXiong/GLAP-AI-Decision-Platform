@@ -170,13 +170,33 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "evidence_refresh_frontend_deployed": True,
         "evidence_refresh_frontend_observed_on_sydney_date": "2026-08-23",
         "evidence_refresh_read_only_verifier_passed": True,
-        "evidence_refresh_interaction_canary_executed": False,
+        "evidence_refresh_interaction_canary_executed": True,
+        "evidence_refresh_interaction_canary_observed_on_sydney_date": "2026-08-24",
+        "evidence_refresh_interaction_canary_observation": (
+            "NAMED_HUMAN_UI_OBSERVED_AND_READ_ONLY_BACKEND_RECONCILED"
+        ),
+        "evidence_refresh_interaction_canary_action_status": "EDITED",
+        "evidence_refresh_interaction_canary_auto_refresh_observed": True,
+        "evidence_refresh_interaction_canary_backend_reconciled": True,
+        "evidence_refresh_interaction_canary_reconciled_on_sydney_date": "2026-08-24",
+        "evidence_refresh_interaction_canary_edit_event_count": 1,
+        "evidence_refresh_interaction_canary_distinct_action_count": 1,
+        "evidence_refresh_interaction_canary_distinct_request_count": 1,
+        "evidence_refresh_interaction_canary_distinct_actor_count": 1,
+        "evidence_refresh_interaction_canary_named_actor_count": 1,
+        "evidence_refresh_interaction_canary_valid_assignment_count": 1,
+        "evidence_refresh_interaction_canary_current_edited_count": 1,
+        "evidence_refresh_interaction_canary_current_assignment_match_count": 1,
         "operator_global_sign_out_completed": True,
         "operator_group_membership_operator_only": True,
         "production_effect": False,
         "future_release_write_authority_approved": False,
     }:
         errors.append("verified mutation release evidence is incomplete or expands authority")
+    if release_evidence.get("evidence_refresh_interaction_canary_executed") is not True:
+        errors.append("named-human evidence refresh interaction observation is hidden")
+    if release_evidence.get("evidence_refresh_interaction_canary_backend_reconciled") is not True:
+        errors.append("read-only Evidence refresh backend reconciliation is hidden")
     if contract.get("role_matrix") != EXPECTED_ROLE_MATRIX:
         errors.append("Action assignment role matrix has changed")
     rollback = contract.get("rollback", {})
@@ -243,8 +263,9 @@ def main() -> int:
         return 1
     print(
         "PASS: response fix, stable retry, separate approver decision, and "
-        "private frontend refresh release are verified; interaction canary "
-        "and COMPLETE remain pending"
+        "private frontend refresh release are verified; the named-human UI "
+        "refresh interaction and read-only backend reconciliation pass, and "
+        "COMPLETE remains pending"
     )
     return 0
 

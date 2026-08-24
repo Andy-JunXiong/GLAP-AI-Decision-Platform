@@ -1,0 +1,85 @@
+{
+  "schema_version": "decision-quality-five-review-reconciliation.v1",
+  "reconciliation_id": "cyclone-gabrielle-t1-five-review-reconciliation-v1",
+  "created_on_sydney_date": "2026-08-24",
+  "predecessor": {
+    "record_digest": "01912186c48676886d0f7a18775dfe160002fae56f416258fadfe4480ac963bf",
+    "review_count": 4,
+    "result": "REVIEWERS_DO_NOT_AGREE",
+    "status": "REQUIRES_ADJUDICATION"
+  },
+  "source_evidence": {
+    "bundle_id": "35397ba1fb3d15d87ad7c071",
+    "bundle_digest": "60ebd29e920a489c3c171d1daf27b6fe85efbc884e77d2763b64b7b6a14d3cdb",
+    "review_id": "91753061d940f8fa9be70d81",
+    "package_digest": "b7e925e02d3118c888246b78cec248d1237c63d303284e35b461f7aa5b5a03a5",
+    "source_collection": "human-evaluation-story.v2",
+    "submission_count": 1,
+    "locked_answer_count": 30,
+    "required_attestations_complete": true,
+    "reviewer_identifiers_retained": false,
+    "account_credentials_retained": false,
+    "answer_content_retained": false
+  },
+  "aggregate_delta": {
+    "review_count_before": 4,
+    "review_count_after": 5,
+    "review_record_count_after": 150,
+    "non_tie_preference_count_after": 5,
+    "baseline_a303_off_preference_count": 2,
+    "glap_a303_on_preference_count": 3,
+    "maximum_preference_count_after": 3
+  },
+  "updated_result": {
+    "preference_consensus_pct": 60.0,
+    "minimum_preference_consensus_pct": 66.67,
+    "baseline_a303_off_mean_comparative_preference_share": 41.5,
+    "glap_a303_on_mean_comparative_preference_share": 58.5,
+    "score_delta": 17.0,
+    "minimum_mean_score_delta": 5.0,
+    "gate_checks": {
+      "minimum_reviewers_met": true,
+      "minimum_non_tie_preferences_met": true,
+      "preference_consensus_met": false,
+      "score_and_preference_winners_align": true,
+      "minimum_score_delta_met": true
+    },
+    "status": "REQUIRES_ADJUDICATION",
+    "result": "REVIEWERS_DO_NOT_AGREE",
+    "favored_variant_id": null,
+    "adjudication_status": "PENDING_HUMAN_ADJUDICATION"
+  },
+  "governance": {
+    "predecessor_immutable": true,
+    "fifth_review_is_human_evidence": true,
+    "fifth_review_is_not_an_adjudication_vote": true,
+    "full_corpus_reaggregation_pending": true,
+    "new_human_disposition_required": true
+  },
+  "claim_boundary": {
+    "supports": ["AGGREGATE_ONLY_FIFTH_REVIEW_RECONCILIATION"],
+    "does_not_support": [
+      "INDIVIDUAL_REVIEW_DISCLOSURE",
+      "FULL_FIVE_REVIEW_CORPUS_RESULT",
+      "BUSINESS_OUTCOME_EFFECT",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "A303_REACTIVATION",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS",
+      "OPERATIONAL_AUTHORITY"
+    ]
+  },
+  "authority": {
+    "profile": "LOCAL_EVALUATION_RECONCILIATION_ONLY",
+    "network_access_allowed": false,
+    "aws_write_allowed": false,
+    "review_mutation_allowed": false,
+    "action_authority": "NONE",
+    "policy_activation_allowed": false,
+    "model_promotion_allowed": false,
+    "production_effect": false,
+    "a303_reactivation_allowed": false
+  },
+  "operational_mutations": [],
+  "record_digest": "1381db7ec1b3ce2060f48769b8ca45f33a3c181afe4e7cc22ccb2883ba1640d6"
+}

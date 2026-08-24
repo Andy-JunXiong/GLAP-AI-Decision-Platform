@@ -1,0 +1,91 @@
+{
+  "schema_version": "decision-quality-five-review-corpus-summary.v1",
+  "created_on_sydney_date": "2026-08-24",
+  "source_evidence": {
+    "bundle_id": "35397ba1fb3d15d87ad7c071",
+    "bundle_digest": "60ebd29e920a489c3c171d1daf27b6fe85efbc884e77d2763b64b7b6a14d3cdb",
+    "reviewer_count": 5,
+    "package_count": 30,
+    "review_record_count": 150,
+    "source_collections": {
+      "human-evaluation-story.v2": 3,
+      "glap-ten-story-review.v1": 2
+    },
+    "aggregate_artifact_digest": "81ae052f34c6ddd957ecc7f9500e65784d90b6db6e807a9582c1bd4e86248bec"
+  },
+  "corpus_result": {
+    "review_evidence_favors_variant_count": 14,
+    "reviewers_do_not_agree_count": 16,
+    "favored_variant_counts": {
+      "glap-a303-on": 14
+    },
+    "unanimous_control_tie_count": 14
+  },
+  "non_control_no_winner_packages": [
+    {
+      "review_id": "91753061d940f8fa9be70d81",
+      "package_digest": "b7e925e02d3118c888246b78cec248d1237c63d303284e35b461f7aa5b5a03a5",
+      "scenario_id": "new-zealand-cyclone-gabrielle-roads-2023-v1",
+      "cutoff_id": "T1_COROMANDEL_HIGHWAY_CLOSURES_CONFIRMED",
+      "baseline_preference_count": 2,
+      "challenger_preference_count": 3,
+      "preference_consensus_pct": 60.0,
+      "score_delta": 17.0,
+      "result": "REVIEWERS_DO_NOT_AGREE",
+      "favored_variant_id": null
+    },
+    {
+      "review_id": "f065f154bf704bbd7b07c49f",
+      "package_digest": "2df9064228894796cf937142be0491b274b3a0aad8e731bc61bc123ae3536b30",
+      "scenario_id": "new-zealand-cyclone-gabrielle-roads-2023-v1",
+      "cutoff_id": "T2_NORTHLAND_NETWORK_ISOLATION_CONFIRMED",
+      "baseline_preference_count": 2,
+      "challenger_preference_count": 3,
+      "preference_consensus_pct": 60.0,
+      "score_delta": 31.0,
+      "result": "REVIEWERS_DO_NOT_AGREE",
+      "favored_variant_id": null
+    }
+  ],
+  "privacy": {
+    "reviewer_identifiers_retained": false,
+    "credentials_retained": false,
+    "answer_content_retained": false,
+    "notes_retained": false,
+    "raw_exports_retained": false
+  },
+  "governance": {
+    "full_corpus_reaggregation_complete": true,
+    "live_sources_read_only": true,
+    "human_disposition_inferred": false,
+    "public_refresh_pending_separate_authorization": true,
+    "predecessor_records_immutable": true
+  },
+  "claim_boundary": {
+    "supports": [
+      "FIVE_REVIEW_CONTROLLED_POINT_IN_TIME_DECISION_QUALITY"
+    ],
+    "does_not_support": [
+      "INDIVIDUAL_REVIEW_DISCLOSURE",
+      "BUSINESS_OUTCOME_EFFECT",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "A303_REACTIVATION",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS",
+      "OPERATIONAL_AUTHORITY"
+    ]
+  },
+  "authority": {
+    "profile": "LOCAL_AGGREGATE_EVIDENCE_ONLY",
+    "aws_write_allowed": false,
+    "review_mutation_allowed": false,
+    "public_publication_allowed": false,
+    "action_authority": "NONE",
+    "policy_activation_allowed": false,
+    "model_promotion_allowed": false,
+    "production_effect": false,
+    "a303_reactivation_allowed": false
+  },
+  "operational_mutations": [],
+  "record_digest": "f867838420302ab6bad12eb443f9969ddde228231aa4fa0ab924557cc55635c0"
+}

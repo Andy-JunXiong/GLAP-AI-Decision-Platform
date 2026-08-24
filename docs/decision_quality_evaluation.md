@@ -4,15 +4,18 @@
 **Review submissions:** `decision-quality-review.v1` (absolute-score tooling)
 and `decision-quality-comparative-review.v1` (story-mode collection)
 **Option content:** `decision-option-contract.v3`
-**Current status:** four independent, pseudonymous submissions are reconciled
-across the formal Sites v12 and mainland Lambda entries. All four contain one
-locked answer for each of the same 30 frozen v3 packages and all required
-attestations. The private aggregate has 15 package results favouring
-`glap-a303-on` and 15 `REVIEWERS_DO_NOT_AGREE` results. This is controlled
+**Current status:** the latest complete cross-entry corpus aggregate contains
+five independent submissions across the formal Sites v12 and mainland Lambda
+entries. All five contain one locked answer for each of the same 30 frozen v3
+packages and all required attestations. The identity-free aggregate covers 150
+records, with 14 package results favouring `glap-a303-on` and 16
+`REVIEWERS_DO_NOT_AGREE` results. This is controlled
 point-in-time Decision Quality evidence, not Business Outcome Effect, real
 logistics performance, model promotion, or production readiness. After explicit
-publication approval, the live aggregate-only Evaluation & Trust view now shows
-the four-review result without private review content.
+publication approval, the live aggregate-only Evaluation & Trust view still
+shows the earlier four-review result without private review content. The five-
+review aggregate is complete locally; any public refresh remains pending
+separate publication authority.
 
 ## Purpose
 
@@ -177,13 +180,16 @@ once as a shared plan requiring explicit confirmation. It stores comparative
 judgments under isolated collection `human-evaluation-story.v2`, aligned with
 `decision-quality-comparative-review.v1`; preview-local answers, questionnaire
 drafts, and story-v1 records are never migrated. Sites v12 passed a
-non-submitting production canary before Dylan was notified. The live database
-contains two complete story-v2 submissions. Ming's and Dong's
-sessions are locked and submitted with 30 committed answers and all three
-attestations each. The earlier story-v1 draft still contains only three
+non-submitting production canary before the invited reviewer was notified.
+Read-only inspection
+now finds three complete story-v2 submissions, each locked with 30 committed
+answers and all three attestations. The latest was submitted on 2026-08-23;
+repository evidence retains no username, credential, reviewer ID, or answer
+content. The earlier story-v1 draft still contains only three
 ineligible answers and was not migrated. All six additional-account canaries,
 including the seventh hosted account released on 2026-08-20, created no
-session, attestation, answer, save, or submission. Unit tests exercise
+session, attestation, answer, save, or submission at canary time; the later
+human submission is distinct from those checks. Unit tests exercise
 packaging and scoring mechanics with in-memory test reviews; those tests are
 not expert evidence and are never written to the scenario corpus.
 
@@ -197,8 +203,10 @@ surfaces. Read-only source inspection found two complete mainland submissions.
 The compatibility/import check passed exact frozen-bundle identity, all 30
 review IDs and package digests, the five rubric dimensions, locked-answer and
 final-submission state, required attestations, and distinct pseudonymous
-reviewer references. The two mainland submissions and two Sites submissions
-therefore form four eligible reviews per package. No live database was changed.
+reviewer references. A read-only in-memory reconciliation combined the two
+mainland submissions and all three Sites submissions into the current five-
+review corpus aggregate. No live database was changed, and no reviewer
+identifier, credential, answer, or note was retained in the saved result.
 The mainland design and human-owned update procedure are documented in
 [`three_case_review_entry.md`](three_case_review_entry.md).
 
@@ -215,7 +223,55 @@ The 2026-08-22 aggregate contains four reviewers, 30 packages, and 120 locked
 review records. Fifteen packages meet every interpretation gate and all favour
 `glap-a303-on`. Fourteen identical-option controls are unanimous ties. The
 remaining non-identical package, Cyclone Gabrielle T1, splits 2:2 with zero
-score delta and remains `REVIEWERS_DO_NOT_AGREE`. No adjudication was inferred.
+score delta and remains `REVIEWERS_DO_NOT_AGREE`. No adjudication was inferred
+from those reviews.
+
+The separate
+[`decision-quality-adjudication.v1`](decision_quality_adjudication_v1.schema.json)
+contract now binds that package to its frozen bundle, review, and package
+digests. The initial content-addressed record is
+[`PENDING_HUMAN_ADJUDICATION`](decision_quality_adjudication_cyclone_gabrielle_t1_v1.json):
+it contains no resolution, rationale, reviewer identity, or study-owner
+attestation. It cannot become a fifth review or overwrite the raw 2:2 result.
+Any named-owner disposition must be appended as a new immutable record and
+remains Decision Quality governance only; A303 reactivation, Business Outcome,
+model, production, and operational claims are prohibited.
+
+On 2026-08-24, an aggregate-only fifth-review reconciliation updated that one
+package without retaining any identity, credential, or answer content. The
+preference count moved from 2:2 to 3:2 and the weighted score delta moved from
+0 to 17 points. Preference consensus is 60%, below the frozen 66.67% gate, so
+the package remains `REVIEWERS_DO_NOT_AGREE` and has no favored variant. The
+reconciliation is recorded in
+[`decision_quality_five_review_reconciliation_v1.json`](decision_quality_five_review_reconciliation_v1.json)
+under its matching
+[`Schema`](decision_quality_five_review_reconciliation_v1.schema.json). It
+remains the immutable transition record for that package and does not modify
+the four-review predecessor.
+
+The full identity-free completion record is
+[`decision_quality_five_review_corpus_summary_v1.json`](decision_quality_five_review_corpus_summary_v1.json)
+under its matching
+[`Schema`](decision_quality_five_review_corpus_summary_v1.schema.json). It
+covers five reviews, 30 packages, and 150 locked records. Fourteen packages
+meet every gate and favour `glap-a303-on`; fourteen controls are unanimous
+ties. Cyclone Gabrielle T1 and T2 are the two remaining non-control no-winner
+packages. Both split 3:2 with 60% consensus, below 66.67%; their score deltas
+are 17 and 31 respectively. The named project owner subsequently chose
+`RETAIN_INCONCLUSIVE` for each package. Separate content-addressed records are
+[`T1 disposition`](decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json)
+and
+[`T2 disposition`](decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json),
+both governed by
+[`decision-quality-human-disposition.v1`](decision_quality_human_disposition_v1.schema.json).
+They do not change the raw no-winner results, add another review, retain human
+identity, or authorize publication or operational action.
+
+Validate the current record locally with:
+
+```bash
+python ops/validate_decision_quality_adjudication.py
+```
 
 ```bash
 python ops/reconcile_review_collections.py \

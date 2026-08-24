@@ -5,7 +5,8 @@
 `evaluation-experiment.v3` (capability-neutral Decision Memory ablation)
 **Business timezone:** `Australia/Sydney`
 **Current implementation:** local, deterministic, read-only A303, External
-Evidence, and Decision Memory ablations; four-review Decision Quality;
+Evidence, and Decision Memory ablations; identity-free five-review Decision
+Quality over 150 records; content-addressed no-winner governance records;
 pre-specified synthetic Outcome robustness; and post-hoc A303.v2 candidate
 screening with an anti-abstention gate
 
@@ -274,12 +275,13 @@ paused and preserved draft progress is ineligible. The corrected story-based,
 progressive A/B/Tie workflow is publicly released as Sites v12. It applies the
 full 30-package v3 bundle with attestations, server save/resume, per-story
 ordering, immutable submission, and isolated reviewer scopes. Seven hosted
-Sites accounts exist, and two eligible story-v2 submissions are complete.
+Sites accounts exist, and three eligible story-v2 submissions are complete.
 Two additional complete submissions from the content-equivalent mainland
 entry passed the study-owner-approved compatibility/import check on
-`2026-08-22`. The four-review private aggregate contains 120 locked records:
-15 package results favour `glap-a303-on`, fourteen identical controls are
-unanimous ties, and one non-identical package remains split 2:2. Decision
+`2026-08-22`. A later read-only in-memory reconciliation covers all five
+reviews and 150 locked records: 14 package results favour `glap-a303-on`,
+fourteen identical controls are unanimous ties, and two non-identical packages
+remain 3:2 below the consensus gate. Decision
 Quality is therefore evaluated with mixed package-level results. Decision
 Quality remains parallel to, rather than an admission gate for, Business
 Outcome simulation. The corrected robustness path evaluates all 16 attributed
@@ -294,6 +296,31 @@ measured business effect. After
 explicit publication approval, the live aggregate-only
 Evaluation & Trust view shows these counts without private review content. See
 [`decision_quality_evaluation.md`](decision_quality_evaluation.md).
+
+The Cyclone Gabrielle T1 split now has a separate immutable
+`decision-quality-adjudication.v1` record in
+[`decision_quality_adjudication_cyclone_gabrielle_t1_v1.json`](decision_quality_adjudication_cyclone_gabrielle_t1_v1.json).
+It binds the frozen bundle, review, and package digests and retains the raw
+four-review result as `REVIEWERS_DO_NOT_AGREE`. Its current state is
+`PENDING_HUMAN_ADJUDICATION`; it remains the immutable predecessor. The named
+project owner later appended a separate T1 resolution, rather than rewriting
+this record. That resolution cannot be counted as a review and cannot reactivate
+A303 or support Business Outcome, model, production, or operational claims.
+
+A later aggregate-only fifth-review reconciliation preserves that predecessor
+and first updates Cyclone Gabrielle T1 to 3:2, 60% consensus, and a 17-point
+weighted score delta. The completed full-corpus reconciliation then establishes
+the five-review aggregate for all 30 packages. Cyclone Gabrielle T2 is also 3:2
+at 60% consensus with a 31-point score delta. Both remain
+`REVIEWERS_DO_NOT_AGREE` with no favored variant because the frozen consensus
+gate is 66.67%. The public view remains the earlier four-review snapshot until
+a separately authorized refresh.
+
+The named project owner separately resolved both no-winner governance steps as
+`RETAIN_INCONCLUSIVE`. T1's version-2 disposition supersedes the pending T1
+record by digest; T2 begins its own disposition lineage. Both records preserve
+the five-review `REVIEWERS_DO_NOT_AGREE` result and contain no human identity or
+per-question review content.
 
 Two bounded A303.v2 eligibility guardrails were then screened on the same
 frozen space as explicitly `POST_HOC_DEVELOPMENT_EVIDENCE`. The anti-abstention
@@ -374,10 +401,9 @@ python ops/evaluate_decision_memory_capability.py \
 1. Keep A303.v1 retired and preserve its evidence. Accept no real-host
    comparison until its submitted adapter package passes the frozen source,
    bundle, trace, redaction, budget, and no-authority contracts.
-2. If the study owner requires a resolved Decision Quality result for the one
-   2:2 package, add
-   a separate adjudication record without changing original reviews; otherwise
-   retain the package as inconclusive.
+2. Preserve the completed T1 and T2 `RETAIN_INCONCLUSIVE` dispositions and do
+   not reinterpret either as a variant win. Any aggregate-only public refresh
+   remains separately authorized.
 3. Accept a separately supplied real adapter package only through the offline
    conformance verifier; registration or comparison remains a separate human-
    authorized decision.

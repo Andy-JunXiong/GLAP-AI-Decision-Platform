@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/schemas/decision_quality_five_review_corpus_summary_v1.schema.json",
+  "title": "GLAP five-review Decision Quality corpus summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "created_on_sydney_date",
+    "source_evidence",
+    "corpus_result",
+    "non_control_no_winner_packages",
+    "privacy",
+    "governance",
+    "claim_boundary",
+    "authority",
+    "operational_mutations",
+    "record_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "decision-quality-five-review-corpus-summary.v1"},
+    "created_on_sydney_date": {"type": "string", "format": "date"},
+    "source_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_id",
+        "bundle_digest",
+        "reviewer_count",
+        "package_count",
+        "review_record_count",
+        "source_collections",
+        "aggregate_artifact_digest"
+      ],
+      "properties": {
+        "bundle_id": {"type": "string"},
+        "bundle_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "reviewer_count": {"const": 5},
+        "package_count": {"const": 30},
+        "review_record_count": {"const": 150},
+        "source_collections": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["human-evaluation-story.v2", "glap-ten-story-review.v1"],
+          "properties": {
+            "human-evaluation-story.v2": {"const": 3},
+            "glap-ten-story-review.v1": {"const": 2}
+          }
+        },
+        "aggregate_artifact_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "corpus_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_evidence_favors_variant_count",
+        "reviewers_do_not_agree_count",
+        "favored_variant_counts",
+        "unanimous_control_tie_count"
+      ],
+      "properties": {
+        "review_evidence_favors_variant_count": {"const": 14},
+        "reviewers_do_not_agree_count": {"const": 16},
+        "favored_variant_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["glap-a303-on"],
+          "properties": {"glap-a303-on": {"const": 14}}
+        },
+        "unanimous_control_tie_count": {"const": 14}
+      }
+    },
+    "non_control_no_winner_packages": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "review_id",
+          "package_digest",
+          "scenario_id",
+          "cutoff_id",
+          "baseline_preference_count",
+          "challenger_preference_count",
+          "preference_consensus_pct",
+          "score_delta",
+          "result",
+          "favored_variant_id"
+        ],
+        "properties": {
+          "review_id": {"type": "string"},
+          "package_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "scenario_id": {"type": "string"},
+          "cutoff_id": {"type": "string"},
+          "baseline_preference_count": {"const": 2},
+          "challenger_preference_count": {"const": 3},
+          "preference_consensus_pct": {"const": 60.0},
+          "score_delta": {"type": "number", "minimum": 0},
+          "result": {"const": "REVIEWERS_DO_NOT_AGREE"},
+          "favored_variant_id": {"type": "null"}
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewer_identifiers_retained",
+        "credentials_retained",
+        "answer_content_retained",
+        "notes_retained",
+        "raw_exports_retained"
+      ],
+      "properties": {
+        "reviewer_identifiers_retained": {"const": false},
+        "credentials_retained": {"const": false},
+        "answer_content_retained": {"const": false},
+        "notes_retained": {"const": false},
+        "raw_exports_retained": {"const": false}
+      }
+    },
+    "governance": {"type": "object"},
+    "claim_boundary": {"type": "object"},
+    "authority": {"type": "object"},
+    "operational_mutations": {"type": "array", "maxItems": 0},
+    "record_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

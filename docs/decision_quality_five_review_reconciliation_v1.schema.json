@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/schemas/decision-quality-five-review-reconciliation-v1.json",
+  "title": "GLAP Five-Review Decision Quality Reconciliation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reconciliation_id",
+    "created_on_sydney_date",
+    "predecessor",
+    "source_evidence",
+    "aggregate_delta",
+    "updated_result",
+    "governance",
+    "claim_boundary",
+    "authority",
+    "operational_mutations",
+    "record_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "decision-quality-five-review-reconciliation.v1"},
+    "reconciliation_id": {"const": "cyclone-gabrielle-t1-five-review-reconciliation-v1"},
+    "created_on_sydney_date": {"type": "string", "format": "date"},
+    "predecessor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_digest", "review_count", "result", "status"],
+      "properties": {
+        "record_digest": {"$ref": "#/$defs/sha256"},
+        "review_count": {"const": 4},
+        "result": {"const": "REVIEWERS_DO_NOT_AGREE"},
+        "status": {"const": "REQUIRES_ADJUDICATION"}
+      }
+    },
+    "source_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_id", "bundle_digest", "review_id", "package_digest",
+        "source_collection", "submission_count", "locked_answer_count",
+        "required_attestations_complete", "reviewer_identifiers_retained",
+        "account_credentials_retained", "answer_content_retained"
+      ],
+      "properties": {
+        "bundle_id": {"type": "string", "minLength": 1},
+        "bundle_digest": {"$ref": "#/$defs/sha256"},
+        "review_id": {"type": "string", "pattern": "^[0-9a-f]{24}$"},
+        "package_digest": {"$ref": "#/$defs/sha256"},
+        "source_collection": {"const": "human-evaluation-story.v2"},
+        "submission_count": {"const": 1},
+        "locked_answer_count": {"const": 30},
+        "required_attestations_complete": {"const": true},
+        "reviewer_identifiers_retained": {"const": false},
+        "account_credentials_retained": {"const": false},
+        "answer_content_retained": {"const": false}
+      }
+    },
+    "aggregate_delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_count_before", "review_count_after", "review_record_count_after",
+        "non_tie_preference_count_after", "baseline_a303_off_preference_count",
+        "glap_a303_on_preference_count", "maximum_preference_count_after"
+      ],
+      "properties": {
+        "review_count_before": {"const": 4},
+        "review_count_after": {"const": 5},
+        "review_record_count_after": {"const": 150},
+        "non_tie_preference_count_after": {"const": 5},
+        "baseline_a303_off_preference_count": {"const": 2},
+        "glap_a303_on_preference_count": {"const": 3},
+        "maximum_preference_count_after": {"const": 3}
+      }
+    },
+    "updated_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preference_consensus_pct", "minimum_preference_consensus_pct",
+        "baseline_a303_off_mean_comparative_preference_share",
+        "glap_a303_on_mean_comparative_preference_share", "score_delta",
+        "minimum_mean_score_delta", "gate_checks", "status", "result",
+        "favored_variant_id", "adjudication_status"
+      ],
+      "properties": {
+        "preference_consensus_pct": {"const": 60.0},
+        "minimum_preference_consensus_pct": {"const": 66.67},
+        "baseline_a303_off_mean_comparative_preference_share": {"const": 41.5},
+        "glap_a303_on_mean_comparative_preference_share": {"const": 58.5},
+        "score_delta": {"const": 17.0},
+        "minimum_mean_score_delta": {"const": 5.0},
+        "gate_checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimum_reviewers_met", "minimum_non_tie_preferences_met",
+            "preference_consensus_met", "score_and_preference_winners_align",
+            "minimum_score_delta_met"
+          ],
+          "properties": {
+            "minimum_reviewers_met": {"const": true},
+            "minimum_non_tie_preferences_met": {"const": true},
+            "preference_consensus_met": {"const": false},
+            "score_and_preference_winners_align": {"const": true},
+            "minimum_score_delta_met": {"const": true}
+          }
+        },
+        "status": {"const": "REQUIRES_ADJUDICATION"},
+        "result": {"const": "REVIEWERS_DO_NOT_AGREE"},
+        "favored_variant_id": {"type": "null"},
+        "adjudication_status": {"const": "PENDING_HUMAN_ADJUDICATION"}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "predecessor_immutable", "fifth_review_is_human_evidence",
+        "fifth_review_is_not_an_adjudication_vote", "full_corpus_reaggregation_pending",
+        "new_human_disposition_required"
+      ],
+      "properties": {
+        "predecessor_immutable": {"const": true},
+        "fifth_review_is_human_evidence": {"const": true},
+        "fifth_review_is_not_an_adjudication_vote": {"const": true},
+        "full_corpus_reaggregation_pending": {"const": true},
+        "new_human_disposition_required": {"const": true}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supports", "does_not_support"],
+      "properties": {
+        "supports": {"const": ["AGGREGATE_ONLY_FIFTH_REVIEW_RECONCILIATION"]},
+        "does_not_support": {
+          "const": [
+            "INDIVIDUAL_REVIEW_DISCLOSURE", "FULL_FIVE_REVIEW_CORPUS_RESULT",
+            "BUSINESS_OUTCOME_EFFECT", "REAL_LOGISTICS_PERFORMANCE",
+            "A303_REACTIVATION", "MODEL_PROMOTION", "PRODUCTION_READINESS",
+            "OPERATIONAL_AUTHORITY"
+          ]
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile", "network_access_allowed", "aws_write_allowed",
+        "review_mutation_allowed", "action_authority", "policy_activation_allowed",
+        "model_promotion_allowed", "production_effect", "a303_reactivation_allowed"
+      ],
+      "properties": {
+        "profile": {"const": "LOCAL_EVALUATION_RECONCILIATION_ONLY"},
+        "network_access_allowed": {"const": false},
+        "aws_write_allowed": {"const": false},
+        "review_mutation_allowed": {"const": false},
+        "action_authority": {"const": "NONE"},
+        "policy_activation_allowed": {"const": false},
+        "model_promotion_allowed": {"const": false},
+        "production_effect": {"const": false},
+        "a303_reactivation_allowed": {"const": false}
+      }
+    },
+    "operational_mutations": {"const": []},
+    "record_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

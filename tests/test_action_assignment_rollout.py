@@ -64,6 +64,21 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
             validator.validate_contract(contract),
         )
 
+    def test_refresh_reconciler_is_aggregate_read_only_and_identifier_safe(self):
+        script = (
+            ROOT / "ops" / "reconcile_action_evidence_refresh_staging.ps1"
+        ).read_text(encoding="utf-8")
+        lower = script.lower()
+        self.assertIn("staging evidence refresh interaction canary", lower)
+        self.assertIn("count(distinct edit.action_id)", lower)
+        self.assertIn("current.status = 'edited'", lower)
+        self.assertIn("protected identifiers were not printed", lower)
+        self.assertNotIn("write-host $query", lower)
+        self.assertNotIn("invoke-restmethod", lower)
+        self.assertNotIn("invoke-webrequest", lower)
+        for statement in ("insert into", "merge into", "update ", "delete from"):
+            self.assertNotIn(statement, lower)
+
     def test_completed_canary_cannot_hide_verified_steps_or_claim_complete(self):
         contract = copy.deepcopy(validator.load_contract())
         contract["canary"]["operator_edit_completed"] = False
@@ -88,14 +103,25 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
             errors,
         )
 
-    def test_frontend_release_cannot_claim_an_unrun_refresh_interaction_canary(self):
+    def test_frontend_refresh_observation_cannot_be_hidden_or_overclaimed(self):
         contract = copy.deepcopy(validator.load_contract())
         contract["verified_release_evidence"][
             "evidence_refresh_interaction_canary_executed"
-        ] = True
+        ] = False
+        errors = validator.validate_contract(contract)
         self.assertIn(
-            "verified mutation release evidence is incomplete or expands authority",
-            validator.validate_contract(contract),
+            "named-human evidence refresh interaction observation is hidden",
+            errors,
+        )
+
+        contract = copy.deepcopy(validator.load_contract())
+        contract["verified_release_evidence"][
+            "evidence_refresh_interaction_canary_backend_reconciled"
+        ] = False
+        errors = validator.validate_contract(contract)
+        self.assertIn(
+            "read-only Evidence refresh backend reconciliation is hidden",
+            errors,
         )
 
 

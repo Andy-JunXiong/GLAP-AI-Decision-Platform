@@ -367,6 +367,145 @@ class ProjectDriftAuditTests(unittest.TestCase):
             result = AUDIT.check_action_assignment_rollout(root)[0]
         self.assertEqual(result.status, "DRIFT")
 
+    def test_action_evidence_refresh_reconciliation_cannot_be_hidden(self):
+        source = json.loads(
+            (ROOT / "docs" / "action_assignment_rollout_contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        source["verified_release_evidence"][
+            "evidence_refresh_interaction_canary_backend_reconciled"
+        ] = False
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            contract_path = root / "docs" / "action_assignment_rollout_contract.json"
+            contract_path.parent.mkdir(parents=True)
+            contract_path.write_text(json.dumps(source), encoding="utf-8")
+            result = AUDIT.check_action_assignment_rollout(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_decision_quality_adjudication_resolution_drift_is_detected(self):
+        paths = (
+            "docs/decision_quality_adjudication_v1.schema.json",
+            "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+            "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+            "docs/decision_quality_five_review_reconciliation_v1.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_human_disposition_v1.schema.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "tests/test_decision_quality_adjudication.py",
+            "blinded-review-survey/data/review-bundle.json",
+            "docs/decision_quality_evaluation.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            record_path = (
+                root
+                / "docs"
+                / "decision_quality_adjudication_cyclone_gabrielle_t1_v1.json"
+            )
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+            record["adjudication"]["status"] = "RESOLVED_HUMAN_ADJUDICATION"
+            record["adjudication"]["resolution"] = "FAVORS_GLAP_A303_ON"
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_five_review_consensus_gate_expansion_is_detected(self):
+        paths = (
+            "docs/decision_quality_adjudication_v1.schema.json",
+            "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+            "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+            "docs/decision_quality_five_review_reconciliation_v1.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_human_disposition_v1.schema.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "tests/test_decision_quality_adjudication.py",
+            "blinded-review-survey/data/review-bundle.json",
+            "docs/decision_quality_evaluation.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            record_path = (
+                root / "docs" / "decision_quality_five_review_reconciliation_v1.json"
+            )
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+            record["updated_result"]["result"] = "REVIEW_EVIDENCE_FAVORS_VARIANT"
+            record["updated_result"]["favored_variant_id"] = "glap-a303-on"
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_five_review_full_corpus_count_drift_is_detected(self):
+        paths = (
+            "docs/decision_quality_adjudication_v1.schema.json",
+            "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+            "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+            "docs/decision_quality_five_review_reconciliation_v1.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_human_disposition_v1.schema.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "tests/test_decision_quality_adjudication.py",
+            "blinded-review-survey/data/review-bundle.json",
+            "docs/decision_quality_evaluation.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            record_path = (
+                root / "docs" / "decision_quality_five_review_corpus_summary_v1.json"
+            )
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+            record["corpus_result"]["review_evidence_favors_variant_count"] = 15
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_five_review_human_disposition_winner_drift_is_detected(self):
+        paths = (
+            "docs/decision_quality_adjudication_v1.schema.json",
+            "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+            "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+            "docs/decision_quality_five_review_reconciliation_v1.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_human_disposition_v1.schema.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "tests/test_decision_quality_adjudication.py",
+            "blinded-review-survey/data/review-bundle.json",
+            "docs/decision_quality_evaluation.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            record_path = (
+                root
+                / "docs"
+                / "decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json"
+            )
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+            record["disposition"]["resolution"] = "FAVORS_GLAP_A303_ON"
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
     def test_action_mutation_release_scope_expansion_is_detected(self):
         source = json.loads(
             (

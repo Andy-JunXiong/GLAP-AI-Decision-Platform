@@ -6,6 +6,33 @@ preserved handoffs.
 
 ## 2026-08-24
 
+- Recorded the named project owner's separate `RETAIN_INCONCLUSIVE`
+  dispositions for Cyclone Gabrielle T1 and T2. T1 appends to its immutable
+  pending predecessor by digest; T2 begins a separate disposition lineage.
+  Both preserve the five-review 3:2, 60% no-winner result and their 17/31 score
+  deltas without storing human identity or per-question content. They do not
+  authorize publication, A303 reactivation, AWS writes, model promotion,
+  production, or operational action.
+- Completed the read-only five-review full-corpus aggregation in memory across
+  three formal Sites and two mainland submissions. The identity-free result
+  covers 150 locked records: 14 packages favour `glap-a303-on`, 14 controls
+  remain unanimous ties, and Cyclone Gabrielle T1 and T2 are the two non-
+  control no-winner packages. Both are 3:2 at 60% consensus, below the frozen
+  66.67% gate, with score deltas of 17 and 31. The saved aggregate contains no
+  reviewer identity, credential, answer, or note; it grants no publication,
+  A303, AWS, model, production, or operational authority.
+- Added an aggregate-only fifth-review reconciliation for Cyclone Gabrielle
+  T1. It preserves the immutable four-review 2:2 predecessor, records the new
+  3:2 split, 60% preference consensus, and 17-point weighted score delta, and
+  correctly retains `REVIEWERS_DO_NOT_AGREE` because the frozen consensus gate
+  is 66.67%. The record contains no reviewer identity, credential, or answer
+  content and adds no A303, AWS, model, production, or operational authority.
+- Added a governed Decision Quality adjudication contract and the first
+  content-addressed pending record for the Cyclone Gabrielle T1 2:2 split. The
+  record preserves all four original reviews and the raw
+  `REVIEWERS_DO_NOT_AGREE` result, contains no inferred decision, and requires
+  any future named-owner resolution to be appended separately. It grants no
+  A303 reactivation, Outcome, AWS, model, production, or operational authority.
 - Completed the separately authorized `2026-08-09` operational-calendar
   baseline refresh in isolated staging. The manual workflow created or
   replaced one aggregate view and passed 10/10 fail-closed checks while
@@ -37,8 +64,12 @@ preserved handoffs.
   and reload the selected Action Evidence chain, while failed writes leave the
   evidence untouched. A named human published the clean frontend tree at
   `adfd2a5`, and the read-only staging verifier passed all Action assignment,
-  Action evidence, and Learning evidence gates. No mutation was performed, so
-  the refresh interaction itself remains without an end-to-end runtime canary.
+  Action evidence, and Learning evidence gates. On `2026-08-24`, a separately
+  authorized named operator reported that one `EDIT` moved the Board to
+  `EDITED` and automatically refreshed the already expanded Evidence chain.
+  A bounded aggregate-only reconciliation then confirmed exactly one matching
+  event, Action, request, named actor, valid assignment, current `EDITED` row,
+  and matching current assignment without printing protected identifiers.
 - Completed and merged the repository Outcome-to-Learning evidence gate. An
   authenticated,
   read-only endpoint and private Learning Review now count only cutoff-eligible

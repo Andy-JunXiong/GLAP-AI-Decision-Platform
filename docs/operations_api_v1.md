@@ -418,8 +418,15 @@ staging verifier passed the Action assignment, Action evidence, and Learning
 evidence gates, including site/assets, unauthenticated `401`, exact-origin
 CORS, alarms, redacted logging, and throttling checks. No Action mutation was
 performed during this release verification, so the deployed bundle and
-governance controls are verified while the mutation-triggered refresh
-interaction itself is not yet runtime-canary evidence.
+governance controls were verified independently of the interaction. On
+`2026-08-24`, a separately authorized named operator opened an eligible
+`PROPOSED` Action's Evidence chain, submitted one `EDIT`, and reported both the
+Board transition to `EDITED` and automatic appearance of the new event in the
+already expanded chain. The aggregate-only read reconciler then confirmed one
+matching `EDIT`, one Action, one request ID, one named actor, a valid
+assignment, current `EDITED` state, and a matching current assignment without
+printing any protected identifier. No approval, rejection, completion, or
+Outcome was authorized as part of this interaction.
 
 The Action–Outcome evidence endpoint and cockpit timeline were merged to `main`
 and source-verified on `2026-08-23`. After separate named-human staging release

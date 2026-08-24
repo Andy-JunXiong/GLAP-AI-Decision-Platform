@@ -64,10 +64,16 @@ versioned `A303_HIGH_RISK_ROUTE` rule contract. Its paired replay evaluates
 System Correctness and Capability Attribution; it does not verify the deployed
 A303 runtime. A local Decision Quality rubric and blinded-review gate are
 implemented. Sites v12 provides seven isolated pseudonymous reviewer
-accounts and preserves two complete story-v2 submissions. Two complete
+accounts and preserves three complete story-v2 submissions. Two complete
 mainland submissions passed the study-owner-approved frozen-v3 compatibility
-check on `2026-08-22`. The private four-review aggregate has 15 package results
-favouring `glap-a303-on`, fourteen unanimous control ties, and one 2:2 result.
+check on `2026-08-22`. A read-only in-memory reconciliation now covers all five
+submissions and 150 locked records while retaining only identity-free aggregate
+evidence. Fourteen packages favour `glap-a303-on`, fourteen controls are
+unanimous ties, and Cyclone Gabrielle T1 and T2 are both 3:2 with 60% consensus,
+below the frozen 66.67% gate. Separate named-human records retain no conclusion
+for both packages without overriding their raw no-winner results. The public
+view still shows the earlier four-
+review 15/15 snapshot; refreshing it requires separate publication authority.
 Decision Quality does not select Business Outcome simulator eligibility. A
 parallel pre-specified synthetic path evaluates all sixteen attributed changes
 and all fourteen no-delta controls using frozen Simulator v1, sensitivity

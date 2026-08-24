@@ -15,11 +15,12 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Capability | Current state | Evidence boundary |
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
+| Public OPS snapshot | `PUBLISHED_VERIFIED` | Scheduled run `32682049141` exported and published schema `1.7` from commit `fed2462`; live verification returned the `2026-08-09` aggregate baseline with synthetic, engineering-only provenance |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Cross-gap recovery passed 41 checks and the `2026-08-09` aggregate operational baseline passed 10 fail-closed checks; synthetic engineering evidence only, with no production alias or schedule |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
-| Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed and runtime-verified; later canary mutations remained separately authorized |
+| Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed; the `2026-08-24` expanded-chain refresh was named-human observed and aggregate-only backend-reconciled |
 | Outcome–Learning evidence gate | `IMPLEMENTED_STAGING` | Private read-only eligible-Outcome threshold and review-only policy proposal; deployed and runtime-verified, with no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
@@ -27,8 +28,9 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Agent Runtime host registry | `IMPLEMENTED_VERIFIED` | Exactly two import-free local adapters are bound to distinct implementation IDs, groups, modules, and source digests; no host authentication, model identity, network, package-install, file-write, approval, or Action claim |
 | Agent Runtime input bundle and host trace | `IMPLEMENTED_VERIFIED` | Canonical SHA-256 bundle and bundle-bound traces support offline integrity verification; they establish neither host/model identity nor approval, Action, quality, outcome, deployment, or production readiness |
 | Offline adapter conformance package | `IMPLEMENTED_VERIFIED` | A fixed four-file package binds inspected import-free source to the frozen input bundle and an exact deterministic replay trace; it grants no registration, network, dependency-install, host/model identity, quality, Outcome, approval, Action, deployment, or production claim |
-| Historical Replay corpus | `IMPLEMENTED_VERIFIED` | Ten-event AIR/OCEAN/RAIL/ROAD hybrid corpus; four compatible reviews per cutoff produce 15 results favouring A303-on, 14 expected control ties, and one 2:2 split |
-| Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Two formal Sites and two mainland Lambda submissions passed the governed cross-entry checks, creating 120 compatible locked review records; superseded drafts remain isolated and ineligible |
+| Historical Replay corpus | `IMPLEMENTED_VERIFIED` | The governed five-review full-corpus aggregate covers 150 records: 14 packages favour A303-on, 14 controls are unanimous ties, and two non-control packages remain no-winner results |
+| Decision Quality review handoff | `IMPLEMENTED_VERIFIED` | Three formal Sites and two mainland Lambda submissions are complete and were combined read-only in memory; only identity-free aggregate evidence was retained |
+| Decision Quality adjudication | `IMPLEMENTED_VERIFIED` | The four-review 2:2 predecessor remains immutable; the named project owner separately retained no conclusion for five-review Cyclone Gabrielle T1 and T2, both 3:2 at 60% below the frozen 66.67% gate |
 | A303 synthetic Outcome robustness | `IMPLEMENTED_VERIFIED_NOT_ROBUST` | Pre-specified local evaluation covers all 16 attributed changes and 14 controls independently of human preference; controls pass exact-zero, but only 39.81% of 3,888 attributed grid results are non-negative and the frozen gate is `NOT_ROBUST` |
 | A303.v2 eligibility-guardrail candidates | `IMPLEMENTED_VERIFIED_REJECTED` | Two post-hoc candidates were screened with an anti-abstention gate; central-safe acts in only two scenarios at 86.42% non-negative on the action subset, stable-positive-only acts nowhere, and neither may advance |
 | A303.v1 development disposition | `RETIRED_FROM_PROGRESSION` | The human project owner explicitly selected option 1 on 2026-08-22; threshold tuning, new holdouts, prospective Outcome collection, calibration, activation, and production progression are closed while all evidence remains preserved |
@@ -89,6 +91,15 @@ fail-closed checks passed. The view remains
 `SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, `real_world_evidence=false`, and
 `ENGINEERING_EVALUATION_ONLY`. None of these runs moved a production alias,
 created a schedule, published Pages, or mutated an Action.
+
+The next scheduled Pages run `32682049141` checked out commit `fed2462`,
+configured the existing read-only OPS role, exported the sanitized snapshot,
+and deployed the site successfully. A live read returned HTTP 200 with schema
+`1.7`, baseline status `available`, cutoff `2026-08-09`, pipeline status
+`current`, and the required `SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`,
+`real_world_evidence=false`, and `ENGINEERING_EVALUATION_ONLY` disclosures.
+This publication added no private identifiers or write path and changed no
+production alias, schedule, Action, policy, or model.
 
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -196,9 +207,14 @@ activating, or allowing it to replace deterministic rules.
   Board. A named human published the clean frontend tree at commit `adfd2a5`
   to private staging, and the read-only verifier passed with
   `-RequireActionAssignment`, `-RequireActionEvidence`, and
-  `-RequireLearningEvidence`. This verifies the deployed bundle and governance
-  controls, not the mutation-triggered interaction: no Action was mutated, no
-  Outcome was created, and no production or Pages authority was exercised.
+  `-RequireLearningEvidence`. A separately authorized named operator then
+  opened an eligible `PROPOSED` Action's Evidence chain, submitted one `EDIT`,
+  and reported that the Board moved to `EDITED` while the expanded chain
+  automatically displayed the new event. A bounded aggregate-only reconciler
+  then confirmed one matching `EDIT`, one Action, one request ID, one named
+  actor, a valid assignment, current `EDITED` state, and a matching current
+  assignment without printing protected identifiers. No approval, rejection,
+  completion, Outcome, production, or Pages authority was exercised.
 
 **Retained completed context from the earlier 2026-08-23 slice**
 
@@ -253,10 +269,20 @@ activating, or allowing it to replace deterministic rules.
 - Ming completed all 30 story-v2 packages and submitted at `2026-08-17 09:16`
   Sydney time; a later read-only verification found Dong independently
   `SUBMITTED` with 30 committed answer rows and all three attestations;
-- the two complete formal submissions and two complete mainland submissions
-  are now normalized to the same comparative-review contract. All four retain
-  distinct pseudonymous reviewer references and one locked answer for each of
-  the same 30 frozen review IDs;
+- The seventh formal Sites account later produced a third complete
+  `human-evaluation-story.v2` submission. Read-only inspection found 30 unique
+  final answers, all three attestations, and a locked submission at
+  `2026-08-23 21:08` Sydney time. No username, credential, reviewer ID, or
+  answer content is retained in repository evidence;
+- Six people were invited in total, five have complete reviews, and one formal
+  account remains outstanding;
+- the three complete formal submissions and two complete mainland submissions
+  use the same frozen package and comparative-review contracts. The earlier
+  five-review corpus was reconciled read-only in memory across both entry
+  surfaces. It covers 150 locked records and retains only identity-free
+  aggregate evidence;
+- the completed aggregate has 14 packages favouring `glap-a303-on`, 14
+  unanimous control ties, and two non-control no-winner packages;
 - the earlier story-v1 draft remains isolated with three ineligible answers;
 - the multi-reviewer extension is locally implemented and verified: each
   configured account maps to a distinct pseudonymous reviewer ID, and that ID
@@ -289,10 +315,17 @@ activating, or allowing it to replace deterministic rules.
 - only each invited independent human may make their own attestations or enter
   their own scores;
 - repository tests and agent actions never create expert evidence;
-- Decision Quality now has a private `HYBRID_HISTORICAL_REPLAY` aggregate:
-  15 packages meet the interpretation gate and favour `glap-a303-on`, while
-  15 remain `REVIEWERS_DO_NOT_AGREE`; this does not establish Business Outcome
-  Effect, real logistics performance, model promotion, or production readiness;
+- The latest complete Decision Quality corpus aggregate is the identity-free
+  five-review, 150-record `HYBRID_HISTORICAL_REPLAY` result: 14 packages meet
+  the interpretation gate and favour `glap-a303-on`, while 16 remain
+  `REVIEWERS_DO_NOT_AGREE`; this does not establish Business Outcome Effect,
+  real logistics performance, model promotion, or production readiness;
+- Cyclone Gabrielle T1 and T2 each split 3:2 with 60% preference consensus,
+  below the frozen 66.67% gate. Their score deltas are 17 and 31 respectively;
+  neither has a favored variant, and separate append-only human records retain
+  no conclusion for both packages;
+- the live public Evaluation & Trust page still shows the earlier four-review
+  15/15 snapshot. A refresh remains pending separate publication authority;
 - no AWS, operational Action, production, model, or Business Outcome Effect
   authority is added.
 
@@ -517,10 +550,10 @@ activating, or allowing it to replace deterministic rules.
 
 **Definition of done**
 
-- four complete human submissions are preserved and locked across two entry
+- five complete human submissions are preserved and locked across two entry
   surfaces;
-- the compatibility/import check and private blinded aggregate are repeatable
-  from pseudonymous exports without changing either live collection;
+- the compatibility/import check and identity-free five-review aggregate are
+  repeatable in memory without changing either live collection;
 - the old-draft isolation, reviewer privacy, and zero-agent-answer boundaries
   remain intact.
 
@@ -537,23 +570,19 @@ activating, or allowing it to replace deterministic rules.
 The evidence chain is released and runtime-verified through the protected
 staging API/frontend paths, and the separately governed Action assignment
 canary now ends at `APPROVED`. The post-mutation Evidence-chain refresh bundle
-is also published and passed the read-only staging verifier. No mutation was
-performed during that verification, so an end-to-end refresh interaction
-canary remains optional and separately human-authorized. Action `COMPLETE` and
-Outcome creation are not implied and remain separately owned.
+is also published and passed the read-only staging verifier. A later
+separately authorized named-human `EDIT` demonstrated the expanded-chain
+refresh in the UI, and the bounded read-only backend reconciliation passed all
+seven checks. Action `COMPLETE` and Outcome creation are not implied and remain
+separately owned.
 
 ## Pending validation
 
-- The cross-gap correction, bounded failed-date recovery, and aggregate
-  operational-calendar baseline are complete. Any public aggregate snapshot
-  remains a separately authorized Pages step and must preserve the public-safe
-  contract.
-- If end-to-end interaction evidence is required, obtain a separate named-human
-  Action-mutation authorization before exercising the deployed Evidence-chain
-  auto-refresh behavior. The release and read-only verifier did not mutate an
-  Action and do not authorize `COMPLETE` or Outcome creation.
-- Have the named study owner decide whether the Cyclone Gabrielle T1 2:2 split
-  should remain inconclusive or enter a separately governed adjudication step.
+- Cyclone Gabrielle T1 and T2 have five-review 3:2 results at 60% consensus,
+  with score deltas of 17 and 31. Separate named-human records resolve the
+  governance step as `RETAIN_INCONCLUSIVE`; neither raw no-winner result nor
+  the immutable T1 2:2 predecessor was changed.
+- Any public refresh remains a separate action and is not authorized.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -561,14 +590,12 @@ done.
 
 ## Incomplete or blocked
 
-- Historical Replay: ten scenarios meet the structural gate and four reviews
-  per cutoff meet the minimum-review count; 15 package results remain
-  inconclusive and must not be presented as wins.
-- Decision Quality: the four-review aggregate and public-safe snapshot are
-  complete. Fifteen packages
-  favour `glap-a303-on`; fourteen identical controls are unanimous ties and one
-  non-identical package is split 2:2. Any adjudication remains a separate,
-  human-owned step.
+- Historical Replay: ten scenarios meet the structural gate and the five-review
+  full-corpus aggregate meets the minimum-review count; its 16 no-winner
+  packages must not be presented as wins.
+- Decision Quality: five human submissions and the full-corpus aggregate are
+  complete. Cyclone Gabrielle T1 and T2 are both 3:2 yet still fail the frozen
+  consensus gate; the named project owner has retained no conclusion for both.
 - Business Outcome Effect: the complete, pre-specified synthetic robustness
   run is `NOT_ROBUST`. It covers all 16 attributed changes and does not establish
   observed factual, real-logistics, prospective controlled, or production-
@@ -804,6 +831,11 @@ done.
   10/10 fail-closed checks. It retained synthetic provenance, engineering-only
   decision use, and `real_world_evidence=false`; no Pages, production,
   schedule, alias, recovery, replay, seed, or Action mutation was included.
+- Scheduled Pages run `32682049141` then exported the governed aggregate through
+  the existing read-only role and published schema `1.7` from commit `fed2462`.
+  Live verification returned the `2026-08-09` baseline as `available` with
+  synthetic, engineering-only provenance and `real_world_evidence=false`;
+  pipeline status was `current`.
 - The repository cross-gap correction passes 55 focused adapter, quality-gate, and
   deployment-contract tests. The synchronized worktree passes Python
   compilation, all 437 repository tests, the 30/30 project drift audit, the
@@ -974,8 +1006,12 @@ done.
 
 ### Pending validation
 
-- One 2:2 package result remains available for optional governed adjudication;
-  the four original reviews must remain unchanged.
+- The prior T1 2:2 package has an immutable predecessor record; T1 and T2 each
+  have five-review 3:2 results below the 66.67% gate and separate
+  `RETAIN_INCONCLUSIVE` human dispositions.
+- The five-review full-corpus aggregate is complete. The public Evaluation &
+  Trust view remains on the earlier four-review snapshot pending separate
+  publication authority.
 - Simulator v1 is deliberately synthetic and has not been calibrated against
   an independently governed factual or prospective Outcome source. Because its
   current capability result is `NOT_ROBUST`, prospective collection is not the
@@ -983,22 +1019,16 @@ done.
 
 ### Incomplete
 
-- Four complete reviews meet the declared minimum-review count. One package is
-  inconclusive by split preference, and fourteen identical controls correctly
-  remain no-winner results.
+- The public Evaluation & Trust view has not been refreshed to the five-review
+  14/16 aggregate. Publication requires separate human authority.
 
 ## Next Up
 
-1. If a refreshed aggregate public snapshot is required, separately authorize
-   the existing Pages publication path and verify that it exposes only the
-   public-safe aggregate contract. The baseline run itself did not publish.
-2. Only if interaction-level evidence is needed, authorize a bounded Action
-   mutation canary to confirm that the deployed expanded Evidence chain
-   refreshes after a successful mutation. This must exclude `COMPLETE` and
-   Outcome creation unless separately approved.
-3. Keep the Cyclone Gabrielle T1 2:2 result inconclusive unless a named study
-   owner separately approves a governed adjudication record; never overwrite
-   the four original submissions.
+1. Prepare the aggregate-only Evaluation & Trust refresh from its four-review
+   15/15 snapshot to the five-review 14/16 result, without including reviewer
+   identity or per-question content.
+2. Publishing that prepared refresh remains a separate human decision. No
+   publication, deployment, or operational mutation is authorized here.
 
 ## Current-week history
 

@@ -619,6 +619,30 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         )
         == 1
         and rollout.get("verified_release_evidence", {}).get(
+            "evidence_refresh_interaction_canary_executed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "evidence_refresh_interaction_canary_auto_refresh_observed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "evidence_refresh_interaction_canary_backend_reconciled"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "evidence_refresh_interaction_canary_edit_event_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "evidence_refresh_interaction_canary_current_edited_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "evidence_refresh_interaction_canary_current_assignment_match_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
             "operator_global_sign_out_completed"
         )
         is True
@@ -650,12 +674,13 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment response fix, stable retry, and separate approver decision are verified; COMPLETE remains pending.",
+            "Action assignment, separate approval, and the auto-refreshed Evidence interaction are read-only reconciled; COMPLETE remains pending.",
             "Action assignment rollout hides verified evidence or expands deployment, mutation, completion, or scheduling authority.",
             (
                 contract_path,
                 "docs/action_assignment_staging_rollout.md",
                 "ops/validate_action_assignment_rollout.py",
+                "ops/reconcile_action_evidence_refresh_staging.ps1",
                 "sql/16_action_assignment_validation.sql",
             ),
         )
@@ -1657,6 +1682,137 @@ def check_adapter_conformance_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_decision_quality_adjudication_boundary(root: Path) -> list[CheckResult]:
+    evidence = (
+        "docs/decision_quality_adjudication_v1.schema.json",
+        "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+        "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+        "docs/decision_quality_five_review_reconciliation_v1.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.json",
+        "docs/decision_quality_human_disposition_v1.schema.json",
+        "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+        "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+        "docs/decision_quality_rubric_v1.json",
+        "ops/validate_decision_quality_adjudication.py",
+        "tests/test_decision_quality_adjudication.py",
+        "blinded-review-survey/data/review-bundle.json",
+        "docs/decision_quality_evaluation.md",
+    )
+    passed = False
+    failure = "The Decision Quality adjudication record is missing, resolved without authority, or has expanded its claim boundary."
+    try:
+        if not all((root / path).is_file() for path in evidence):
+            raise FileNotFoundError("Decision Quality adjudication evidence is incomplete")
+        validator = _load_repository_module(
+            root, "ops/validate_decision_quality_adjudication.py"
+        )
+        record = validator.load_json(
+            root / "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json"
+        )
+        bundle = validator.load_json(
+            root / "blinded-review-survey/data/review-bundle.json"
+        )
+        reconciliation = validator.load_json(
+            root / "docs/decision_quality_five_review_reconciliation_v1.json"
+        )
+        corpus_summary = validator.load_json(
+            root / "docs/decision_quality_five_review_corpus_summary_v1.json"
+        )
+        t1_disposition = validator.load_json(
+            root / "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json"
+        )
+        t2_disposition = validator.load_json(
+            root / "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json"
+        )
+        rubric = validator.load_json(root / "docs/decision_quality_rubric_v1.json")
+        passed = (
+            validator.validate_record(record, bundle, today=sydney_business_date())
+            == []
+            and validator.validate_reconciliation(
+                reconciliation,
+                record,
+                bundle,
+                rubric,
+                today=sydney_business_date(),
+            )
+            == []
+            and validator.validate_corpus_summary(
+                corpus_summary,
+                bundle,
+                rubric,
+                today=sydney_business_date(),
+            )
+            == []
+            and validator.validate_human_disposition(
+                t1_disposition,
+                corpus_summary,
+                bundle,
+                predecessor=record,
+                today=sydney_business_date(),
+            )
+            == []
+            and validator.validate_human_disposition(
+                t2_disposition,
+                corpus_summary,
+                bundle,
+                today=sydney_business_date(),
+            )
+            == []
+            and record["adjudication"]["status"] == "PENDING_HUMAN_ADJUDICATION"
+            and record["adjudication"]["resolution"] is None
+            and record["source_evidence"]["review_count"] == 4
+            and record["source_evidence"]["raw_review_result"]
+            == "REVIEWERS_DO_NOT_AGREE"
+            and record["governance"]["adjudication_is_not_a_fifth_review"] is True
+            and record["authority"]["a303_reactivation_allowed"] is False
+            and record["operational_mutations"] == []
+            and reconciliation["aggregate_delta"]["review_count_after"] == 5
+            and reconciliation["updated_result"]["preference_consensus_pct"]
+            == 60.0
+            and reconciliation["updated_result"]["result"]
+            == "REVIEWERS_DO_NOT_AGREE"
+            and reconciliation["updated_result"]["favored_variant_id"] is None
+            and reconciliation["governance"]["full_corpus_reaggregation_pending"]
+            is True
+            and reconciliation["operational_mutations"] == []
+            and corpus_summary["source_evidence"]["reviewer_count"] == 5
+            and corpus_summary["source_evidence"]["review_record_count"] == 150
+            and corpus_summary["corpus_result"][
+                "review_evidence_favors_variant_count"
+            ]
+            == 14
+            and corpus_summary["corpus_result"]["reviewers_do_not_agree_count"]
+            == 16
+            and corpus_summary["governance"]["full_corpus_reaggregation_complete"]
+            is True
+            and corpus_summary["authority"]["public_publication_allowed"] is False
+            and corpus_summary["operational_mutations"] == []
+            and t1_disposition["disposition"]["resolution"]
+            == "RETAIN_INCONCLUSIVE"
+            and t2_disposition["disposition"]["resolution"]
+            == "RETAIN_INCONCLUSIVE"
+            and t1_disposition["package_evidence"]["raw_review_result"]
+            == "REVIEWERS_DO_NOT_AGREE"
+            and t2_disposition["package_evidence"]["raw_review_result"]
+            == "REVIEWERS_DO_NOT_AGREE"
+            and t1_disposition["operational_mutations"] == []
+            and t2_disposition["operational_mutations"] == []
+        )
+    except Exception as error:
+        failure = f"The Decision Quality adjudication boundary drifted: {error}."
+    return [
+        _result(
+            "decision_quality_adjudication_boundary",
+            "evaluation",
+            passed,
+            "The identity-free five-review aggregate remains 14/16, and separate named-human records retain inconclusive dispositions for both Cyclone Gabrielle T1 and T2 without overriding the no-winner results.",
+            failure,
+            evidence,
+        )
+    ]
+
+
 def run_audit(root: Path) -> dict[str, Any]:
     contract = load_contract(root)
     checks: list[CheckResult] = []
@@ -1679,6 +1835,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_a303_v2_guardrail_boundary(root))
     checks.extend(check_a303_v1_retirement_boundary(root))
     checks.extend(check_capability_neutral_evaluation_boundary(root))
+    checks.extend(check_decision_quality_adjudication_boundary(root))
     checks.extend(check_agent_runtime_boundary(root))
     checks.extend(check_adapter_conformance_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"

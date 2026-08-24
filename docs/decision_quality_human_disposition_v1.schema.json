@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/schemas/decision_quality_human_disposition_v1.schema.json",
+  "title": "GLAP Decision Quality human disposition v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "disposition_id",
+    "record_version",
+    "supersedes_record_digest",
+    "created_on_sydney_date",
+    "source_corpus",
+    "package_evidence",
+    "disposition",
+    "privacy",
+    "governance",
+    "claim_boundary",
+    "authority",
+    "operational_mutations",
+    "record_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": "decision-quality-human-disposition.v1"},
+    "disposition_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{7,127}$"},
+    "record_version": {"type": "integer", "minimum": 1},
+    "supersedes_record_digest": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+    },
+    "created_on_sydney_date": {"type": "string", "format": "date"},
+    "source_corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "record_digest", "reviewer_count", "review_record_count"],
+      "properties": {
+        "schema_version": {"const": "decision-quality-five-review-corpus-summary.v1"},
+        "record_digest": {"$ref": "#/$defs/sha256"},
+        "reviewer_count": {"const": 5},
+        "review_record_count": {"const": 150}
+      }
+    },
+    "package_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "package_digest",
+        "scenario_id",
+        "cutoff_id",
+        "cutoff_at",
+        "baseline_preference_count",
+        "challenger_preference_count",
+        "preference_consensus_pct",
+        "minimum_preference_consensus_pct",
+        "score_delta",
+        "raw_review_result",
+        "favored_variant_id"
+      ],
+      "properties": {
+        "review_id": {"type": "string", "pattern": "^[0-9a-f]{24}$"},
+        "package_digest": {"$ref": "#/$defs/sha256"},
+        "scenario_id": {"const": "new-zealand-cyclone-gabrielle-roads-2023-v1"},
+        "cutoff_id": {
+          "enum": [
+            "T1_COROMANDEL_HIGHWAY_CLOSURES_CONFIRMED",
+            "T2_NORTHLAND_NETWORK_ISOLATION_CONFIRMED"
+          ]
+        },
+        "cutoff_at": {"type": "string", "format": "date-time"},
+        "baseline_preference_count": {"const": 2},
+        "challenger_preference_count": {"const": 3},
+        "preference_consensus_pct": {"const": 60.0},
+        "minimum_preference_consensus_pct": {"const": 66.67},
+        "score_delta": {"enum": [17.0, 31.0]},
+        "raw_review_result": {"const": "REVIEWERS_DO_NOT_AGREE"},
+        "favored_variant_id": {"type": "null"}
+      }
+    },
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "resolution",
+        "rationale",
+        "decided_by_named_study_owner",
+        "decided_on_sydney_date"
+      ],
+      "properties": {
+        "status": {"const": "RESOLVED_HUMAN_ADJUDICATION"},
+        "resolution": {"const": "RETAIN_INCONCLUSIVE"},
+        "rationale": {"type": "string", "minLength": 20, "maxLength": 2000},
+        "decided_by_named_study_owner": {"const": true},
+        "decided_on_sydney_date": {"type": "string", "format": "date"}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "study_owner_identity_retained",
+        "reviewer_identifiers_retained",
+        "credentials_retained",
+        "answer_content_retained",
+        "notes_retained"
+      ],
+      "properties": {
+        "study_owner_identity_retained": {"const": false},
+        "reviewer_identifiers_retained": {"const": false},
+        "credentials_retained": {"const": false},
+        "answer_content_retained": {"const": false},
+        "notes_retained": {"const": false}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original_reviews_immutable",
+        "disposition_is_not_an_additional_review",
+        "raw_review_result_remains_authoritative",
+        "no_winner_converted_to_winner",
+        "separate_disposition_per_package"
+      ],
+      "properties": {
+        "original_reviews_immutable": {"const": true},
+        "disposition_is_not_an_additional_review": {"const": true},
+        "raw_review_result_remains_authoritative": {"const": true},
+        "no_winner_converted_to_winner": {"const": true},
+        "separate_disposition_per_package": {"const": true}
+      }
+    },
+    "claim_boundary": {"type": "object"},
+    "authority": {"type": "object"},
+    "operational_mutations": {"const": []},
+    "record_digest": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

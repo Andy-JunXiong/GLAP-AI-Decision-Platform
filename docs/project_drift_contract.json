@@ -48,13 +48,14 @@
     {
       "id": "action_edit_owner_due_date",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "staging response fix, stable same-request replay, and distinct named-approver APPROVE verified; COMPLETE remains separate and unauthorized",
+      "boundary": "staging response fix, stable same-request replay, distinct named-approver APPROVE, and the later auto-refreshed Evidence interaction are read-only reconciled; COMPLETE remains separate and unauthorized",
       "evidence_files": [
         "lambda/glap_action_mutation.py",
         "lambda/glap_operations_api.py",
         "sql/15_action_assignment_v1.sql",
         "sql/16_action_assignment_validation.sql",
         "ops/plan_action_assignment_schema.ps1",
+        "ops/reconcile_action_evidence_refresh_staging.ps1",
         "docs/archive/status/handoffs/development_handoff_2026-08-13.md",
         "docs/action_assignment_rollout_contract.json",
         "docs/action_assignment_staging_rollout.md",
@@ -244,7 +245,7 @@
     {
       "id": "decision_quality_review",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "four independent pseudonymous submissions from the formal Sites and content-equivalent mainland entries passed the study-owner-approved frozen-v3 compatibility check; the private 120-record aggregate has 15 package results favouring glap-a303-on and 15 REVIEWERS_DO_NOT_AGREE results; the live Pages view publishes only the aggregate-safe four-review result; no Business Outcome Effect, model, production, or operational claim is supported",
+      "boundary": "the governed identity-free five-review corpus aggregate covers 150 locked records; 14 package results favour glap-a303-on, 14 controls are unanimous ties, and Cyclone Gabrielle T1 and T2 remain 3:2 no-winner results below the frozen consensus gate; Pages still shows the earlier four-review snapshot pending separate publication authority; no Business Outcome Effect, model, production, or operational claim is supported",
       "evidence_files": [
         "ops/evaluate_decision_quality.py",
         "ops/build_historical_replay_review_bundle.py",
@@ -263,7 +264,11 @@
         "docs/decision_quality_review_v1.schema.json",
         "docs/decision_quality_comparative_review_v1.schema.json",
         "docs/formal_story_review_export_v1.schema.json",
-        "docs/historical_replay_review_freeze_v3.schema.json"
+        "docs/historical_replay_review_freeze_v3.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.json",
+        "ops/reconcile_live_five_reviews_readonly.py",
+        "tests/test_live_five_review_reconciliation.py"
       ]
     },
     {
@@ -283,6 +288,28 @@
         "docs/evaluation_architecture.md",
         "docs/historical_replay_lab.md",
         "docs/temporal_truthfulness.md"
+      ]
+    },
+    {
+      "id": "decision_quality_adjudication",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the content-addressed four-review 2:2 predecessor remains immutable; the five-review full-corpus aggregate has two non-control no-winner packages, Cyclone Gabrielle T1 and T2, each at 3:2 and 60% consensus below the frozen 66.67% gate; separate named-human records retain no conclusion for both without changing the raw results or expanding authority",
+      "evidence_files": [
+        "docs/decision_quality_adjudication_v1.schema.json",
+        "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+        "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+        "docs/decision_quality_five_review_reconciliation_v1.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.json",
+        "docs/decision_quality_human_disposition_v1.schema.json",
+        "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+        "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+        "ops/validate_decision_quality_adjudication.py",
+        "tests/test_decision_quality_adjudication.py",
+        "blinded-review-survey/data/review-bundle.json",
+        "docs/decision_quality_evaluation.md",
+        "docs/evaluation_architecture.md",
+        "docs/historical_replay_lab.md"
       ]
     },
     {
@@ -356,7 +383,7 @@
     {
       "id": "historical_replay_corpus",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "ten-event AIR/OCEAN/RAIL/ROAD local hybrid corpus with HIGH/MEDIUM coverage; structural gates and four-review minimum met in the private reconciled evidence; 15 package results favour glap-a303-on and 15 require no-winner treatment or adjudication; authoritative public facts plus controlled synthetic enterprise state",
+      "boundary": "ten-event AIR/OCEAN/RAIL/ROAD local hybrid corpus with HIGH/MEDIUM coverage; structural gates and five-review minimum met in the identity-free 150-record aggregate; 14 package results favour glap-a303-on and 16 require no-winner treatment or adjudication; authoritative public facts plus controlled synthetic enterprise state",
       "evidence_files": [
         "ops/run_historical_replay.py",
         "ops/run_historical_replay_corpus.py",
@@ -378,6 +405,9 @@
         "docs/historical_replay_scenario_v1.schema.json",
         "docs/historical_replay_corpus_v1.schema.json",
         "docs/historical_replay_review_freeze_v3.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.json",
+        "ops/reconcile_live_five_reviews_readonly.py",
         "docs/temporal_truthfulness.md"
       ]
     },
