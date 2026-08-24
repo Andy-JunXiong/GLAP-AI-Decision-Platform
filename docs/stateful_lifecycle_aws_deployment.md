@@ -707,6 +707,12 @@ at that Sydney as-of date and provides one overall row plus transport-mode,
 provider, and market-lane breakdowns for shipment volume, delivery performance,
 delay, cost variance, and governed signal candidates.
 
+`baseline_as_of_date` is the inclusion cutoff; `source_max_metric_date` is the
+latest eligible lifecycle metric actually included. The deployment validator
+now requires those values to match. This prevents a later recovery from being
+backdated into an earlier point-in-time baseline and prevents a newer cutoff
+from masking stale source coverage.
+
 This is an operational-calendar engineering baseline over staging data, not
 real-world company performance. Every row therefore carries
 `real_world_evidence=false`, provenance `SIMULATED_MULTIMODAL_V1`, evidence
@@ -738,6 +744,28 @@ The run did not load a seed, recover or replay another date, deploy analytics
 or a lifecycle stack, change production, schedules, or aliases, publish Pages,
 or mutate an Action. Any public aggregate publication remains a separately
 authorized step.
+
+Separately authorized Pages run `32673379142` subsequently published commit
+`fed2462` successfully. The public JSON showed the daily OPS track current at
+`2026-08-24`, while this stateful view retained cutoff `2026-08-09` and eligible
+source metrics only through `2026-08-06`. The repository date-display and
+cutoff/source equality correction is locally implemented and test-verified,
+but it has not yet been published or runtime-verified. Continuing
+the lifecycle, replacing the baseline at a later cutoff, and publishing again
+remain three separate human-authorized operations.
+
+The first two of those later operations were separately authorized and
+completed. Run `32674455765` advanced 12 dates through `2026-08-21`; run
+`32676988757` advanced the remaining three dates through `2026-08-24`, with
+four stages and 41 checks passing per date. Redundant run `32728891520` failed
+closed before processing because the controller refused to overwrite the newer
+24 August status. Run `32729202007` then used only
+`deploy-operational-baseline` at cutoff `2026-08-24`, replaced one aggregate
+view, and passed the deployed 10-check contract. It reported 751 shipments,
+301 new bookings, and 199 delivered rows with synthetic, engineering-only
+provenance. No seed, production alias, schedule, Pages publication, or Action
+mutation was included. Publishing and verifying the stricter equality contract
+remain separate.
 
 ## Future-scenario extension AWS evidence -- 5 August 2026
 

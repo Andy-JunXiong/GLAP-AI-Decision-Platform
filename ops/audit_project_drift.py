@@ -208,6 +208,11 @@ def check_stateful_recovery_evidence_boundary(
         "32671064789",
         "32671484061",
         "32672560594",
+        "32682049141",
+        "32674455765",
+        "32676988757",
+        "32728891520",
+        "32729202007",
     )
     stale_status = (
         "persisted status remains failed",
@@ -227,8 +232,14 @@ def check_stateful_recovery_evidence_boundary(
         and "28 lifecycle" in boundary
         and "5 compatibility" in boundary
         and "8 analytics" in boundary
+        and "actual-calendar continuation" in boundary
+        and "2026-08-24" in boundary
+        and "41 checks per date" in boundary
+        and "failed closed" in boundary
         and "operational baseline view" in boundary
-        and "10 fail-closed checks" in boundary
+        and "10-check contract" in boundary
+        and "aggregate-only pages publication" in boundary
+        and "source coverage equals cutoff" in boundary
         and "real-world evidence false" in boundary
         and "without seed" in boundary
         and "replay" in boundary
@@ -242,8 +253,8 @@ def check_stateful_recovery_evidence_boundary(
             "stateful_cross_gap_recovery_boundary",
             "governance",
             passed,
-            "The cross-gap recovery and operational-baseline evidence remain complete, synthetic, and authority bounded.",
-            "The lifecycle recovery or operational-baseline evidence is stale, incomplete, or claims a wider authority boundary.",
+            "The recovery, operational baseline, public export, and cutoff/source safeguard remain complete, synthetic, and authority bounded.",
+            "The lifecycle recovery, operational baseline, public export, or cutoff/source safeguard is stale, incomplete, or claims a wider authority boundary.",
             (
                 "docs/project_drift_contract.json",
                 status_path,

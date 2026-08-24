@@ -271,6 +271,11 @@ class OpsSnapshotTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             exporter.parse_operational_baseline(future, "2026-08-06")
 
+        stale_source = operational_baseline_row()
+        stale_source["source_max_metric_date"] = "2026-08-02"
+        with self.assertRaisesRegex(ValueError, "does not reach its governed cutoff"):
+            exporter.parse_operational_baseline(stale_source, "2026-08-06")
+
     def test_operational_baseline_rows_publish_safe_breakdowns(self):
         lane = {
             **operational_baseline_row(),

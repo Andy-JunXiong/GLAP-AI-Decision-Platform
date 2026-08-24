@@ -361,6 +361,8 @@ LIMIT 10;</pre></article>
     const baseline=snapshot.operational_baseline||{},m=baseline.metrics||{},maturity=baseline.maturity||{},breakdowns=baseline.breakdowns||{},labels=baseline.outcome_labels||{},profile=baseline.population_profile||{},available=baseline.status==="available";
     const maturityReady=maturity.status==="ENGINEERING_READY";
     const baselineDate=available?dateLabel(baseline.as_of_date):"Unavailable";
+    const baselineSourceDate=available?dateLabel(baseline.source_max_metric_date):"Unavailable";
+    const baselineDateWindow=available?`Baseline cutoff ${baselineDate} · source data through ${baselineSourceDate}`:"Baseline unavailable in this published snapshot";
     const lanes=Array.isArray(breakdowns.market_lanes)?breakdowns.market_lanes:[];
     const laneSignalRows=[...lanes].sort((a,b)=>Number(b.signal_candidate_count||0)-Number(a.signal_candidate_count||0)||Number(b.shipment_count||0)-Number(a.shipment_count||0));
     const renderLaneList=(target,rows,mode)=>{
@@ -371,7 +373,7 @@ LIMIT 10;</pre></article>
       node.innerHTML=rows.length?`<div class="rank-row header"><strong>${headings[0]}</strong><span>${headings[1]}</span><span>${headings[2]}</span><span>${headings[3]}</span></div>`+rows.map(row=>{const value=values(row);return `<div class="rank-row"><strong>${escapeHtml(row.name)}</strong><span>${metric(value[0])}</span><span>${metric(value[1])}</span><span>${metric(value[2])}</span></div>`}).join(""):'<div class="empty-state">No governed lane aggregates are available in this snapshot.</div>';
     };
     const health=document.getElementById("baselineHealth");
-    health.textContent=available?`AWS stateful baseline · as of ${baselineDate}`:"Baseline unavailable in this published snapshot";
+    health.textContent=available?`AWS stateful baseline · cutoff ${baselineDate} · source through ${baselineSourceDate}`:"Baseline unavailable in this published snapshot";
     health.className=available?"status-ok":"status-note";
     document.getElementById("baselineShipments").textContent=metric(m.shipment_count);
     document.getElementById("baselineBookings").textContent=metric(m.new_booking_count);
@@ -396,12 +398,12 @@ LIMIT 10;</pre></article>
     document.getElementById("overviewSignalNote").textContent=available?`${metric(m.high_severity_signal_count)} of ${metric(m.signal_candidate_count)} governed candidates`:`No live stateful baseline in fallback`;
     document.getElementById("overviewObservedOutcomes").textContent=metric(labels.observed);
     document.getElementById("overviewOutcomeNote").textContent=maturityReady?"Engineering maturity threshold passed":`${metric(labels.pending)} labels remain pending`;
-    document.getElementById("signalDataDate").textContent=`Data as of ${baselineDate}`;
+    document.getElementById("signalDataDate").textContent=baselineDateWindow;
     document.getElementById("liveSignalTotal").textContent=metric(m.signal_candidate_count);
     document.getElementById("liveHighSignals").textContent=metric(m.high_severity_signal_count);
     document.getElementById("liveSignalLanes").textContent=metric(lanes.filter(row=>Number(row.signal_candidate_count||0)>0).length);
     document.getElementById("liveSignalBreaches").textContent=metric(m.sla_breach_shipment_count);
-    document.getElementById("shipmentDataDate").textContent=`Data as of ${baselineDate}`;
+    document.getElementById("shipmentDataDate").textContent=baselineDateWindow;
     document.getElementById("shipmentBaselineTotal").textContent=metric(m.shipment_count);
     document.getElementById("shipmentNewBookings").textContent=metric(m.new_booking_count);
     document.getElementById("shipmentSlaBreaches").textContent=metric(m.sla_breach_shipment_count);
@@ -418,7 +420,7 @@ LIMIT 10;</pre></article>
     document.getElementById("outcomeBreachPopulation").textContent=metric(m.sla_breach_shipment_count);
     document.getElementById("outcomeSignalPopulation").textContent=metric(m.signal_candidate_count);
     document.getElementById("outcomeReadiness").innerHTML=`<div><span>OUTCOME MATURITY GATE</span><strong>${maturityReady?"ENGINEERING READY":"NOT READY"}</strong><p>${available?`${delivered} delivered labels observed; ${minimum} are required with observable on-time and realized-cost metrics.`:"The published fallback has no stateful baseline."}</p><small>No measured savings or production performance claim</small></div>`;
-    document.getElementById("statefulAnalyticsDate").textContent=`Data as of ${baselineDate}`;
+    document.getElementById("statefulAnalyticsDate").textContent=baselineDateWindow;
     document.getElementById("analyticsModeCount").textContent=metric(profile.transport_mode_count);
     document.getElementById("analyticsProviderCount").textContent=metric(profile.provider_count);
     document.getElementById("analyticsLaneCount").textContent=metric(profile.market_lane_count);

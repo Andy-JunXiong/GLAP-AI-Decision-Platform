@@ -24,7 +24,7 @@
     {
       "id": "stateful_multimodal_lifecycle",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "manual isolated staging only; cross-gap recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks, then one aggregate 2026-08-09 operational baseline view passed 10 fail-closed checks; synthetic engineering evidence with real-world evidence false, without seed, replay, production alias, schedule, Pages, or Action mutation",
+      "boundary": "manual isolated staging only; cross-gap recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks; actual-calendar continuation later reached 2026-08-24 with 41 checks per date, a redundant older-start request failed closed, and one aggregate 2026-08-24 operational baseline view passed the deployed 10-check contract; an earlier aggregate-only Pages publication exposed source coverage through 2026-08-06, so the locally implemented next-publication gate requires source coverage equals cutoff; synthetic engineering evidence with real-world evidence false, without seed, replay, production alias, schedule, Pages publication from the continuation, or Action mutation",
       "evidence_files": [
         "lambda/glap_stateful_lifecycle_generator.py",
         "infrastructure/stateful-lifecycle-staging.yaml",

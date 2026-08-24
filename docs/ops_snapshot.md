@@ -19,6 +19,8 @@ The `1.7` snapshot contains only:
 - aggregate alert, action, and root-cause distributions from governed AWS v3/v2
   result tables;
 - aggregate pipeline query status and data-completeness checks;
+- a stateful baseline cutoff and its latest included source metric date; a
+  connected publication is rejected unless those dates are equal;
 - the aggregate `ALL` row plus allowlisted transport-mode, provider, and
   market-lane rows from the stateful operational-calendar baseline, including
   shipment, booking, delivery, SLA-breach, governed signal, and aggregate cost
@@ -160,6 +162,15 @@ the product displays **Synthetic validation snapshot · not live**. If the role
 is configured but the export fails, the deployment fails and the last
 successful site remains available; it does not silently publish a fresh-looking
 fallback.
+
+The stateful baseline has two dates with different meanings.
+`baseline_as_of_date` is the governed inclusion cutoff, while
+`source_max_metric_date` is the latest source row actually included. A recovery
+performed after an older cutoff keeps its system-derived later `as_of_date` and
+is correctly excluded from that historical point-in-time baseline. The SQL
+validator and exporter therefore fail closed when source coverage does not
+reach the requested cutoff, and Signals, Shipments, and stateful Analytics show
+both dates rather than shortening them to one ambiguous `Data as of` label.
 
 When `AWS_OPS_PIPELINE_STATUS_REQUIRED=true`, a missing, failed, stale, or
 incomplete pipeline-run contract forces the published snapshot to `stale`; fresh

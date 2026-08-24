@@ -38,6 +38,7 @@ checks AS (
     SELECT 'invalid_cutoff_or_temporal_contract' AS check_name, count(*)
     FROM baseline
     WHERE baseline_as_of_date <> DATE '{{AS_OF_DATE}}'
+       OR source_max_metric_date <> baseline_as_of_date
        OR source_max_metric_date > DATE '{{AS_OF_DATE}}'
        OR temporal_scope_id <> 'OPERATIONAL'
        OR execution_mode <> 'OPERATIONAL'

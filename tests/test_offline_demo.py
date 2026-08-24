@@ -176,6 +176,15 @@ class OfflineDemoTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
 
+    def test_stateful_dates_distinguish_cutoff_from_source_coverage(self):
+        for marker in (
+            "baseline.source_max_metric_date",
+            "Baseline cutoff ${baselineDate} · source data through ${baselineSourceDate}",
+            "cutoff ${baselineDate} · source through ${baselineSourceDate}",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
     def test_pipeline_health_is_visible_and_fail_closed(self):
         for marker in (
             'id="pipelineSummary"',

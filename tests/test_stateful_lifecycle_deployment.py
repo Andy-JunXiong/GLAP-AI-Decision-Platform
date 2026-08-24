@@ -207,6 +207,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("'ENGINEERING_EVALUATION_ONLY'", baseline)
         self.assertIn("sum(IF(delivery_observed, current_total_cost", baseline)
         self.assertIn("delivered_count = 0 AND cost_variance_pct IS NOT NULL", validation)
+        self.assertIn(
+            "source_max_metric_date <> baseline_as_of_date", validation
+        )
         self.assertNotRegex(
             baseline,
             r"(?i)(insert\s+into|merge\s+into|update\s+|delete\s+from|drop\s+)",

@@ -203,6 +203,25 @@ baseline run `32672560594` then created or replaced one cutoff-bounded
 aggregate view and passed 10/10 fail-closed checks. Production alias,
 Scheduler, and Pages remain unchanged and human-owned.
 
+A separately authorized read-only export and Pages deployment run
+`32673379142`, followed by scheduled run `32682049141`, published the aggregate
+snapshot from commit `fed2462`. Inspection confirmed the daily OPS track at
+`2026-08-24` but also exposed that
+the frozen stateful baseline cutoff was `2026-08-09` while its latest eligible
+source metric date was `2026-08-06`. The repository worktree now rejects a
+connected baseline whose source coverage does not equal its cutoff and displays
+both dates. That safeguard is locally verified, with publication verification
+pending.
+
+Separately authorized manual staging runs later closed the source-date gap.
+Run `32674455765` extended `2026-08-10` through `2026-08-21`; run
+`32676988757` completed `2026-08-22` through `2026-08-24`, with four stages and
+41 checks passing per date. Redundant run `32728891520` failed closed before
+processing rather than overwrite the newer 24 August controller status.
+Baseline run `32729202007` then replaced exactly one aggregate view at cutoff
+`2026-08-24` and passed the deployed 10-check contract. These operations loaded
+no seed and changed no production alias, schedule, Pages surface, or Action.
+
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and
 execution, the change set contained one non-replacing Lambda property update,

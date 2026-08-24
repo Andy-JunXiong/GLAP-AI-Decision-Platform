@@ -15,8 +15,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Capability | Current state | Evidence boundary |
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
-| Public OPS snapshot | `PUBLISHED_VERIFIED` | Scheduled run `32682049141` exported and published schema `1.7` from commit `fed2462`; live verification returned the `2026-08-09` aggregate baseline with synthetic, engineering-only provenance |
-| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Cross-gap recovery passed 41 checks and the `2026-08-09` aggregate operational baseline passed 10 fail-closed checks; synthetic engineering evidence only, with no production alias or schedule |
+| Public OPS snapshot | `PUBLISHED_VERIFIED` | Scheduled run `32682049141` exported and published schema `1.7` from commit `fed2462`; live verification returned the earlier `2026-08-09` aggregate baseline with synthetic, engineering-only provenance |
+| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation through `2026-08-24` passed 41 checks per date, and baseline run `32729202007` replaced one aggregate view at the 24 August cutoff and passed the existing 10 checks; the stricter cutoff/source equality safeguard is repository-implemented and locally verified, with publication and runtime verification pending |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
@@ -100,6 +100,26 @@ and deployed the site successfully. A live read returned HTTP 200 with schema
 `real_world_evidence=false`, and `ENGINEERING_EVALUATION_ONLY` disclosures.
 This publication added no private identifiers or write path and changed no
 production alias, schedule, Action, policy, or model.
+
+Read-only inspection of that published stateful baseline found
+`source_max_metric_date=2026-08-06`. This was a point-in-time availability gap,
+not a cache issue: the 9 August recovery executed on 24 August and could not be
+backdated into an earlier cutoff. A repository-only correction now displays
+both dates and requires source coverage to equal the cutoff before a connected
+publication can succeed.
+
+Separately authorized lifecycle runs then closed the actual-calendar source
+gap. Run `32674455765` extended 12 dates from `2026-08-10` through
+`2026-08-21`; run `32676988757` extended `2026-08-22` through `2026-08-24` and
+passed four stages plus 41 checks on each date. A later redundant run
+`32728891520` failed closed before processing because the controller refused to
+overwrite the newer 24 August status with a request beginning on 22 August.
+Finally, baseline run `32729202007` created or replaced one aggregate view at
+cutoff `2026-08-24` and passed its existing 10 checks. These runs used
+`OPERATIONAL` / `ACTUAL_CALENDAR`, loaded no seed, and changed no production
+alias, schedule, Pages surface, or Action. The stricter cutoff/source equality
+check is repository-implemented and locally verified but not yet published or
+runtime-verified.
 
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -836,6 +856,19 @@ done.
   Live verification returned the `2026-08-09` baseline as `available` with
   synthetic, engineering-only provenance and `real_world_evidence=false`;
   pipeline status was `current`.
+- Read-only inspection separated the published `2026-08-09` cutoff from source
+  coverage through `2026-08-06`. The local correction renders both dates and
+  rejects a connected export unless they match.
+- Separately authorized run `32674455765` extended the actual-calendar lifecycle
+  through `2026-08-21`. Run `32676988757` then completed 22–24 August with four
+  stages and 41 checks per date. Redundant run `32728891520` failed closed
+  before processing rather than overwrite the newer 24 August status.
+- Separately authorized baseline run `32729202007` replaced one aggregate view
+  at cutoff `2026-08-24` and passed the existing 10 checks. The equality gate
+  and two-date UI now pass 91 focused tests, Python compilation, all 468
+  repository tests, 26 focused drift tests, the 32/32 drift audit,
+  machine-readable contract parsing, SQL/template integrity checks, and
+  `git diff --check`. They remain unpublished and runtime-unverified.
 - The repository cross-gap correction passes 55 focused adapter, quality-gate, and
   deployment-contract tests. The synchronized worktree passes Python
   compilation, all 437 repository tests, the 30/30 project drift audit, the
@@ -1019,16 +1052,23 @@ done.
 
 ### Incomplete
 
+- The public stateful baseline still reflects the earlier published artifact;
+  the strict cutoff/source equality gate and two-date display have not been
+  published.
 - The public Evaluation & Trust view has not been refreshed to the five-review
   14/16 aggregate. Publication requires separate human authority.
 
 ## Next Up
 
-1. Prepare the aggregate-only Evaluation & Trust refresh from its four-review
+1. After the separately authorized commit, push, and Pages publication, verify
+   read-only that the public baseline
+   exposes both cutoff and source coverage at `2026-08-24` and retains its
+   synthetic, engineering-only provenance.
+2. Prepare the aggregate-only Evaluation & Trust refresh from its four-review
    15/15 snapshot to the five-review 14/16 result, without including reviewer
    identity or per-question content.
-2. Publishing that prepared refresh remains a separate human decision. No
-   publication, deployment, or operational mutation is authorized here.
+3. Publishing that prepared evaluation refresh remains a separate human
+   decision. No deployment or operational mutation is authorized here.
 
 ## Current-week history
 

@@ -45,6 +45,14 @@ only `OPERATIONAL` / `ACTUAL_CALENDAR` rows. Their explicitly named
 `*_context*` counterparts retain all scopes for governed scenario work and
 must always be queried with one `temporal_scope_id`.
 
+An operational-baseline cutoff is not itself proof that source rows exist
+through that date. Late recovery rows retain the Sydney `as_of_date` on which
+they became available and must not be backdated into an earlier point-in-time
+baseline. A connected public baseline may claim a cutoff only when its
+`source_max_metric_date` equals `baseline_as_of_date`; otherwise validation and
+publication fail closed. Public UI surfaces must show both values whenever the
+contract is unavailable or being diagnosed.
+
 ## Evidence rules
 
 - Future simulations may test lifecycle transitions, quality gates, recovery,

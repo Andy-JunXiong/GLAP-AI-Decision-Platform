@@ -135,6 +135,18 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 encoding="utf-8",
             )
             detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            status_path.write_text(
+                original_status.replace("32682049141", "pages-run-id-missing"),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            status_path.write_text(
+                original_status.replace("32729202007", "latest-baseline-run-missing"),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
         self.assertEqual(detected.status, "DRIFT")
 
     def test_deployed_evidence_maturity_requires_release_run(self):

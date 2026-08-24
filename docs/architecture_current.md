@@ -189,6 +189,8 @@ flowchart TB
 - Failed scheduled invocations retry twice before entering the encrypted DLQ.
 - The public Pages role is read-only and publishes aggregate analytics without
   entity, route, carrier, account, ARN, or S3 identifiers.
+- A connected stateful baseline may publish only when its latest eligible
+  source metric date equals its governed cutoff; the UI exposes both dates.
 - Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,
   root-cause, and decision tables remain historical evidence only.
 
@@ -303,6 +305,26 @@ and persisted terminal success. Separately authorized baseline run
 `2026-08-09` and passed 10/10 fail-closed checks. It remains synthetic,
 engineering-only evidence with `real_world_evidence=false`. No seed,
 production alias, schedule, Pages publication, or Action mutation was included.
+
+The separately authorized aggregate-only Pages run `32673379142`, followed by
+scheduled run `32682049141`, published commit `fed2462` successfully. Read-only
+inspection found the daily OPS track current at `2026-08-24`, but the stateful
+baseline retained cutoff `2026-08-09` with eligible source metrics only through
+`2026-08-06`. A local
+contract correction now rejects that cutoff/source gap on the next connected
+publication and renders the two dates separately. It has not yet been committed
+or deployed; the currently published site still contains the earlier snapshot.
+
+Named-human-authorized staging runs subsequently extended actual-calendar
+source state through `2026-08-24`. Runs `32674455765` and `32676988757` covered
+10–21 August and 22–24 August respectively, with four stages and 41 checks per
+date. Redundant run `32728891520` was rejected before processing because its
+older start date could not overwrite the newer status. Baseline run
+`32729202007` then replaced one aggregate view at the 24 August cutoff and
+passed the deployed 10-check contract. The stricter equality gate is
+repository-implemented and locally verified, with publication verification
+pending; none of these runs moved a production alias, created a schedule,
+published Pages, or mutated an Action.
 
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached

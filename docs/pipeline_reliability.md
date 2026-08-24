@@ -84,6 +84,23 @@ still `SYNTHETIC_OPERATIONAL_CALENDAR_BASELINE`, engineering evaluation only,
 and not real-world evidence. The run did not seed, recover, or replay lifecycle
 data and did not change production, schedules, aliases, Pages, or Actions.
 
+Pages run `32673379142` later published that aggregate view successfully and
+made a narrower freshness gap visible: the daily OPS track was current at
+`2026-08-24`, while the stateful baseline cutoff was `2026-08-09` and its
+latest eligible metric date was `2026-08-06`. The repository now treats
+cutoff/source equality as part of the baseline fail-closed contract. This
+safeguard is locally verified but not yet published; the current public page is
+the earlier successful artifact.
+
+Separately authorized isolated-staging continuation runs `32674455765` and
+`32676988757` later advanced actual-calendar source state through
+`2026-08-24`, with all four stages and 41 checks passing per date. Redundant
+run `32728891520` demonstrated the status monotonicity guard by failing before
+an older start date could overwrite the newer 24 August status. Baseline run
+`32729202007` then replaced one aggregate view at the 24 August cutoff and
+passed the currently deployed 10-check contract. This is staging runtime
+evidence, not a Pages publication or real-world logistics claim.
+
 The generated SQL was executed successfully in Athena on 4 August 2026:
 
 | Gate | Current tables | Aggregate rows | Duplicate keys | Shipments today / prior day |

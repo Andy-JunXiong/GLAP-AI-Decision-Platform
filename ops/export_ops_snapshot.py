@@ -935,6 +935,10 @@ def parse_operational_baseline(
         or source_start_date > source_max_date
     ):
         raise ValueError("Operational baseline exceeds the governed analysis date")
+    if source_max_date != baseline_date:
+        raise ValueError(
+            "Operational baseline source data does not reach its governed cutoff"
+        )
 
     if (
         str(row.get("real_world_evidence") or "").lower() != "false"

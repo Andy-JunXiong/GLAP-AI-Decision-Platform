@@ -6,6 +6,13 @@ preserved handoffs.
 
 ## 2026-08-24
 
+- Added a truthful stateful-baseline publication contract. Connected exports
+  now fail closed unless the latest eligible source date equals the governed
+  cutoff, while Signals, Shipments, and stateful Analytics display both dates.
+  Separately authorized staging continuation reached `2026-08-24`, and the
+  24 August aggregate baseline passed its deployed 10-check contract. This
+  capability remains synthetic and aggregate-only; commit, Pages publication,
+  and live verification are recorded as separate maturity states.
 - Recorded the named project owner's separate `RETAIN_INCONCLUSIVE`
   dispositions for Cyclone Gabrielle T1 and T2. T1 appends to its immutable
   pending predecessor by digest; T2 begins a separate disposition lineage.

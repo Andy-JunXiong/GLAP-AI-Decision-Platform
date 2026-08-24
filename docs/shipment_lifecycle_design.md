@@ -37,8 +37,8 @@ KN/DHL rows, or clear provider/model readiness. The AWS quality-gate update,
 controlled recovery of the failed `2026-08-09` status, later actual-calendar
 continuation, operational-baseline refresh, and public publication were
 defined as separate runtime steps requiring human authority. The recovery and
-baseline refresh were later separately authorized and completed; public
-publication remains separate and unauthorized.
+baseline refresh were later separately authorized and completed; aggregate-only
+public publication was subsequently authorized and completed as its own step.
 
 ## Cross-gap prior-state correction -- 23 August 2026
 
@@ -66,6 +66,25 @@ and passed 10/10 fail-closed checks. Both runtime results remain synthetic
 engineering evidence; they do not fabricate a missing calendar date, alter an
 evidence classification, or authorize production, schedules, aliases, Pages,
 or another recovery attempt.
+
+A later aggregate-only Pages run `32673379142` succeeded from commit `fed2462`
+and exposed the point-in-time distinction clearly: the published baseline
+cutoff remained `2026-08-09`, while its latest eligible source metric date was
+`2026-08-06`. This was not a cache failure. The recovery rows were created with
+the system-derived `2026-08-24` availability date and therefore could not be
+retroactively included in a 9 August baseline. The repository correction now
+requires source coverage to equal the requested cutoff and renders both dates;
+that correction is locally verified and awaits publication and runtime
+verification.
+
+The source continuation and baseline replacement were later separately
+authorized. Run `32674455765` extended 10–21 August; run `32676988757`
+extended 22–24 August and passed four stages plus 41 checks per date. Redundant
+run `32728891520` failed closed before processing because its older start date
+could not overwrite the newer 24 August status. Baseline run `32729202007`
+then replaced one aggregate view at cutoff `2026-08-24` and passed the deployed
+10-check contract. The repository equality check has not yet been exercised by
+a connected export or Pages publication.
 
 ## Decision summary
 
