@@ -1834,10 +1834,12 @@ def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
         "blinded-review-survey/data/review-bundle.json",
         "ops/validate_decision_quality_adjudication.py",
         "ops/export_public_evaluation_snapshot.py",
+        "ops/canary_public_evaluation.py",
         "offline/data/evaluation-snapshot.json",
         "offline/glap-demo.html",
         ".github/workflows/pages.yml",
         "tests/test_public_evaluation_snapshot.py",
+        "tests/test_public_evaluation_canary.py",
         "tests/test_offline_demo.py",
         "docs/evaluation_architecture.md",
         "docs/ops_snapshot.md",
@@ -1889,6 +1891,7 @@ def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
         required_workflow = (
             '"offline/data/evaluation-snapshot.json"',
             '"ops/export_public_evaluation_snapshot.py"',
+            '"ops/canary_public_evaluation.py"',
             '"ops/validate_decision_quality_adjudication.py"',
             '"docs/public_evaluation_snapshot_v1.schema.json"',
             '"docs/decision_quality_five_review_corpus_summary_v1.schema.json"',
@@ -1896,6 +1899,18 @@ def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
             '"docs/decision_quality_rubric_v1.json"',
             '"blinded-review-survey/data/review-bundle.json"',
             "python ops/export_public_evaluation_snapshot.py",
+            "python ops/canary_public_evaluation.py",
+        )
+        canary = (root / "ops/canary_public_evaluation.py").read_text(
+            encoding="utf-8"
+        )
+        required_canary = (
+            '"mode": "READ_ONLY"',
+            "live_snapshot_matches_governed_projection",
+            "aggregate_counts_reconcile",
+            "authority_all_false",
+            "page_loader_present",
+            "fail_closed_state_present",
         )
         passed = (
             generated == tracked
@@ -1907,8 +1922,11 @@ def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
             and all(marker in html for marker in required_html)
             and not any(marker in html for marker in forbidden_html)
             and all(marker in workflow for marker in required_workflow)
+            and all(marker in canary for marker in required_canary)
             and workflow.index("python ops/export_public_evaluation_snapshot.py")
             < workflow.index("- name: Prepare static site")
+            and workflow.index("uses: actions/deploy-pages@v4")
+            < workflow.index("python ops/canary_public_evaluation.py")
         )
     except Exception as error:
         failure = f"The public Evaluation snapshot boundary drifted: {error}."
@@ -1917,7 +1935,7 @@ def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
             "public_evaluation_snapshot_boundary",
             "evaluation",
             passed,
-            "The page reads a versioned, source-bound aggregate-only Evaluation snapshot, withholds invalid results, and the Pages source validates the exact projection before artifact preparation.",
+            "The page reads a versioned, source-bound aggregate-only Evaluation snapshot, withholds invalid results, validates the exact projection before artifact preparation, and runs a read-only live canary after deployment.",
             failure,
             evidence,
         )

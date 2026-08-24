@@ -142,7 +142,7 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Read-only Evaluation publication canary
 
-**Status:** `RECOMMENDED_NOT_APPROVED`
+**Status:** `IMPLEMENTED_LOCAL_PENDING_PUBLICATION`
 
 **Goal**
 
@@ -150,12 +150,30 @@ Turn the one-time post-publication checks into a deterministic read-only canary
 that verifies the live v1 JSON, aggregate reconciliation, all-false authority,
 page loader, and fail-closed state after a Pages deployment.
 
-**Boundary**
+**Completed**
 
-This is the recommended next development slice, not approved or implemented
-work. Any implementation must remain read-only and aggregate-only and requires
-new human authorization. It must not add AWS writes, production, schedule,
-alias, data, review, policy, model, or Action authority.
+- Added a standard-library-only canary that fetches the published page and v1
+  JSON without credentials or writes. It requires the live JSON to equal the
+  governed source projection, reruns the snapshot contract, reconciles corpus
+  and result counts, and requires every authority field to remain false.
+- The canary requires the deployed page to equal the locally validated Pages
+  source and separately confirms the no-store Evaluation loader, initial
+  `UNAVAILABLE` state, and exception path that withholds results. Bounded
+  retries handle Pages propagation without accepting an older artifact.
+- Wired the canary after `actions/deploy-pages` and records its aggregate-only
+  report in the workflow summary. Added focused publication-lag, projection,
+  page, and authority failure tests plus project-drift protection.
+
+**Boundary and pending runtime evidence**
+
+The implementation is read-only. The project owner has separately authorized
+its bounded commit and push plus the resulting existing aggregate-only Pages
+publication; workflow and canary results remain pending. No AWS write,
+production, schedule, alias, data, review, policy, model, or Action authority
+was added. A manual invocation of the local canary
+against the currently published site passed all six checks and the expected
+10/30, 5, 150, and 14/16 aggregates; this verifies the script against the
+existing artifact but does not establish that the new workflow step ran.
 
 ## Recently completed — Versioned public Evaluation snapshot
 
@@ -673,6 +691,9 @@ separately owned.
   authorized only through the bounded `main` push, CI, read-only OPS export,
   and aggregate-only Pages path; all write and production authorities remain
   excluded.
+- The local post-deployment canary passes against the existing live page and
+  snapshot. Its bounded release is separately authorized, but GitHub Actions
+  runtime verification remains pending.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -1122,18 +1143,18 @@ done.
 
 ### Incomplete
 
-- Post-publication Evaluation verification is currently a manual read-only
-  check; no automated live canary records the schema, aggregate reconciliation,
-  authority boundary, and fail-closed loader after every Pages deployment.
+- The automated read-only Evaluation canary is implemented and its bounded
+  release is authorized, but it has not yet run after a Pages deployment;
+  publication and runtime evidence remain pending.
 
 ## Next Up
 
-1. Recommended next feature: add a read-only post-deployment Evaluation canary
-   that validates the live v1 JSON, aggregate reconciliation, all-false
-   authority, page loader, and fail-closed state after each Pages publication.
-2. This is a recommendation only and requires a new implementation approval;
-   it must not add AWS writes, operational mutation, production, schedule,
-   alias, data, or Action authority.
+1. Execute the separately authorized bounded commit and `main` push, then
+   inspect CI, the aggregate-only Pages publication, the new canary workflow
+   summary, and the live result.
+2. This authorization does not add AWS writes, operational mutation,
+   production, schedule, alias, data, review, policy, model, or Action
+   authority.
 
 ## Current-week history
 

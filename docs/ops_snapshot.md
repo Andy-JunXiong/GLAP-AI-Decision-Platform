@@ -91,6 +91,18 @@ tracked JSON differs from the governed source projection. This does not change
 the OPS exporter, its read-only AWS role, or the requirement for separate
 human authority before push or publication.
 
+The same workflow now includes a not-yet-runtime-verified post-deployment
+canary. It
+uses only unauthenticated HTTP reads after `actions/deploy-pages`, rejects a
+live page that differs from the validated local source, requires the live JSON
+to equal the governed projection, reruns its Sydney-date and aggregate
+reconciliation checks, and confirms all-false authority plus the loader and
+fail-closed markers. Bounded retries cover publication propagation; a passing
+report contains only safe aggregate totals and is written to the workflow
+summary. Its bounded commit, push, and resulting aggregate-only Pages
+publication are separately authorized; until that workflow run completes,
+this implementation is not runtime evidence or standing publication authority.
+
 That authority was separately granted for commit `489ef90`. CI run
 `32741075346` and Pages run `32741075493` passed; the latter completed the
 existing read-only OPS export and Evaluation validation before deployment.

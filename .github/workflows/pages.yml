@@ -10,6 +10,7 @@ on:
       - "offline/data/evaluation-snapshot.json"
       - "ops/export_ops_snapshot.py"
       - "ops/export_public_evaluation_snapshot.py"
+      - "ops/canary_public_evaluation.py"
       - "ops/validate_decision_quality_adjudication.py"
       - "ops/configure_ops_snapshot_access.ps1"
       - "docs/public_evaluation_snapshot_v1.schema.json"
@@ -105,3 +106,18 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published Evaluation surface
+        if: ${{ github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: |
+          python ops/canary_public_evaluation.py \
+            --base-url "${{ steps.deployment.outputs.page_url }}" \
+            --cache-bust "${{ github.sha }}-${{ github.run_attempt }}" \
+            | tee evaluation-canary.json
+          {
+            echo "### Read-only Evaluation publication canary"
+            echo '```json'
+            cat evaluation-canary.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

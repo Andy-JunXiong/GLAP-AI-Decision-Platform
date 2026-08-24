@@ -197,6 +197,11 @@ flowchart TB
   frozen source contract, rubric, and review bundle. It must validate the exact
   aggregate-only projection before preparing or uploading a Pages artifact;
   this local gate is not evidence that a workflow ran or publication occurred.
+- A local post-deployment Evaluation canary is connected after the existing
+  Pages deploy step. It uses unauthenticated reads only, requires the live page
+  and v1 JSON to match their governed local sources, and fails on count,
+  authority, loader, or fail-closed drift. Until the authorized workflow run
+  completes, this is implementation evidence only, not runtime evidence.
 - A connected stateful baseline may publish only when its latest eligible
   source metric date equals its governed cutoff; the UI exposes both dates.
 - Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,

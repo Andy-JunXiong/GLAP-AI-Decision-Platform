@@ -208,3 +208,13 @@ The first bounded release of this gate completed from commit `489ef90`: CI run
 ran the read-only OPS export and the Evaluation validator before artifact
 preparation, then deployed the site. Read-only HTTP checks verified the live
 v1 snapshot and loader; no AWS write or operational mutation was included.
+
+A post-deployment read-only canary is now implemented locally after
+`actions/deploy-pages`. It fetches the published page and v1 JSON with no
+credentials, requires them to match the governed local sources, reruns the
+Sydney-date and aggregate contract, and verifies all-false authority, the
+no-store loader, and the `UNAVAILABLE` fail-closed path. It retries boundedly
+for Pages propagation and writes only safe aggregate evidence to the workflow
+summary. The project owner has separately authorized the bounded commit and
+push plus the resulting existing aggregate-only Pages publication; workflow
+and canary runtime evidence remain pending.

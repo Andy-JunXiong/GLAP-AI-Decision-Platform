@@ -367,6 +367,17 @@ passed before artifact preparation, and live read-only checks confirmed the v1
 schema, governed aggregate, all-false authority fields, loader, and fail-closed
 state. This runtime evidence does not expand the snapshot's claim boundary.
 
+A deterministic post-deployment canary is now implemented locally in
+`ops/canary_public_evaluation.py` and connected after the Pages deploy step.
+It performs unauthenticated reads only, requires the live v1 JSON to equal the
+governed source projection, reruns the temporal and aggregate contract, checks
+all-false authority, and requires the deployed page to retain the validated
+loader and `UNAVAILABLE` fail-closed path. It retries only to tolerate Pages
+propagation and never accepts an older or different artifact. Its bounded
+commit, push, and resulting aggregate-only Pages publication are separately
+authorized, but it supplies no new runtime evidence until that workflow run
+completes.
+
 Two bounded A303.v2 eligibility guardrails were then screened on the same
 frozen space as explicitly `POST_HOC_DEVELOPMENT_EVIDENCE`. The anti-abstention
 gate prevents a candidate from appearing robust merely by changing nearly all
