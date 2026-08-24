@@ -6,13 +6,21 @@ preserved handoffs.
 
 ## 2026-08-24
 
+- Prepared the aggregate-only public Evaluation & Trust view for the complete
+  five-review corpus: five reviews, 150 locked records, 14 gated preferences,
+  14 unanimous control ties, and two 3:2 no-winner comparisons below the frozen
+  consensus gate. The public source contains no reviewer identity, credentials,
+  per-question answers, notes, or private study artifacts. A named human
+  separately authorized the source-control release and Pages publication;
+  workflow and live-page success remain separate runtime evidence.
 - Added a truthful stateful-baseline publication contract. Connected exports
   now fail closed unless the latest eligible source date equals the governed
   cutoff, while Signals, Shipments, and stateful Analytics display both dates.
   Separately authorized staging continuation reached `2026-08-24`, and the
   24 August aggregate baseline passed its deployed 10-check contract. This
-  capability remains synthetic and aggregate-only; commit, Pages publication,
-  and live verification are recorded as separate maturity states.
+  capability remains synthetic and aggregate-only. Commit `28e3edf`, CI run
+  `32731582106`, and Pages run `32731582185` later completed successfully; a
+  read-only live check confirmed cutoff and source coverage at `2026-08-24`.
 - Recorded the named project owner's separate `RETAIN_INCONCLUSIVE`
   dispositions for Cyclone Gabrielle T1 and T2. T1 appends to its immutable
   pending predecessor by digest; T2 begins a separate disposition lineage.

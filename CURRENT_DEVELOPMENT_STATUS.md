@@ -15,8 +15,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Capability | Current state | Evidence boundary |
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
-| Public OPS snapshot | `PUBLISHED_VERIFIED` | Scheduled run `32682049141` exported and published schema `1.7` from commit `fed2462`; live verification returned the earlier `2026-08-09` aggregate baseline with synthetic, engineering-only provenance |
-| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation through `2026-08-24` passed 41 checks per date, and baseline run `32729202007` replaced one aggregate view at the 24 August cutoff and passed the existing 10 checks; the stricter cutoff/source equality safeguard is repository-implemented and locally verified, with publication and runtime verification pending |
+| Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
+| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation through `2026-08-24` passed 41 checks per date, baseline run `32729202007` replaced one aggregate view at the 24 August cutoff and passed the deployed 10 checks, and the later Pages exporter exercised the stricter cutoff/source equality gate successfully; the SQL correction remains repository-delivered rather than separately redeployed by Pages |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
@@ -36,7 +36,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | A303.v1 development disposition | `RETIRED_FROM_PROGRESSION` | The human project owner explicitly selected option 1 on 2026-08-22; threshold tuning, new holdouts, prospective Outcome collection, calibration, activation, and production progression are closed while all evidence remains preserved |
 | A303 Outcome calibration interface | `INACTIVE_REUSABLE_INFRASTRUCTURE` | Contract and validator remain available for a separately authorized future rule, but A303.v1 calibration is `CLOSED_NOT_APPLICABLE` and no eligible controlled pairs exist |
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
-| Public evaluation evidence view | `PUBLISHED_VERIFIED` | The live aggregate-only GitHub Pages view shows four reviews, 120 locked records, and the mixed 15/15 package result without private review content |
+| Public evaluation evidence view | `RELEASE_AUTHORIZED_PENDING_RUNTIME` | The repository candidate shows five reviews, 150 locked records, and 14/16 without private review content; commit, push, and aggregate-only Pages publication are explicitly authorized, while the workflow result and live content remain separate read-only runtime evidence |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -104,9 +104,9 @@ production alias, schedule, Action, policy, or model.
 Read-only inspection of that published stateful baseline found
 `source_max_metric_date=2026-08-06`. This was a point-in-time availability gap,
 not a cache issue: the 9 August recovery executed on 24 August and could not be
-backdated into an earlier cutoff. A repository-only correction now displays
-both dates and requires source coverage to equal the cutoff before a connected
-publication can succeed.
+backdated into an earlier cutoff. The correction displays both dates and
+requires source coverage to equal the cutoff before a connected publication
+can succeed.
 
 Separately authorized lifecycle runs then closed the actual-calendar source
 gap. Run `32674455765` extended 12 dates from `2026-08-10` through
@@ -117,9 +117,11 @@ overwrite the newer 24 August status with a request beginning on 22 August.
 Finally, baseline run `32729202007` created or replaced one aggregate view at
 cutoff `2026-08-24` and passed its existing 10 checks. These runs used
 `OPERATIONAL` / `ACTUAL_CALENDAR`, loaded no seed, and changed no production
-alias, schedule, Pages surface, or Action. The stricter cutoff/source equality
-check is repository-implemented and locally verified but not yet published or
-runtime-verified.
+alias, schedule, Pages surface, or Action. Commit `28e3edf` later delivered the
+stricter display and exporter gate. CI run `32731582106` and aggregate-only
+Pages run `32731582185` succeeded; a live read confirmed both cutoff and source
+coverage at `2026-08-24` with synthetic, engineering-only provenance. Pages
+did not redeploy the SQL validator or mutate lifecycle data.
 
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
@@ -344,8 +346,11 @@ activating, or allowing it to replace deterministic rules.
   below the frozen 66.67% gate. Their score deltas are 17 and 31 respectively;
   neither has a favored variant, and separate append-only human records retain
   no conclusion for both packages;
-- the live public Evaluation & Trust page still shows the earlier four-review
-  15/15 snapshot. A refresh remains pending separate publication authority;
+- the repository static candidate renders the identity-free five-review 14/16
+  aggregate. A named human has separately authorized its commit, push, and
+  aggregate-only Pages publication; workflow success and live content must
+  still be established by read-only runtime evidence rather than inferred from
+  the source;
 - no AWS, operational Action, production, model, or Business Outcome Effect
   authority is added.
 
@@ -1042,9 +1047,9 @@ done.
 - The prior T1 2:2 package has an immutable predecessor record; T1 and T2 each
   have five-review 3:2 results below the 66.67% gate and separate
   `RETAIN_INCONCLUSIVE` human dispositions.
-- The five-review full-corpus aggregate is complete. The public Evaluation &
-  Trust view remains on the earlier four-review snapshot pending separate
-  publication authority.
+- The five-review full-corpus aggregate and its aggregate-only repository page
+  candidate are complete. Release is explicitly authorized, but workflow and
+  live-page success remain separate runtime facts until read-only verified.
 - Simulator v1 is deliberately synthetic and has not been calibrated against
   an independently governed factual or prospective Outcome source. Because its
   current capability result is `NOT_ROBUST`, prospective collection is not the
@@ -1052,23 +1057,20 @@ done.
 
 ### Incomplete
 
-- The public stateful baseline still reflects the earlier published artifact;
-  the strict cutoff/source equality gate and two-date display have not been
-  published.
-- The public Evaluation & Trust view has not been refreshed to the five-review
-  14/16 aggregate. Publication requires separate human authority.
+- The repository source is release-ready for the five-review 14/16 aggregate.
+  Publication and post-release verification must remain aggregate-only and
+  cannot be inferred from a committed source tree.
 
 ## Next Up
 
-1. After the separately authorized commit, push, and Pages publication, verify
-   read-only that the public baseline
-   exposes both cutoff and source coverage at `2026-08-24` and retains its
-   synthetic, engineering-only provenance.
-2. Prepare the aggregate-only Evaluation & Trust refresh from its four-review
-   15/15 snapshot to the five-review 14/16 result, without including reviewer
-   identity or per-question content.
-3. Publishing that prepared evaluation refresh remains a separate human
-   decision. No deployment or operational mutation is authorized here.
+1. Complete the authorized source-control release and verify read-only that the
+   latest successful Pages runtime shows five reviews, 150 locked records, the
+   14/16 result, and both 3:2 comparisons below the frozen consensus gate.
+2. After runtime verification, design a versioned aggregate-only Evaluation
+   snapshot contract so future public evidence does not depend on static page
+   constants.
+3. No AWS deployment, operational mutation, production change, schedule,
+   alias, data, or Action authority is implied by either step.
 
 ## Current-week history
 

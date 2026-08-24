@@ -74,8 +74,7 @@ cutoff remained `2026-08-09`, while its latest eligible source metric date was
 the system-derived `2026-08-24` availability date and therefore could not be
 retroactively included in a 9 August baseline. The repository correction now
 requires source coverage to equal the requested cutoff and renders both dates;
-that correction is locally verified and awaits publication and runtime
-verification.
+the display and exporter gate are locally and publicly runtime-verified.
 
 The source continuation and baseline replacement were later separately
 authorized. Run `32674455765` extended 10–21 August; run `32676988757`
@@ -83,8 +82,10 @@ extended 22–24 August and passed four stages plus 41 checks per date. Redundan
 run `32728891520` failed closed before processing because its older start date
 could not overwrite the newer 24 August status. Baseline run `32729202007`
 then replaced one aggregate view at cutoff `2026-08-24` and passed the deployed
-10-check contract. The repository equality check has not yet been exercised by
-a connected export or Pages publication.
+10-check contract. Commit `28e3edf` and separately authorized aggregate-only
+Pages run `32731582185` later exercised the connected exporter equality gate
+successfully. A read-only public check confirmed both dates at `2026-08-24`;
+Pages did not redeploy the SQL validator or mutate lifecycle data.
 
 ## Decision summary
 

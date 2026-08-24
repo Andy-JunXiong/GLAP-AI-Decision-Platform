@@ -213,6 +213,7 @@ def check_stateful_recovery_evidence_boundary(
         "32676988757",
         "32728891520",
         "32729202007",
+        "32731582185",
     )
     stale_status = (
         "persisted status remains failed",
@@ -240,6 +241,7 @@ def check_stateful_recovery_evidence_boundary(
         and "10-check contract" in boundary
         and "aggregate-only pages publication" in boundary
         and "source coverage equals cutoff" in boundary
+        and "without redeploying sql" in boundary
         and "real-world evidence false" in boundary
         and "without seed" in boundary
         and "replay" in boundary

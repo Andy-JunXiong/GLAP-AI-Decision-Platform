@@ -171,6 +171,10 @@ is correctly excluded from that historical point-in-time baseline. The SQL
 validator and exporter therefore fail closed when source coverage does not
 reach the requested cutoff, and Signals, Shipments, and stateful Analytics show
 both dates rather than shortening them to one ambiguous `Data as of` label.
+Commit `28e3edf` exercised the connected exporter gate in aggregate-only Pages
+run `32731582185`; the run succeeded and a read-only live check returned both
+dates as `2026-08-24`. This verifies the published display and exporter path,
+not a separate deployment of the SQL validator or any lifecycle mutation.
 
 When `AWS_OPS_PIPELINE_STATUS_REQUIRED=true`, a missing, failed, stale, or
 incomplete pipeline-run contract forces the published snapshot to `stale`; fresh

@@ -310,10 +310,8 @@ The separately authorized aggregate-only Pages run `32673379142`, followed by
 scheduled run `32682049141`, published commit `fed2462` successfully. Read-only
 inspection found the daily OPS track current at `2026-08-24`, but the stateful
 baseline retained cutoff `2026-08-09` with eligible source metrics only through
-`2026-08-06`. A local
-contract correction now rejects that cutoff/source gap on the next connected
-publication and renders the two dates separately. It has not yet been committed
-or deployed; the currently published site still contains the earlier snapshot.
+`2026-08-06`. The contract correction rejects that cutoff/source gap on a
+connected publication and renders the two dates separately.
 
 Named-human-authorized staging runs subsequently extended actual-calendar
 source state through `2026-08-24`. Runs `32674455765` and `32676988757` covered
@@ -322,9 +320,15 @@ date. Redundant run `32728891520` was rejected before processing because its
 older start date could not overwrite the newer status. Baseline run
 `32729202007` then replaced one aggregate view at the 24 August cutoff and
 passed the deployed 10-check contract. The stricter equality gate is
-repository-implemented and locally verified, with publication verification
-pending; none of these runs moved a production alias, created a schedule,
-published Pages, or mutated an Action.
+repository-implemented and locally verified; none of these runs moved a
+production alias, created a schedule, published Pages, or mutated an Action.
+
+Commit `28e3edf` later delivered the public display and strict exporter gate.
+CI run `32731582106` and separately authorized aggregate-only Pages run
+`32731582185` succeeded. A live read confirmed cutoff and source coverage both
+at `2026-08-24`, with synthetic, engineering-only provenance. Pages performed
+no lifecycle write and did not redeploy the SQL validator, production alias,
+schedule, or Action path.
 
 On 2026-08-10, the release path demonstrated both recovery and success. A first
 execution exposed missing exact rollback reads and reached

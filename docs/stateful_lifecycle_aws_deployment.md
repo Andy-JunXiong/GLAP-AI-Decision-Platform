@@ -750,9 +750,8 @@ Separately authorized Pages run `32673379142` subsequently published commit
 `2026-08-24`, while this stateful view retained cutoff `2026-08-09` and eligible
 source metrics only through `2026-08-06`. The repository date-display and
 cutoff/source equality correction is locally implemented and test-verified,
-but it has not yet been published or runtime-verified. Continuing
-the lifecycle, replacing the baseline at a later cutoff, and publishing again
-remain three separate human-authorized operations.
+while continuing the lifecycle, replacing the baseline at a later cutoff, and
+publishing again remained three separate human-authorized operations.
 
 The first two of those later operations were separately authorized and
 completed. Run `32674455765` advanced 12 dates through `2026-08-21`; run
@@ -764,8 +763,14 @@ closed before processing because the controller refused to overwrite the newer
 view, and passed the deployed 10-check contract. It reported 751 shipments,
 301 new bookings, and 199 delivered rows with synthetic, engineering-only
 provenance. No seed, production alias, schedule, Pages publication, or Action
-mutation was included. Publishing and verifying the stricter equality contract
-remain separate.
+mutation was included.
+
+The third operation was separately authorized afterward. Commit `28e3edf` and
+aggregate-only Pages run `32731582185` delivered the two-date display and
+exercised the connected exporter equality gate successfully. A read-only live
+check confirmed cutoff and latest source metric date both at `2026-08-24`.
+Pages did not deploy this SQL file or mutate lifecycle data, production aliases,
+schedules, or Actions.
 
 ## Future-scenario extension AWS evidence -- 5 August 2026
 

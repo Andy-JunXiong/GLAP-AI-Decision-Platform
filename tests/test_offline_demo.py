@@ -118,14 +118,15 @@ class OfflineDemoTests(unittest.TestCase):
             'data-page="evaluation"',
             "Historical Replay",
             "10</strong><small>cases · 30 frozen cutoffs",
-            "4 / 3",
+            "5 / 3",
             "minimum met · two entry surfaces",
-            "120",
+            "150",
             "Decision Quality",
             "MIXED",
-            "15 favour A303-on · 15 no winner",
+            "14 favour A303-on · 16 no winner",
             "Fourteen control ties",
-            "Cyclone Gabrielle T1 is split 2:2",
+            "Cyclone Gabrielle T1 and T2 each split 3:2 at 60%",
+            "below the frozen 66.67% consensus gate",
             "No reviewer identities, account details, answers, notes",
             "No operational or business-outcome claim",
             "repeat(8,minmax(60px,1fr))",
@@ -145,6 +146,16 @@ class OfflineDemoTests(unittest.TestCase):
             with self.subTest(private_marker=private_marker):
                 self.assertNotIn(private_marker, self.html)
         self.assertNotRegex(self.html, r"reviewer-[a-z0-9]")
+
+        for stale_marker in (
+            "Four-review gate complete",
+            "COMPLETE · 4 REVIEWERS",
+            "COMPLETE · 120 LOCKED",
+            "MIXED · 15 / 15",
+            "Cyclone Gabrielle T1 is split 2:2",
+        ):
+            with self.subTest(stale_marker=stale_marker):
+                self.assertNotIn(stale_marker, self.html)
 
     def test_stale_claims_and_fake_actions_do_not_return(self):
         for forbidden in (

@@ -208,10 +208,9 @@ A separately authorized read-only export and Pages deployment run
 snapshot from commit `fed2462`. Inspection confirmed the daily OPS track at
 `2026-08-24` but also exposed that
 the frozen stateful baseline cutoff was `2026-08-09` while its latest eligible
-source metric date was `2026-08-06`. The repository worktree now rejects a
-connected baseline whose source coverage does not equal its cutoff and displays
-both dates. That safeguard is locally verified, with publication verification
-pending.
+source metric date was `2026-08-06`. The repository now rejects a connected
+baseline whose source coverage does not equal its cutoff and displays both
+dates.
 
 Separately authorized manual staging runs later closed the source-date gap.
 Run `32674455765` extended `2026-08-10` through `2026-08-21`; run
@@ -221,6 +220,13 @@ processing rather than overwrite the newer 24 August controller status.
 Baseline run `32729202007` then replaced exactly one aggregate view at cutoff
 `2026-08-24` and passed the deployed 10-check contract. These operations loaded
 no seed and changed no production alias, schedule, Pages surface, or Action.
+
+Commit `28e3edf` then delivered the display and exporter safeguard through the
+separately authorized aggregate-only Pages run `32731582185`. Its sanitized
+export and static deployment succeeded, and a read-only public check confirmed
+cutoff and source coverage both at `2026-08-24`. This publication read existing
+aggregates only; it did not redeploy the SQL validator or change any AWS
+resource, lifecycle data, production alias, schedule, or Action.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and
