@@ -313,14 +313,53 @@ weighted score delta. The completed full-corpus reconciliation then establishes
 the five-review aggregate for all 30 packages. Cyclone Gabrielle T2 is also 3:2
 at 60% consensus with a 31-point score delta. Both remain
 `REVIEWERS_DO_NOT_AGREE` with no favored variant because the frozen consensus
-gate is 66.67%. The public view remains the earlier four-review snapshot until
-a separately authorized refresh.
+gate is 66.67%. The public view was subsequently refreshed under separate
+human publication authority and now shows the five-review aggregate. That
+deployed page remains runtime evidence distinct from the local source tree and
+from any later snapshot-contract revision.
 
 The named project owner separately resolved both no-winner governance steps as
 `RETAIN_INCONCLUSIVE`. T1's version-2 disposition supersedes the pending T1
 record by digest; T2 begins its own disposition lineage. Both records preserve
 the five-review `REVIEWERS_DO_NOT_AGREE` result and contain no human identity or
 per-question review content.
+
+### Public aggregate Evaluation snapshot
+
+The public Evaluation surface has its own versioned contract,
+`public-evaluation-snapshot.v1`, separate from both the private review corpus
+and the operational OPS snapshot. The validated projection is stored at
+`offline/data/evaluation-snapshot.json`; its schema is
+`docs/public_evaluation_snapshot_v1.schema.json`, and
+`ops/export_public_evaluation_snapshot.py` proves that the tracked JSON is an
+exact projection of the governed five-review corpus before it can be used.
+
+The public projection permits only:
+
+- the evaluation as-of date and `HYBRID_HISTORICAL_REPLAY` evidence class;
+- aggregate case, cutoff, complete-review, minimum-review, and locked-record
+  counts;
+- aggregate package-result and unanimous-control counts;
+- safe case and T1/T2 labels with aggregate preference counts for the two
+  no-winner comparisons;
+- fixed privacy, claim-boundary, and no-authority declarations.
+
+It excludes source bundle/package/review identifiers and digests, source
+collection names, individual answers or notes, account details, private study
+artifacts, score deltas, and operational identifiers. The browser validates
+the same shape, count reconciliation, Sydney date boundary, privacy flags,
+claim exclusions, and all-false authority fields. If fetch or validation fails,
+the page displays `UNAVAILABLE` and no Evaluation result; it does not fall back
+to embedded review totals. This local contract and loader are not publication
+authority and are not themselves evidence that Pages has published the
+versioned snapshot.
+
+The local Pages workflow also treats the snapshot, exporter, source validator,
+public/source schemas, five-review source summary, rubric, and frozen review
+bundle as publication-triggering inputs. It runs the exact-projection validator
+before `_site` preparation, so a source/snapshot mismatch cannot reach the
+artifact-upload step. This is a repository gate only; it does not mean the
+workflow has run or that the versioned snapshot is live.
 
 Two bounded A303.v2 eligibility guardrails were then screened on the same
 frozen space as explicitly `POST_HOC_DEVELOPMENT_EVIDENCE`. The anti-abstention

@@ -184,3 +184,21 @@ update. Read-only inspection found `UPDATE_COMPLETE` and an active Python 3.14
 controller. Diagnostic run `32391364627` passed all 28 checks for the failed
 logical date without mutation. The persisted status still requires a separate
 named-human `recover-failed-integration-date` approval.
+
+## Public Evaluation Pages gate
+
+The local Pages workflow treats `public-evaluation-snapshot.v1` as a separate
+aggregate-only publication input. Changes to the tracked snapshot, exporter,
+source validator, public/source schemas, governed five-review summary, rubric,
+or frozen review bundle enter the Pages path. Before `_site` is prepared or an
+artifact is uploaded, the workflow runs:
+
+```bash
+python ops/export_public_evaluation_snapshot.py
+```
+
+The command validates the private governed source boundary and then requires
+the tracked public JSON to equal the safe projection exactly. A mismatch exits
+non-zero and blocks artifact preparation. This gate grants no publication,
+AWS, data, model, policy, or Action authority; commit, push, and Pages execution
+remain separately human-authorized actions.

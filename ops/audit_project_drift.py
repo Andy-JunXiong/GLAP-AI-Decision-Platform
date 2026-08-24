@@ -1826,6 +1826,104 @@ def check_decision_quality_adjudication_boundary(root: Path) -> list[CheckResult
     ]
 
 
+def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
+    evidence = (
+        "docs/public_evaluation_snapshot_v1.schema.json",
+        "docs/decision_quality_five_review_corpus_summary_v1.json",
+        "docs/decision_quality_rubric_v1.json",
+        "blinded-review-survey/data/review-bundle.json",
+        "ops/validate_decision_quality_adjudication.py",
+        "ops/export_public_evaluation_snapshot.py",
+        "offline/data/evaluation-snapshot.json",
+        "offline/glap-demo.html",
+        ".github/workflows/pages.yml",
+        "tests/test_public_evaluation_snapshot.py",
+        "tests/test_offline_demo.py",
+        "docs/evaluation_architecture.md",
+        "docs/ops_snapshot.md",
+        "docs/temporal_truthfulness.md",
+    )
+    passed = False
+    failure = (
+        "The versioned public Evaluation snapshot is missing, no longer an exact "
+        "aggregate-only projection, or the page no longer fails closed."
+    )
+    try:
+        if not all((root / path).is_file() for path in evidence):
+            raise FileNotFoundError("public Evaluation snapshot evidence is incomplete")
+        exporter = _load_repository_module(
+            root, "ops/export_public_evaluation_snapshot.py"
+        )
+        source = exporter.load_json(
+            root / "docs/decision_quality_five_review_corpus_summary_v1.json"
+        )
+        bundle = exporter.load_json(
+            root / "blinded-review-survey/data/review-bundle.json"
+        )
+        rubric = exporter.load_json(root / "docs/decision_quality_rubric_v1.json")
+        tracked = exporter.load_json(root / "offline/data/evaluation-snapshot.json")
+        generated = exporter.build_public_snapshot(source, bundle, rubric)
+        html = (root / "offline/glap-demo.html").read_text(encoding="utf-8")
+        workflow = (root / ".github/workflows/pages.yml").read_text(
+            encoding="utf-8"
+        )
+        required_html = (
+            'const EVALUATION_SCHEMA_VERSION="public-evaluation-snapshot.v1"',
+            'fetch("data/evaluation-snapshot.json",{cache:"no-store"})',
+            "validateEvaluationSnapshot",
+            "renderEvaluationUnavailable",
+            "Evaluation privacy boundary fails closed",
+            "Evaluation authority boundary fails closed",
+            'id="evaluationState">UNAVAILABLE',
+        )
+        forbidden_html = (
+            "Public aggregate only · 24 August 2026",
+            "10</strong><small>cases · 30 frozen cutoffs",
+            "14 favour A303-on · 16 no winner",
+            "review_id",
+            "package_digest",
+            "bundle_digest",
+            "source_collections",
+            "submitted_at",
+        )
+        required_workflow = (
+            '"offline/data/evaluation-snapshot.json"',
+            '"ops/export_public_evaluation_snapshot.py"',
+            '"ops/validate_decision_quality_adjudication.py"',
+            '"docs/public_evaluation_snapshot_v1.schema.json"',
+            '"docs/decision_quality_five_review_corpus_summary_v1.schema.json"',
+            '"docs/decision_quality_five_review_corpus_summary_v1.json"',
+            '"docs/decision_quality_rubric_v1.json"',
+            '"blinded-review-survey/data/review-bundle.json"',
+            "python ops/export_public_evaluation_snapshot.py",
+        )
+        passed = (
+            generated == tracked
+            and exporter.validate_public_snapshot(
+                tracked, today=sydney_business_date()
+            )
+            == []
+            and exporter._protected_keys(tracked) == set()
+            and all(marker in html for marker in required_html)
+            and not any(marker in html for marker in forbidden_html)
+            and all(marker in workflow for marker in required_workflow)
+            and workflow.index("python ops/export_public_evaluation_snapshot.py")
+            < workflow.index("- name: Prepare static site")
+        )
+    except Exception as error:
+        failure = f"The public Evaluation snapshot boundary drifted: {error}."
+    return [
+        _result(
+            "public_evaluation_snapshot_boundary",
+            "evaluation",
+            passed,
+            "The page reads a versioned, source-bound aggregate-only Evaluation snapshot, withholds invalid results, and the Pages source validates the exact projection before artifact preparation.",
+            failure,
+            evidence,
+        )
+    ]
+
+
 def run_audit(root: Path) -> dict[str, Any]:
     contract = load_contract(root)
     checks: list[CheckResult] = []
@@ -1849,6 +1947,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_a303_v1_retirement_boundary(root))
     checks.extend(check_capability_neutral_evaluation_boundary(root))
     checks.extend(check_decision_quality_adjudication_boundary(root))
+    checks.extend(check_public_evaluation_snapshot_boundary(root))
     checks.extend(check_agent_runtime_boundary(root))
     checks.extend(check_adapter_conformance_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"

@@ -228,6 +228,16 @@ cutoff and source coverage both at `2026-08-24`. This publication read existing
 aggregates only; it did not redeploy the SQL validator or change any AWS
 resource, lifecycle data, production alias, schedule, or Action.
 
+The later repository-local `public-evaluation-snapshot.v1` work adds no AWS resource
+or permission. Its Pages workflow source watches the tracked aggregate
+snapshot, public and source schemas, governed source summary, rubric, frozen
+review bundle, source validator, and exporter. Before `_site` is prepared, the
+workflow runs the exporter in check mode and fails when the tracked public JSON
+is not the exact privacy- and authority-bounded source projection. This is
+repository implementation with a separately authorized bounded `main` release;
+CI, read-only export, Pages, and live-page results remain runtime evidence until
+the corresponding workflow completes and is inspected.
+
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and
 execution, the change set contained one non-replacing Lambda property update,

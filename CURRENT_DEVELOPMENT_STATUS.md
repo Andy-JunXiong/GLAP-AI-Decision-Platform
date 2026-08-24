@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-24`
+**Sydney as-of date:** `2026-08-25`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -36,7 +36,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | A303.v1 development disposition | `RETIRED_FROM_PROGRESSION` | The human project owner explicitly selected option 1 on 2026-08-22; threshold tuning, new holdouts, prospective Outcome collection, calibration, activation, and production progression are closed while all evidence remains preserved |
 | A303 Outcome calibration interface | `INACTIVE_REUSABLE_INFRASTRUCTURE` | Contract and validator remain available for a separately authorized future rule, but A303.v1 calibration is `CLOSED_NOT_APPLICABLE` and no eligible controlled pairs exist |
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
-| Public evaluation evidence view | `RELEASE_AUTHORIZED_PENDING_RUNTIME` | The repository candidate shows five reviews, 150 locked records, and 14/16 without private review content; commit, push, and aggregate-only Pages publication are explicitly authorized, while the workflow result and live content remain separate read-only runtime evidence |
+| Public evaluation evidence view | `V1_RELEASE_AUTHORIZED_PENDING_RUNTIME` | Commit `8698290`, CI run `32734483600`, and Pages run `32734483601` published and verified the earlier aggregate-only five-review view. The versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed Pages gate are locally verified and authorized for source-control release; the new CI, read-only export, Pages, and live-page results remain pending runtime evidence |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -140,7 +140,50 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Action–Outcome–Learning evidence chain
+## Active slice — Versioned public Evaluation snapshot
+
+**Status:** `RELEASE_AUTHORIZED_LOCAL_VERIFIED`
+
+**Goal**
+
+Replace static Evaluation totals with one versioned aggregate-only contract
+whose tracked JSON is an exact safe projection of the governed five-review
+corpus. Make the public page withhold every result when source validation,
+schema, date, count, privacy, claim, or authority checks fail.
+
+**Completed locally**
+
+- Added `public-evaluation-snapshot.v1`, its JSON Schema, exact source exporter,
+  and tracked aggregate-only snapshot. The exporter first invokes the existing
+  five-review corpus validator and strips review/package/bundle identities,
+  digests, source collections, answers, notes, private artifacts, and score
+  deltas.
+- Replaced Evaluation totals embedded in `offline/glap-demo.html` with a
+  no-store JSON loader. Browser validation reconciles review, cutoff, record,
+  result, control, and two no-winner counts; enforces the current Sydney date;
+  and requires fixed privacy, claim, and all-false authority boundaries.
+- Added a true fail-closed state: failed fetches and invalid snapshots display
+  `UNAVAILABLE` without reusing older totals.
+- Hardened the local Pages source so changes to the Evaluation snapshot,
+  exporter, source validator, schemas, governed source summary, rubric, or
+  frozen review bundle enter the publication path. The workflow runs the exact
+  source-projection check before `_site` preparation or artifact upload.
+- Added focused contract, privacy, future-date, count, authority, source-drift,
+  page-loader, and project-drift tests. The local audit now reports 33/33
+  checks passed; Python compilation, all 477 repository tests, JSON parsing,
+  browser-script syntax validation, and `git diff --check` also pass. A local
+  HTTP preview loaded the versioned JSON into the Evaluation view with the
+  expected 10/30, 5/3, 150, and 14/16 aggregates and no browser console errors.
+
+**Boundary and next step**
+
+The implementation is locally verified and its source-control release is now
+explicitly authorized. The authorized `main` push may trigger CI, the existing
+read-only AWS OPS export, and aggregate-only Pages publication. Those workflow
+and live-page results remain pending runtime evidence; AWS writes, production,
+schedules, aliases, data changes, and Action mutations remain outside scope.
+
+## Recently completed — Action–Outcome–Learning evidence chain
 
 **Status:** `IMPLEMENTED_STAGING`
 
@@ -607,7 +650,10 @@ separately owned.
   with score deltas of 17 and 31. Separate named-human records resolve the
   governance step as `RETAIN_INCONCLUSIVE`; neither raw no-winner result nor
   the immutable T1 2:2 predecessor was changed.
-- Any public refresh remains a separate action and is not authorized.
+- Publication of the new versioned Evaluation snapshot and loader was later
+  authorized only through the bounded `main` push, CI, read-only OPS export,
+  and aggregate-only Pages path; all write and production authorities remain
+  excluded.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -1047,9 +1093,10 @@ done.
 - The prior T1 2:2 package has an immutable predecessor record; T1 and T2 each
   have five-review 3:2 results below the 66.67% gate and separate
   `RETAIN_INCONCLUSIVE` human dispositions.
-- The five-review full-corpus aggregate and its aggregate-only repository page
-  candidate are complete. Release is explicitly authorized, but workflow and
-  live-page success remain separate runtime facts until read-only verified.
+- The already published aggregate-only five-review page is runtime-verified.
+  The later versioned JSON contract and fail-closed loader are locally tested
+  and source-control release-authorized; their new workflow and live-page
+  validation remain pending runtime evidence.
 - Simulator v1 is deliberately synthetic and has not been calibrated against
   an independently governed factual or prospective Outcome source. Because its
   current capability result is `NOT_ROBUST`, prospective collection is not the
@@ -1057,18 +1104,16 @@ done.
 
 ### Incomplete
 
-- The repository source is release-ready for the five-review 14/16 aggregate.
-  Publication and post-release verification must remain aggregate-only and
-  cannot be inferred from a committed source tree.
+- The versioned public Evaluation snapshot is release-authorized but not yet
+  runtime-verified. CI, the read-only export, Pages publication, and live-page
+  behavior cannot be inferred from the committed source tree.
 
 ## Next Up
 
-1. Complete the authorized source-control release and verify read-only that the
-   latest successful Pages runtime shows five reviews, 150 locked records, the
-   14/16 result, and both 3:2 comparisons below the frozen consensus gate.
-2. After runtime verification, design a versioned aggregate-only Evaluation
-   snapshot contract so future public evidence does not depend on static page
-   constants.
+1. Complete the authorized source-control release of
+   `public-evaluation-snapshot.v1` and verify CI and Pages workflow results.
+2. Read-only verify that the live page loads the versioned aggregate and fails
+   closed without disclosing protected review content or implying authority.
 3. No AWS deployment, operational mutation, production change, schedule,
    alias, data, or Action authority is implied by either step.
 

@@ -72,8 +72,11 @@ evidence. Fourteen packages favour `glap-a303-on`, fourteen controls are
 unanimous ties, and Cyclone Gabrielle T1 and T2 are both 3:2 with 60% consensus,
 below the frozen 66.67% gate. Separate named-human records retain no conclusion
 for both packages without overriding their raw no-winner results. The public
-view still shows the earlier four-
-review 15/15 snapshot; refreshing it requires separate publication authority.
+view was separately refreshed and runtime-verified with the aggregate-only
+five-review result. A later repository-local versioned snapshot revision
+replaces embedded totals with `public-evaluation-snapshot.v1`; its bounded
+source-control release is authorized, while new workflow and live-page results
+remain pending runtime evidence.
 Decision Quality does not select Business Outcome simulator eligibility. A
 parallel pre-specified synthetic path evaluates all sixteen attributed changes
 and all fourteen no-delta controls using frozen Simulator v1, sensitivity
@@ -189,6 +192,10 @@ flowchart TB
 - Failed scheduled invocations retry twice before entering the encrypted DLQ.
 - The public Pages role is read-only and publishes aggregate analytics without
   entity, route, carrier, account, ARN, or S3 identifiers.
+- The local Pages source watches the versioned Evaluation snapshot, exporter,
+  frozen source contract, rubric, and review bundle. It must validate the exact
+  aggregate-only projection before preparing or uploading a Pages artifact;
+  this local gate is not evidence that a workflow ran or publication occurred.
 - A connected stateful baseline may publish only when its latest eligible
   source metric date equals its governed cutoff; the UI exposes both dates.
 - Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,

@@ -116,13 +116,13 @@
 
     <section class="page" id="evaluation">
       <div class="title"><div><label>EVALUATE</label><h1>Evaluation &amp; trust</h1><p>Decision-quality evidence is separated from AWS operations, scenario interactions, and business outcomes.</p></div><a class="outline" href="https://github.com/Andy-JunXiong/GLAP-AI-Decision-Platform/blob/main/docs/evaluation_architecture.md" target="_blank" rel="noreferrer">Evaluation contract ↗</a></div>
-      <div class="evidence-strip"><i></i><strong>Public aggregate only · 24 August 2026</strong><span>No reviewer identities, account details, answers, notes, or private study artifacts are exposed.</span></div>
-      <div class="truth-banner"><span class="truth-badge engineering">HYBRID HISTORICAL REPLAY</span><span class="truth-note">Five-review gate complete · mixed package-level result · no production-readiness claim</span></div>
-      <div class="metrics evaluation-metrics"><article class="metric"><span>Historical Replay</span><strong>10</strong><small>cases · 30 frozen cutoffs</small></article><article class="metric green"><span>Complete reviews</span><strong>5 / 3</strong><small>minimum met · two entry surfaces</small></article><article class="metric"><span>Locked review records</span><strong>150</strong><small>30 packages × 5 reviewers</small></article><article class="metric amber"><span>Decision Quality</span><strong class="evaluation-state">MIXED</strong><small>14 favour A303-on · 16 no winner</small></article></div>
+      <div class="evidence-strip"><i></i><strong id="evaluationAsOf">Public aggregate only · snapshot unavailable</strong><span>No reviewer identities, account details, answers, notes, or private study artifacts are exposed.</span></div>
+      <div class="truth-banner"><span class="truth-badge engineering" id="evaluationEvidenceClass">EVALUATION SNAPSHOT</span><span class="truth-note" id="evaluationTruthNote">Evaluation snapshot not loaded · no result shown</span></div>
+      <div class="metrics evaluation-metrics"><article class="metric"><span>Historical Replay</span><strong id="evaluationCases">—</strong><small id="evaluationCutoffs">snapshot unavailable</small></article><article class="metric green"><span>Complete reviews</span><strong id="evaluationReviews">—</strong><small id="evaluationReviewMinimum">snapshot unavailable</small></article><article class="metric"><span>Locked review records</span><strong id="evaluationLockedRecords">—</strong><small id="evaluationRecordFormula">snapshot unavailable</small></article><article class="metric amber"><span>Decision Quality</span><strong class="evaluation-state" id="evaluationState">UNAVAILABLE</strong><small id="evaluationResultSummary">no result shown</small></article></div>
       <div class="section-label"><div><h2>Governed evaluation path</h2><p>Each stage closes without widening the evidence claim</p></div><span>Current position: package-level interpretation</span></div>
-      <div class="reliability-grid"><article class="reliability-item"><span>01 · FREEZE</span><strong>Replay and rubric bound</strong><small>COMPLETE</small></article><article class="reliability-item"><span>02 · COLLECT</span><strong>Independent story reviews</strong><small>COMPLETE · 5 REVIEWERS</small></article><article class="reliability-item"><span>03 · VALIDATE</span><strong>Cross-entry integrity</strong><small>COMPLETE · 150 LOCKED</small></article><article class="reliability-item"><span>04 · INTERPRET</span><strong>Deblinded package results</strong><small style="color:#9b650c">MIXED · 14 / 16</small></article></div>
-      <div class="two-source-grid" style="margin-top:16px"><article class="card"><div class="head"><div><h2>Evidence available now</h2><p>What the governed five-review aggregate supports</p></div></div><div class="lineage-list"><div><strong>Fourteen gated preferences</strong><small>All 14 packages that met every interpretation threshold favour the A303-on variant.</small></div><div><strong>Fourteen control ties</strong><small>All reviewers treated the identical-option controls as ties, preserving the no-winner boundary.</small></div><div><strong>Two unresolved comparisons</strong><small>Cyclone Gabrielle T1 and T2 each split 3:2 at 60%, below the frozen 66.67% consensus gate, and remain inconclusive.</small></div></div></article><article class="card"><div class="head"><div><h2>Claims intentionally withheld</h2><p>Boundaries that prevent premature conclusions</p></div></div><div class="lineage-list"><div><strong>No corpus-wide win claim</strong><small>Sixteen packages have no winner; the mixed result is reported without filling gaps.</small></div><div><strong>No operational or business-outcome claim</strong><small>Evaluation results do not become runtime reliability, measured savings, or production evidence.</small></div><div><strong>No private review content</strong><small>Names, email addresses, credentials, reviewer IDs, per-story answers, notes, and study-owner artifacts remain outside this public surface.</small></div></div></article></div>
-      <div class="boundary"><strong>Governed interpretation</strong><p>Both 3:2 comparisons remain inconclusive under the frozen consensus gate; original reviews must not change. Business Outcome Effect, model promotion, production readiness, and operational authority remain separate gates.</p></div>
+      <div class="reliability-grid"><article class="reliability-item"><span>01 · FREEZE</span><strong>Replay and rubric bound</strong><small id="evaluationFreezeState">UNAVAILABLE</small></article><article class="reliability-item"><span>02 · COLLECT</span><strong>Independent story reviews</strong><small id="evaluationCollectState">UNAVAILABLE</small></article><article class="reliability-item"><span>03 · VALIDATE</span><strong>Cross-entry integrity</strong><small id="evaluationValidateState">UNAVAILABLE</small></article><article class="reliability-item"><span>04 · INTERPRET</span><strong>Aggregate package results</strong><small id="evaluationInterpretState" style="color:#9b650c">UNAVAILABLE</small></article></div>
+      <div class="two-source-grid" style="margin-top:16px"><article class="card"><div class="head"><div><h2>Evidence available now</h2><p>What the governed aggregate snapshot supports</p></div></div><div class="lineage-list"><div><strong id="evaluationPreferenceHeading">Evaluation snapshot not loaded</strong><small id="evaluationPreferenceDetail">No preference result is shown.</small></div><div><strong id="evaluationControlHeading">Control result unavailable</strong><small id="evaluationControlDetail">No control result is shown.</small></div><div><strong id="evaluationNoWinnerHeading">Comparison result unavailable</strong><small id="evaluationNoWinnerDetail">No comparison result is shown.</small></div></div></article><article class="card"><div class="head"><div><h2>Claims intentionally withheld</h2><p>Boundaries that prevent premature conclusions</p></div></div><div class="lineage-list"><div><strong>No corpus-wide win claim</strong><small id="evaluationNoWinnerClaim">An unavailable or mixed snapshot cannot establish a corpus-wide winner.</small></div><div><strong>No operational or business-outcome claim</strong><small>Evaluation results do not become runtime reliability, measured savings, or production evidence.</small></div><div><strong>No private review content</strong><small>Names, email addresses, credentials, reviewer IDs, per-story answers, notes, and study-owner artifacts remain outside this public surface.</small></div></div></article></div>
+      <div class="boundary"><strong>Governed interpretation</strong><p id="evaluationBoundary">Evaluation snapshot unavailable; no package-level conclusion is displayed. Business Outcome Effect, model promotion, production readiness, and operational authority remain separate gates.</p></div>
     </section>
 
     <section class="page" id="system">
@@ -281,6 +281,10 @@ LIMIT 10;</pre></article>
   const dateLabel=value=>{if(!value)return"Unknown";const parsed=new Date(value.length===10?value+"T00:00:00Z":value);return Number.isNaN(parsed.valueOf())?value:new Intl.DateTimeFormat("en-AU",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(parsed)};
   const percent=value=>value===null||value===undefined?"—":`${Number(value).toFixed(1)}%`;
   const escapeHtml=value=>String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+  const EVALUATION_SCHEMA_VERSION="public-evaluation-snapshot.v1";
+  const EVALUATION_EXCLUSIONS=["INDIVIDUAL_REVIEW_DISCLOSURE","BUSINESS_OUTCOME_EFFECT","REAL_LOGISTICS_PERFORMANCE","A303_REACTIVATION","MODEL_PROMOTION","PRODUCTION_READINESS","OPERATIONAL_AUTHORITY"];
+  const exactKeys=(value,keys)=>value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).sort().join("|")===keys.slice().sort().join("|");
+  const sydneyDate=()=>{const parts=new Intl.DateTimeFormat("en-AU",{year:"numeric",month:"2-digit",day:"2-digit",timeZone:"Australia/Sydney"}).formatToParts(new Date());const values=Object.fromEntries(parts.map(part=>[part.type,part.value]));return `${values.year}-${values.month}-${values.day}`};
   const pipelineStageLabels={generation:"Generate shipment inputs",raw_to_iceberg:"Publish lakehouse inputs",input_validation:"Validate required inputs",decision_pipeline:"Create alerts and recommendations",decision_flywheel:"Record actions and learning",output_validation:"Validate published outputs"};
   const pipelineStageShort={generation:"Generation",raw_to_iceberg:"Lakehouse",input_validation:"Input gate",decision_pipeline:"Decision pipeline",decision_flywheel:"Decision flywheel",output_validation:"Output gate"};
   const qualityCheckLabels={missing_dates:"Missing dates",empty_inputs:"Empty inputs",duplicate_business_keys:"Duplicate business keys",abnormal_volume_change:"Abnormal volume change",stale_stage_outputs:"Stale stage outputs"};
@@ -496,6 +500,82 @@ LIMIT 10;</pre></article>
     }
   }
 
+  function validateEvaluationSnapshot(snapshot){
+    const rootKeys=["schema_version","status","evaluation_as_of_date","source_contract","evidence_class","corpus","decision_quality","privacy","claim_boundary","authority"];
+    if(!exactKeys(snapshot,rootKeys)||snapshot.schema_version!==EVALUATION_SCHEMA_VERSION||snapshot.status!=="available"||snapshot.source_contract!=="decision-quality-five-review-corpus-summary.v1"||snapshot.evidence_class!=="HYBRID_HISTORICAL_REPLAY")throw new Error("Unsupported Evaluation snapshot contract");
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(snapshot.evaluation_as_of_date)||snapshot.evaluation_as_of_date>sydneyDate())throw new Error("Evaluation snapshot date is invalid or future-dated");
+    const corpus=snapshot.corpus,corpusKeys=["case_count","cutoff_count","complete_review_count","minimum_review_count","locked_review_record_count"];
+    if(!exactKeys(corpus,corpusKeys)||!corpusKeys.every(key=>Number.isInteger(corpus[key])&&corpus[key]>0)||corpus.complete_review_count<corpus.minimum_review_count||corpus.locked_review_record_count!==corpus.cutoff_count*corpus.complete_review_count)throw new Error("Evaluation corpus counts fail closed");
+    const quality=snapshot.decision_quality,qualityKeys=["status","favors_a303_on_count","no_winner_count","unanimous_control_tie_count","minimum_preference_consensus_pct","non_control_no_winner_comparisons"];
+    if(!exactKeys(quality,qualityKeys)||quality.status!=="MIXED"||![quality.favors_a303_on_count,quality.no_winner_count,quality.unanimous_control_tie_count].every(value=>Number.isInteger(value)&&value>=0)||quality.favors_a303_on_count+quality.no_winner_count!==corpus.cutoff_count||quality.unanimous_control_tie_count>quality.no_winner_count||typeof quality.minimum_preference_consensus_pct!=="number"||quality.minimum_preference_consensus_pct<=0||quality.minimum_preference_consensus_pct>100)throw new Error("Evaluation result counts fail closed");
+    const comparisonKeys=["case_label","cutoff_label","baseline_preference_count","challenger_preference_count","preference_consensus_pct","result"];
+    if(!Array.isArray(quality.non_control_no_winner_comparisons)||quality.non_control_no_winner_comparisons.length!==2||quality.unanimous_control_tie_count+quality.non_control_no_winner_comparisons.length!==quality.no_winner_count||new Set(quality.non_control_no_winner_comparisons.map(item=>item.cutoff_label)).size!==2||!quality.non_control_no_winner_comparisons.every(item=>exactKeys(item,comparisonKeys)&&item.case_label==="Cyclone Gabrielle"&&["T1","T2"].includes(item.cutoff_label)&&item.result==="REVIEWERS_DO_NOT_AGREE"&&Number.isInteger(item.baseline_preference_count)&&item.baseline_preference_count>=0&&Number.isInteger(item.challenger_preference_count)&&item.challenger_preference_count>=0&&item.baseline_preference_count+item.challenger_preference_count===corpus.complete_review_count&&typeof item.preference_consensus_pct==="number"&&item.preference_consensus_pct>=0&&item.preference_consensus_pct<quality.minimum_preference_consensus_pct))throw new Error("Evaluation no-winner comparisons fail closed");
+    const privacyKeys=["reviewer_identifiers_retained","credentials_retained","answer_content_retained","notes_retained","private_source_artifacts_retained"];
+    if(!exactKeys(snapshot.privacy,privacyKeys)||!privacyKeys.every(key=>snapshot.privacy[key]===false))throw new Error("Evaluation privacy boundary fails closed");
+    const authorityKeys=["publication_authority_from_snapshot","aws_write_allowed","review_mutation_allowed","action_mutation_allowed","policy_activation_allowed","model_promotion_allowed","production_effect"];
+    if(!exactKeys(snapshot.authority,authorityKeys)||!authorityKeys.every(key=>snapshot.authority[key]===false))throw new Error("Evaluation authority boundary fails closed");
+    if(!exactKeys(snapshot.claim_boundary,["supports","does_not_support"])||snapshot.claim_boundary.supports.length!==1||snapshot.claim_boundary.supports[0]!=="FIVE_REVIEW_CONTROLLED_POINT_IN_TIME_DECISION_QUALITY"||snapshot.claim_boundary.does_not_support.length!==EVALUATION_EXCLUSIONS.length||!EVALUATION_EXCLUSIONS.every(value=>snapshot.claim_boundary.does_not_support.includes(value)))throw new Error("Evaluation claim boundary fails closed");
+    return snapshot;
+  }
+
+  function renderEvaluationUnavailable(){
+    document.getElementById("evaluationAsOf").textContent="Public aggregate only · snapshot unavailable";
+    document.getElementById("evaluationEvidenceClass").textContent="EVALUATION SNAPSHOT";
+    document.getElementById("evaluationTruthNote").textContent="Evaluation snapshot unavailable · no result shown";
+    ["evaluationCases","evaluationReviews","evaluationLockedRecords"].forEach(id=>document.getElementById(id).textContent="—");
+    ["evaluationCutoffs","evaluationReviewMinimum","evaluationRecordFormula"].forEach(id=>document.getElementById(id).textContent="snapshot unavailable");
+    document.getElementById("evaluationState").textContent="UNAVAILABLE";
+    document.getElementById("evaluationResultSummary").textContent="no result shown";
+    ["evaluationFreezeState","evaluationCollectState","evaluationValidateState","evaluationInterpretState"].forEach(id=>document.getElementById(id).textContent="UNAVAILABLE");
+    document.getElementById("evaluationPreferenceHeading").textContent="Evaluation snapshot not loaded";
+    document.getElementById("evaluationPreferenceDetail").textContent="No preference result is shown.";
+    document.getElementById("evaluationControlHeading").textContent="Control result unavailable";
+    document.getElementById("evaluationControlDetail").textContent="No control result is shown.";
+    document.getElementById("evaluationNoWinnerHeading").textContent="Comparison result unavailable";
+    document.getElementById("evaluationNoWinnerDetail").textContent="No comparison result is shown.";
+    document.getElementById("evaluationNoWinnerClaim").textContent="An unavailable or mixed snapshot cannot establish a corpus-wide winner.";
+    document.getElementById("evaluationBoundary").textContent="Evaluation snapshot unavailable; no package-level conclusion is displayed. Business Outcome Effect, model promotion, production readiness, and operational authority remain separate gates.";
+  }
+
+  function applyEvaluationSnapshot(snapshot){
+    const {corpus,decision_quality:quality}=validateEvaluationSnapshot(snapshot);
+    const comparisons=quality.non_control_no_winner_comparisons.sort((a,b)=>a.cutoff_label.localeCompare(b.cutoff_label));
+    const comparisonSummary=comparisons.map(item=>`${item.case_label} ${item.cutoff_label} ${item.challenger_preference_count}:${item.baseline_preference_count} at ${item.preference_consensus_pct}%`).join(" and ");
+    document.getElementById("evaluationAsOf").textContent=`Public aggregate only · ${dateLabel(snapshot.evaluation_as_of_date)}`;
+    document.getElementById("evaluationEvidenceClass").textContent=snapshot.evidence_class.replaceAll("_"," ");
+    document.getElementById("evaluationTruthNote").textContent=`${corpus.complete_review_count}-review gate complete · mixed aggregate result · no production-readiness claim`;
+    document.getElementById("evaluationCases").textContent=corpus.case_count;
+    document.getElementById("evaluationCutoffs").textContent=`cases · ${corpus.cutoff_count} frozen cutoffs`;
+    document.getElementById("evaluationReviews").textContent=`${corpus.complete_review_count} / ${corpus.minimum_review_count}`;
+    document.getElementById("evaluationReviewMinimum").textContent="minimum met · aggregate only";
+    document.getElementById("evaluationLockedRecords").textContent=corpus.locked_review_record_count;
+    document.getElementById("evaluationRecordFormula").textContent=`${corpus.cutoff_count} packages × ${corpus.complete_review_count} reviews`;
+    document.getElementById("evaluationState").textContent=quality.status;
+    document.getElementById("evaluationResultSummary").textContent=`${quality.favors_a303_on_count} favour A303-on · ${quality.no_winner_count} no winner`;
+    document.getElementById("evaluationFreezeState").textContent="COMPLETE";
+    document.getElementById("evaluationCollectState").textContent=`COMPLETE · ${corpus.complete_review_count} REVIEWS`;
+    document.getElementById("evaluationValidateState").textContent=`COMPLETE · ${corpus.locked_review_record_count} LOCKED`;
+    document.getElementById("evaluationInterpretState").textContent=`${quality.status} · ${quality.favors_a303_on_count} / ${quality.no_winner_count}`;
+    document.getElementById("evaluationPreferenceHeading").textContent=`${quality.favors_a303_on_count} gated preferences`;
+    document.getElementById("evaluationPreferenceDetail").textContent=`All ${quality.favors_a303_on_count} packages that met every interpretation threshold favour the A303-on variant.`;
+    document.getElementById("evaluationControlHeading").textContent=`${quality.unanimous_control_tie_count} unanimous control ties`;
+    document.getElementById("evaluationControlDetail").textContent="Identical-option controls preserve the no-winner boundary.";
+    document.getElementById("evaluationNoWinnerHeading").textContent=`${comparisons.length} unresolved comparisons`;
+    document.getElementById("evaluationNoWinnerDetail").textContent=`${comparisonSummary}, below the ${quality.minimum_preference_consensus_pct}% consensus gate.`;
+    document.getElementById("evaluationNoWinnerClaim").textContent=`${quality.no_winner_count} packages have no winner; the mixed result is reported without filling gaps.`;
+    document.getElementById("evaluationBoundary").textContent=`Both ${comparisons.map(item=>item.cutoff_label).join(" and ")} comparisons remain inconclusive under the frozen consensus gate; original reviews must not change. Business Outcome Effect, model promotion, production readiness, and operational authority remain separate gates.`;
+  }
+
+  async function loadEvaluationSnapshot(){
+    renderEvaluationUnavailable();
+    if(location.protocol==="file:")return;
+    try{
+      const response=await fetch("data/evaluation-snapshot.json",{cache:"no-store"});
+      if(!response.ok)throw new Error(`Evaluation snapshot HTTP ${response.status}`);
+      applyEvaluationSnapshot(await response.json());
+    }catch(error){console.warn("Evaluation snapshot unavailable; result withheld",error)}
+  }
+
   function tagSystemPair(title,view){const label=[...document.querySelectorAll("#system .section-label")].find(el=>el.querySelector("h2")?.textContent===title);if(!label)return;label.dataset.systemSection=view;label.nextElementSibling.dataset.systemSection=view}
   [["OPS runbook","ops"],["Operational requirements","ops"],["Reliability controls","ops"],["Governed release path","governance"],["Product-to-AWS mapping","governance"]].forEach(([title,view])=>tagSystemPair(title,view));
   const boundaryGrid=[...document.querySelectorAll("#system .system-grid")].find(el=>el.textContent.includes("Decision lineage"));if(boundaryGrid)boundaryGrid.dataset.systemSection="governance";
@@ -526,7 +606,7 @@ LIMIT 10;</pre></article>
   document.getElementById("saveReason").onclick=()=>{const selected=document.querySelector('input[name="reason"]:checked');const note=document.getElementById("reasonNote").value.trim();if(!selected&&!note){toast("Choose a reason or add a note.");return}const reason=[selected?.value,note].filter(Boolean).join(" · ");if(state.pendingReasonAction==="reject"){setDecision("rejected",reason);ledgerEntry("Scenario rejected by "+state.owner,reason)}else{state.reason=reason;setDecision("approved",reason);ledgerEntry("Scenario override approved · "+state.diverted+" FCL",state.owner+" · "+reason)}closeReason();toast("Scenario reason saved in this browser session.")};
   document.getElementById("approve").onclick=()=>{if(state.diverted!==8&&!state.reason){openReason("override");return}setDecision("approved",state.reason);ledgerEntry("Scenario diversion approved · "+state.diverted+" FCL",state.owner+" · illustrative port-diversion-policy v1.2");toast("Scenario approved in this browser only. No AWS record was written.")};
 
-  renderSignals();updateEconomics();setDecision("pending");loadOpsSnapshot();
+  renderSignals();updateEconomics();setDecision("pending");loadOpsSnapshot();loadEvaluationSnapshot();
 </script>
 </body>
 </html>

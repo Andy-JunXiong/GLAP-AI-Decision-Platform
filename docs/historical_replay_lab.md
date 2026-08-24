@@ -274,6 +274,16 @@ T2. Their content-addressed disposition records preserve the no-winner results,
 retain no human identity or per-question content, and grant no publication,
 A303, model, production, or operational authority.
 
+The aggregate public projection is separately versioned as
+`public-evaluation-snapshot.v1`. It exposes only safe corpus/result counts and
+anonymous Cyclone Gabrielle T1/T2 comparison labels; source identities,
+digests, answers, notes, and private artifacts remain outside the projection.
+The tracked projection must match the validated five-review source exactly,
+and the public loader shows `UNAVAILABLE` rather than embedded totals when its
+date, counts, privacy, claim, or authority contract fails. This display
+contract neither changes benchmark eligibility nor grants publication or
+operational authority.
+
 ## Pre-specified synthetic Outcome robustness
 
 [`a303_outcome_simulator_v1.json`](a303_outcome_simulator_v1.json)

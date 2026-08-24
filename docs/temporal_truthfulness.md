@@ -89,6 +89,14 @@ actually visible by its final decision cutoff. Reveal-only outcomes and
 hypothetical worst cases cannot be used to inflate the decision-time severity
 or manufacture a capability delta.
 
+The public Evaluation snapshot carries its own `evaluation_as_of_date`. That
+date must parse as a calendar date and be on or before the current Sydney
+business date. It dates the aggregate evaluation record; it does not turn
+historical replay or controlled enterprise state into operational evidence.
+The public page must fail closed to `UNAVAILABLE` when the date is missing,
+invalid, or future-dated, and must not reuse a previously embedded Evaluation
+result as a fallback.
+
 Multi-scenario replay membership is frozen in a selection manifest before
 aggregation. Every member still passes its own cutoff, source-revision, and
 reveal-isolation checks. Corpus totals cannot convert hybrid replay into

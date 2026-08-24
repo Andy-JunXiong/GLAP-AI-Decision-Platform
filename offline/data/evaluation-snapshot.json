@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-evaluation-snapshot.v1",
+  "status": "available",
+  "evaluation_as_of_date": "2026-08-24",
+  "source_contract": "decision-quality-five-review-corpus-summary.v1",
+  "evidence_class": "HYBRID_HISTORICAL_REPLAY",
+  "corpus": {
+    "case_count": 10,
+    "cutoff_count": 30,
+    "complete_review_count": 5,
+    "minimum_review_count": 3,
+    "locked_review_record_count": 150
+  },
+  "decision_quality": {
+    "status": "MIXED",
+    "favors_a303_on_count": 14,
+    "no_winner_count": 16,
+    "unanimous_control_tie_count": 14,
+    "minimum_preference_consensus_pct": 66.67,
+    "non_control_no_winner_comparisons": [
+      {
+        "case_label": "Cyclone Gabrielle",
+        "cutoff_label": "T1",
+        "baseline_preference_count": 2,
+        "challenger_preference_count": 3,
+        "preference_consensus_pct": 60.0,
+        "result": "REVIEWERS_DO_NOT_AGREE"
+      },
+      {
+        "case_label": "Cyclone Gabrielle",
+        "cutoff_label": "T2",
+        "baseline_preference_count": 2,
+        "challenger_preference_count": 3,
+        "preference_consensus_pct": 60.0,
+        "result": "REVIEWERS_DO_NOT_AGREE"
+      }
+    ]
+  },
+  "privacy": {
+    "reviewer_identifiers_retained": false,
+    "credentials_retained": false,
+    "answer_content_retained": false,
+    "notes_retained": false,
+    "private_source_artifacts_retained": false
+  },
+  "claim_boundary": {
+    "supports": [
+      "FIVE_REVIEW_CONTROLLED_POINT_IN_TIME_DECISION_QUALITY"
+    ],
+    "does_not_support": [
+      "INDIVIDUAL_REVIEW_DISCLOSURE",
+      "BUSINESS_OUTCOME_EFFECT",
+      "REAL_LOGISTICS_PERFORMANCE",
+      "A303_REACTIVATION",
+      "MODEL_PROMOTION",
+      "PRODUCTION_READINESS",
+      "OPERATIONAL_AUTHORITY"
+    ]
+  },
+  "authority": {
+    "publication_authority_from_snapshot": false,
+    "aws_write_allowed": false,
+    "review_mutation_allowed": false,
+    "action_mutation_allowed": false,
+    "policy_activation_allowed": false,
+    "model_promotion_allowed": false,
+    "production_effect": false
+  }
+}

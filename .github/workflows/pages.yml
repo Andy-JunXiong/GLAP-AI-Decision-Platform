@@ -7,8 +7,16 @@ on:
     paths:
       - "offline/glap-demo.html"
       - "offline/data/ops-snapshot.json"
+      - "offline/data/evaluation-snapshot.json"
       - "ops/export_ops_snapshot.py"
+      - "ops/export_public_evaluation_snapshot.py"
+      - "ops/validate_decision_quality_adjudication.py"
       - "ops/configure_ops_snapshot_access.ps1"
+      - "docs/public_evaluation_snapshot_v1.schema.json"
+      - "docs/decision_quality_five_review_corpus_summary_v1.schema.json"
+      - "docs/decision_quality_five_review_corpus_summary_v1.json"
+      - "docs/decision_quality_rubric_v1.json"
+      - "blinded-review-survey/data/review-bundle.json"
       - "sql/13_operational_baseline.sql"
       - "sql/14_operational_baseline_validation.sql"
       - ".github/workflows/pages.yml"
@@ -70,6 +78,10 @@ jobs:
         shell: bash
         run: |
           echo "AWS_OPS_READ_ROLE_ARN is not configured; publishing the explicit non-live fallback snapshot." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate aggregate-only Evaluation snapshot
+        shell: bash
+        run: python ops/export_public_evaluation_snapshot.py
 
       - name: Prepare static site
         shell: bash

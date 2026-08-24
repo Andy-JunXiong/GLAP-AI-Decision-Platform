@@ -4,6 +4,18 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-25
+
+- Implemented locally a versioned aggregate-only public Evaluation snapshot.
+  Its exporter binds the public JSON to the already governed five-review corpus
+  and removes protected source fields; the page reads the JSON and fails closed
+  to `UNAVAILABLE` on fetch, temporal, count, privacy, claim, or authority
+  drift. The local Pages source now watches the snapshot and governed source
+  inputs and validates their exact projection before artifact preparation. The
+  implementation, tests, drift guard, workflow source, and documentation are
+  locally verified and authorized for a bounded source-control release; CI,
+  read-only export, Pages, and live-page results remain runtime evidence.
+
 ## 2026-08-24
 
 - Prepared the aggregate-only public Evaluation & Trust view for the complete

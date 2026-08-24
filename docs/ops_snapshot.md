@@ -67,12 +67,29 @@ Shipments, Outcomes, and Analytics. Decisions shows the existing published
 aggregate separately from a browser-only scenario lab. Scenario approval never
 writes AWS state, changes shipment data, or contributes an observed outcome.
 
-Evaluation & Trust remains separate from the OPS snapshot contract. Its dated
-public-safe review aggregate is maintained in the static page source and
-contains only case, cutoff, reviewer-total, record-total, package-result, and
-claim-boundary counts. It excludes reviewer IDs, entry credentials, individual
-answers, notes, blind keys, and private study artifacts, and it never contributes
-to operational KPIs or Business Outcome Effect.
+Evaluation & Trust remains separate from the OPS snapshot contract. Its
+versioned `public-evaluation-snapshot.v1` JSON is loaded from
+`data/evaluation-snapshot.json`, not from OPS metrics or hard-coded page totals.
+The public Evaluation contract contains only its as-of date and evidence class;
+aggregate case, cutoff, reviewer-total, record-total, package-result, control,
+and safe no-winner comparison counts; and explicit privacy, claim, and
+no-authority fields. It excludes reviewer/package/bundle identifiers and
+digests, entry credentials, individual answers, notes, source collections,
+blind keys, score deltas, and private study artifacts.
+
+The Evaluation loader fails closed to `UNAVAILABLE` when the file cannot be
+loaded or when its schema, Sydney date, count reconciliation, privacy, claim,
+or authority boundary fails. It has no committed fallback result and never
+contributes to operational KPIs, freshness, pipeline health, Outcome maturity,
+or Business Outcome Effect. The local snapshot implementation does not grant
+GitHub Pages publication authority.
+
+The local Pages workflow watches every file needed to reproduce that public
+Evaluation projection. It invokes `ops/export_public_evaluation_snapshot.py`
+before `_site` preparation and therefore blocks artifact upload when the
+tracked JSON differs from the governed source projection. This does not change
+the OPS exporter, its read-only AWS role, or the requirement for separate
+human authority before push or publication.
 
 ## GitHub configuration
 

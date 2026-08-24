@@ -117,16 +117,17 @@ class OfflineDemoTests(unittest.TestCase):
             'id="evaluation"',
             'data-page="evaluation"',
             "Historical Replay",
-            "10</strong><small>cases · 30 frozen cutoffs",
-            "5 / 3",
-            "minimum met · two entry surfaces",
-            "150",
+            'id="evaluationCases"',
+            'id="evaluationReviews"',
+            'id="evaluationLockedRecords"',
             "Decision Quality",
-            "MIXED",
-            "14 favour A303-on · 16 no winner",
-            "Fourteen control ties",
-            "Cyclone Gabrielle T1 and T2 each split 3:2 at 60%",
-            "below the frozen 66.67% consensus gate",
+            'id="evaluationState">UNAVAILABLE',
+            "Evaluation snapshot not loaded",
+            'fetch("data/evaluation-snapshot.json",{cache:"no-store"})',
+            'const EVALUATION_SCHEMA_VERSION="public-evaluation-snapshot.v1"',
+            "Evaluation snapshot date is invalid or future-dated",
+            "Evaluation privacy boundary fails closed",
+            "Evaluation authority boundary fails closed",
             "No reviewer identities, account details, answers, notes",
             "No operational or business-outcome claim",
             "repeat(8,minmax(60px,1fr))",
@@ -153,6 +154,9 @@ class OfflineDemoTests(unittest.TestCase):
             "COMPLETE · 120 LOCKED",
             "MIXED · 15 / 15",
             "Cyclone Gabrielle T1 is split 2:2",
+            "Public aggregate only · 24 August 2026",
+            "10</strong><small>cases · 30 frozen cutoffs",
+            "14 favour A303-on · 16 no winner",
         ):
             with self.subTest(stale_marker=stale_marker):
                 self.assertNotIn(stale_marker, self.html)
@@ -270,7 +274,27 @@ class RepositoryShowcaseTests(unittest.TestCase):
         workflow = PAGES_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("offline/glap-demo.html", workflow)
         self.assertIn("offline/data/ops-snapshot.json", workflow)
+        self.assertIn("offline/data/evaluation-snapshot.json", workflow)
         self.assertIn("ops/export_ops_snapshot.py", workflow)
+        self.assertIn("ops/export_public_evaluation_snapshot.py", workflow)
+        self.assertIn("ops/validate_decision_quality_adjudication.py", workflow)
+        self.assertIn("docs/public_evaluation_snapshot_v1.schema.json", workflow)
+        self.assertIn(
+            "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+            workflow,
+        )
+        self.assertIn(
+            "docs/decision_quality_five_review_corpus_summary_v1.json", workflow
+        )
+        self.assertIn("docs/decision_quality_rubric_v1.json", workflow)
+        self.assertIn("blinded-review-survey/data/review-bundle.json", workflow)
+        self.assertIn(
+            "python ops/export_public_evaluation_snapshot.py", workflow
+        )
+        self.assertLess(
+            workflow.index("python ops/export_public_evaluation_snapshot.py"),
+            workflow.index("- name: Prepare static site"),
+        )
         self.assertIn("sql/13_operational_baseline.sql", workflow)
         self.assertIn("AWS_OPS_READ_ROLE_ARN", workflow)
         self.assertIn("AWS_OPS_PIPELINE_STATUS_URI", workflow)

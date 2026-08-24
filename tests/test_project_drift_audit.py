@@ -524,6 +524,95 @@ class ProjectDriftAuditTests(unittest.TestCase):
             result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
         self.assertEqual(result.status, "DRIFT")
 
+    def test_public_evaluation_snapshot_boundary_and_authority_drift(self):
+        paths = (
+            "docs/public_evaluation_snapshot_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "blinded-review-survey/data/review-bundle.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "ops/export_public_evaluation_snapshot.py",
+            "offline/data/evaluation-snapshot.json",
+            "offline/glap-demo.html",
+            ".github/workflows/pages.yml",
+            "tests/test_public_evaluation_snapshot.py",
+            "tests/test_offline_demo.py",
+            "docs/evaluation_architecture.md",
+            "docs/ops_snapshot.md",
+            "docs/temporal_truthfulness.md",
+        )
+        current = AUDIT.check_public_evaluation_snapshot_boundary(ROOT)[0]
+        self.assertEqual(current.status, "PASS")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            snapshot_path = root / "offline" / "data" / "evaluation-snapshot.json"
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            snapshot["authority"]["action_mutation_allowed"] = True
+            snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+            result = AUDIT.check_public_evaluation_snapshot_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_public_evaluation_page_hardcoded_result_drift_is_detected(self):
+        paths = (
+            "docs/public_evaluation_snapshot_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "blinded-review-survey/data/review-bundle.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "ops/export_public_evaluation_snapshot.py",
+            "offline/data/evaluation-snapshot.json",
+            "offline/glap-demo.html",
+            ".github/workflows/pages.yml",
+            "tests/test_public_evaluation_snapshot.py",
+            "tests/test_offline_demo.py",
+            "docs/evaluation_architecture.md",
+            "docs/ops_snapshot.md",
+            "docs/temporal_truthfulness.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            page_path = root / "offline" / "glap-demo.html"
+            page = page_path.read_text(encoding="utf-8").replace(
+                "Public aggregate only · snapshot unavailable",
+                "Public aggregate only · 24 August 2026",
+                1,
+            )
+            page_path.write_text(page, encoding="utf-8")
+            result = AUDIT.check_public_evaluation_snapshot_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_public_evaluation_pages_validation_gate_drift_is_detected(self):
+        paths = (
+            "docs/public_evaluation_snapshot_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "blinded-review-survey/data/review-bundle.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "ops/export_public_evaluation_snapshot.py",
+            "offline/data/evaluation-snapshot.json",
+            "offline/glap-demo.html",
+            ".github/workflows/pages.yml",
+            "tests/test_public_evaluation_snapshot.py",
+            "tests/test_offline_demo.py",
+            "docs/evaluation_architecture.md",
+            "docs/ops_snapshot.md",
+            "docs/temporal_truthfulness.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            workflow_path = root / ".github" / "workflows" / "pages.yml"
+            workflow = workflow_path.read_text(encoding="utf-8").replace(
+                "python ops/export_public_evaluation_snapshot.py",
+                "echo evaluation-validation-skipped",
+            )
+            workflow_path.write_text(workflow, encoding="utf-8")
+            result = AUDIT.check_public_evaluation_snapshot_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
     def test_action_mutation_release_scope_expansion_is_detected(self):
         source = json.loads(
             (

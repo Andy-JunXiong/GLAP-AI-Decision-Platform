@@ -131,14 +131,14 @@ Durable capabilities:
 - simple forecast baselines and governed label-readiness gates;
 - learning proposals that cannot self-activate.
 
-Near-term gate: the four-review Decision Quality minimum is complete, and the
-independent pre-specified A303 synthetic robustness run is complete with a
-`NOT_ROBUST` result. Two bounded post-hoc A303.v2 eligibility guardrails have
-also failed an anti-abstention development gate: one retains only two action
-opportunities at 86.42% non-negative on its action subset, and the stricter one
-retains none. On `2026-08-22`, the human project owner selected stop/retire;
-A303.v1 threshold tuning, holdouts, prospective collection, calibration,
-activation, and production progression are now closed. All evidence remains
+Near-term gate: the five-review full-corpus Decision Quality aggregate is
+complete, and the independent pre-specified A303 synthetic robustness run is
+complete with a `NOT_ROBUST` result. Two bounded post-hoc A303.v2 eligibility
+guardrails have also failed an anti-abstention development gate: one retains
+only two action opportunities at 86.42% non-negative on its action subset, and
+the stricter one retains none. On `2026-08-22`, the human project owner
+selected stop/retire; A303.v1 threshold tuning, holdouts, prospective
+collection, calibration, activation, and production progression are now closed. All evidence remains
 preserved. Further threshold tuning on the same corpus is not a durable
 progression path. Any fundamentally new rule would require separate explicit
 human authorization, a new version, a newly frozen holdout, and the full
