@@ -373,10 +373,11 @@ It performs unauthenticated reads only, requires the live v1 JSON to equal the
 governed source projection, reruns the temporal and aggregate contract, checks
 all-false authority, and requires the deployed page to retain the validated
 loader and `UNAVAILABLE` fail-closed path. It retries only to tolerate Pages
-propagation and never accepts an older or different artifact. Its bounded
-commit, push, and resulting aggregate-only Pages publication are separately
-authorized, but it supplies no new runtime evidence until that workflow run
-completes.
+propagation and never accepts an older or different artifact. Commit
+`3d9dc34`, CI run `32780350123`, and Pages run `32780350187` passed. The
+post-deployment step verified the exact deployed page and v1 projection,
+reconciled counts, all-false authority, loader, and fail-closed state; it adds
+no broader Evaluation claim or operational authority.
 
 Two bounded A303.v2 eligibility guardrails were then screened on the same
 frozen space as explicitly `POST_HOC_DEVELOPMENT_EVIDENCE`. The anti-abstention

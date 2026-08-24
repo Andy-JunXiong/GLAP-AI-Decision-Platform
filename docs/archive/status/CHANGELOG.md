@@ -11,9 +11,10 @@ preserved handoffs.
   their governed local sources, reconciles aggregate counts, requires all
   authority fields to remain false, and confirms the no-store loader and
   `UNAVAILABLE` fail-closed path. Bounded retries tolerate publication lag but
-  never accept an older artifact. Its bounded commit, push, and resulting Pages
-  publication are separately authorized; workflow runtime verification remains
-  pending.
+  never accept an older artifact. Commit `3d9dc34`, CI run `32780350123`, and
+  Pages run `32780350187` passed; the deployed canary returned all six checks
+  true with the governed 10/30, 5, 150, and 14/16 aggregate and all authority
+  fields false.
 - Implemented locally a versioned aggregate-only public Evaluation snapshot.
   Its exporter binds the public JSON to the already governed five-review corpus
   and removes protected source fields; the page reads the JSON and fails closed

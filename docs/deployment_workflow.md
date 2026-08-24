@@ -215,6 +215,7 @@ credentials, requires them to match the governed local sources, reruns the
 Sydney-date and aggregate contract, and verifies all-false authority, the
 no-store loader, and the `UNAVAILABLE` fail-closed path. It retries boundedly
 for Pages propagation and writes only safe aggregate evidence to the workflow
-summary. The project owner has separately authorized the bounded commit and
-push plus the resulting existing aggregate-only Pages publication; workflow
-and canary runtime evidence remain pending.
+summary. The project owner separately authorized the bounded release. Commit
+`3d9dc34`, CI run `32780350123`, and Pages run `32780350187` passed; the latter
+deployed the exact commit and the canary returned all six checks true with the
+governed aggregate and all authority fields false.

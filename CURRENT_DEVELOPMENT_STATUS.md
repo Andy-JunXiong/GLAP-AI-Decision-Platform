@@ -140,9 +140,27 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Read-only Evaluation publication canary
+## Active slice — Governed `COMPLETE`-to-Outcome evidence canary
 
-**Status:** `IMPLEMENTED_LOCAL_PENDING_PUBLICATION`
+**Status:** `RECOMMENDED_NOT_APPROVED`
+
+**Goal**
+
+Prepare one bounded staging canary that lets a separately authorized named
+human complete an already approved Action, then verifies the delayed simulated
+Outcome through the authenticated Action evidence chain and existing Learning
+gate.
+
+**Boundary**
+
+This is a recommendation only, not approved or implemented work. The agent may
+not complete an operational Action. Any future canary requires a separate
+named-human mutation authorization and must retain staging, synthetic Outcome,
+actual-calendar cutoff, append-only audit, and no-production boundaries.
+
+## Recently completed — Read-only Evaluation publication canary
+
+**Status:** `PUBLISHED_RUNTIME_VERIFIED`
 
 **Goal**
 
@@ -164,16 +182,16 @@ page loader, and fail-closed state after a Pages deployment.
   report in the workflow summary. Added focused publication-lag, projection,
   page, and authority failure tests plus project-drift protection.
 
-**Boundary and pending runtime evidence**
+**Boundary and runtime evidence**
 
-The implementation is read-only. The project owner has separately authorized
-its bounded commit and push plus the resulting existing aggregate-only Pages
-publication; workflow and canary results remain pending. No AWS write,
-production, schedule, alias, data, review, policy, model, or Action authority
-was added. A manual invocation of the local canary
-against the currently published site passed all six checks and the expected
-10/30, 5, 150, and 14/16 aggregates; this verifies the script against the
-existing artifact but does not establish that the new workflow step ran.
+Commit `3d9dc34` was pushed to `main`. CI run `32780350123` passed, and Pages
+run `32780350187` completed the existing read-only AWS OPS export, exact
+Evaluation projection gate, deployment, and new post-deployment canary. The
+canary passed all six checks against the deployed commit: exact page, exact v1
+projection, reconciled counts, all-false authority, loader, and fail-closed
+state. It reported 10/30, 5, 150, and 14/16 with as-of `2026-08-24`. No AWS
+write, production, schedule, alias, data, review, policy, model, or Action
+authority was added.
 
 ## Recently completed — Versioned public Evaluation snapshot
 
@@ -691,9 +709,9 @@ separately owned.
   authorized only through the bounded `main` push, CI, read-only OPS export,
   and aggregate-only Pages path; all write and production authorities remain
   excluded.
-- The local post-deployment canary passes against the existing live page and
-  snapshot. Its bounded release is separately authorized, but GitHub Actions
-  runtime verification remains pending.
+- The post-deployment canary is published and runtime-verified from commit
+  `3d9dc34`; CI run `32780350123` and Pages run `32780350187` passed, including
+  its six-check all-false-authority report.
 
 `pending validation` means implementation exists but the required human,
 runtime, or external evidence has not been completed. It is not equivalent to
@@ -1143,18 +1161,18 @@ done.
 
 ### Incomplete
 
-- The automated read-only Evaluation canary is implemented and its bounded
-  release is authorized, but it has not yet run after a Pages deployment;
-  publication and runtime evidence remain pending.
+- Action `COMPLETE` and delayed simulated Outcome creation remain separately
+  human-owned; the recommended staging canary is not yet approved.
 
 ## Next Up
 
-1. Execute the separately authorized bounded commit and `main` push, then
-   inspect CI, the aggregate-only Pages publication, the new canary workflow
-   summary, and the live result.
-2. This authorization does not add AWS writes, operational mutation,
-   production, schedule, alias, data, review, policy, model, or Action
-   authority.
+1. Recommended next feature: prepare one separately governed staging
+   `COMPLETE` to delayed simulated Outcome evidence canary for an already
+   approved Action, so the authenticated Action evidence chain can reach the
+   existing Outcome and Learning gates end to end.
+2. This is a recommendation only. Action completion must be performed by a
+   separately authorized named human; it grants no agent mutation, production,
+   schedule, alias, policy activation, or model-promotion authority.
 
 ## Current-week history
 
