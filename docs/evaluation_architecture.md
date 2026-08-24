@@ -361,6 +361,12 @@ before `_site` preparation, so a source/snapshot mismatch cannot reach the
 artifact-upload step. This is a repository gate only; it does not mean the
 workflow has run or that the versioned snapshot is live.
 
+For the first bounded release, commit `489ef90`, CI run `32741075346`, and Pages
+run `32741075493` provide the separate delivery evidence. The Pages validator
+passed before artifact preparation, and live read-only checks confirmed the v1
+schema, governed aggregate, all-false authority fields, loader, and fail-closed
+state. This runtime evidence does not expand the snapshot's claim boundary.
+
 Two bounded A303.v2 eligibility guardrails were then screened on the same
 frozen space as explicitly `POST_HOC_DEVELOPMENT_EVIDENCE`. The anti-abstention
 gate prevents a candidate from appearing robust merely by changing nearly all

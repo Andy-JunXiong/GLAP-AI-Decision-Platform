@@ -91,6 +91,13 @@ tracked JSON differs from the governed source projection. This does not change
 the OPS exporter, its read-only AWS role, or the requirement for separate
 human authority before push or publication.
 
+That authority was separately granted for commit `489ef90`. CI run
+`32741075346` and Pages run `32741075493` passed; the latter completed the
+existing read-only OPS export and Evaluation validation before deployment.
+Live read-only checks returned HTTP 200 for the page and v1 JSON and confirmed
+the expected aggregate and all-false authority fields. This publication did
+not change the OPS contract or grant any write path.
+
 ## GitHub configuration
 
 The repository includes an idempotent PowerShell setup command for the current

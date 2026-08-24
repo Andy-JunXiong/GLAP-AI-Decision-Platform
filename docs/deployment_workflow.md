@@ -202,3 +202,9 @@ the tracked public JSON to equal the safe projection exactly. A mismatch exits
 non-zero and blocks artifact preparation. This gate grants no publication,
 AWS, data, model, policy, or Action authority; commit, push, and Pages execution
 remain separately human-authorized actions.
+
+The first bounded release of this gate completed from commit `489ef90`: CI run
+`32741075346` and Pages run `32741075493` passed. The Pages job successfully
+ran the read-only OPS export and the Evaluation validator before artifact
+preparation, then deployed the site. Read-only HTTP checks verified the live
+v1 snapshot and loader; no AWS write or operational mutation was included.

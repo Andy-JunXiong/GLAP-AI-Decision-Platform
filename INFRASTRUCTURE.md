@@ -234,9 +234,12 @@ snapshot, public and source schemas, governed source summary, rubric, frozen
 review bundle, source validator, and exporter. Before `_site` is prepared, the
 workflow runs the exporter in check mode and fails when the tracked public JSON
 is not the exact privacy- and authority-bounded source projection. This is
-repository implementation with a separately authorized bounded `main` release;
-CI, read-only export, Pages, and live-page results remain runtime evidence until
-the corresponding workflow completes and is inspected.
+repository implementation released as commit `489ef90`. CI run `32741075346`
+passed. Pages run `32741075493` successfully configured the existing read-only
+OPS credentials, exported the sanitized OPS snapshot, passed the Evaluation
+gate before artifact preparation, and deployed Pages. Live page and Evaluation
+JSON checks returned HTTP 200; no AWS resource, write permission, production
+alias, schedule, lifecycle data, or Action was changed.
 
 The Action mutation staging release boundary was exercised end to end on
 2026-08-10. Separate human approvals guarded change-set preparation and

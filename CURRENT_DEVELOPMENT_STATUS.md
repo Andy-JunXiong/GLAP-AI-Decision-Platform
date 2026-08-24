@@ -36,7 +36,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | A303.v1 development disposition | `RETIRED_FROM_PROGRESSION` | The human project owner explicitly selected option 1 on 2026-08-22; threshold tuning, new holdouts, prospective Outcome collection, calibration, activation, and production progression are closed while all evidence remains preserved |
 | A303 Outcome calibration interface | `INACTIVE_REUSABLE_INFRASTRUCTURE` | Contract and validator remain available for a separately authorized future rule, but A303.v1 calibration is `CLOSED_NOT_APPLICABLE` and no eligible controlled pairs exist |
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
-| Public evaluation evidence view | `V1_RELEASE_AUTHORIZED_PENDING_RUNTIME` | Commit `8698290`, CI run `32734483600`, and Pages run `32734483601` published and verified the earlier aggregate-only five-review view. The versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed Pages gate are locally verified and authorized for source-control release; the new CI, read-only export, Pages, and live-page results remain pending runtime evidence |
+| Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
@@ -140,9 +140,26 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Versioned public Evaluation snapshot
+## Active slice — Read-only Evaluation publication canary
 
-**Status:** `RELEASE_AUTHORIZED_LOCAL_VERIFIED`
+**Status:** `RECOMMENDED_NOT_APPROVED`
+
+**Goal**
+
+Turn the one-time post-publication checks into a deterministic read-only canary
+that verifies the live v1 JSON, aggregate reconciliation, all-false authority,
+page loader, and fail-closed state after a Pages deployment.
+
+**Boundary**
+
+This is the recommended next development slice, not approved or implemented
+work. Any implementation must remain read-only and aggregate-only and requires
+new human authorization. It must not add AWS writes, production, schedule,
+alias, data, review, policy, model, or Action authority.
+
+## Recently completed — Versioned public Evaluation snapshot
+
+**Status:** `PUBLISHED_RUNTIME_VERIFIED`
 
 **Goal**
 
@@ -151,7 +168,7 @@ whose tracked JSON is an exact safe projection of the governed five-review
 corpus. Make the public page withhold every result when source validation,
 schema, date, count, privacy, claim, or authority checks fail.
 
-**Completed locally**
+**Completed**
 
 - Added `public-evaluation-snapshot.v1`, its JSON Schema, exact source exporter,
   and tracked aggregate-only snapshot. The exporter first invokes the existing
@@ -177,11 +194,13 @@ schema, date, count, privacy, claim, or authority checks fail.
 
 **Boundary and next step**
 
-The implementation is locally verified and its source-control release is now
-explicitly authorized. The authorized `main` push may trigger CI, the existing
-read-only AWS OPS export, and aggregate-only Pages publication. Those workflow
-and live-page results remain pending runtime evidence; AWS writes, production,
-schedules, aliases, data changes, and Action mutations remain outside scope.
+Commit `489ef90` is on `main`. CI run `32741075346` and Pages run
+`32741075493` passed; the Pages job successfully used the existing read-only
+AWS OPS export, passed the Evaluation validator before artifact preparation,
+and deployed the aggregate-only site. Post-publication checks returned HTTP 200
+for the page and JSON and confirmed the v1 schema, `2026-08-24` as-of date,
+10/30, 5, 150, 14/16, all-false authority, JSON loader, and fail-closed state.
+No AWS write, production, schedule, alias, data, or Action mutation occurred.
 
 ## Recently completed — Action–Outcome–Learning evidence chain
 
@@ -1093,10 +1112,9 @@ done.
 - The prior T1 2:2 package has an immutable predecessor record; T1 and T2 each
   have five-review 3:2 results below the 66.67% gate and separate
   `RETAIN_INCONCLUSIVE` human dispositions.
-- The already published aggregate-only five-review page is runtime-verified.
-  The later versioned JSON contract and fail-closed loader are locally tested
-  and source-control release-authorized; their new workflow and live-page
-  validation remain pending runtime evidence.
+- The versioned aggregate-only five-review page is published and
+  runtime-verified from commit `489ef90`; the exact source-projection gate and
+  live all-false authority boundary both passed.
 - Simulator v1 is deliberately synthetic and has not been calibrated against
   an independently governed factual or prospective Outcome source. Because its
   current capability result is `NOT_ROBUST`, prospective collection is not the
@@ -1104,18 +1122,18 @@ done.
 
 ### Incomplete
 
-- The versioned public Evaluation snapshot is release-authorized but not yet
-  runtime-verified. CI, the read-only export, Pages publication, and live-page
-  behavior cannot be inferred from the committed source tree.
+- Post-publication Evaluation verification is currently a manual read-only
+  check; no automated live canary records the schema, aggregate reconciliation,
+  authority boundary, and fail-closed loader after every Pages deployment.
 
 ## Next Up
 
-1. Complete the authorized source-control release of
-   `public-evaluation-snapshot.v1` and verify CI and Pages workflow results.
-2. Read-only verify that the live page loads the versioned aggregate and fails
-   closed without disclosing protected review content or implying authority.
-3. No AWS deployment, operational mutation, production change, schedule,
-   alias, data, or Action authority is implied by either step.
+1. Recommended next feature: add a read-only post-deployment Evaluation canary
+   that validates the live v1 JSON, aggregate reconciliation, all-false
+   authority, page loader, and fail-closed state after each Pages publication.
+2. This is a recommendation only and requires a new implementation approval;
+   it must not add AWS writes, operational mutation, production, schedule,
+   alias, data, or Action authority.
 
 ## Current-week history
 

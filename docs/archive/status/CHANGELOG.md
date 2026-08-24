@@ -12,9 +12,10 @@ preserved handoffs.
   to `UNAVAILABLE` on fetch, temporal, count, privacy, claim, or authority
   drift. The local Pages source now watches the snapshot and governed source
   inputs and validates their exact projection before artifact preparation. The
-  implementation, tests, drift guard, workflow source, and documentation are
-  locally verified and authorized for a bounded source-control release; CI,
-  read-only export, Pages, and live-page results remain runtime evidence.
+  implementation, tests, drift guard, workflow source, and documentation were
+  released as commit `489ef90`; CI run `32741075346` and Pages run
+  `32741075493` passed. Live read-only checks verified the v1 schema, expected
+  aggregate, all-false authority, page loader, and fail-closed state.
 
 ## 2026-08-24
 

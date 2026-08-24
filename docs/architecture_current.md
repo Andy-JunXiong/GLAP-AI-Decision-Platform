@@ -75,8 +75,9 @@ for both packages without overriding their raw no-winner results. The public
 view was separately refreshed and runtime-verified with the aggregate-only
 five-review result. A later repository-local versioned snapshot revision
 replaces embedded totals with `public-evaluation-snapshot.v1`; its bounded
-source-control release is authorized, while new workflow and live-page results
-remain pending runtime evidence.
+source-control release completed as commit `489ef90`. CI run `32741075346` and
+Pages run `32741075493` passed, and live read-only checks verified the v1 JSON,
+aggregate counts, all-false authority fields, page loader, and fail-closed state.
 Decision Quality does not select Business Outcome simulator eligibility. A
 parallel pre-specified synthetic path evaluates all sixteen attributed changes
 and all fourteen no-delta controls using frozen Simulator v1, sensitivity
