@@ -118,7 +118,152 @@ export type OperationsOutcome = {
   alert_type: string | null;
   alert_severity: string | null;
   action_status: ActionStatus | null;
+  decision_brief_version: "decision-brief.v1" | null;
+  selected_alternative: string | null;
 };
+
+export type OutcomeCohortSummary = {
+  schema_version: "outcome-cohort-summary.v1";
+  as_of_date: string;
+  status: "AVAILABLE" | "NO_ELIGIBLE_BOUND_OUTCOMES";
+  source: {
+    execution_mode: "OPERATIONAL";
+    time_basis: "ACTUAL_CALENDAR";
+    evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT";
+  };
+  eligibility: {
+    observed_only: true;
+    pending_excluded: true;
+    unbound_actions_excluded: true;
+    future_simulations_excluded: true;
+  };
+  cohorts: Array<{
+    decision_brief_version: string;
+    selected_alternative: string;
+    observed_outcome_count: number;
+    status_counts: {
+      successful: number;
+      partially_successful: number;
+      failed: number;
+      inconclusive: number;
+    };
+    effect_pct: { minimum: number; average: number; maximum: number };
+    evidence_sufficiency: {
+      status: "PENDING_HUMAN_APPROVAL" | "INSUFFICIENT_EVIDENCE" | "SUFFICIENT_FOR_DESCRIPTIVE_COMPARISON";
+      distinct_result_states: number;
+      sample_gate_met: boolean | null;
+      result_coverage_gate_met: boolean | null;
+      comparison_eligible: boolean;
+    };
+    evidence_gap: {
+      schema_version: "outcome-cohort-evidence-gap.v1";
+      status: "PENDING_HUMAN_APPROVAL" | "GAP_REMAINS" | "TARGET_MET";
+      target_contract_version: string | null;
+      additional_observed_outcomes: number | null;
+      additional_distinct_result_states: number | null;
+      calculation_only: true;
+      outcome_collection_recommended: false;
+      outcome_creation_authorized: false;
+      lifecycle_continuation_authorized: false;
+    };
+  }>;
+  evidence_sufficiency_gate: {
+    schema_version: "outcome-cohort-evidence-sufficiency.v1";
+    configuration_status: "PENDING_HUMAN_APPROVAL" | "HUMAN_APPROVED_CONTRACT";
+    threshold_contract_version: string | null;
+    thresholds: {
+      minimum_observed_outcomes: number | null;
+      minimum_distinct_result_states: number | null;
+    };
+    comparison_scope: "DESCRIPTIVE_SYNTHETIC_ONLY";
+    any_comparison_eligible: boolean;
+  };
+  descriptive_comparison_view?: {
+    schema_version: "outcome-cohort-descriptive-comparison.v1";
+    status: "AVAILABLE" | "INSUFFICIENT_ELIGIBLE_COHORTS";
+    required_eligible_cohort_count: 2;
+    eligible_cohort_count: number;
+    excluded_cohort_count: number;
+    cohorts: Array<{
+      decision_brief_version: string;
+      selected_alternative: string;
+      observed_outcome_count: number;
+      status_percentages: {
+        successful: number;
+        partially_successful: number;
+        failed: number;
+        inconclusive: number;
+      };
+      effect_pct: { minimum: number; average: number; maximum: number };
+      provenance: {
+        schema_version: "outcome-cohort-comparison-provenance.v1";
+        decision_binding: {
+          binding_source: "IMMUTABLE_ACTION_PROPOSAL";
+          decision_brief_version: string;
+          selected_alternative: string;
+        };
+        evidence_contract: {
+          cohort_summary_schema_version: "outcome-cohort-summary.v1";
+          threshold_contract_version: string;
+          as_of_date: string;
+          execution_mode: "OPERATIONAL";
+          time_basis: "ACTUAL_CALENDAR";
+          evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT";
+          observed_only: true;
+          pending_excluded: true;
+          unbound_actions_excluded: true;
+          future_simulations_excluded: true;
+        };
+        privacy: {
+          action_identifiers_exposed: false;
+          outcome_identifiers_exposed: false;
+          shipment_identifiers_exposed: false;
+        };
+        read_only: true;
+      };
+      integrity?: {
+        schema_version: "outcome-cohort-comparison-fingerprint.v1";
+        algorithm: "SHA-256";
+        canonicalization: "JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS";
+        digest: string;
+        covered_fields: [
+          "decision_brief_version",
+          "selected_alternative",
+          "observed_outcome_count",
+          "status_percentages",
+          "effect_pct",
+          "provenance",
+        ];
+        verification_scope: "RESPONSE_CONTENT_INTEGRITY_ONLY";
+        digital_signature: false;
+        source_authenticity_attested: false;
+        business_validity_attested: false;
+      };
+    }>;
+    comparison_scope: "DESCRIPTIVE_SYNTHETIC_ONLY";
+    governance: {
+      ranking_produced: false;
+      preferred_alternative_selected: false;
+      causal_superiority_estimated: false;
+      statistical_significance_estimated: false;
+      action_recommended: false;
+    };
+  };
+  governance: {
+    descriptive_summary_only: true;
+    causal_effect_estimate: false;
+    financial_value_estimated: false;
+    real_logistics_performance: false;
+    model_readiness: false;
+    policy_activation_authorized: false;
+    human_threshold_approval_required: true;
+    automatic_threshold_selection: false;
+  };
+};
+
+export type OutcomeComparisonCohort = NonNullable<
+  OutcomeCohortSummary["descriptive_comparison_view"]
+>["cohorts"][number];
 
 export type ActionAuditEvent = {
   event_id: string;
@@ -427,7 +572,9 @@ type RiskResponse = {
 
 type OutcomeResponse = {
   schema_version: "operations-api.v1";
+  as_of_date: string;
   items: OperationsOutcome[];
+  cohort_summary?: OutcomeCohortSummary;
   next_token: string | null;
 };
 

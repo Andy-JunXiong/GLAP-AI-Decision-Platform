@@ -8,6 +8,7 @@ forwards mutations with an actor derived from the authenticated identity.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import logging
 import math
@@ -104,6 +105,9 @@ OPERATION_PERMISSION = {
     "COMPLETE": "actions:complete",
 }
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
+APPROVED_OUTCOME_COHORT_CONTRACT_VERSION = "outcome-cohort-threshold-contract.v1"
+APPROVED_OUTCOME_COHORT_OBSERVATION_FLOOR = 20
+APPROVED_OUTCOME_COHORT_RESULT_STATE_FLOOR = 2
 SAFE_PROVIDER = re.compile(r"^[A-Z0-9][A-Z0-9._-]{1,31}$")
 SAFE_LANE = re.compile(r"^[A-Z0-9]{2,8}-[A-Z0-9]{2,8}$")
 LOGGER = logging.getLogger(__name__)
@@ -637,14 +641,385 @@ SELECT o.outcome_id, o.action_id, o.alert_fingerprint, o.shipment_id,
        o.effect_pct, o.outcome_version, o.as_of_date,
        CASE WHEN o.outcome_status = 'PENDING' THEN 'NOT_OBSERVED'
             ELSE 'OBSERVED_ACTUAL_CALENDAR' END AS evidence_status,
-       a.action_type, a.alert_type, a.alert_severity, a.status AS action_status
+       a.action_type, a.alert_type, a.alert_severity, a.status AS action_status,
+       a.decision_brief_version, a.selected_alternative
 FROM current_outcomes o
 LEFT JOIN {_identifier(DATABASE)}.{_identifier(ACTION_VIEW)} a
-  ON o.action_id = a.action_id AND a.temporal_scope_id = 'OPERATIONAL'
+  ON o.action_id = a.action_id
+ AND a.temporal_scope_id = 'OPERATIONAL'
+ AND a.execution_mode = 'OPERATIONAL'
+ AND a.time_basis = 'ACTUAL_CALENDAR'
+ AND a.as_of_date <= DATE '{as_of_date}'
+ AND a.created_date <= DATE '{as_of_date}'
 WHERE 1 = 1{status_filter}
 ORDER BY CASE o.outcome_status WHEN 'PENDING' THEN 1 ELSE 2 END,
          o.observation_due_date, o.outcome_id
 LIMIT {limit}"""
+
+
+def build_outcome_cohort_query(as_of_date: str) -> str:
+    """Aggregate observed synthetic effects by immutable Decision contract."""
+
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    return f"""WITH ranked_outcomes AS (
+    SELECT outcome_id, action_id, status AS outcome_status, observed_date,
+           effect_pct, as_of_date,
+           row_number() OVER (
+               PARTITION BY outcome_id
+               ORDER BY try_cast(dt AS date) DESC, as_of_date DESC
+           ) AS row_rank
+    FROM {_identifier(DATABASE)}.{_identifier(OUTCOME_TABLE)}
+    WHERE temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND try_cast(dt AS date) <= DATE '{as_of_date}'
+      AND observed_date IS NOT NULL
+      AND observed_date <= DATE '{as_of_date}'
+      AND status IN ('SUCCESSFUL', 'PARTIALLY_SUCCESSFUL', 'FAILED', 'INCONCLUSIVE')
+      AND try_cast(effect_pct AS double) IS NOT NULL
+), current_outcomes AS (
+    SELECT * FROM ranked_outcomes WHERE row_rank = 1
+), eligible_actions AS (
+    SELECT action_id, decision_brief_version, selected_alternative
+    FROM {_identifier(DATABASE)}.{_identifier(ACTION_VIEW)}
+    WHERE temporal_scope_id = 'OPERATIONAL'
+      AND execution_mode = 'OPERATIONAL'
+      AND time_basis = 'ACTUAL_CALENDAR'
+      AND as_of_date <= DATE '{as_of_date}'
+      AND created_date <= DATE '{as_of_date}'
+      AND nullif(trim(decision_brief_version), '') IS NOT NULL
+      AND nullif(trim(selected_alternative), '') IS NOT NULL
+)
+SELECT a.decision_brief_version, a.selected_alternative,
+       count(*) AS observed_outcome_count,
+       count_if(o.outcome_status = 'SUCCESSFUL') AS successful_count,
+       count_if(o.outcome_status = 'PARTIALLY_SUCCESSFUL') AS partially_successful_count,
+       count_if(o.outcome_status = 'FAILED') AS failed_count,
+       count_if(o.outcome_status = 'INCONCLUSIVE') AS inconclusive_count,
+       round(min(try_cast(o.effect_pct AS double)), 2) AS minimum_effect_pct,
+       round(avg(try_cast(o.effect_pct AS double)), 2) AS average_effect_pct,
+       round(max(try_cast(o.effect_pct AS double)), 2) AS maximum_effect_pct
+FROM current_outcomes o
+JOIN eligible_actions a ON o.action_id = a.action_id
+GROUP BY a.decision_brief_version, a.selected_alternative
+ORDER BY a.decision_brief_version, a.selected_alternative"""
+
+
+def _finite_float_value(row: dict[str, str | None], field: str) -> float:
+    value = row.get(field)
+    try:
+        parsed = float(str(value))
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"Outcome cohort field {field} is invalid") from exc
+    if not math.isfinite(parsed):
+        raise RuntimeError(f"Outcome cohort field {field} is not finite")
+    return parsed
+
+
+def build_outcome_cohort_contract(
+    rows: list[dict[str, str | None]],
+    as_of_date: str,
+    approved_minimum_observed: int | None = None,
+    approved_minimum_result_states: int | None = None,
+    approved_threshold_contract_version: str | None = None,
+) -> dict[str, Any]:
+    """Shape descriptive synthetic cohorts without implying causal effect."""
+
+    threshold_parts = (
+        approved_minimum_observed,
+        approved_minimum_result_states,
+        approved_threshold_contract_version,
+    )
+    thresholds_configured = all(value is not None for value in threshold_parts)
+    if any(value is not None for value in threshold_parts) and not thresholds_configured:
+        raise RuntimeError("Outcome cohort sufficiency configuration is incomplete")
+    if thresholds_configured:
+        if (
+            isinstance(approved_minimum_observed, bool)
+            or isinstance(approved_minimum_result_states, bool)
+            or not isinstance(approved_minimum_observed, int)
+            or not isinstance(approved_minimum_result_states, int)
+            or approved_minimum_observed < 1
+            or not 1 <= approved_minimum_result_states <= 4
+            or not SAFE_ID.fullmatch(str(approved_threshold_contract_version))
+        ):
+            raise RuntimeError("Outcome cohort sufficiency configuration is invalid")
+
+    cohorts = []
+    for row in rows:
+        brief_version = str(row.get("decision_brief_version") or "").strip()
+        alternative = str(row.get("selected_alternative") or "").strip()
+        if not brief_version or not alternative:
+            raise RuntimeError("Outcome cohort contains an unbound Decision source")
+        observed = _count_value(row, "observed_outcome_count")
+        statuses = {
+            "successful": _count_value(row, "successful_count"),
+            "partially_successful": _count_value(
+                row, "partially_successful_count"
+            ),
+            "failed": _count_value(row, "failed_count"),
+            "inconclusive": _count_value(row, "inconclusive_count"),
+        }
+        if observed < 1 or sum(statuses.values()) != observed:
+            raise RuntimeError("Outcome cohort status counts do not reconcile")
+        minimum = round(_finite_float_value(row, "minimum_effect_pct"), 2)
+        average = round(_finite_float_value(row, "average_effect_pct"), 2)
+        maximum = round(_finite_float_value(row, "maximum_effect_pct"), 2)
+        minimum = 0.0 if minimum == 0 else minimum
+        average = 0.0 if average == 0 else average
+        maximum = 0.0 if maximum == 0 else maximum
+        if not minimum <= average <= maximum:
+            raise RuntimeError("Outcome cohort effect distribution is invalid")
+        distinct_result_states = sum(count > 0 for count in statuses.values())
+        sample_gate_met = (
+            observed >= approved_minimum_observed
+            if thresholds_configured else None
+        )
+        result_coverage_gate_met = (
+            distinct_result_states >= approved_minimum_result_states
+            if thresholds_configured else None
+        )
+        additional_observed_outcomes = (
+            max(approved_minimum_observed - observed, 0)
+            if thresholds_configured else None
+        )
+        additional_distinct_result_states = (
+            max(approved_minimum_result_states - distinct_result_states, 0)
+            if thresholds_configured else None
+        )
+        comparison_eligible = bool(
+            thresholds_configured and sample_gate_met and result_coverage_gate_met
+        )
+        cohorts.append({
+            "decision_brief_version": brief_version,
+            "selected_alternative": alternative,
+            "observed_outcome_count": observed,
+            "status_counts": statuses,
+            "effect_pct": {
+                "minimum": minimum,
+                "average": average,
+                "maximum": maximum,
+            },
+            "evidence_sufficiency": {
+                "status": (
+                    "SUFFICIENT_FOR_DESCRIPTIVE_COMPARISON"
+                    if comparison_eligible
+                    else "INSUFFICIENT_EVIDENCE"
+                    if thresholds_configured
+                    else "PENDING_HUMAN_APPROVAL"
+                ),
+                "distinct_result_states": distinct_result_states,
+                "sample_gate_met": sample_gate_met,
+                "result_coverage_gate_met": result_coverage_gate_met,
+                "comparison_eligible": comparison_eligible,
+            },
+            "evidence_gap": {
+                "schema_version": "outcome-cohort-evidence-gap.v1",
+                "status": (
+                    "TARGET_MET"
+                    if comparison_eligible
+                    else "GAP_REMAINS"
+                    if thresholds_configured
+                    else "PENDING_HUMAN_APPROVAL"
+                ),
+                "target_contract_version": (
+                    approved_threshold_contract_version
+                    if thresholds_configured else None
+                ),
+                "additional_observed_outcomes": additional_observed_outcomes,
+                "additional_distinct_result_states": (
+                    additional_distinct_result_states
+                ),
+                "calculation_only": True,
+                "outcome_collection_recommended": False,
+                "outcome_creation_authorized": False,
+                "lifecycle_continuation_authorized": False,
+            },
+        })
+    eligible_comparison_cohorts = []
+    for cohort in cohorts:
+        if not cohort["evidence_sufficiency"]["comparison_eligible"]:
+            continue
+        observed_count = cohort["observed_outcome_count"]
+        comparison_cohort = {
+            "decision_brief_version": cohort["decision_brief_version"],
+            "selected_alternative": cohort["selected_alternative"],
+            "observed_outcome_count": observed_count,
+            "status_percentages": {
+                status: round(count / observed_count * 100, 2)
+                for status, count in cohort["status_counts"].items()
+            },
+            "effect_pct": cohort["effect_pct"],
+            "provenance": {
+                "schema_version": "outcome-cohort-comparison-provenance.v1",
+                "decision_binding": {
+                    "binding_source": "IMMUTABLE_ACTION_PROPOSAL",
+                    "decision_brief_version": cohort["decision_brief_version"],
+                    "selected_alternative": cohort["selected_alternative"],
+                },
+                "evidence_contract": {
+                    "cohort_summary_schema_version": "outcome-cohort-summary.v1",
+                    "threshold_contract_version": (
+                        approved_threshold_contract_version
+                    ),
+                    "as_of_date": as_of_date,
+                    "execution_mode": "OPERATIONAL",
+                    "time_basis": "ACTUAL_CALENDAR",
+                    "evidence_class": (
+                        "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT"
+                    ),
+                    "observed_only": True,
+                    "pending_excluded": True,
+                    "unbound_actions_excluded": True,
+                    "future_simulations_excluded": True,
+                },
+                "privacy": {
+                    "action_identifiers_exposed": False,
+                    "outcome_identifiers_exposed": False,
+                    "shipment_identifiers_exposed": False,
+                },
+                "read_only": True,
+            },
+        }
+        fingerprint_payload = {
+            **comparison_cohort,
+            "status_percentages": {
+                key: f"{value:.2f}"
+                for key, value in comparison_cohort["status_percentages"].items()
+            },
+            "effect_pct": {
+                key: f"{value:.2f}"
+                for key, value in comparison_cohort["effect_pct"].items()
+            },
+        }
+        canonical_comparison = json.dumps(
+            fingerprint_payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        comparison_cohort["integrity"] = {
+            "schema_version": "outcome-cohort-comparison-fingerprint.v1",
+            "algorithm": "SHA-256",
+            "canonicalization": (
+                "JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS"
+            ),
+            "digest": hashlib.sha256(canonical_comparison).hexdigest(),
+            "covered_fields": [
+                "decision_brief_version",
+                "selected_alternative",
+                "observed_outcome_count",
+                "status_percentages",
+                "effect_pct",
+                "provenance",
+            ],
+            "verification_scope": "RESPONSE_CONTENT_INTEGRITY_ONLY",
+            "digital_signature": False,
+            "source_authenticity_attested": False,
+            "business_validity_attested": False,
+        }
+        eligible_comparison_cohorts.append(comparison_cohort)
+    comparison_available = len(eligible_comparison_cohorts) >= 2
+    return {
+        "schema_version": "outcome-cohort-summary.v1",
+        "as_of_date": as_of_date,
+        "status": "AVAILABLE" if cohorts else "NO_ELIGIBLE_BOUND_OUTCOMES",
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT",
+        },
+        "eligibility": {
+            "observed_only": True,
+            "pending_excluded": True,
+            "unbound_actions_excluded": True,
+            "future_simulations_excluded": True,
+        },
+        "cohorts": cohorts,
+        "evidence_sufficiency_gate": {
+            "schema_version": "outcome-cohort-evidence-sufficiency.v1",
+            "configuration_status": (
+                "HUMAN_APPROVED_CONTRACT"
+                if thresholds_configured else "PENDING_HUMAN_APPROVAL"
+            ),
+            "threshold_contract_version": (
+                approved_threshold_contract_version
+                if thresholds_configured else None
+            ),
+            "thresholds": {
+                "minimum_observed_outcomes": (
+                    approved_minimum_observed if thresholds_configured else None
+                ),
+                "minimum_distinct_result_states": (
+                    approved_minimum_result_states
+                    if thresholds_configured else None
+                ),
+            },
+            "comparison_scope": "DESCRIPTIVE_SYNTHETIC_ONLY",
+            "any_comparison_eligible": any(
+                cohort["evidence_sufficiency"]["comparison_eligible"]
+                for cohort in cohorts
+            ),
+        },
+        "descriptive_comparison_view": {
+            "schema_version": "outcome-cohort-descriptive-comparison.v1",
+            "status": (
+                "AVAILABLE"
+                if comparison_available
+                else "INSUFFICIENT_ELIGIBLE_COHORTS"
+            ),
+            "required_eligible_cohort_count": 2,
+            "eligible_cohort_count": len(eligible_comparison_cohorts),
+            "excluded_cohort_count": (
+                len(cohorts) - len(eligible_comparison_cohorts)
+            ),
+            "cohorts": (
+                eligible_comparison_cohorts if comparison_available else []
+            ),
+            "comparison_scope": "DESCRIPTIVE_SYNTHETIC_ONLY",
+            "governance": {
+                "ranking_produced": False,
+                "preferred_alternative_selected": False,
+                "causal_superiority_estimated": False,
+                "statistical_significance_estimated": False,
+                "action_recommended": False,
+            },
+        },
+        "governance": {
+            "descriptive_summary_only": True,
+            "causal_effect_estimate": False,
+            "financial_value_estimated": False,
+            "real_logistics_performance": False,
+            "model_readiness": False,
+            "policy_activation_authorized": False,
+            "human_threshold_approval_required": True,
+            "automatic_threshold_selection": False,
+        },
+    }
+
+
+def build_outcome_review_response(
+    items: list[dict[str, str | None]],
+    cohort_rows: list[dict[str, str | None]],
+    as_of_date: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": "operations-api.v1",
+        "as_of_date": as_of_date,
+        "items": items,
+        "cohort_summary": build_outcome_cohort_contract(
+            cohort_rows,
+            as_of_date,
+            approved_minimum_observed=APPROVED_OUTCOME_COHORT_OBSERVATION_FLOOR,
+            approved_minimum_result_states=APPROVED_OUTCOME_COHORT_RESULT_STATE_FLOOR,
+            approved_threshold_contract_version=(
+                APPROVED_OUTCOME_COHORT_CONTRACT_VERSION
+            ),
+        ),
+        "next_token": None,
+    }
 
 
 def build_learning_evidence_query(as_of_date: str) -> str:
@@ -1572,11 +1947,16 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             import boto3
             params = event.get("queryStringParameters") or {}
             limit = min(max(int(params.get("limit", 50)), 1), 100)
+            cutoff = _sydney_date()
+            athena = boto3.client("athena")
             rows = _query_rows(
-                boto3.client("athena"),
-                build_outcome_review_query(limit, params.get("status"), _sydney_date()),
+                athena,
+                build_outcome_review_query(limit, params.get("status"), cutoff),
             )
-            return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
+            cohort_rows = _query_rows(athena, build_outcome_cohort_query(cutoff))
+            return _response(
+                200, build_outcome_review_response(rows, cohort_rows, cutoff)
+            )
 
         if method == "GET" and path == "/v1/learning":
             if "learning:read" not in permissions or "outcomes:read" not in permissions:

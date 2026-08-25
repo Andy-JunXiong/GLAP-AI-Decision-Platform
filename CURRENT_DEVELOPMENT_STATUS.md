@@ -43,6 +43,17 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
 | Decision-to-Action binding v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; the additive staging migration is plan-only and has not been applied |
+| Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
+| Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
+| Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
+| Outcome cohort threshold contract v1 | `HUMAN_APPROVED_IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | The explicit `2026-08-25` approval is preserved in a schema-validated machine-readable contract and exact code-bound constants; it grants no causal, value, Learning, model, policy, deployment, or production authority |
+| Outcome cohort evidence-gap explainer v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Each cohort reports exact non-negative sample and result-state gaps to the approved 20/2 targets; the calculation cannot recommend collection, create Outcomes, advance lifecycle dates, or expand comparison authority |
+| Eligible Outcome cohort comparison view v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | At least two independently eligible cohorts are required before status percentages and effect ranges appear side by side; no ranking, preferred alternative, causal/statistical superiority, or Action recommendation is produced |
+| Outcome cohort comparison provenance drill-down v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Each displayed comparison aggregate traces to its immutable Decision binding, Sydney cutoff, evidence class, aggregation schema, and threshold contract without exposing Action, Outcome, or shipment identifiers |
+| Outcome cohort comparison fingerprint v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Each displayed comparison aggregate and its provenance carry a deterministic, cross-runtime-reproducible SHA-256 digest; it is unsigned and proves neither source authenticity nor business validity |
+| Private cockpit comparison fingerprint verifier v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Browser Web Crypto recomputes each digest and withholds covered comparison metrics and provenance until verification succeeds; missing, malformed, drifted, or mismatched contracts fail closed |
+| Comparison fingerprint verification diagnostics v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Every browser result carries one bounded local reason code; mismatch codes expose no raw error or covered evidence and create no telemetry or persistence |
+| Bounded local comparison re-verification v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Only transient browser failures receive one same-response local retry per cohort; structural failures cannot retry, content stays hidden, and no network or storage is used |
 | Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
 | Learning operation | `DORMANT_EVIDENCE_GATED` | `implementation_status=IMPLEMENTED_VERIFIED`, `operational_status=DORMANT`, `evidence_status=INSUFFICIENT_ELIGIBLE_OUTCOMES`, and `progression_status=EVIDENCE_GATED`; current inspected state remains 1/20 |
 
@@ -147,14 +158,340 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — none; formal day closeout
+## Active slice — Bounded local comparison re-verification v1 complete
 
-**Status:** `NO_ACTIVE_IMPLEMENTATION`
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
 
-The 2026-08-25 development slices are complete, locally verified, and prepared
-for repository delivery. Outcome Review decision provenance v1 is the next
-recommended slice, but it has not started and receives no implementation,
-deployment, mutation, or production authority from this closeout.
+The private cockpit now offers at most one local re-verification per cohort and
+loaded response, only for `CRYPTO_UNAVAILABLE` or `VERIFICATION_ERROR`.
+Structural mismatches remain non-retryable. Retry reuses the same in-memory
+cohort, returns content to the hidden pending state, and performs no network or
+storage operation. The slice is local and not deployed.
+
+## Recently completed — Bounded local comparison re-verification v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Let an operator recover once from a plausibly transient browser verification
+failure without refreshing data or weakening structural mismatch handling.
+
+**Completed**
+
+- Added an exact retry allowlist containing only `CRYPTO_UNAVAILABLE` and
+  `VERIFICATION_ERROR`, both still requiring `status=MISMATCH`.
+- Kept missing integrity, metadata drift, non-canonical content, digest
+  mismatch, and verified results non-retryable.
+- Added a local retry button only when the allowlist passes.
+- Limited each cohort to one attempt for the currently loaded comparison-view
+  object; a new server response receives a new local boundary.
+- Removed the previous result while retrying so covered metrics and provenance
+  remain hidden.
+- Reused the same in-memory cohort and discarded the new result if the view
+  changed before completion.
+- Added direct allow/deny tests, documentation, and a drift guard against
+  structural retry, repeated attempts, network/storage use, or authority drift.
+
+**Boundary**
+
+Retry is a browser-local integrity operation only. It does not fetch new data,
+authenticate a source, validate business evidence, classify an incident,
+establish causality/significance/value, select an alternative, recommend or
+mutate an Action, or grant Learning/model/policy/deployment/production
+authority. No request, route, telemetry, persistence, browser storage,
+identifier exposure, key, secret, deployment, AWS call, publication, or
+external write was added.
+
+## Recently completed — Comparison fingerprint verification diagnostics v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Tell an operator why browser verification failed without weakening the display
+gate or creating a new evidence, telemetry, or security claim.
+
+**Completed**
+
+- Replaced the single opaque mismatch result with a structured status and one
+  reason code.
+- Added bounded codes for missing integrity, contract metadata drift,
+  unavailable cryptography, non-canonical content, digest mismatch, and safe
+  verification failure; `MATCH` is reserved for verified content.
+- Mapped every mismatch code to fixed operator-safe cockpit copy.
+- Kept the covered comparison metrics, provenance, canonical payload, computed
+  digest, raw exception, and stack trace out of diagnostic results.
+- Preserved content withholding for pending verification and every non-match
+  result.
+- Added direct reason-code scenarios, documentation, and a drift guard against
+  diagnostic collapse, leakage, or authority expansion.
+
+**Boundary**
+
+Reason codes are local troubleshooting context only. They do not authenticate
+the source, classify a security incident, validate business evidence, establish
+causality/significance/value, select an alternative, recommend or mutate an
+Action, or grant Learning/model/policy/deployment/production authority. No API
+request, route, telemetry, persistence, identifier exposure, key, secret,
+deployment, AWS call, publication, or external write was added.
+
+## Recently completed — Private cockpit comparison fingerprint verifier v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Turn the server-provided comparison checksum into an enforced cockpit display
+gate rather than a passive value that an operator must inspect manually.
+
+**Completed**
+
+- Added a browser-local verifier for the exact covered-field order, v1
+  metadata, two-decimal normalization, recursively sorted compact JSON, and
+  SHA-256 digest.
+- Required all signature, source-authenticity, and business-validity claims to
+  remain false before verification can pass.
+- Withheld every covered metric and provenance field until the result is
+  `VERIFIED`.
+- Failed closed for missing integrity or Web Crypto, malformed values,
+  metadata/trust drift, unsupported canonical values, and digest mismatch.
+- Added a server-generated known-digest test proving cross-runtime agreement;
+  metric tampering, trust expansion, and a missing integrity object all return
+  `MISMATCH`.
+- Added documentation and a dedicated project-drift guard for the verifier and
+  display gate.
+
+**Boundary**
+
+Browser recomputation proves unsigned response-content consistency only. It
+does not authenticate the server or source, validate business evidence,
+establish causality or significance, select an alternative, recommend or
+mutate an Action, or grant Learning/model/policy/deployment/production
+authority. No API request, route, identifier exposure, key, secret, telemetry,
+persistence, deployment, AWS call, publication, or external write was added.
+
+## Recently completed — Outcome cohort comparison fingerprint v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Make comparison aggregates detectably consistent across later reads without
+turning a checksum into an authenticity or evidence-validity claim.
+
+**Completed**
+
+- Added `outcome-cohort-comparison-fingerprint.v1` to every displayed eligible
+  comparison cohort.
+- Covered its Decision binding, observed count, status percentages, effect
+  range, and complete aggregate-only provenance.
+- Normalized percentage values to fixed two-decimal strings and serialized
+  sorted compact ASCII JSON so server and browser implementations can reproduce
+  identical bytes.
+- Excluded the integrity object from its own input and emitted a lowercase
+  SHA-256 digest.
+- Kept digital-signature, source-authenticity, and business-validity
+  attestations explicitly false.
+- Added the private cockpit disclosure, exact digest-change tests,
+  documentation, and a drift guard against trust or authority expansion.
+
+**Boundary**
+
+The digest detects covered-content mismatch only when recomputed. It is not a
+signature, MAC, timestamp, authenticity proof, business-evidence validation,
+causal/statistical result, preferred alternative, or Action recommendation. No
+query, route, identifier exposure, key, secret, mutation, deployment, AWS call,
+publication, or production action occurred.
+
+## Recently completed — Outcome cohort comparison provenance drill-down v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Make every displayed comparison aggregate traceable to its governed source
+contracts without creating entity drill-through or leaking identifiers.
+
+**Completed**
+
+- Added `outcome-cohort-comparison-provenance.v1` to each eligible cohort
+  actually returned by the comparison view.
+- Bound provenance to the immutable Action proposal's Decision Brief version
+  and selected alternative.
+- Included the Sydney cutoff, `OPERATIONAL` / `ACTUAL_CALENDAR` evidence basis,
+  synthetic evidence class, aggregation schema, and approved threshold
+  contract.
+- Kept Action, Outcome, and shipment identifier-exposure fields false and the
+  projection read-only.
+- Added an expandable private cockpit disclosure without another API request.
+- Added typed contracts, identifier-absence tests, documentation, and a drift
+  guard against entity exposure or mutation authority.
+
+**Boundary**
+
+Provenance proves traceability only. It does not validate a preferred
+alternative, causal/statistical superiority, realised value, real logistics
+performance, Action recommendation, Learning/model/policy readiness, or
+production readiness. No query, route, mutation, deployment, AWS call,
+publication, or production action occurred.
+
+## Recently completed — Eligible Outcome cohort comparison view v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Allow guarded side-by-side review only after more than one cohort has enough
+descriptive evidence, without turning visual comparison into a winner claim.
+
+**Completed**
+
+- Added `outcome-cohort-descriptive-comparison.v1` inside the existing Outcome
+  response without adding a query or route.
+- Required at least two independently eligible cohorts; otherwise the response
+  is `INSUFFICIENT_ELIGIBLE_COHORTS` with an empty comparison array.
+- Projected only cohort identity, observed count, four result-state percentages,
+  and descriptive minimum/average/maximum effect percentages.
+- Preserved source order and added no effect-based or outcome-based sorting.
+- Added private cockpit available, unavailable, and older-contract fallback
+  states.
+- Added explicit all-false ranking, alternative-selection, causal-superiority,
+  statistical-significance, and Action-recommendation fields, plus tests,
+  documentation, and a drift guard.
+
+**Boundary**
+
+This is descriptive synthetic comparison only. No statistical test, causal
+estimate, financial value, real logistics performance, preferred alternative,
+collection recommendation, Action mutation, Learning/model/policy decision,
+deployment, AWS call, publication, or production action occurred.
+
+## Recently completed — Outcome cohort evidence-gap explainer v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Make an ineligible cohort's evidence shortfall visible without turning that
+shortfall into an instruction to manufacture or operationally advance data.
+
+**Completed**
+
+- Added `outcome-cohort-evidence-gap.v1` to every cohort in the existing
+  authenticated response.
+- Calculated `max(20 - observed, 0)` and
+  `max(2 - represented_result_states, 0)` from already-governed counts.
+- Returned `TARGET_MET`, `GAP_REMAINS`, or fail-closed
+  `PENDING_HUMAN_APPROVAL` status with nullable gaps when no complete threshold
+  contract is supplied to the lower-level builder.
+- Added private cockpit gap fields and an explicit no-collection disclosure.
+- Added typed contracts, pass/fail/null mechanics tests, documentation, and a
+  drift guard against Outcome-creation or lifecycle authority.
+
+**Boundary**
+
+The gap is descriptive synthetic arithmetic, not statistical significance,
+causal evidence, realised value, a data-collection recommendation, or a
+readiness decision. No query, route, environment value, table, CloudFormation
+change, AWS call, mutation, lifecycle continuation, deployment, publication,
+model/policy operation, or production action occurred.
+
+## Recently completed — Outcome cohort threshold contract v1
+
+**Status:** `HUMAN_APPROVED_IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Convert the project owner's exact evidence-threshold decision into a durable,
+auditable input for descriptive synthetic Outcome cohort comparison.
+
+**Completed**
+
+- Added a JSON contract and JSON Schema recording `20` observed Outcomes, `2`
+  represented result states, the `2026-08-25` project-owner approval, and the
+  `DESCRIPTIVE_SYNTHETIC_ONLY` scope.
+- Bound the single-file Lambda runtime to the exact approved version and values
+  without adding an environment variable or changing its deployment package.
+- Changed the existing Outcome response to `HUMAN_APPROVED_CONTRACT` and
+  activated per-cohort sample and result-coverage checks.
+- Added a private cockpit disclosure showing the approved gate and version.
+- Extended drift checks to reject a code/contract mismatch, automatic threshold
+  selection, or any expanded authority.
+
+**Boundary**
+
+This is repository-local implementation evidence. The threshold approval is
+real project-governance evidence, while all logistics Outcomes remain synthetic.
+The prerequisite Action migration remains plan-only and unapplied; the API and
+private frontend have not been deployed. No AWS call, CloudFormation or
+environment change, table mutation, Action or Outcome mutation,
+Learning/model/policy operation, Pages publication, production change, causal
+claim, or financial-value claim occurred.
+
+## Recently completed — Decision-contract Outcome cohort summary v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Turn Decision provenance into a cohort-level review surface without mistaking
+the bounded Outcome card list or synthetic averages for causal evidence.
+
+**Completed**
+
+- Extended the existing authenticated Outcome response with
+  `outcome-cohort-summary.v1`; no route, table, role, or write surface was added.
+- Added a separate no-limit aggregate so cohort counts do not depend on the
+  at-most-100 entity list.
+- Included only observed numeric Outcomes and operational actual-calendar
+  Actions with complete Decision Brief version and selected alternative keys.
+- Returned sample size, four result-state counts, and descriptive minimum,
+  average, and maximum effect percentages.
+- Failed closed on unreconciled status totals, non-finite effects, and invalid
+  effect ordering; an empty cohort is not treated as zero effect.
+- Added private cockpit cards, backward-compatible unavailable/empty states,
+  governance disclosures, contract documentation, tests, and a drift gate.
+
+**Boundary**
+
+This is repository-local implementation evidence. The prerequisite Action
+schema migration remains plan-only and unapplied; the API and private frontend
+have not been deployed. No AWS call, CloudFormation change, table change,
+Action or Outcome mutation, Learning threshold change, Pages publication,
+model or policy operation, production change, causal claim, or financial-value
+claim occurred.
+
+## Recently completed — Outcome Review decision provenance v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Let private Outcome reviewers identify the actual proposal contract behind a
+synthetic result instead of grouping evidence only by broad Action type.
+
+**Completed**
+
+- Extended the existing authenticated `GET /v1/outcomes` response rather than
+  adding another endpoint or persistence path.
+- Joined Outcome `action_id` to the immutable Action view only when both sides
+  remain operational, actual-calendar, and cutoff-eligible.
+- Exposed nullable `decision_brief_version` and `selected_alternative` in the
+  API client and private cockpit.
+- Kept legacy and `COST_ANOMALY` Actions unbound rather than inferring history.
+- Added an explicit UI disclosure that provenance is traceability only and
+  simulated effects are neither causal estimates nor real logistics
+  performance.
+- Added query, type, rendered-contract, documentation, and drift coverage.
+
+**Boundary**
+
+This is repository-local implementation evidence. The prerequisite Action
+schema migration remains plan-only and unapplied; the API and private frontend
+have not been deployed. No AWS call, table change, Action or Outcome mutation,
+Learning threshold change, Pages publication, production change, or causal or
+financial-value claim occurred.
 
 ## Recently completed — Decision-to-Action binding v1
 
@@ -1091,6 +1428,72 @@ done.
 
 ### Codex-run validation
 
+- Bounded local comparison re-verification v1 passes retry allow/deny contract
+  scenarios, one-attempt and hidden-state cockpit checks, frontend lint, and the
+  production build. All 46 project-drift tests, the 46/46 drift audit, Python
+  compilation, all 557 repository tests, JSON contract parsing, and
+  `git diff --check` pass. Validation is local only; no request, route,
+  telemetry, persistence, browser storage, deployment, AWS call, mutation, or
+  publication occurred.
+- Comparison fingerprint verification diagnostics v1 passes verified-match,
+  digest-mismatch, metadata-drift, missing-integrity, and non-canonical-content
+  frontend scenarios, plus fixed-code cockpit checks, frontend lint, and the
+  production build. All 45 project-drift tests, the 45/45 drift audit, Python
+  compilation, all 556 repository tests, JSON contract parsing, and
+  `git diff --check` pass. Validation is local only; no request, route,
+  telemetry, persistence, deployment, AWS call, mutation, or publication
+  occurred.
+- Private cockpit comparison fingerprint verifier v1 passes the server-known
+  digest vector plus metric-tamper, trust-expansion, and missing-integrity
+  scenarios in four frontend tests, along with frontend lint and production
+  build. All 44 project-drift tests, the 44/44 drift audit, Python compilation,
+  all 555 repository tests, JSON contract parsing, and `git diff --check` pass.
+  Validation is local only; no request, route, key, telemetry, persistence,
+  deployment, AWS call, mutation, or publication occurred.
+- Outcome cohort comparison fingerprint v1 passes 53 focused Operations API
+  tests, all 43 project-drift tests, the expanded 43/43 drift audit, and the
+  private frontend lint, production build, and all three rendered contract
+  tests. Python compilation and all 554 repository tests pass. Validation is
+  local only; no query, route, identifier exposure, key, secret, migration,
+  deployment, AWS call, mutation, or publication occurred.
+- Outcome cohort comparison provenance drill-down v1 passes 53 focused
+  Operations API tests, all 42 project-drift tests, the expanded 42/42 drift
+  audit, and the private frontend lint, production build, and all three
+  rendered contract tests. Python compilation and all 553 repository tests
+  pass. Validation is local only; no new query, entity exposure, migration,
+  deployment, AWS call, mutation, or publication occurred.
+- Eligible Outcome cohort comparison view v1 passes 53 focused Operations API
+  tests, all 41 project-drift tests, the expanded 41/41 drift audit, and the
+  private frontend lint, production build, and all three rendered contract
+  tests. Python compilation and all 552 repository tests pass. Validation is
+  local only; no migration, deployment, AWS call, mutation, comparison-based
+  Action, or publication occurred.
+- Outcome cohort evidence-gap explainer v1 passes 53 focused Operations API
+  tests, all 40 project-drift tests, the expanded 40/40 drift audit, and the
+  private frontend lint, production build, and all three rendered contract
+  tests. Python compilation and all 551 repository tests pass. Validation is
+  local only; no migration, deployment, AWS call, lifecycle continuation,
+  mutation, or publication occurred.
+- Outcome cohort threshold contract v1 passes 53 focused Operations API tests,
+  all 39 project-drift tests, the 39/39 drift audit, and the private frontend
+  lint, production build, and all three rendered contract tests. Python
+  compilation, all 550 repository tests, and all three affected JSON documents
+  parse successfully. Validation is local only; the 20/2 threshold approval is
+  code-bound but not deployed, and no migration, AWS call, mutation, or
+  publication occurred.
+- Decision-contract Outcome cohort summary v1 passes 50 focused Operations API
+  tests, all 37 project-drift tests, the expanded 38/38 drift audit, and the
+  private frontend lint, production build, and all three rendered contract
+  tests. Python compilation, all 545 repository tests, contract JSON parsing,
+  and `git diff --check` pass. Validation is local only; no migration,
+  deployment, AWS call, mutation, or publication occurred.
+- Outcome Review decision provenance v1 passes 47 focused Operations API tests,
+  all 36 project-drift tests including the new non-causal boundary check, and
+  the private frontend lint, production build, and all three rendered contract
+  tests. Python compilation, all 541 repository tests, the expanded 37/37
+  project drift audit, contract JSON parsing, and `git diff --check` pass.
+  Validation is local only; no migration, deployment, AWS call, mutation, or
+  publication occurred.
 - Decision-to-Action binding v1 passes the 103-test governed-loop,
   persistence-adapter, Operations API, and drift focused set. Frontend lint,
   production build, and all three rendered contract tests pass. Python
@@ -1309,6 +1712,14 @@ done.
 
 ### User-reported validation
 
+- On `2026-08-25`, the user explicitly authorized formal day closeout,
+  synchronization of related repository documentation, one scoped commit, and
+  a push to GitHub `main`. This source-control authority includes the ordinary
+  CI and plan-only Operations API staging workflow triggered by the approved
+  paths; it does not authorize the workflow's manual deploy action, AWS writes,
+  schema migration, private-frontend deployment, Pages publication, Action or
+  Outcome mutation, production change, schedule or alias movement, or
+  Learning/model/policy operation.
 - The user explicitly approved Sites v5 publication, restoration of public
   access, and the reviewer restart notification.
 - The user then rejected v2 as too vague and specified that each case must
@@ -1406,15 +1817,16 @@ done.
 
 ## Next Up
 
-1. Recommended next feature: Outcome Review decision provenance v1. Expose the
-   immutable Decision Brief version and selected alternative beside each
-   eligible Outcome so evaluation can group synthetic effects by the actual
-   proposal contract rather than only by broad Action type.
-2. Decision-to-Action binding supplies the immutable source fields and Action
-   identity; the existing Outcome already preserves `action_id`. The next
-   slice should join those contracts read-only without copying mutable claims,
-   estimating causality, changing Learning thresholds, or adding write
-   authority.
+1. Recommended next feature: comparison-envelope runtime validator v1. It
+   should validate the top-level comparison schema, status/count reconciliation,
+   governance all-false flags, and cohort-array shape before React iterates the
+   response, failing the whole comparison view closed when the envelope is
+   malformed.
+2. The current verifier, diagnostics, and retry control safely govern each
+   individual cohort only after an iterable comparison envelope exists. A
+   runtime envelope validator would provide that prerequisite and prevent
+   malformed top-level responses from reaching cohort verification or render
+   logic. Staging use still requires separate deployment authority.
 3. On or after Sydney date `2026-08-28`, separately authorize only the one
    already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
    reconcile its due Outcome/Learning delta. Stop after that canary; do not

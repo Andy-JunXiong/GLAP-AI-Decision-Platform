@@ -568,6 +568,230 @@
       ]
     },
     {
+      "id": "outcome_review_decision_provenance_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the authenticated Outcome Review joins each cutoff-eligible Outcome to its immutable Action by action_id and exposes nullable decision-brief.v1 and selected alternative fields read-only; legacy and COST_ANOMALY Actions remain unbound, synthetic effects establish no causality or real performance, the prerequisite migration remains plan-only, and no table, write route, deployment, Action mutation, Learning change, or production authority was added",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_review_decision_provenance_v1.md",
+        "docs/decision_action_binding_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "decision_contract_outcome_cohort_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the existing authenticated Outcome response includes a versioned no-limit aggregate of latest observed numeric synthetic Outcomes grouped only by complete immutable Decision Brief version and selected alternative; pending, future-simulation, and unbound rows are excluded, counts and effect distributions fail closed, every causal, value, real-performance, model, policy, deployment, mutation, and production authority remains false, and the prerequisite Action migration remains plan-only",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/decision_contract_outcome_cohort_v1.md",
+        "docs/outcome_review_decision_provenance_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_evidence_sufficiency_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "sample-count and distinct-result-state sufficiency mechanics are implemented locally and consume the versioned project-owner-approved 20 observed Outcome / 2 distinct result-state contract; runtime status is HUMAN_APPROVED_CONTRACT, partial or invalid configuration fails closed, automatic threshold selection is false, passing permits descriptive synthetic comparison only, and no environment, CloudFormation, deployment, mutation, causal/value, Learning, model, policy, or production authority was added",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_evidence_sufficiency_v1.md",
+        "docs/outcome_cohort_threshold_contract_v1.json",
+        "docs/outcome_cohort_threshold_contract_v1.schema.json",
+        "docs/decision_contract_outcome_cohort_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_threshold_contract_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the explicit project-owner approval on 2026-08-25 is preserved as a schema-validated machine-readable v1 contract requiring 20 observed synthetic Outcomes and 2 represented result states per Decision cohort; code and contract must remain exact, changes require a new version and human approval, and the contract grants descriptive comparison eligibility only—not causality, value, real logistics performance, Learning, model, policy, deployment, or production authority",
+      "evidence_files": [
+        "docs/outcome_cohort_threshold_contract_v1.json",
+        "docs/outcome_cohort_threshold_contract_v1.schema.json",
+        "docs/outcome_cohort_evidence_sufficiency_v1.md",
+        "lambda/glap_operations_api.py",
+        "ops/audit_project_drift.py",
+        "tests/test_operations_api.py",
+        "tests/test_project_drift_audit.py",
+        "decision-brief-demo/app/page.tsx",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_evidence_gap_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "each Decision cohort reports exact non-negative arithmetic gaps to the human-approved 20 observed Outcome / 2 represented result-state targets; zero means only that the descriptive minimum shape is met, while collection recommendation, Outcome creation, lifecycle continuation, causality, value, statistical significance, Learning, model, policy, deployment, and production authority remain false",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_evidence_gap_v1.md",
+        "docs/outcome_cohort_evidence_sufficiency_v1.md",
+        "docs/outcome_cohort_threshold_contract_v1.json",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_descriptive_comparison_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the authenticated Outcome response exposes a comparison view only when at least two cohorts independently pass the human-approved 20/2 gate; unavailable responses withhold the comparison cohort array, available responses preserve source order and show only status percentages and effect ranges, while ranking, preferred-alternative selection, causal superiority, statistical significance, Action recommendation, collection, mutation, deployment, and production authority remain false",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_descriptive_comparison_v1.md",
+        "docs/outcome_cohort_evidence_gap_v1.md",
+        "docs/outcome_cohort_evidence_sufficiency_v1.md",
+        "docs/outcome_cohort_threshold_contract_v1.json",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_comparison_provenance_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "each displayed eligible comparison cohort includes aggregate-only provenance bound to its immutable Action proposal's Decision Brief version and selected alternative, Sydney cutoff, operational actual-calendar evidence class, cohort aggregation schema, and approved threshold contract; Action, Outcome, and shipment identifiers remain unexposed, the trace is read-only, and no query, entity drill-through, mutation, ranking, selection, causal/statistical, deployment, or production authority is added",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_comparison_provenance_v1.md",
+        "docs/outcome_cohort_descriptive_comparison_v1.md",
+        "docs/outcome_review_decision_provenance_v1.md",
+        "docs/outcome_cohort_threshold_contract_v1.json",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_comparison_fingerprint_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "each displayed eligible comparison cohort carries a deterministic SHA-256 digest over its aggregate values and complete provenance using sorted compact ASCII JSON with percentages normalized to fixed two-decimal strings; the integrity object is excluded from its own input, verification is response-content-only, and digital-signature, source-authenticity, business-validity, mutation, deployment, and production authority remain false",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_comparison_fingerprint_v1.md",
+        "docs/outcome_cohort_comparison_provenance_v1.md",
+        "docs/outcome_cohort_descriptive_comparison_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_comparison_verifier_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the private cockpit recomputes each displayed cohort's exact v1 SHA-256 fingerprint with browser Web Crypto and withholds all covered comparison metrics and provenance until verification succeeds; missing integrity or cryptography, malformed or non-canonical values, metadata or authority-flag drift, and digest mismatch fail closed, while the unsigned result grants no source-authenticity, business-validity, mutation, deployment, or production authority",
+      "evidence_files": [
+        "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "decision-brief-demo/package.json",
+        "docs/outcome_cohort_comparison_verifier_v1.md",
+        "docs/outcome_cohort_comparison_fingerprint_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_comparison_diagnostics_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "each browser fingerprint result carries exactly one bounded local reason code: MATCH only with VERIFIED, or a fail-closed MISMATCH code for missing integrity, contract metadata drift, unavailable cryptography, non-canonical content, digest mismatch, or safe verification failure; the cockpit displays only fixed operator-safe copy while covered evidence and raw errors remain withheld, and no telemetry, persistence, mutation, deployment, or production authority is added",
+      "evidence_files": [
+        "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_comparison_diagnostics_v1.md",
+        "docs/outcome_cohort_comparison_verifier_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "outcome_cohort_comparison_retry_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the private cockpit offers at most one browser-local re-verification per cohort and loaded response only for CRYPTO_UNAVAILABLE or VERIFICATION_ERROR; structural mismatches and verified results are non-retryable, the card returns to hidden pending state, the same in-memory cohort is checked, stale-view results are discarded, and no network, browser storage, telemetry, persistence, mutation, deployment, or production authority is added",
+      "evidence_files": [
+        "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_comparison_retry_v1.md",
+        "docs/outcome_cohort_comparison_diagnostics_v1.md",
+        "docs/outcome_cohort_comparison_verifier_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "pre_commit_drift_gate",
       "state": "IMPLEMENTED_VERIFIED",
       "boundary": "local staged-snapshot validation before commit",

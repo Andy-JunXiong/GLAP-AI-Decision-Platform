@@ -104,6 +104,270 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_outcome_decision_provenance_causal_claim_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_review_decision_provenance_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_decision_provenance_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            contract_path = root / "docs/outcome_review_decision_provenance_v1.md"
+            contract_path.write_text(
+                contract_path.read_text(encoding="utf-8").replace(
+                    "establish traceability, not causality",
+                    "establish causal impact",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_decision_provenance_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_decision_contract_outcome_cohort_authority_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/decision_contract_outcome_cohort_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_decision_contract_outcome_cohort_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"causal_effect_estimate": False',
+                    '"causal_effect_estimate": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_contract_outcome_cohort_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_sufficiency_automatic_threshold_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_cohort_evidence_sufficiency_v1.md",
+            "docs/outcome_cohort_threshold_contract_v1.json",
+            "docs/outcome_cohort_threshold_contract_v1.schema.json",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_evidence_sufficiency_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"automatic_threshold_selection": False',
+                    '"automatic_threshold_selection": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_evidence_sufficiency_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_approved_threshold_contract_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_cohort_evidence_sufficiency_v1.md",
+            "docs/outcome_cohort_threshold_contract_v1.json",
+            "docs/outcome_cohort_threshold_contract_v1.schema.json",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            contract_path = root / "docs/outcome_cohort_threshold_contract_v1.json"
+            contract = json.loads(contract_path.read_text(encoding="utf-8"))
+            contract["thresholds"]["minimum_observed_outcomes"] = 21
+            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            detected = AUDIT.check_outcome_cohort_evidence_sufficiency_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_evidence_gap_authority_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_cohort_evidence_gap_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_evidence_gap_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"outcome_creation_authorized": False',
+                    '"outcome_creation_authorized": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_evidence_gap_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_comparison_ranking_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_cohort_descriptive_comparison_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_descriptive_comparison_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"ranking_produced": False',
+                    '"ranking_produced": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_descriptive_comparison_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_comparison_provenance_identifier_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_cohort_comparison_provenance_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_comparison_provenance_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"action_identifiers_exposed": False',
+                    '"action_identifiers_exposed": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_comparison_provenance_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_comparison_fingerprint_trust_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/outcome_cohort_comparison_fingerprint_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_comparison_fingerprint_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"source_authenticity_attested": False',
+                    '"source_authenticity_attested": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_comparison_fingerprint_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_comparison_verifier_fail_closed_drift_is_detected(self):
+        paths = (
+            "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "decision-brief-demo/tests/rendered-html.test.mjs",
+            "decision-brief-demo/package.json",
+            "docs/outcome_cohort_comparison_verifier_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_comparison_verifier_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            verifier_path = (
+                root
+                / "decision-brief-demo/app/outcome-comparison-fingerprint.ts"
+            )
+            verifier_path.write_text(
+                verifier_path.read_text(encoding="utf-8").replace(
+                    "integrity.digital_signature === false",
+                    "integrity.digital_signature !== false",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_comparison_verifier_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_comparison_diagnostic_collapse_is_detected(self):
+        paths = (
+            "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+            "decision-brief-demo/app/page.tsx",
+            "decision-brief-demo/app/operations.css",
+            "decision-brief-demo/tests/rendered-html.test.mjs",
+            "docs/outcome_cohort_comparison_diagnostics_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_comparison_diagnostics_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            verifier_path = (
+                root
+                / "decision-brief-demo/app/outcome-comparison-fingerprint.ts"
+            )
+            verifier_path.write_text(
+                verifier_path.read_text(encoding="utf-8").replace(
+                    'reason_code: "VERIFICATION_ERROR"',
+                    'reason_code: "DIGEST_MISMATCH"',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_comparison_diagnostics_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_outcome_cohort_comparison_retry_scope_expansion_is_detected(self):
+        paths = (
+            "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+            "decision-brief-demo/app/page.tsx",
+            "decision-brief-demo/app/operations.css",
+            "decision-brief-demo/tests/rendered-html.test.mjs",
+            "docs/outcome_cohort_comparison_retry_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_comparison_retry_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            verifier_path = (
+                root
+                / "decision-brief-demo/app/outcome-comparison-fingerprint.ts"
+            )
+            verifier_path.write_text(
+                verifier_path.read_text(encoding="utf-8").replace(
+                    '"VERIFICATION_ERROR",\n]);',
+                    '"VERIFICATION_ERROR",\n  "DIGEST_MISMATCH",\n]);',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_comparison_retry_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_outcome_learning_activation_drift_is_detected(self):
         paths = (
             "lambda/glap_operations_api.py",

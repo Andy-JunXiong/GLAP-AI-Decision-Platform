@@ -93,6 +93,89 @@ before the cutoff and are labelled `OBSERVED_ACTUAL_CALENDAR`. Supported status
 filters are `PENDING`, `SUCCESSFUL`, `PARTIALLY_SUCCESSFUL`, `FAILED`, and
 `INCONCLUSIVE`.
 
+Each row now also reads nullable `decision_brief_version` and
+`selected_alternative` from the immutable Action proposal joined by the
+existing `action_id`. Both sides of the read-time join must remain operational,
+actual-calendar, and cutoff-eligible. The fields are not copied into the
+Outcome table. Legacy and `COST_ANOMALY` Actions remain null rather than being
+backfilled by inference. This enables private grouping by proposal contract but
+does not establish human approval, execution, causality, real logistics
+performance, or financial value. See
+[`outcome_review_decision_provenance_v1.md`](outcome_review_decision_provenance_v1.md).
+
+The same response now includes `cohort_summary` using
+`outcome-cohort-summary.v1`. A separate unbounded aggregate query groups only
+latest-version observed Outcomes with numeric effects and complete immutable
+Action bindings by `decision_brief_version` and `selected_alternative`. It
+returns sample count, result-state counts, and minimum/average/maximum
+descriptive effect percentages. Pending, future-simulation, and unbound rows
+are excluded. The server rejects unreconciled counts and invalid distributions.
+These synthetic descriptions are not causal estimates, realised financial
+value, real logistics performance, model readiness, or policy authority. See
+[`decision_contract_outcome_cohort_v1.md`](decision_contract_outcome_cohort_v1.md).
+
+Each cohort and the top-level summary also expose
+`outcome-cohort-evidence-sufficiency.v1`. The project owner approved the
+versioned `outcome-cohort-threshold-contract.v1` on `2026-08-25`: each cohort
+requires at least 20 observed Outcomes and two represented result states. The
+runtime reports `HUMAN_APPROVED_CONTRACT` and evaluates both gates; partial or
+invalid configuration still fails closed. It does not choose thresholds
+automatically, and passing permits descriptive synthetic comparison only. See
+[`outcome_cohort_evidence_sufficiency_v1.md`](outcome_cohort_evidence_sufficiency_v1.md).
+
+Each cohort also includes `outcome-cohort-evidence-gap.v1`, which reports the
+non-negative arithmetic shortfall to the approved 20/2 targets. Zero means the
+minimum descriptive evidence shape is met; a positive value is not an
+instruction to create Outcomes or advance the lifecycle. Collection,
+creation, and lifecycle-continuation authority remain false. See
+[`outcome_cohort_evidence_gap_v1.md`](outcome_cohort_evidence_gap_v1.md).
+
+The response's `outcome-cohort-descriptive-comparison.v1` projection remains
+unavailable until at least two cohorts independently pass the gate. When
+available, it shows only status percentages and effect ranges for eligible
+cohorts. It produces no ranking, preferred alternative, causal superiority,
+statistical significance, or Action recommendation. See
+[`outcome_cohort_descriptive_comparison_v1.md`](outcome_cohort_descriptive_comparison_v1.md).
+
+Every cohort actually displayed in that comparison includes
+`outcome-cohort-comparison-provenance.v1`. It binds the aggregate to its
+immutable Decision Brief version and selected alternative, Sydney cutoff,
+evidence class, aggregation contract, and approved threshold contract while
+keeping Action, Outcome, and shipment identifiers unexposed. See
+[`outcome_cohort_comparison_provenance_v1.md`](outcome_cohort_comparison_provenance_v1.md).
+
+Each displayed comparison item also includes a deterministic
+`outcome-cohort-comparison-fingerprint.v1` SHA-256 digest over its metrics and
+provenance. The fingerprint supports response-content consistency checks only;
+it is not a digital signature, source-authenticity attestation, or business-
+validity proof. See
+[`outcome_cohort_comparison_fingerprint_v1.md`](outcome_cohort_comparison_fingerprint_v1.md).
+Percentage inputs use fixed two-decimal strings, including normalized zero,
+before sorted compact JSON serialization so a browser can reproduce the same
+bytes as the server.
+
+The private cockpit's
+`outcome-cohort-comparison-verifier.v1` recomputes that digest with browser Web
+Crypto. Covered metrics and provenance remain hidden until the result is
+`VERIFIED`; missing crypto support, contract drift, malformed values, trust-
+flag expansion, or digest mismatch all fail closed. Verification remains an
+unsigned content-consistency check and issues no additional API request. See
+[`outcome_cohort_comparison_verifier_v1.md`](outcome_cohort_comparison_verifier_v1.md).
+
+Verifier results include one local reason code from
+`outcome-cohort-comparison-diagnostics.v1`. The cockpit maps it to fixed safe
+copy while continuing to withhold covered content. It never exposes a raw
+exception, canonical payload, covered value, or computed digest, and it creates
+no telemetry or persistence. See
+[`outcome_cohort_comparison_diagnostics_v1.md`](outcome_cohort_comparison_diagnostics_v1.md).
+
+`outcome-cohort-comparison-retry.v1` permits one browser-local re-verification
+per cohort and loaded response only for `CRYPTO_UNAVAILABLE` or
+`VERIFICATION_ERROR`. Structural failures never receive the control. The retry
+reuses the same response object, returns content to the hidden pending state,
+and performs no API request. See
+[`outcome_cohort_comparison_retry_v1.md`](outcome_cohort_comparison_retry_v1.md).
+
 `GET /v1/learning` returns the governed bridge from observed Outcomes to a
 review-only policy proposal. One bounded Athena query de-duplicates Outcomes,
 counts only closed `OPERATIONAL` / `ACTUAL_CALENDAR` records observed on or

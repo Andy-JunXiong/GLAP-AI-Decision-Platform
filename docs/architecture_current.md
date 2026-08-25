@@ -304,6 +304,77 @@ gate still blocked at `1/20`, with no proposal present. The earlier
 merge-triggered run remained plan-only; the later separately authorized
 workflow dispatch performed the deployment.
 
+The repository now also implements a local-only Outcome Review provenance
+projection. The existing `GET /v1/outcomes` read joins each cutoff-eligible
+Outcome to its immutable Action by `action_id` and exposes the nullable
+Decision Brief version and selected alternative. It does not add a table,
+write route, inferred legacy binding, causal-effect claim, deployment, or
+production authority. The prerequisite Action schema migration remains
+plan-only and unapplied.
+
+The next local projection adds `outcome-cohort-summary.v1` to that same
+authenticated response. It performs a separate no-limit aggregate over only
+observed, numeric, cutoff-eligible Outcomes with complete immutable Decision
+bindings. The private cockpit displays sample/status counts and descriptive
+effect ranges while explicitly denying causal, realised-value, real-performance,
+model-readiness, and policy-authority claims. No route, role, table, write path,
+CloudFormation change, deployment, or production authority was added.
+
+A fail-closed `outcome-cohort-evidence-sufficiency.v1` layer now sits inside
+that local response. It consumes the versioned, project-owner-approved
+`outcome-cohort-threshold-contract.v1`: 20 observed Outcomes and two represented
+result states per Decision cohort. Runtime constants are bound to the
+machine-readable repository contract, and drift checks fail if they diverge.
+The UI shows the approved descriptive gate and each cohort's eligibility. This
+adds no environment configuration, CloudFormation change, deployment,
+causal/value claim, Learning change, model/policy authority, or production path.
+
+An `outcome-cohort-evidence-gap.v1` projection derives each cohort's remaining
+sample and result-state shortfall from those same approved targets. It is
+returned inside the existing authenticated response and rendered in the
+private cockpit. The projection is calculation-only and grants no authority to
+create Outcomes, advance operational dates, or target result-state diversity.
+
+The companion `outcome-cohort-descriptive-comparison.v1` projection fails
+closed until two or more cohorts pass the approved gate. It then returns only
+eligible cohorts' status percentages and effect ranges in stable source order.
+No ranking, preferred alternative, causal/statistical superiority, or Action
+recommendation is produced.
+
+Every cohort returned by that available comparison also includes
+`outcome-cohort-comparison-provenance.v1`. The nested projection traces the
+aggregate to its immutable Decision binding, Sydney cutoff, evidence class,
+cohort schema, and threshold contract. It is aggregate-only, exposes no Action,
+Outcome, or shipment identifiers, and performs no additional query.
+
+An `outcome-cohort-comparison-fingerprint.v1` integrity object hashes the
+displayed comparison metrics and that complete provenance using deterministic
+canonical JSON and SHA-256. Percentage inputs are fixed two-decimal strings so
+server and browser verification use identical bytes. The digest is unsigned and supports content-
+consistency verification only; it proves neither source authenticity nor
+business validity and introduces no key or secret boundary.
+
+The private cockpit now applies
+`outcome-cohort-comparison-verifier.v1` before rendering those covered fields.
+Browser Web Crypto recomputes the digest from the already-loaded response;
+pending, unsupported, malformed, contract-drifted, or mismatched results
+withhold comparison metrics and provenance. This adds no API request, route,
+telemetry, persistence, identifier exposure, or mutation authority.
+
+The verifier returns a bounded local diagnostic reason under
+`outcome-cohort-comparison-diagnostics.v1`. The cockpit renders only fixed safe
+copy and the code while the covered content remains withheld. Raw exceptions,
+canonical payloads, covered values, and computed digests are not placed in the
+diagnostic result, and no telemetry or persistence boundary is introduced.
+
+A bounded `outcome-cohort-comparison-retry.v1` control permits at most one
+browser-local re-verification per cohort and loaded response, and only for
+`CRYPTO_UNAVAILABLE` or `VERIFICATION_ERROR`. It reuses the same in-memory
+cohort, returns the card to its hidden pending state, and applies the new result
+only while the same comparison-view object remains current. Structural
+mismatches cannot retry, and no request, storage, telemetry, or mutation is
+added.
+
 The staging runtime now also exposes an authenticated
 `GET /v1/label-readiness` projection and Provider Label Readiness cockpit page.
 They aggregate only the governed operational label view by mode/provider under

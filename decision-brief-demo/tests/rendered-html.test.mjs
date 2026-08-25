@@ -36,6 +36,116 @@ test("includes the generated social card", async () => {
   await access(new URL("../public/og.png", import.meta.url));
 });
 
+test("verifies the server comparison fingerprint and fails closed on drift", async () => {
+  const {
+    isOutcomeComparisonFingerprintRetryable,
+    verifyOutcomeComparisonFingerprint,
+  } = await import(
+    "../app/outcome-comparison-fingerprint.ts"
+  );
+  const cohort = {
+    decision_brief_version: "decision-brief.v1",
+    selected_alternative: "ELIGIBLE",
+    observed_outcome_count: 20,
+    status_percentages: {
+      successful: 50,
+      partially_successful: 0,
+      failed: 50,
+      inconclusive: 0,
+    },
+    effect_pct: { minimum: -5, average: 2, maximum: 9 },
+    provenance: {
+      schema_version: "outcome-cohort-comparison-provenance.v1",
+      decision_binding: {
+        binding_source: "IMMUTABLE_ACTION_PROPOSAL",
+        decision_brief_version: "decision-brief.v1",
+        selected_alternative: "ELIGIBLE",
+      },
+      evidence_contract: {
+        cohort_summary_schema_version: "outcome-cohort-summary.v1",
+        threshold_contract_version: "outcome-cohort-threshold-contract.v1",
+        as_of_date: "2026-08-25",
+        execution_mode: "OPERATIONAL",
+        time_basis: "ACTUAL_CALENDAR",
+        evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT",
+        observed_only: true,
+        pending_excluded: true,
+        unbound_actions_excluded: true,
+        future_simulations_excluded: true,
+      },
+      privacy: {
+        action_identifiers_exposed: false,
+        outcome_identifiers_exposed: false,
+        shipment_identifiers_exposed: false,
+      },
+      read_only: true,
+    },
+    integrity: {
+      schema_version: "outcome-cohort-comparison-fingerprint.v1",
+      algorithm: "SHA-256",
+      canonicalization: "JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS",
+      digest: "2158370e322f20fbb2e73e52d2139bcc18d6c2010678467f95461d6e4f064c73",
+      covered_fields: [
+        "decision_brief_version",
+        "selected_alternative",
+        "observed_outcome_count",
+        "status_percentages",
+        "effect_pct",
+        "provenance",
+      ],
+      verification_scope: "RESPONSE_CONTENT_INTEGRITY_ONLY",
+      digital_signature: false,
+      source_authenticity_attested: false,
+      business_validity_attested: false,
+    },
+  };
+  assert.deepEqual(
+    await verifyOutcomeComparisonFingerprint(cohort),
+    { status: "VERIFIED", reason_code: "MATCH" },
+  );
+
+  const changedMetric = structuredClone(cohort);
+  changedMetric.effect_pct.average = 2.01;
+  assert.deepEqual(
+    await verifyOutcomeComparisonFingerprint(changedMetric),
+    { status: "MISMATCH", reason_code: "DIGEST_MISMATCH" },
+  );
+
+  const expandedTrust = structuredClone(cohort);
+  expandedTrust.integrity.digital_signature = true;
+  assert.deepEqual(
+    await verifyOutcomeComparisonFingerprint(expandedTrust),
+    { status: "MISMATCH", reason_code: "CONTRACT_METADATA_MISMATCH" },
+  );
+
+  const missingIntegrity = structuredClone(cohort);
+  delete missingIntegrity.integrity;
+  assert.deepEqual(
+    await verifyOutcomeComparisonFingerprint(missingIntegrity),
+    { status: "MISMATCH", reason_code: "MISSING_INTEGRITY" },
+  );
+
+  const nonCanonical = structuredClone(cohort);
+  nonCanonical.effect_pct.average = 2.001;
+  assert.deepEqual(
+    await verifyOutcomeComparisonFingerprint(nonCanonical),
+    { status: "MISMATCH", reason_code: "NON_CANONICAL_CONTENT" },
+  );
+
+  assert.equal(isOutcomeComparisonFingerprintRetryable({
+    status: "MISMATCH", reason_code: "CRYPTO_UNAVAILABLE",
+  }), true);
+  assert.equal(isOutcomeComparisonFingerprintRetryable({
+    status: "MISMATCH", reason_code: "VERIFICATION_ERROR",
+  }), true);
+  assert.equal(isOutcomeComparisonFingerprintRetryable({
+    status: "MISMATCH", reason_code: "DIGEST_MISMATCH",
+  }), false);
+  assert.equal(isOutcomeComparisonFingerprintRetryable({
+    status: "VERIFIED", reason_code: "MATCH",
+  }), false);
+});
+
 test("keeps authenticated Action writes behind the internal API client", async () => {
   const client = await readFile(new URL("../app/operations-api.ts", import.meta.url), "utf8");
   assert.match(client, /NEXT_PUBLIC_GLAP_OPERATIONS_API_URL/);
@@ -88,6 +198,71 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /title="Outcome review"/);
   assert.match(page, /Not counted as actual evidence/);
   assert.match(page, /OBSERVED_ACTUAL_CALENDAR/);
+  assert.match(client, /decision_brief_version: "decision-brief\.v1" \| null/);
+  assert.match(client, /selected_alternative: string \| null/);
+  assert.match(client, /schema_version: "outcome-cohort-summary\.v1"/);
+  assert.match(client, /descriptive_summary_only: true/);
+  assert.match(client, /causal_effect_estimate: false/);
+  assert.match(client, /schema_version: "outcome-cohort-evidence-sufficiency\.v1"/);
+  assert.match(client, /configuration_status: "PENDING_HUMAN_APPROVAL" \| "HUMAN_APPROVED_CONTRACT"/);
+  assert.match(client, /automatic_threshold_selection: false/);
+  assert.match(page, /Decision source: \$\{item\.decision_brief_version\}/);
+  assert.match(page, /legacy or unbound Action/);
+  assert.match(page, /Simulated Outcome effects are not causal estimates or real logistics performance/);
+  assert.match(page, /Decision-contract Outcome cohorts/);
+  assert.match(page, /No eligible Decision cohorts/);
+  assert.match(page, /These cohorts are descriptive only/);
+  assert.match(page, /Comparison thresholds await human approval/);
+  assert.match(page, /comparison eligibility is blocked/);
+  assert.match(page, /Human-approved descriptive gate/);
+  assert.match(page, /represented result states per cohort/);
+  assert.match(page, /threshold_contract_version/);
+  assert.match(page, /Result-state coverage/);
+  assert.match(page, /Outcome evidence gap/);
+  assert.match(page, /Result-state gap/);
+  assert.match(page, /not instructions to create Outcomes or advance the lifecycle/);
+  assert.match(client, /schema_version: "outcome-cohort-evidence-gap\.v1"/);
+  assert.match(client, /outcome_creation_authorized: false/);
+  assert.match(client, /lifecycle_continuation_authorized: false/);
+  assert.match(client, /schema_version: "outcome-cohort-descriptive-comparison\.v1"/);
+  assert.match(client, /preferred_alternative_selected: false/);
+  assert.match(client, /statistical_significance_estimated: false/);
+  assert.match(page, /Cohort comparison contract unavailable/);
+  assert.match(page, /Cohort comparison unavailable/);
+  assert.match(page, /Eligible Outcome cohort comparison/);
+  assert.match(page, /Side-by-side descriptive status mix and effect ranges/);
+  assert.match(page, /This view produces no ranking, preferred alternative, causal superiority, statistical significance, or Action recommendation/);
+  assert.match(client, /schema_version: "outcome-cohort-comparison-provenance\.v1"/);
+  assert.match(client, /binding_source: "IMMUTABLE_ACTION_PROPOSAL"/);
+  assert.match(client, /action_identifiers_exposed: false/);
+  assert.match(client, /outcome_identifiers_exposed: false/);
+  assert.match(client, /shipment_identifiers_exposed: false/);
+  assert.match(page, /View comparison provenance/);
+  assert.match(page, /Aggregate only—none exposed/);
+  assert.match(client, /schema_version: "outcome-cohort-comparison-fingerprint\.v1"/);
+  assert.match(client, /canonicalization: "JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS"/);
+  assert.match(client, /verification_scope: "RESPONSE_CONTENT_INTEGRITY_ONLY"/);
+  assert.match(client, /digital_signature: false/);
+  assert.match(client, /source_authenticity_attested: false/);
+  const fingerprintVerifier = await readFile(new URL("../app/outcome-comparison-fingerprint.ts", import.meta.url), "utf8");
+  assert.match(fingerprintVerifier, /globalThis\.crypto\.subtle\.digest/);
+  assert.match(fingerprintVerifier, /reason_code: "CRYPTO_UNAVAILABLE"/);
+  assert.match(fingerprintVerifier, /reason_code: "VERIFICATION_ERROR"/);
+  assert.match(page, /Fingerprint verified/);
+  assert.match(page, /Comparison metrics and provenance remain hidden until browser verification completes/);
+  assert.match(page, /comparisonFingerprintDiagnostic/);
+  assert.match(page, /Comparison metrics and provenance are withheld/);
+  assert.match(page, /comparison-diagnostic-code/);
+  assert.match(fingerprintVerifier, /RETRYABLE_REASON_CODES/);
+  assert.match(page, /retryFingerprintVerification/);
+  assert.match(page, /Retry local verification/);
+  assert.match(page, /browser-only check without requesting new data/);
+  assert.match(page, /delete results\[verificationKey\]/);
+  assert.match(page, /attempts >= 1/);
+  assert.match(page, /retry_attempts: { \.\.\.current\.retry_attempts, \[verificationKey\]: 1 }/);
+  assert.match(page, /fingerprintVerification\.view === comparisonView/);
+  assert.match(page, /Integrity algorithm/);
+  assert.match(page, /Deterministic content fingerprint only—not a digital signature, source-authenticity attestation, or business-validity proof/);
   assert.match(page, /title="Pipeline Health"/);
   assert.match(page, /Open recovery runbook/);
   assert.match(page, /Future simulations cannot be presented as current pipeline health/);

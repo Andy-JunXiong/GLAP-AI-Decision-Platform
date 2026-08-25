@@ -1,0 +1,29 @@
+{
+  "schema_version": "outcome-cohort-threshold-contract.v1",
+  "contract_version": "outcome-cohort-threshold-contract.v1",
+  "approval": {
+    "status": "HUMAN_APPROVED",
+    "approved_by_role": "PROJECT_OWNER",
+    "approved_on": "2026-08-25",
+    "evidence": "EXPLICIT_SESSION_INSTRUCTION"
+  },
+  "thresholds": {
+    "minimum_observed_outcomes": 20,
+    "minimum_distinct_result_states": 2
+  },
+  "scope": {
+    "comparison_scope": "DESCRIPTIVE_SYNTHETIC_ONLY",
+    "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT",
+    "execution_mode": "OPERATIONAL",
+    "time_basis": "ACTUAL_CALENDAR"
+  },
+  "authority": {
+    "causal_effect_estimate": false,
+    "financial_value_estimated": false,
+    "real_logistics_performance": false,
+    "model_readiness": false,
+    "policy_activation_authorized": false,
+    "deployment_authorized": false,
+    "production_authorized": false
+  }
+}

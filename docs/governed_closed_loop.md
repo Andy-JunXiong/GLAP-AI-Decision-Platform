@@ -75,6 +75,79 @@ claim. After separate named-human authorization, the endpoint and cockpit
 timeline were deployed to private staging and passed both the staging and
 four-role runtime verifiers. This release created no Action mutation.
 
+The repository-local Outcome Review now projects the same immutable proposal
+provenance beside every cutoff-eligible Outcome. It follows the existing
+`action_id` at read time to expose nullable `decision_brief_version` and
+`selected_alternative`; it does not duplicate those fields into Outcome
+history. Legacy and unimplemented Decision types remain explicitly unbound.
+This makes synthetic evaluation groupable by proposal contract without
+claiming approval, execution, causality, realised value, or real logistics
+performance. The extension is locally verified and not deployed; see
+[`outcome_review_decision_provenance_v1.md`](outcome_review_decision_provenance_v1.md).
+
+Outcome Review now also consumes that provenance through a versioned cohort
+summary. A separate read-only aggregate groups only latest-version observed,
+numeric, bound synthetic Outcomes by Decision Brief version and selected
+alternative. It returns reconciled sample/status counts and descriptive effect
+ranges without depending on the bounded entity list. Pending, unbound, and
+future-simulation rows are excluded. The summary creates no counterfactual,
+causal, realised-value, real-performance, Learning, model, policy, or
+production claim; see
+[`decision_contract_outcome_cohort_v1.md`](decision_contract_outcome_cohort_v1.md).
+
+The cohort response now includes a separate evidence-sufficiency gate whose
+business configuration is now bound to the project-owner-approved
+`outcome-cohort-threshold-contract.v1`: 20 observed Outcomes and two represented
+result states per cohort. Each cohort receives explicit pass/fail gate results;
+only a cohort passing both may report descriptive comparison eligibility. The
+mechanism cannot select thresholds, change Learning, or expand any causal,
+value, model, policy, deployment, or production claim; see
+[`outcome_cohort_evidence_sufficiency_v1.md`](outcome_cohort_evidence_sufficiency_v1.md).
+
+The same response now explains the exact non-negative evidence gap to those
+20/2 targets for every cohort. The gap is arithmetic only: it cannot recommend
+Outcome creation, lifecycle continuation, or a desired result-state mix, and
+it cannot expand causal, value, Learning, model, policy, deployment, or
+production authority. See
+[`outcome_cohort_evidence_gap_v1.md`](outcome_cohort_evidence_gap_v1.md).
+
+An eligible-cohort comparison view fails closed until at least two cohorts pass
+the approved gate. It then places their descriptive status mixes and effect
+ranges side by side without ranking, selecting a preferred alternative,
+estimating causal or statistical superiority, or recommending an Action. See
+[`outcome_cohort_descriptive_comparison_v1.md`](outcome_cohort_descriptive_comparison_v1.md).
+
+Each displayed comparison cohort now carries aggregate-only provenance for its
+immutable Decision binding, Sydney cutoff, evidence basis, aggregation schema,
+and approved threshold contract. Action, Outcome, and shipment identifiers
+remain unexposed, so traceability adds no entity drill-through or mutation
+authority. See
+[`outcome_cohort_comparison_provenance_v1.md`](outcome_cohort_comparison_provenance_v1.md).
+
+A deterministic SHA-256 fingerprint now covers each displayed comparison
+aggregate and its provenance. It detects covered-content mismatch when
+recomputed, but it is unsigned and establishes neither source authenticity nor
+business validity. See
+[`outcome_cohort_comparison_fingerprint_v1.md`](outcome_cohort_comparison_fingerprint_v1.md).
+Its canonical form uses fixed two-decimal percentage strings before sorted,
+compact JSON encoding, avoiding server/browser numeric-serialization drift.
+The private cockpit now recomputes that digest locally and withholds the
+covered aggregate and provenance until verification succeeds. Failure or
+unavailable browser cryptography fails closed without a new request or write;
+see
+[`outcome_cohort_comparison_verifier_v1.md`](outcome_cohort_comparison_verifier_v1.md).
+Mismatch results now include one bounded local diagnostic code. The code helps
+the operator distinguish a missing contract, contract drift, unavailable
+cryptography, non-canonical content, digest mismatch, or safe verification
+failure without exposing covered evidence, persisting a result, or sending
+telemetry; see
+[`outcome_cohort_comparison_diagnostics_v1.md`](outcome_cohort_comparison_diagnostics_v1.md).
+The cockpit offers one local-only retry for the two transient browser reason
+codes and none for structural mismatch codes. The same loaded response is
+rechecked, content stays hidden, and no network, telemetry, persistence, or
+mutation path is introduced; see
+[`outcome_cohort_comparison_retry_v1.md`](outcome_cohort_comparison_retry_v1.md).
+
 The repository extension uses `PROPOSED -> EDITED` to record a named owner and
 due date without approving the Action. `EDITED` then requires a separate
 approver to approve or reject it. Assignment is carried forward into later

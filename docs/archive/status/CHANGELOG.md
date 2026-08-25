@@ -6,6 +6,56 @@ preserved handoffs.
 
 ## 2026-08-25
 
+- Implemented bounded local comparison re-verification v1. The private cockpit
+  offers exactly one same-response browser-local retry only for
+  `CRYPTO_UNAVAILABLE` or `VERIFICATION_ERROR`; structural, contract, and
+  digest failures remain non-retryable and hidden. The retry performs no API
+  request, refresh, storage, telemetry, persistence, or operational mutation.
+- Implemented bounded comparison fingerprint diagnostics v1. Browser
+  verification now returns a fixed safe reason code while exposing neither raw
+  errors nor covered evidence on failure. The reason contract remains local,
+  non-persistent, and incapable of expanding trust or Action authority.
+- Implemented the private cockpit comparison fingerprint verifier v1. Browser
+  Web Crypto recomputes the server digest over the exact canonical comparison
+  fields and withholds metrics and provenance until verification succeeds.
+  Missing integrity, metadata drift, non-canonical content, or digest mismatch
+  fails closed; this is an unsigned consistency check, not source
+  authentication or business-evidence validation.
+- Implemented Outcome cohort comparison fingerprint v1. Each displayed
+  eligible cohort now carries a reproducible SHA-256 digest over its immutable
+  Decision binding, descriptive aggregate, and aggregate-only provenance.
+  Cross-runtime fixed two-decimal canonicalization is tested, while signature,
+  authenticity, business validity, ranking, and Action authority remain false.
+- Implemented Outcome cohort comparison provenance v1. Every displayed cohort
+  traces to its immutable Decision Brief version and selected alternative,
+  Sydney cutoff, operational actual-calendar basis, synthetic evidence class,
+  aggregation schema, and approved threshold contract without exposing entity
+  identifiers or adding another request.
+- Implemented eligible descriptive Outcome cohort comparison v1. The existing
+  authenticated Outcome response shows status percentages and descriptive
+  effect ranges only when at least two cohorts independently pass the approved
+  evidence gate. It preserves source order and produces no ranking, preferred
+  alternative, causal or statistical superiority, or Action recommendation.
+- Implemented Outcome cohort evidence-gap explainer v1. Each cohort reports the
+  exact non-negative shortfall to the approved sample and result-state targets,
+  using only already-governed counts. It cannot recommend collection, create
+  Outcomes, advance lifecycle dates, or grant Learning/model/policy authority.
+- Recorded and implemented the human-approved Outcome cohort threshold
+  contract v1. Its schema-validated repository contract freezes the project
+  owner's `20` observed Outcomes and `2` represented result states decision for
+  descriptive synthetic review. The values are code-bound but not deployed and
+  grant no causal, value, model, policy, production, or data-mutation authority.
+- Implemented Outcome cohort evidence-sufficiency v1 and the decision-contract
+  Outcome cohort summary v1. The existing authenticated Outcome response now
+  aggregates all cutoff-eligible observed numeric synthetic Outcomes by
+  immutable Decision Brief version and selected alternative, reconciles result
+  counts, and applies the approved gate independently per cohort. Counts and
+  ranges remain descriptive, aggregate-only, and locally verified.
+- Implemented Outcome Review decision provenance v1. Each cutoff-eligible
+  Outcome can expose the immutable source Action's nullable Decision Brief
+  version and selected alternative through a read-time join. Legacy bindings
+  remain null, simulated effects remain non-causal, and no new route, write
+  surface, migration, deployment, or public publication was added.
 - Implemented Decision-to-Action binding v1. Every newly generated valid SLA
   proposal now preserves `decision-brief.v1`, the deterministic
   `EXPEDITE_MILESTONE` selection, and its exact rationale on the immutable

@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -336,6 +337,12 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("'NOT_OBSERVED'", query)
         self.assertIn("'OBSERVED_ACTUAL_CALENDAR'", query)
         self.assertIn("outcome_status = 'PENDING'", query)
+        self.assertIn("a.decision_brief_version", query)
+        self.assertIn("a.selected_alternative", query)
+        self.assertIn("a.execution_mode = 'OPERATIONAL'", query)
+        self.assertIn("a.time_basis = 'ACTUAL_CALENDAR'", query)
+        self.assertIn("a.as_of_date <= DATE '2026-08-07'", query)
+        self.assertIn("a.created_date <= DATE '2026-08-07'", query)
         self.assertIn("LEFT JOIN", query)
         self.assertIn("LIMIT 50", query)
 
@@ -344,6 +351,347 @@ class OperationsApiTests(unittest.TestCase):
             api.build_outcome_review_query(50, "OBSERVED", "2026-08-07")
         with self.assertRaises(ValueError):
             api.build_outcome_review_query(50, "PENDING", "tomorrow")
+
+    def test_outcome_cohort_query_is_observed_bound_and_cutoff_eligible(self):
+        query = api.build_outcome_cohort_query("2026-08-25")
+        self.assertEqual(query.count("temporal_scope_id = 'OPERATIONAL'"), 2)
+        self.assertEqual(query.count("execution_mode = 'OPERATIONAL'"), 2)
+        self.assertEqual(query.count("time_basis = 'ACTUAL_CALENDAR'"), 2)
+        self.assertIn("observed_date <= DATE '2026-08-25'", query)
+        self.assertIn("try_cast(effect_pct AS double) IS NOT NULL", query)
+        self.assertIn("nullif(trim(decision_brief_version), '') IS NOT NULL", query)
+        self.assertIn("nullif(trim(selected_alternative), '') IS NOT NULL", query)
+        self.assertIn("GROUP BY a.decision_brief_version, a.selected_alternative", query)
+        self.assertIn("count_if(o.outcome_status = 'SUCCESSFUL')", query)
+        self.assertNotIn("status = 'PENDING'", query)
+        self.assertNotIn("FUTURE_SIMULATION", query)
+        self.assertNotIn("LIMIT", query)
+        with self.assertRaises(ValueError):
+            api.build_outcome_cohort_query("tomorrow")
+
+    def test_outcome_cohort_contract_is_descriptive_and_authority_bounded(self):
+        contract = api.build_outcome_cohort_contract([{
+            "decision_brief_version": "decision-brief.v1",
+            "selected_alternative": "EXPEDITE_MILESTONE",
+            "observed_outcome_count": "3",
+            "successful_count": "1",
+            "partially_successful_count": "1",
+            "failed_count": "1",
+            "inconclusive_count": "0",
+            "minimum_effect_pct": "-5.0",
+            "average_effect_pct": "2.5",
+            "maximum_effect_pct": "15.0",
+        }], "2026-08-25")
+        self.assertEqual(contract["status"], "AVAILABLE")
+        self.assertEqual(contract["cohorts"][0]["observed_outcome_count"], 3)
+        self.assertEqual(contract["cohorts"][0]["effect_pct"]["average"], 2.5)
+        self.assertTrue(contract["eligibility"]["pending_excluded"])
+        self.assertTrue(contract["eligibility"]["unbound_actions_excluded"])
+        self.assertTrue(contract["governance"]["descriptive_summary_only"])
+        self.assertFalse(contract["governance"]["causal_effect_estimate"])
+        self.assertFalse(contract["governance"]["financial_value_estimated"])
+        self.assertFalse(contract["governance"]["real_logistics_performance"])
+        self.assertFalse(contract["governance"]["model_readiness"])
+        self.assertFalse(contract["governance"]["policy_activation_authorized"])
+        self.assertTrue(contract["governance"]["human_threshold_approval_required"])
+        self.assertFalse(contract["governance"]["automatic_threshold_selection"])
+        self.assertEqual(
+            contract["evidence_sufficiency_gate"]["configuration_status"],
+            "PENDING_HUMAN_APPROVAL",
+        )
+        self.assertIsNone(
+            contract["evidence_sufficiency_gate"]["thresholds"]
+            ["minimum_observed_outcomes"]
+        )
+        self.assertFalse(
+            contract["evidence_sufficiency_gate"]["any_comparison_eligible"]
+        )
+        self.assertEqual(
+            contract["cohorts"][0]["evidence_sufficiency"]["status"],
+            "PENDING_HUMAN_APPROVAL",
+        )
+        self.assertFalse(
+            contract["cohorts"][0]["evidence_sufficiency"]
+            ["comparison_eligible"]
+        )
+        gap = contract["cohorts"][0]["evidence_gap"]
+        self.assertEqual(gap["schema_version"], "outcome-cohort-evidence-gap.v1")
+        self.assertEqual(gap["status"], "PENDING_HUMAN_APPROVAL")
+        self.assertIsNone(gap["additional_observed_outcomes"])
+        self.assertIsNone(gap["additional_distinct_result_states"])
+        self.assertTrue(gap["calculation_only"])
+        self.assertFalse(gap["outcome_collection_recommended"])
+        self.assertFalse(gap["outcome_creation_authorized"])
+        self.assertFalse(gap["lifecycle_continuation_authorized"])
+        comparison = contract["descriptive_comparison_view"]
+        self.assertEqual(
+            comparison["schema_version"],
+            "outcome-cohort-descriptive-comparison.v1",
+        )
+        self.assertEqual(comparison["status"], "INSUFFICIENT_ELIGIBLE_COHORTS")
+        self.assertEqual(comparison["eligible_cohort_count"], 0)
+        self.assertEqual(comparison["cohorts"], [])
+        self.assertFalse(comparison["governance"]["ranking_produced"])
+        self.assertFalse(comparison["governance"]["action_recommended"])
+
+    def test_outcome_cohort_sufficiency_mechanics_require_complete_approved_contract(self):
+        row = {
+            "decision_brief_version": "decision-brief.v1",
+            "selected_alternative": "EXPEDITE_MILESTONE",
+            "observed_outcome_count": "3",
+            "successful_count": "1",
+            "partially_successful_count": "1",
+            "failed_count": "1",
+            "inconclusive_count": "0",
+            "minimum_effect_pct": "-5",
+            "average_effect_pct": "2.5",
+            "maximum_effect_pct": "15",
+        }
+        contract = api.build_outcome_cohort_contract(
+            [row], "2026-08-25",
+            approved_minimum_observed=3,
+            approved_minimum_result_states=2,
+            approved_threshold_contract_version="cohort-gate-approved-v1",
+        )
+        gate = contract["evidence_sufficiency_gate"]
+        sufficiency = contract["cohorts"][0]["evidence_sufficiency"]
+        self.assertEqual(gate["configuration_status"], "HUMAN_APPROVED_CONTRACT")
+        self.assertEqual(gate["thresholds"]["minimum_observed_outcomes"], 3)
+        self.assertTrue(gate["any_comparison_eligible"])
+        self.assertEqual(sufficiency["distinct_result_states"], 3)
+        self.assertTrue(sufficiency["sample_gate_met"])
+        self.assertTrue(sufficiency["result_coverage_gate_met"])
+        self.assertTrue(sufficiency["comparison_eligible"])
+        self.assertEqual(
+            sufficiency["status"], "SUFFICIENT_FOR_DESCRIPTIVE_COMPARISON"
+        )
+        self.assertEqual(contract["cohorts"][0]["evidence_gap"]["status"], "TARGET_MET")
+        self.assertEqual(
+            contract["cohorts"][0]["evidence_gap"]["additional_observed_outcomes"],
+            0,
+        )
+        self.assertEqual(
+            contract["cohorts"][0]["evidence_gap"]
+            ["additional_distinct_result_states"],
+            0,
+        )
+        self.assertEqual(
+            contract["descriptive_comparison_view"]["status"],
+            "INSUFFICIENT_ELIGIBLE_COHORTS",
+        )
+        self.assertEqual(
+            contract["descriptive_comparison_view"]["eligible_cohort_count"], 1
+        )
+        self.assertEqual(contract["descriptive_comparison_view"]["cohorts"], [])
+        with self.assertRaisesRegex(RuntimeError, "incomplete"):
+            api.build_outcome_cohort_contract(
+                [row], "2026-08-25", approved_minimum_observed=3
+            )
+
+    def test_outcome_review_response_uses_human_approved_threshold_contract(self):
+        rows = [
+            {
+                "decision_brief_version": "decision-brief.v1",
+                "selected_alternative": "ELIGIBLE",
+                "observed_outcome_count": "20",
+                "successful_count": "10",
+                "partially_successful_count": "0",
+                "failed_count": "10",
+                "inconclusive_count": "0",
+                "minimum_effect_pct": "-5",
+                "average_effect_pct": "2",
+                "maximum_effect_pct": "9",
+            },
+            {
+                "decision_brief_version": "decision-brief.v1",
+                "selected_alternative": "ONE_SIDED",
+                "observed_outcome_count": "20",
+                "successful_count": "20",
+                "partially_successful_count": "0",
+                "failed_count": "0",
+                "inconclusive_count": "0",
+                "minimum_effect_pct": "1",
+                "average_effect_pct": "2",
+                "maximum_effect_pct": "3",
+            },
+            {
+                "decision_brief_version": "decision-brief.v1",
+                "selected_alternative": "ELIGIBLE_TWO",
+                "observed_outcome_count": "20",
+                "successful_count": "5",
+                "partially_successful_count": "5",
+                "failed_count": "5",
+                "inconclusive_count": "5",
+                "minimum_effect_pct": "0",
+                "average_effect_pct": "4",
+                "maximum_effect_pct": "8",
+            },
+        ]
+        response = api.build_outcome_review_response([], rows, "2026-08-25")
+        gate = response["cohort_summary"]["evidence_sufficiency_gate"]
+        self.assertEqual(gate["configuration_status"], "HUMAN_APPROVED_CONTRACT")
+        self.assertEqual(
+            gate["threshold_contract_version"],
+            "outcome-cohort-threshold-contract.v1",
+        )
+        self.assertEqual(gate["thresholds"]["minimum_observed_outcomes"], 20)
+        self.assertEqual(gate["thresholds"]["minimum_distinct_result_states"], 2)
+        self.assertEqual(gate["comparison_scope"], "DESCRIPTIVE_SYNTHETIC_ONLY")
+        self.assertTrue(gate["any_comparison_eligible"])
+        cohorts = {
+            row["selected_alternative"]: row
+            for row in response["cohort_summary"]["cohorts"]
+        }
+        self.assertTrue(cohorts["ELIGIBLE"]["evidence_sufficiency"]["comparison_eligible"])
+        self.assertFalse(cohorts["ONE_SIDED"]["evidence_sufficiency"]["comparison_eligible"])
+        self.assertEqual(cohorts["ELIGIBLE"]["evidence_gap"]["status"], "TARGET_MET")
+        self.assertEqual(
+            cohorts["ONE_SIDED"]["evidence_gap"]["additional_observed_outcomes"], 0
+        )
+        self.assertEqual(
+            cohorts["ONE_SIDED"]["evidence_gap"]
+            ["additional_distinct_result_states"],
+            1,
+        )
+        comparison = response["cohort_summary"]["descriptive_comparison_view"]
+        self.assertEqual(comparison["status"], "AVAILABLE")
+        self.assertEqual(comparison["required_eligible_cohort_count"], 2)
+        self.assertEqual(comparison["eligible_cohort_count"], 2)
+        self.assertEqual(comparison["excluded_cohort_count"], 1)
+        self.assertEqual(len(comparison["cohorts"]), 2)
+        compared = {
+            row["selected_alternative"]: row for row in comparison["cohorts"]
+        }
+        self.assertEqual(compared["ELIGIBLE"]["status_percentages"]["successful"], 50.0)
+        self.assertEqual(
+            compared["ELIGIBLE_TWO"]["status_percentages"]["inconclusive"],
+            25.0,
+        )
+        self.assertFalse(comparison["governance"]["ranking_produced"])
+        self.assertFalse(comparison["governance"]["preferred_alternative_selected"])
+        self.assertFalse(comparison["governance"]["causal_superiority_estimated"])
+        self.assertFalse(
+            comparison["governance"]["statistical_significance_estimated"]
+        )
+        self.assertFalse(comparison["governance"]["action_recommended"])
+        provenance = compared["ELIGIBLE"]["provenance"]
+        self.assertEqual(
+            provenance["schema_version"],
+            "outcome-cohort-comparison-provenance.v1",
+        )
+        self.assertEqual(
+            provenance["decision_binding"]["binding_source"],
+            "IMMUTABLE_ACTION_PROPOSAL",
+        )
+        self.assertEqual(
+            provenance["decision_binding"]["selected_alternative"], "ELIGIBLE"
+        )
+        self.assertEqual(provenance["evidence_contract"]["as_of_date"], "2026-08-25")
+        self.assertEqual(
+            provenance["evidence_contract"]["threshold_contract_version"],
+            "outcome-cohort-threshold-contract.v1",
+        )
+        self.assertTrue(provenance["evidence_contract"]["observed_only"])
+        self.assertTrue(provenance["evidence_contract"]["pending_excluded"])
+        self.assertTrue(provenance["evidence_contract"]["future_simulations_excluded"])
+        self.assertFalse(provenance["privacy"]["action_identifiers_exposed"])
+        self.assertFalse(provenance["privacy"]["outcome_identifiers_exposed"])
+        self.assertFalse(provenance["privacy"]["shipment_identifiers_exposed"])
+        self.assertTrue(provenance["read_only"])
+        serialized_provenance = json.dumps(provenance)
+        self.assertNotIn('"action_id"', serialized_provenance)
+        self.assertNotIn('"outcome_id"', serialized_provenance)
+        self.assertNotIn('"shipment_id"', serialized_provenance)
+        fingerprinted = compared["ELIGIBLE"]
+        integrity = fingerprinted["integrity"]
+        fingerprint_payload = {
+            key: value for key, value in fingerprinted.items() if key != "integrity"
+        }
+        fingerprint_payload["status_percentages"] = {
+            key: f"{value:.2f}"
+            for key, value in fingerprint_payload["status_percentages"].items()
+        }
+        fingerprint_payload["effect_pct"] = {
+            key: f"{value:.2f}"
+            for key, value in fingerprint_payload["effect_pct"].items()
+        }
+        expected_digest = hashlib.sha256(json.dumps(
+            fingerprint_payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")).hexdigest()
+        self.assertEqual(
+            integrity["schema_version"],
+            "outcome-cohort-comparison-fingerprint.v1",
+        )
+        self.assertEqual(integrity["algorithm"], "SHA-256")
+        self.assertEqual(
+            integrity["canonicalization"],
+            "JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS",
+        )
+        self.assertEqual(integrity["digest"], expected_digest)
+        self.assertRegex(integrity["digest"], r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            integrity["verification_scope"], "RESPONSE_CONTENT_INTEGRITY_ONLY"
+        )
+        self.assertFalse(integrity["digital_signature"])
+        self.assertFalse(integrity["source_authenticity_attested"])
+        self.assertFalse(integrity["business_validity_attested"])
+        changed_payload = json.loads(json.dumps(fingerprint_payload))
+        changed_payload["effect_pct"]["average"] = "2.01"
+        changed_digest = hashlib.sha256(json.dumps(
+            changed_payload,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")).hexdigest()
+        self.assertNotEqual(changed_digest, integrity["digest"])
+
+    def test_outcome_cohort_sufficiency_below_approved_sample_stays_blocked(self):
+        row = {
+            "decision_brief_version": "decision-brief.v1",
+            "selected_alternative": "EXPEDITE_MILESTONE",
+            "observed_outcome_count": "1",
+            "successful_count": "1",
+            "partially_successful_count": "0",
+            "failed_count": "0",
+            "inconclusive_count": "0",
+            "minimum_effect_pct": "5",
+            "average_effect_pct": "5",
+            "maximum_effect_pct": "5",
+        }
+        contract = api.build_outcome_cohort_contract(
+            [row], "2026-08-25",
+            approved_minimum_observed=2,
+            approved_minimum_result_states=1,
+            approved_threshold_contract_version="cohort-gate-approved-v1",
+        )
+        sufficiency = contract["cohorts"][0]["evidence_sufficiency"]
+        self.assertFalse(sufficiency["sample_gate_met"])
+        self.assertTrue(sufficiency["result_coverage_gate_met"])
+        self.assertFalse(sufficiency["comparison_eligible"])
+        self.assertEqual(sufficiency["status"], "INSUFFICIENT_EVIDENCE")
+        gap = contract["cohorts"][0]["evidence_gap"]
+        self.assertEqual(gap["status"], "GAP_REMAINS")
+        self.assertEqual(gap["additional_observed_outcomes"], 1)
+        self.assertEqual(gap["additional_distinct_result_states"], 0)
+
+    def test_outcome_cohort_contract_fails_closed_on_unreconciled_counts(self):
+        row = {
+            "decision_brief_version": "decision-brief.v1",
+            "selected_alternative": "EXPEDITE_MILESTONE",
+            "observed_outcome_count": "2",
+            "successful_count": "1",
+            "partially_successful_count": "0",
+            "failed_count": "0",
+            "inconclusive_count": "0",
+            "minimum_effect_pct": "1",
+            "average_effect_pct": "1",
+            "maximum_effect_pct": "1",
+        }
+        with self.assertRaisesRegex(RuntimeError, "do not reconcile"):
+            api.build_outcome_cohort_contract([row], "2026-08-25")
 
     def test_learning_query_uses_only_cutoff_eligible_operational_outcomes(self):
         query = api.build_learning_evidence_query("2026-08-07")
@@ -700,32 +1048,48 @@ class OperationsApiTests(unittest.TestCase):
         )
 
     def test_viewer_can_read_outcomes(self):
-        class AthenaClient:
-            def start_query_execution(self, **kwargs):
-                self.query = kwargs["QueryString"]
-                return {"QueryExecutionId": "query-1"}
-
-            def get_query_execution(self, **_kwargs):
-                return {"QueryExecution": {"Status": {"State": "SUCCEEDED"}}}
-
-            def get_query_results(self, **_kwargs):
-                return {
-                    "ResultSet": {
-                        "ResultSetMetadata": {"ColumnInfo": [{"Name": "outcome_id"}]},
-                        "Rows": [
-                            {"Data": [{"VarCharValue": "outcome_id"}]},
-                            {"Data": [{"VarCharValue": "outcome-123"}]},
-                        ],
-                    }
-                }
-
-        client = AthenaClient()
-        fake_boto3 = types.SimpleNamespace(client=lambda _service: client)
-        with patch.dict(sys.modules, {"boto3": fake_boto3}), patch.object(api, "_sydney_date", return_value="2026-08-07"):
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", side_effect=[
+                 [{"outcome_id": "outcome-123"}], []
+             ]) as query_rows, \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
             response = api.lambda_handler(request(path="/v1/outcomes"), None)
+        body = json.loads(response["body"])
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"])["items"][0]["outcome_id"], "outcome-123")
-        self.assertIn("observed_date <= DATE '2026-08-07'", client.query)
+        self.assertEqual(body["items"][0]["outcome_id"], "outcome-123")
+        self.assertEqual(
+            body["cohort_summary"]["status"], "NO_ELIGIBLE_BOUND_OUTCOMES"
+        )
+        queries = [call.args[1] for call in query_rows.call_args_list]
+        self.assertIn("observed_date <= DATE '2026-08-07'", queries[0])
+        self.assertIn("a.decision_brief_version", queries[0])
+        self.assertIn("GROUP BY a.decision_brief_version", queries[1])
+
+    def test_outcome_response_preserves_bound_and_legacy_null_provenance(self):
+        rows = [
+            {
+                "outcome_id": "outcome-bound",
+                "decision_brief_version": "decision-brief.v1",
+                "selected_alternative": "EXPEDITE_MILESTONE",
+            },
+            {
+                "outcome_id": "outcome-legacy",
+                "decision_brief_version": None,
+                "selected_alternative": None,
+            },
+        ]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", side_effect=[rows, []]), \
+             patch.object(api, "_sydney_date", return_value="2026-08-25"):
+            response = api.lambda_handler(request(path="/v1/outcomes"), None)
+        body = json.loads(response["body"])
+        self.assertEqual(
+            body["items"][0]["selected_alternative"], "EXPEDITE_MILESTONE"
+        )
+        self.assertIsNone(body["items"][1]["decision_brief_version"])
+        self.assertIsNone(body["items"][1]["selected_alternative"])
 
     def test_pipeline_health_is_six_stage_current_and_redacted(self):
         health = api.sanitize_pipeline_health(pipeline_run(), "2026-08-07")

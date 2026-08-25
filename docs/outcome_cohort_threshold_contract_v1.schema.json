@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.example/contracts/outcome-cohort-threshold-contract.v1.schema.json",
+  "title": "GLAP Outcome cohort threshold contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract_version",
+    "approval",
+    "thresholds",
+    "scope",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "outcome-cohort-threshold-contract.v1"
+    },
+    "contract_version": {
+      "const": "outcome-cohort-threshold-contract.v1"
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "approved_by_role", "approved_on", "evidence"],
+      "properties": {
+        "status": {"const": "HUMAN_APPROVED"},
+        "approved_by_role": {"const": "PROJECT_OWNER"},
+        "approved_on": {"type": "string", "format": "date"},
+        "evidence": {"const": "EXPLICIT_SESSION_INSTRUCTION"}
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_observed_outcomes", "minimum_distinct_result_states"],
+      "properties": {
+        "minimum_observed_outcomes": {"type": "integer", "minimum": 1},
+        "minimum_distinct_result_states": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparison_scope", "evidence_class", "execution_mode", "time_basis"],
+      "properties": {
+        "comparison_scope": {"const": "DESCRIPTIVE_SYNTHETIC_ONLY"},
+        "evidence_class": {"const": "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT"},
+        "execution_mode": {"const": "OPERATIONAL"},
+        "time_basis": {"const": "ACTUAL_CALENDAR"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "causal_effect_estimate",
+        "financial_value_estimated",
+        "real_logistics_performance",
+        "model_readiness",
+        "policy_activation_authorized",
+        "deployment_authorized",
+        "production_authorized"
+      ],
+      "properties": {
+        "causal_effect_estimate": {"const": false},
+        "financial_value_estimated": {"const": false},
+        "real_logistics_performance": {"const": false},
+        "model_readiness": {"const": false},
+        "policy_activation_authorized": {"const": false},
+        "deployment_authorized": {"const": false},
+        "production_authorized": {"const": false}
+      }
+    }
+  }
+}

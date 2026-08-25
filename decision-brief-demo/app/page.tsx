@@ -7,6 +7,7 @@ import {
   DecisionBriefV1,
   OperationsAction,
   OperationsOutcome,
+  OutcomeCohortSummary,
   PipelineHealth as PipelineHealthData,
   ForecastContract,
   LearningEvidence,
@@ -30,6 +31,12 @@ import {
   readOperationsToken,
 } from "./operations-api";
 import {
+  OutcomeComparisonFingerprintReason,
+  OutcomeComparisonFingerprintVerification,
+  isOutcomeComparisonFingerprintRetryable,
+  verifyOutcomeComparisonFingerprint,
+} from "./outcome-comparison-fingerprint";
+import {
   finishOperationsSignIn,
   internalAuthenticationEnabled,
   operationsSignedIn,
@@ -42,6 +49,18 @@ type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "ou
 type OperationsLoadState = "demo" | "loading" | "connected" | "auth_required" | "error";
 type ShipmentLoadState = "idle" | "loading" | "connected" | "partial" | "error";
 type DataStateKind = "loading" | "empty" | "stale" | "partial" | "failed" | "auth_required" | "idle";
+
+const comparisonFingerprintDiagnostic: Record<
+  Exclude<OutcomeComparisonFingerprintReason, "MATCH">,
+  string
+> = {
+  MISSING_INTEGRITY: "The response does not include the required v1 integrity contract.",
+  CONTRACT_METADATA_MISMATCH: "The integrity metadata or bounded trust flags do not match the v1 contract.",
+  CRYPTO_UNAVAILABLE: "Browser cryptography is unavailable for this verification attempt.",
+  NON_CANONICAL_CONTENT: "The covered response values do not satisfy the canonical comparison format.",
+  DIGEST_MISMATCH: "The recomputed digest does not match the response fingerprint.",
+  VERIFICATION_ERROR: "Browser verification could not complete safely.",
+};
 
 const navItems: { id: View; label: string; icon: string; internalOnly?: boolean }[] = [
   { id: "overview", label: "Control Tower", icon: "⌂" },
@@ -89,6 +108,7 @@ export default function Home() {
   const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
   const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
+  const [outcomeCohortSummary, setOutcomeCohortSummary] = useState<OutcomeCohortSummary | null>(null);
   const [pipelineHealth, setPipelineHealth] = useState<PipelineHealthData | null>(null);
   const [forecastContract, setForecastContract] = useState<ForecastContract | null>(null);
   const [learningContract, setLearningContract] = useState<LearningEvidence | null>(null);
@@ -142,6 +162,7 @@ export default function Home() {
       setOperationsActions(queue.items);
       setOperationsRisks(risks.items);
       setOperationsOutcomes(outcomes.items);
+      setOutcomeCohortSummary(outcomes.cohort_summary ?? null);
       setOperationsState("connected");
       setOperationsMessage("");
     } catch (error) {
@@ -398,7 +419,7 @@ export default function Home() {
           selection={shipmentSelection} nextToken={shipmentNextToken}
           refresh={refreshNetwork} openGroup={openShipmentGroup} loadMore={loadMoreShipments}
         />}
-        {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
+        {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} cohortSummary={outcomeCohortSummary} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "learning" && <LearningReview contract={learningContract} state={learningState} message={learningMessage} refresh={refreshLearning} />}
         {view === "readiness" && <LabelReadiness contract={labelReadinessContract} state={labelReadinessState} message={labelReadinessMessage} refresh={refreshLabelReadiness} />}
         {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
@@ -846,12 +867,64 @@ function DemoShipments({ go }: { go: (view: View) => void }) {
   </div>;
 }
 
-function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
+function Outcomes({ outcomes, cohortSummary, operationsState, operationsMessage, refresh }: {
   outcomes: OperationsOutcome[];
+  cohortSummary: OutcomeCohortSummary | null;
   operationsState: OperationsLoadState;
   operationsMessage: string;
   refresh: () => Promise<void>;
 }) {
+  const comparisonView = cohortSummary?.descriptive_comparison_view ?? null;
+  const [fingerprintVerification, setFingerprintVerification] = useState<{
+    view: typeof comparisonView;
+    results: Record<string, OutcomeComparisonFingerprintVerification>;
+    retry_attempts: Record<string, 1>;
+  }>({ view: null, results: {}, retry_attempts: {} });
+  useEffect(() => {
+    if (comparisonView?.status !== "AVAILABLE") return;
+    let current = true;
+    void Promise.all(comparisonView.cohorts.map(async (cohort) => {
+      const key = `${cohort.decision_brief_version}:${cohort.selected_alternative}:${cohort.integrity?.digest ?? "missing"}`;
+      return [key, await verifyOutcomeComparisonFingerprint(cohort)] as const;
+    })).then((results) => {
+      if (current) setFingerprintVerification({
+        view: comparisonView,
+        results: Object.fromEntries(results),
+        retry_attempts: {},
+      });
+    });
+    return () => { current = false; };
+  }, [comparisonView]);
+  const retryFingerprintVerification = async (
+    cohort: NonNullable<typeof comparisonView>["cohorts"][number],
+    verificationKey: string,
+  ) => {
+    const existing = fingerprintVerification.view === comparisonView
+      ? fingerprintVerification.results[verificationKey]
+      : undefined;
+    const attempts = fingerprintVerification.view === comparisonView
+      ? fingerprintVerification.retry_attempts[verificationKey] ?? 0
+      : 0;
+    if (!existing || !isOutcomeComparisonFingerprintRetryable(existing) || attempts >= 1) return;
+    setFingerprintVerification((current) => {
+      if (current.view !== comparisonView) return current;
+      const results = { ...current.results };
+      delete results[verificationKey];
+      return {
+        view: current.view,
+        results,
+        retry_attempts: { ...current.retry_attempts, [verificationKey]: 1 },
+      };
+    });
+    const result = await verifyOutcomeComparisonFingerprint(cohort);
+    setFingerprintVerification((current) => current.view === comparisonView
+      ? {
+        view: current.view,
+        results: { ...current.results, [verificationKey]: result },
+        retry_attempts: current.retry_attempts,
+      }
+      : current);
+  };
   if (operationsState === "demo") return <DemoOutcomes />;
   const pending = outcomes.filter((item) => item.evidence_status === "NOT_OBSERVED");
   const observed = outcomes.filter((item) => item.evidence_status === "OBSERVED_ACTUAL_CALENDAR");
@@ -860,7 +933,7 @@ function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
     ? `${(observed.reduce((total, item) => total + Number(item.effect_pct ?? 0), 0) / observed.length).toFixed(1)}%`
     : "—";
   return <div className="page">
-    <PageTitle eyebrow="LEARN" title="Outcome review" copy="Compare completed Actions with evidence that is mature by the Sydney business-date cutoff." action={<button className="outline-button" onClick={() => void refresh()}>Refresh outcomes</button>} />
+    <PageTitle eyebrow="LEARN" title="Outcome review" copy="Compare completed Actions with cutoff-eligible evidence and trace each result to its immutable Decision Brief proposal." action={<button className="outline-button" onClick={() => void refresh()}>Refresh outcomes</button>} />
     <OperationsState state={operationsState} message={operationsMessage} label="Outcome Review" onRetry={refresh} />
     {operationsState === "connected" && <>
       <section className="metric-grid compact">
@@ -869,13 +942,98 @@ function Outcomes({ outcomes, operationsState, operationsMessage, refresh }: {
         <Metric label="Successful outcomes" value={String(successful.length)} note={observed.length ? "Observed evidence" : "No mature evidence yet"} tone={successful.length ? "green" : ""} />
         <Metric label="Average observed effect" value={averageEffect} note={observed.length ? "Across mature outcomes" : "Pending outcomes excluded"} />
       </section>
+      {!cohortSummary && <DataState kind="partial" title="Decision cohorts unavailable" message="This Operations API build does not expose the versioned Decision-contract cohort summary. Outcome rows remain available." />}
+      {cohortSummary?.status === "NO_ELIGIBLE_BOUND_OUTCOMES" && <DataState kind="partial" title="No eligible Decision cohorts" message="No observed, cutoff-eligible synthetic Outcomes have a complete Decision Brief binding. Pending and unbound records are excluded." />}
+      {cohortSummary?.evidence_sufficiency_gate.configuration_status === "PENDING_HUMAN_APPROVAL" && <DataState kind="partial" title="Comparison thresholds await human approval" message="No minimum sample or result-coverage threshold has been approved. Cohort statistics remain descriptive and comparison eligibility is blocked." />}
+      {cohortSummary?.status === "AVAILABLE" && <section className="card outcome-cohort-summary">
+        <CardHead title="Decision-contract Outcome cohorts" copy="Descriptive synthetic evidence grouped by immutable Decision Brief version and selected alternative." />
+        {cohortSummary.evidence_sufficiency_gate.configuration_status === "HUMAN_APPROVED_CONTRACT" && <div className="cohort-threshold-contract">
+          <strong>Human-approved descriptive gate</strong>
+          <span>At least {cohortSummary.evidence_sufficiency_gate.thresholds.minimum_observed_outcomes} observed Outcomes and {cohortSummary.evidence_sufficiency_gate.thresholds.minimum_distinct_result_states} represented result states per cohort.</span>
+          <small>{cohortSummary.evidence_sufficiency_gate.threshold_contract_version}</small>
+        </div>}
+        <div className="outcome-cohort-grid">{cohortSummary.cohorts.map((cohort) => <article key={`${cohort.decision_brief_version}:${cohort.selected_alternative}`}>
+          <small>{cohort.decision_brief_version}</small>
+          <strong>{cohort.selected_alternative.replaceAll("_", " ")}</strong>
+          <span>{cohort.observed_outcome_count} observed synthetic Outcome{cohort.observed_outcome_count === 1 ? "" : "s"}</span>
+          <b className={`cohort-sufficiency ${cohort.evidence_sufficiency.comparison_eligible ? "eligible" : "blocked"}`}>{cohort.evidence_sufficiency.status.replaceAll("_", " ")}</b>
+          <dl>
+            <div><dt>Successful / partial</dt><dd>{cohort.status_counts.successful} / {cohort.status_counts.partially_successful}</dd></div>
+            <div><dt>Failed / inconclusive</dt><dd>{cohort.status_counts.failed} / {cohort.status_counts.inconclusive}</dd></div>
+            <div><dt>Effect range</dt><dd>{cohort.effect_pct.minimum}% to {cohort.effect_pct.maximum}%</dd></div>
+            <div><dt>Average effect</dt><dd>{cohort.effect_pct.average}%</dd></div>
+            <div><dt>Result-state coverage</dt><dd>{cohort.evidence_sufficiency.distinct_result_states} of 4 states</dd></div>
+            <div><dt>Outcome evidence gap</dt><dd>{cohort.evidence_gap.additional_observed_outcomes === null ? "Pending contract" : cohort.evidence_gap.additional_observed_outcomes === 0 ? "Target met" : `${cohort.evidence_gap.additional_observed_outcomes} additional`}</dd></div>
+            <div><dt>Result-state gap</dt><dd>{cohort.evidence_gap.additional_distinct_result_states === null ? "Pending contract" : cohort.evidence_gap.additional_distinct_result_states === 0 ? "Target met" : `${cohort.evidence_gap.additional_distinct_result_states} additional`}</dd></div>
+            <div><dt>Comparison eligible</dt><dd>{cohort.evidence_sufficiency.comparison_eligible ? "Yes — descriptive only" : "No"}</dd></div>
+          </dl>
+        </article>)}</div>
+        <p className="data-disclaimer">Evidence gaps are arithmetic differences from the approved 20/2 contract, not instructions to create Outcomes or advance the lifecycle. Observed means the synthetic result matured under the actual-calendar cutoff. These cohorts are descriptive only—not causal estimates, realised value, model readiness, or policy authority.</p>
+      </section>}
+      {cohortSummary?.status === "AVAILABLE" && !comparisonView && <DataState kind="partial" title="Cohort comparison contract unavailable" message="This Operations API build does not expose the versioned eligible-cohort comparison view. Individual cohort evidence remains available." />}
+      {cohortSummary?.status === "AVAILABLE" && comparisonView?.status === "INSUFFICIENT_ELIGIBLE_COHORTS" && <DataState kind="partial" title="Cohort comparison unavailable" message={`${comparisonView.eligible_cohort_count} of ${comparisonView.required_eligible_cohort_count} required cohorts pass the approved gate. Evidence gaps above explain what is missing; no data collection is recommended.`} />}
+      {comparisonView?.status === "AVAILABLE" && <section className="card cohort-comparison-view">
+        <CardHead title="Eligible Outcome cohort comparison" copy="Side-by-side descriptive status mix and effect ranges for cohorts that independently pass the approved 20/2 gate." />
+        <div className="cohort-comparison-grid">{comparisonView.cohorts.map((cohort) => {
+          const verificationKey = `${cohort.decision_brief_version}:${cohort.selected_alternative}:${cohort.integrity?.digest ?? "missing"}`;
+          const verification = fingerprintVerification.view === comparisonView
+            ? fingerprintVerification.results[verificationKey]
+            : undefined;
+          const retryable = verification
+            ? isOutcomeComparisonFingerprintRetryable(verification)
+              && (fingerprintVerification.retry_attempts[verificationKey] ?? 0) < 1
+            : false;
+          if (verification?.status !== "VERIFIED" || !cohort.integrity) return <article className="comparison-integrity-blocked" key={verificationKey}>
+            <small>Comparison integrity</small>
+            <strong>{verification?.status === "MISMATCH" ? "Verification failed" : "Verifying fingerprint"}</strong>
+            {verification?.status === "MISMATCH" && <b className="comparison-diagnostic-code">{verification.reason_code}</b>}
+            <span>{verification?.status === "MISMATCH"
+              ? `${comparisonFingerprintDiagnostic[verification.reason_code]} Comparison metrics and provenance are withheld. ${retryable ? "You may retry this browser-only check without requesting new data." : "Refresh the Outcome review before relying on this cohort."}`
+              : "Comparison metrics and provenance remain hidden until browser verification completes."}</span>
+            {retryable && <button className="comparison-local-retry" type="button" onClick={() => void retryFingerprintVerification(cohort, verificationKey)}>Retry local verification</button>}
+          </article>;
+          return <article className="comparison-integrity-verified" key={verificationKey}>
+          <small>{cohort.decision_brief_version}</small>
+          <strong>{cohort.selected_alternative.replaceAll("_", " ")}</strong>
+          <span>{cohort.observed_outcome_count} observed synthetic Outcomes</span>
+          <b className="comparison-integrity-status">Fingerprint verified</b>
+          <dl>
+            <div><dt>Successful</dt><dd>{cohort.status_percentages.successful}%</dd></div>
+            <div><dt>Partially successful</dt><dd>{cohort.status_percentages.partially_successful}%</dd></div>
+            <div><dt>Failed</dt><dd>{cohort.status_percentages.failed}%</dd></div>
+            <div><dt>Inconclusive</dt><dd>{cohort.status_percentages.inconclusive}%</dd></div>
+            <div><dt>Average effect</dt><dd>{cohort.effect_pct.average}%</dd></div>
+            <div><dt>Effect range</dt><dd>{cohort.effect_pct.minimum}% to {cohort.effect_pct.maximum}%</dd></div>
+          </dl>
+          <details className="comparison-provenance">
+            <summary>View comparison provenance</summary>
+            <dl>
+              <div><dt>Binding source</dt><dd>{cohort.provenance.decision_binding.binding_source.replaceAll("_", " ")}</dd></div>
+              <div><dt>Sydney cutoff</dt><dd>{cohort.provenance.evidence_contract.as_of_date}</dd></div>
+              <div><dt>Evidence basis</dt><dd>{cohort.provenance.evidence_contract.execution_mode} / {cohort.provenance.evidence_contract.time_basis}</dd></div>
+              <div><dt>Threshold contract</dt><dd>{cohort.provenance.evidence_contract.threshold_contract_version}</dd></div>
+              <div><dt>Aggregation contract</dt><dd>{cohort.provenance.evidence_contract.cohort_summary_schema_version}</dd></div>
+              <div><dt>Identifiers</dt><dd>Aggregate only—none exposed</dd></div>
+              <div><dt>Integrity algorithm</dt><dd>{cohort.integrity.algorithm}</dd></div>
+              <div><dt>Verification scope</dt><dd>{cohort.integrity.verification_scope.replaceAll("_", " ")}</dd></div>
+            </dl>
+            <code className="comparison-fingerprint">{cohort.integrity.digest}</code>
+            <p>Deterministic content fingerprint only—not a digital signature, source-authenticity attestation, or business-validity proof.</p>
+          </details>
+        </article>})}</div>
+        <p className="data-disclaimer">This view produces no ranking, preferred alternative, causal superiority, statistical significance, or Action recommendation. It compares descriptive synthetic distributions only.</p>
+      </section>}
       <div className="decision-list">{outcomes.map((item) => <article className="decision-card" key={item.outcome_id}>
         <div className={`decision-priority ${(item.alert_severity ?? "medium").toLowerCase()}`}><i /><span>{item.outcome_status}</span></div>
-        <div className="decision-main"><small>{item.outcome_id}</small><strong>{(item.action_type ?? "Completed Action").replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id} · Action {item.action_id}</span></div>
+        <div className="outcome-decision-main">
+          <div className="decision-main"><small>{item.outcome_id}</small><strong>{(item.action_type ?? "Completed Action").replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id} · Action {item.action_id}</span></div>
+          <span className="decision-source">{item.decision_brief_version && item.selected_alternative ? `Decision source: ${item.decision_brief_version} · ${item.selected_alternative.replaceAll("_", " ")}` : "Decision source unavailable — legacy or unbound Action"}</span>
+        </div>
         <div className="decision-value"><small>{item.evidence_status === "NOT_OBSERVED" ? "Evidence" : "Observed effect"}</small><strong>{item.evidence_status === "NOT_OBSERVED" ? "Not observed" : `${item.effect_pct}%`}</strong></div>
         <div className="decision-due"><small>{item.evidence_status === "NOT_OBSERVED" ? "Observation due" : "Observed"}</small><strong>{item.evidence_status === "NOT_OBSERVED" ? item.observation_due_date : item.observed_date}</strong></div>
         <span className="status-button">{item.evidence_status === "NOT_OBSERVED" ? "Pending" : "Actual calendar"}</span>
       </article>)}</div>
+      <p className="data-disclaimer">Decision provenance identifies the immutable proposal contract only. Simulated Outcome effects are not causal estimates or real logistics performance.</p>
       {outcomes.length === 0 && <DataState kind="empty" title="No operational Outcomes" message="No operational Outcomes are available at the current Sydney cutoff." />}
     </>}
   </div>;

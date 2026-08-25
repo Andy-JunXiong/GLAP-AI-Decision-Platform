@@ -12,6 +12,49 @@
   cursor: default;
 }
 
+.outcome-decision-main { display: grid; gap: 5px; min-width: 0; }
+.decision-source { color: var(--teal); font-size: 9px; line-height: 1.35; }
+.outcome-cohort-summary { margin-bottom: 18px; }
+.cohort-threshold-contract { background: rgba(43, 131, 96, .08); border: 1px solid rgba(43, 131, 96, .28); border-radius: 12px; display: grid; gap: 4px; margin: 0 0 18px; padding: 12px 14px; }
+.cohort-threshold-contract strong { color: var(--green); }
+.cohort-threshold-contract span, .cohort-threshold-contract small { color: var(--muted); }
+.outcome-cohort-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.outcome-cohort-grid > article { background: #f8fafc; border-left: 3px solid var(--teal); border-radius: 8px; display: grid; gap: 5px; padding: 13px; }
+.outcome-cohort-grid > article > small { color: var(--teal); font-size: 8px; font-weight: 800; }
+.outcome-cohort-grid > article > strong { color: var(--navy); font-size: 12px; text-transform: capitalize; }
+.outcome-cohort-grid > article > span { color: var(--muted); font-size: 9px; }
+.cohort-sufficiency { border-radius: 999px; font-size: 8px; justify-self: start; padding: 4px 7px; text-transform: capitalize; }
+.cohort-sufficiency.blocked { background: #fef3c7; color: #92400e; }
+.cohort-sufficiency.eligible { background: #dcfce7; color: #166534; }
+.outcome-cohort-grid dl { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 8px 0 0; }
+.outcome-cohort-grid dl div { display: grid; gap: 3px; }
+.outcome-cohort-grid dt { color: var(--muted); font-size: 8px; text-transform: uppercase; }
+.outcome-cohort-grid dd { color: var(--ink); font-size: 10px; font-weight: 800; margin: 0; }
+.cohort-comparison-view { margin-bottom: 18px; }
+.cohort-comparison-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cohort-comparison-grid > article { background: #f8fafc; border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 5px; padding: 14px; }
+.cohort-comparison-grid > article > small { color: var(--teal); font-size: 8px; font-weight: 800; }
+.cohort-comparison-grid > article > strong { color: var(--navy); font-size: 12px; text-transform: capitalize; }
+.cohort-comparison-grid > article > span { color: var(--muted); font-size: 9px; }
+.comparison-integrity-status { background: #dcfce7; border-radius: 999px; color: #166534; font-size: 8px; justify-self: start; padding: 4px 7px; text-transform: uppercase; }
+.cohort-comparison-grid > article.comparison-integrity-blocked { background: #fff7ed; border-color: #fdba74; }
+.comparison-integrity-blocked > small { color: #9a3412; }
+.comparison-integrity-blocked > strong { color: #7c2d12; }
+.comparison-integrity-blocked > span { line-height: 1.5; }
+.comparison-diagnostic-code { color: #9a3412; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 8px; overflow-wrap: anywhere; }
+.comparison-local-retry { background: transparent; border: 1px solid #c2410c; border-radius: 6px; color: #9a3412; cursor: pointer; font-size: 8px; font-weight: 800; justify-self: start; padding: 6px 8px; }
+.comparison-local-retry:hover { background: #ffedd5; }
+.cohort-comparison-grid dl { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 8px 0 0; }
+.cohort-comparison-grid dl div { display: grid; gap: 3px; }
+.cohort-comparison-grid dt { color: var(--muted); font-size: 8px; text-transform: uppercase; }
+.cohort-comparison-grid dd { color: var(--ink); font-size: 10px; font-weight: 800; margin: 0; }
+.comparison-provenance { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 9px; }
+.comparison-provenance summary { color: var(--teal); cursor: pointer; font-size: 9px; font-weight: 800; }
+.comparison-provenance[open] summary { margin-bottom: 8px; }
+.comparison-provenance dl { margin-top: 0; }
+.comparison-provenance > p { color: var(--muted); font-size: 8px; line-height: 1.4; margin: 7px 0 0; }
+.comparison-fingerprint { background: #eef2f7; border-radius: 5px; color: var(--ink); display: block; font-size: 8px; margin-top: 8px; overflow-wrap: anywhere; padding: 7px; }
+
 .action-evidence {
   border-top: 1px solid var(--line);
   grid-column: 1 / -1;
@@ -259,4 +302,5 @@
   .action-evidence-flow { grid-template-columns: 1fr; }
   .learning-proposal dl { grid-template-columns: 1fr; }
   .label-readiness-grid { grid-template-columns: 1fr; }
+  .outcome-cohort-grid, .cohort-comparison-grid { grid-template-columns: 1fr; }
 }

@@ -1730,6 +1730,882 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
     ]
 
 
+def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/outcome_review_decision_provenance_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            "def build_outcome_review_query",
+            "a.decision_brief_version, a.selected_alternative",
+            "a.temporal_scope_id = 'OPERATIONAL'",
+            "a.execution_mode = 'OPERATIONAL'",
+            "a.time_basis = 'ACTUAL_CALENDAR'",
+            "a.as_of_date <= DATE",
+            "a.created_date <= DATE",
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'decision_brief_version: "decision-brief.v1" | null',
+            "selected_alternative: string | null",
+            "export async function loadOutcomeReview",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Decision source:",
+            "legacy or unbound Action",
+            "not causal estimates or real logistics performance",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "does not copy Decision provenance into the Outcome table",
+            "establish traceability, not causality",
+            "does not add an Outcome, Action, approval, completion, or activation write",
+            "plan-only staging migration",
+        )
+    )
+    return [
+        _result(
+            "outcome_decision_provenance_boundary",
+            "governance",
+            api_bounded and client_bounded and page_bounded and contract_bounded,
+            "Outcome Review preserves cutoff-bounded, read-only Decision provenance without inventing legacy bindings or causal performance claims.",
+            "Outcome Review lost a temporal, read-only, legacy-null, or non-causal Decision provenance boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_decision_contract_outcome_cohort_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/decision_contract_outcome_cohort_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    query_source = text["api"].split(
+        "def build_outcome_cohort_query", 1
+    )[-1].split("def _finite_float_value", 1)[0]
+    api_bounded = all(
+        marker in query_source
+        for marker in (
+            "observed_date <= DATE",
+            "try_cast(effect_pct AS double) IS NOT NULL",
+            "nullif(trim(decision_brief_version), '') IS NOT NULL",
+            "nullif(trim(selected_alternative), '') IS NOT NULL",
+            "GROUP BY a.decision_brief_version, a.selected_alternative",
+        )
+    ) and "LIMIT" not in query_source and all(
+        marker in text["api"]
+        for marker in (
+            '"schema_version": "outcome-cohort-summary.v1"',
+            '"descriptive_summary_only": True',
+            '"causal_effect_estimate": False',
+            '"financial_value_estimated": False',
+            '"real_logistics_performance": False',
+            '"model_readiness": False',
+            '"policy_activation_authorized": False',
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'schema_version: "outcome-cohort-summary.v1"',
+            "pending_excluded: true",
+            "unbound_actions_excluded: true",
+            "future_simulations_excluded: true",
+            "causal_effect_estimate: false",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Decision-contract Outcome cohorts",
+            "No eligible Decision cohorts",
+            "These cohorts are descriptive only",
+            "not causal estimates, realised value, model readiness, or policy authority",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "Pending Outcomes, future simulations, legacy Actions",
+            "cohort counts are not derived from the separately bounded Outcome card list",
+            "does not establish treatment assignment",
+            "adds no route, table, mutation, Learning threshold",
+            "remains plan-only",
+        )
+    )
+    return [
+        _result(
+            "decision_contract_outcome_cohort_boundary",
+            "governance",
+            api_bounded and client_bounded and page_bounded and contract_bounded,
+            "Decision-contract Outcome cohorts remain observed-only, bound, descriptive, synthetic, reconciled, read-only, and authority bounded.",
+            "Decision-contract Outcome cohorts lost an eligibility, reconciliation, descriptive-only, or no-authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_evidence_sufficiency_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/outcome_cohort_evidence_sufficiency_v1.md",
+        "approval_contract": "docs/outcome_cohort_threshold_contract_v1.json",
+        "approval_schema": "docs/outcome_cohort_threshold_contract_v1.schema.json",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    try:
+        approval_contract = json.loads(text["approval_contract"])
+        approval_schema = json.loads(text["approval_schema"])
+    except (TypeError, ValueError):
+        approval_contract = {}
+        approval_schema = {}
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            'APPROVED_OUTCOME_COHORT_CONTRACT_VERSION = "outcome-cohort-threshold-contract.v1"',
+            "APPROVED_OUTCOME_COHORT_OBSERVATION_FLOOR = 20",
+            "APPROVED_OUTCOME_COHORT_RESULT_STATE_FLOOR = 2",
+            "approved_minimum_observed: int | None = None",
+            "approved_minimum_result_states: int | None = None",
+            "approved_threshold_contract_version: str | None = None",
+            "approved_minimum_observed=APPROVED_OUTCOME_COHORT_OBSERVATION_FLOOR",
+            "approved_minimum_result_states=APPROVED_OUTCOME_COHORT_RESULT_STATE_FLOOR",
+            "APPROVED_OUTCOME_COHORT_CONTRACT_VERSION",
+            '"schema_version": "outcome-cohort-evidence-sufficiency.v1"',
+            '"configuration_status": (',
+            'else "PENDING_HUMAN_APPROVAL"',
+            '"comparison_scope": "DESCRIPTIVE_SYNTHETIC_ONLY"',
+            '"human_threshold_approval_required": True',
+            '"automatic_threshold_selection": False',
+        )
+    ) and not any(
+        marker in text["api"]
+        for marker in (
+            "OUTCOME_COHORT_MINIMUM_SAMPLE",
+            "OUTCOME_COHORT_MINIMUM_RESULT_STATES",
+            'os.getenv("OUTCOME_COHORT',
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'schema_version: "outcome-cohort-evidence-sufficiency.v1"',
+            'configuration_status: "PENDING_HUMAN_APPROVAL" | "HUMAN_APPROVED_CONTRACT"',
+            "minimum_observed_outcomes: number | null",
+            "minimum_distinct_result_states: number | null",
+            "automatic_threshold_selection: false",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Comparison thresholds await human approval",
+            "No minimum sample or result-coverage threshold has been approved",
+            "comparison eligibility is blocked",
+            "Human-approved descriptive gate",
+            "represented result states per cohort",
+            "Result-state coverage",
+            "Comparison eligible",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "`HUMAN_APPROVED_CONTRACT`",
+            "`minimum_observed_outcomes = 20`",
+            "`minimum_distinct_result_states = 2`",
+            "Changing either value requires a new versioned contract and a new explicit human approval",
+            "cannot select its own thresholds",
+            "adds no route, table, CloudFormation change, environment configuration",
+        )
+    )
+    approved_contract_bounded = (
+        set(approval_contract) == {
+            "schema_version",
+            "contract_version",
+            "approval",
+            "thresholds",
+            "scope",
+            "authority",
+        }
+        and approval_contract.get("schema_version")
+        == "outcome-cohort-threshold-contract.v1"
+        and approval_contract.get("contract_version")
+        == "outcome-cohort-threshold-contract.v1"
+        and approval_contract.get("approval") == {
+            "status": "HUMAN_APPROVED",
+            "approved_by_role": "PROJECT_OWNER",
+            "approved_on": "2026-08-25",
+            "evidence": "EXPLICIT_SESSION_INSTRUCTION",
+        }
+        and approval_contract.get("thresholds") == {
+            "minimum_observed_outcomes": 20,
+            "minimum_distinct_result_states": 2,
+        }
+        and approval_contract.get("scope") == {
+            "comparison_scope": "DESCRIPTIVE_SYNTHETIC_ONLY",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT",
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+        }
+        and approval_contract.get("authority") == {
+            "causal_effect_estimate": False,
+            "financial_value_estimated": False,
+            "real_logistics_performance": False,
+            "model_readiness": False,
+            "policy_activation_authorized": False,
+            "deployment_authorized": False,
+            "production_authorized": False,
+        }
+        and approval_schema.get("properties", {})
+        .get("contract_version", {})
+        .get("const") == "outcome-cohort-threshold-contract.v1"
+        and approval_schema.get("additionalProperties") is False
+    )
+    return [
+        _result(
+            "outcome_cohort_evidence_sufficiency_boundary",
+            "governance",
+            api_bounded
+            and client_bounded
+            and page_bounded
+            and contract_bounded
+            and approved_contract_bounded,
+            "The human-approved 20/2 v1 contract is code-bound, machine-readable, descriptive-only, and fail-closed against drift.",
+            "Outcome cohort thresholds drifted from the approved 20/2 contract or gained unsupported comparison authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_evidence_gap_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/outcome_cohort_evidence_gap_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            '"schema_version": "outcome-cohort-evidence-gap.v1"',
+            "max(approved_minimum_observed - observed, 0)",
+            "max(approved_minimum_result_states - distinct_result_states, 0)",
+            '"calculation_only": True',
+            '"outcome_collection_recommended": False',
+            '"outcome_creation_authorized": False',
+            '"lifecycle_continuation_authorized": False',
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'schema_version: "outcome-cohort-evidence-gap.v1"',
+            "additional_observed_outcomes: number | null",
+            "additional_distinct_result_states: number | null",
+            "outcome_collection_recommended: false",
+            "outcome_creation_authorized: false",
+            "lifecycle_continuation_authorized: false",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Outcome evidence gap",
+            "Result-state gap",
+            "Evidence gaps are arithmetic differences from the approved 20/2 contract",
+            "not instructions to create Outcomes or advance the lifecycle",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "`max(20 - observed_outcome_count, 0)`",
+            "`max(2 - distinct_result_states, 0)`",
+            "The explainer is a calculation, not a data-collection plan",
+            "`outcome_creation_authorized`",
+            "`lifecycle_continuation_authorized` false",
+            "adds no query, route, table, environment value, CloudFormation change",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_evidence_gap_boundary",
+            "governance",
+            api_bounded and client_bounded and page_bounded and contract_bounded,
+            "Outcome cohort evidence gaps remain exact, non-negative, calculation-only, and unable to authorize evidence creation or lifecycle advancement.",
+            "Outcome cohort evidence gaps drifted from the approved targets or gained collection, mutation, or lifecycle authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_descriptive_comparison_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/outcome_cohort_descriptive_comparison_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            '"schema_version": "outcome-cohort-descriptive-comparison.v1"',
+            "comparison_available = len(eligible_comparison_cohorts) >= 2",
+            'else "INSUFFICIENT_ELIGIBLE_COHORTS"',
+            '"required_eligible_cohort_count": 2',
+            "eligible_comparison_cohorts if comparison_available else []",
+            '"ranking_produced": False',
+            '"preferred_alternative_selected": False',
+            '"causal_superiority_estimated": False',
+            '"statistical_significance_estimated": False',
+            '"action_recommended": False',
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            "descriptive_comparison_view?:",
+            'schema_version: "outcome-cohort-descriptive-comparison.v1"',
+            'status: "AVAILABLE" | "INSUFFICIENT_ELIGIBLE_COHORTS"',
+            "required_eligible_cohort_count: 2",
+            "preferred_alternative_selected: false",
+            "statistical_significance_estimated: false",
+            "action_recommended: false",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Cohort comparison contract unavailable",
+            "Cohort comparison unavailable",
+            "no data collection is recommended",
+            "Eligible Outcome cohort comparison",
+            "Side-by-side descriptive status mix and effect ranges",
+            "This view produces no ranking, preferred alternative, causal superiority, statistical significance, or Action recommendation",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "`AVAILABLE` only when `eligible_cohort_count >= 2`",
+            "an empty `cohorts` array while unavailable",
+            "does not sort cohorts by effect or status",
+            "`ranking_produced`",
+            "`preferred_alternative_selected`",
+            "`statistical_significance_estimated`",
+            "adds no query, route, table, environment value, CloudFormation change",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_descriptive_comparison_boundary",
+            "governance",
+            api_bounded and client_bounded and page_bounded and contract_bounded,
+            "Eligible cohort comparison remains two-cohort-gated, descriptive-only, order-neutral, and unable to rank, select, infer superiority, or recommend Action.",
+            "Eligible cohort comparison lost its two-cohort gate or gained ranking, selection, inference, or Action authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_comparison_provenance_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/outcome_cohort_comparison_provenance_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            '"schema_version": "outcome-cohort-comparison-provenance.v1"',
+            '"binding_source": "IMMUTABLE_ACTION_PROPOSAL"',
+            '"cohort_summary_schema_version": "outcome-cohort-summary.v1"',
+            '"threshold_contract_version": (',
+            '"execution_mode": "OPERATIONAL"',
+            '"time_basis": "ACTUAL_CALENDAR"',
+            '"observed_only": True',
+            '"pending_excluded": True',
+            '"unbound_actions_excluded": True',
+            '"future_simulations_excluded": True',
+            '"action_identifiers_exposed": False',
+            '"outcome_identifiers_exposed": False',
+            '"shipment_identifiers_exposed": False',
+            '"read_only": True',
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'schema_version: "outcome-cohort-comparison-provenance.v1"',
+            'binding_source: "IMMUTABLE_ACTION_PROPOSAL"',
+            'cohort_summary_schema_version: "outcome-cohort-summary.v1"',
+            'evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_OUTCOME_COHORT"',
+            "action_identifiers_exposed: false",
+            "outcome_identifiers_exposed: false",
+            "shipment_identifiers_exposed: false",
+            "read_only: true",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "View comparison provenance",
+            "Binding source",
+            "Sydney cutoff",
+            "Threshold contract",
+            "Aggregation contract",
+            "Aggregate only—none exposed",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "`outcome-cohort-comparison-provenance.v1`",
+            "binding source `IMMUTABLE_ACTION_PROPOSAL`",
+            "Action, Outcome, and shipment identifiers are not included",
+            "Provenance establishes traceability, not validity of a preferred alternative",
+            "adds no query, route, table, environment value, CloudFormation change",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_comparison_provenance_boundary",
+            "governance",
+            api_bounded and client_bounded and page_bounded and contract_bounded,
+            "Comparison provenance remains immutable-binding-traceable, cutoff-bounded, aggregate-only, identifier-free, and read-only.",
+            "Comparison provenance lost its immutable/cutoff binding or exposed entity identifiers or mutation authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_comparison_fingerprint_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/outcome_cohort_comparison_fingerprint_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            "fingerprint_payload = {",
+            'f"{value:.2f}"',
+            "canonical_comparison = json.dumps(",
+            "ensure_ascii=True",
+            'separators=(",", ":")',
+            "sort_keys=True",
+            '"schema_version": "outcome-cohort-comparison-fingerprint.v1"',
+            '"algorithm": "SHA-256"',
+            '"JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS"',
+            '"digest": hashlib.sha256(canonical_comparison).hexdigest()',
+            '"verification_scope": "RESPONSE_CONTENT_INTEGRITY_ONLY"',
+            '"digital_signature": False',
+            '"source_authenticity_attested": False',
+            '"business_validity_attested": False',
+        )
+    ) and (
+        text["api"].index("fingerprint_payload = {")
+        < text["api"].index("canonical_comparison = json.dumps(")
+        < text["api"].index('comparison_cohort["integrity"] = {')
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'schema_version: "outcome-cohort-comparison-fingerprint.v1"',
+            'algorithm: "SHA-256"',
+            'canonicalization: "JSON_SORT_KEYS_COMPACT_UTF8_ASCII_DECIMAL_2_STRINGS"',
+            'verification_scope: "RESPONSE_CONTENT_INTEGRITY_ONLY"',
+            "digital_signature: false",
+            "source_authenticity_attested: false",
+            "business_validity_attested: false",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Integrity algorithm",
+            "Verification scope",
+            "comparison-fingerprint",
+            "Deterministic content fingerprint only—not a digital signature, source-authenticity attestation, or business-validity proof",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "`outcome-cohort-comparison-fingerprint.v1` covers exactly:",
+            "percentage values are normalized to fixed two-decimal ASCII strings",
+            "signed zero is normalized to `0.00`",
+            "The integrity object itself is excluded from its own digest",
+            "supports `RESPONSE_CONTENT_INTEGRITY_ONLY`",
+            "It is not a digital signature, MAC, timestamp authority, source-authenticity attestation",
+            "`business_validity_attested` false",
+            "adds no query, route, key, secret, certificate",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_comparison_fingerprint_boundary",
+            "governance",
+            api_bounded and client_bounded and page_bounded and contract_bounded,
+            "Comparison fingerprints remain deterministic across server/browser number formatting, cover only the displayed aggregate and provenance, and grant no signature, authenticity, validity, mutation, or production authority.",
+            "Comparison fingerprints lost deterministic canonicalization or gained signature, authenticity, validity, mutation, or production authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_comparison_verifier_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "verifier": "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "tests": "decision-brief-demo/tests/rendered-html.test.mjs",
+        "package": "decision-brief-demo/package.json",
+        "contract": "docs/outcome_cohort_comparison_verifier_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    verifier_bounded = all(
+        marker in text["verifier"]
+        for marker in (
+            "EXPECTED_COVERED_FIELDS",
+            "Number.isFinite(value)",
+            "value === 0 ? 0 : value",
+            "normalized.toFixed(2)",
+            "Number(text) !== normalized",
+            "Canonical strings must be ASCII",
+            "Number.isSafeInteger(value)",
+            "Object.keys(value).sort()",
+            'integrity.schema_version === "outcome-cohort-comparison-fingerprint.v1"',
+            "if (!integrity) return false",
+            'integrity.algorithm === "SHA-256"',
+            'integrity.verification_scope === "RESPONSE_CONTENT_INTEGRITY_ONLY"',
+            "integrity.digital_signature === false",
+            "integrity.source_authenticity_attested === false",
+            "integrity.business_validity_attested === false",
+            "globalThis.crypto.subtle.digest(",
+            "new TextEncoder().encode(canonicalPayload)",
+            'status: "VERIFIED", reason_code: "MATCH"',
+            'status: "MISMATCH", reason_code: "DIGEST_MISMATCH"',
+            'status: "MISMATCH", reason_code: "VERIFICATION_ERROR"',
+        )
+    )
+    client_bounded = "export type OutcomeComparisonCohort" in text["client"]
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "verifyOutcomeComparisonFingerprint",
+            "fingerprintVerification.view === comparisonView",
+            'verification?.status !== "VERIFIED"',
+            "Comparison metrics and provenance remain hidden until browser verification completes",
+            "Comparison metrics and provenance are withheld",
+            "Fingerprint verified",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "verifies the server comparison fingerprint and fails closed on drift",
+            "await verifyOutcomeComparisonFingerprint(cohort)",
+            'status: "VERIFIED", reason_code: "MATCH"',
+            "changedMetric.effect_pct.average = 2.01",
+            "expandedTrust.integrity.digital_signature = true",
+            "delete missingIntegrity.integrity",
+            'status: "MISMATCH"',
+        )
+    ) and "--experimental-strip-types --test" in text["package"]
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "before the private cockpit reveals any covered comparison metric or provenance field",
+            "Digital-signature, source-authenticity, and business-validity fields must all remain false",
+            "A missing integrity object or Web Crypto, malformed values, metadata drift, authority-flag drift, canonicalization failure, and digest mismatch all resolve to `MISMATCH`",
+            "proves neither server or source authenticity nor business validity",
+            "adds no API request, route, entity identifier, key, secret, certificate, telemetry, persistence, mutation",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_comparison_verifier_boundary",
+            "governance",
+            verifier_bounded
+            and client_bounded
+            and page_bounded
+            and tests_bounded
+            and contract_bounded,
+            "The private cockpit verifier recomputes the exact bounded fingerprint, reveals covered comparison evidence only after a match, and fails closed without gaining authenticity, validity, mutation, or production authority.",
+            "The private cockpit verifier stopped failing closed, weakened canonical or trust checks, or gained authenticity, validity, mutation, or production authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_comparison_diagnostics_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "verifier": "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "css": "decision-brief-demo/app/operations.css",
+        "tests": "decision-brief-demo/tests/rendered-html.test.mjs",
+        "contract": "docs/outcome_cohort_comparison_diagnostics_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    reason_codes = (
+        '"MATCH"',
+        '"MISSING_INTEGRITY"',
+        '"CONTRACT_METADATA_MISMATCH"',
+        '"CRYPTO_UNAVAILABLE"',
+        '"NON_CANONICAL_CONTENT"',
+        '"DIGEST_MISMATCH"',
+        '"VERIFICATION_ERROR"',
+    )
+    verifier_bounded = all(
+        marker in text["verifier"] for marker in reason_codes
+    ) and all(
+        marker in text["verifier"]
+        for marker in (
+            'status: "VERIFIED" | "MISMATCH"',
+            "reason_code: OutcomeComparisonFingerprintReason",
+            'return { status: "MISMATCH", reason_code: "MISSING_INTEGRITY" }',
+            'return { status: "MISMATCH", reason_code: "CONTRACT_METADATA_MISMATCH" }',
+            'return { status: "MISMATCH", reason_code: "CRYPTO_UNAVAILABLE" }',
+            'return { status: "MISMATCH", reason_code: "NON_CANONICAL_CONTENT" }',
+            'return { status: "MISMATCH", reason_code: "VERIFICATION_ERROR" }',
+            '? { status: "VERIFIED", reason_code: "MATCH" }',
+            ': { status: "MISMATCH", reason_code: "DIGEST_MISMATCH" }',
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "comparisonFingerprintDiagnostic",
+            'Exclude<OutcomeComparisonFingerprintReason, "MATCH">',
+            "The response does not include the required v1 integrity contract",
+            "Browser cryptography is unavailable for this verification attempt",
+            "The covered response values do not satisfy the canonical comparison format",
+            "The recomputed digest does not match the response fingerprint",
+            "Browser verification could not complete safely",
+            "comparison-diagnostic-code",
+            "Comparison metrics and provenance are withheld",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            'reason_code: "MATCH"',
+            'reason_code: "DIGEST_MISMATCH"',
+            'reason_code: "CONTRACT_METADATA_MISMATCH"',
+            'reason_code: "MISSING_INTEGRITY"',
+            "nonCanonical.effect_pct.average = 2.001",
+            'reason_code: "NON_CANONICAL_CONTENT"',
+            'reason_code: "CRYPTO_UNAVAILABLE"',
+            'reason_code: "VERIFICATION_ERROR"',
+        )
+    )
+    css_bounded = "comparison-diagnostic-code" in text["css"]
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "exactly one bounded reason code",
+            "No raw exception, stack trace, canonical payload, covered metric, provenance value, or computed digest is included",
+            "Every non-`MATCH` reason retains `status=MISMATCH`",
+            "The cockpit displays only the reason code and a fixed operator-safe explanation",
+            "add no API request, route, telemetry, persistence, identifier exposure, key, secret, certificate, mutation",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_comparison_diagnostics_boundary",
+            "governance",
+            verifier_bounded
+            and page_bounded
+            and tests_bounded
+            and css_bounded
+            and contract_bounded,
+            "Comparison verification diagnostics remain bounded to fixed local reason codes, disclose no covered evidence or raw errors, and preserve fail-closed mismatch behavior without telemetry or authority expansion.",
+            "Comparison verification diagnostics leaked covered evidence or raw errors, weakened mismatch behavior, or gained telemetry, persistence, mutation, or production authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_outcome_cohort_comparison_retry_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "verifier": "decision-brief-demo/app/outcome-comparison-fingerprint.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "css": "decision-brief-demo/app/operations.css",
+        "tests": "decision-brief-demo/tests/rendered-html.test.mjs",
+        "contract": "docs/outcome_cohort_comparison_retry_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    try:
+        retry_reason_block = text["verifier"].split(
+            "const RETRYABLE_REASON_CODES", 1
+        )[1].split("]);", 1)[0]
+        retry_function = text["page"].split(
+            "const retryFingerprintVerification", 1
+        )[1].split('if (operationsState === "demo")', 1)[0]
+    except IndexError:
+        retry_reason_block = ""
+        retry_function = ""
+    retry_reasons_exact = all(
+        reason in retry_reason_block
+        for reason in ('"CRYPTO_UNAVAILABLE"', '"VERIFICATION_ERROR"')
+    ) and not any(
+        reason in retry_reason_block
+        for reason in (
+            '"MATCH"',
+            '"MISSING_INTEGRITY"',
+            '"CONTRACT_METADATA_MISMATCH"',
+            '"NON_CANONICAL_CONTENT"',
+            '"DIGEST_MISMATCH"',
+        )
+    )
+    verifier_bounded = retry_reasons_exact and all(
+        marker in text["verifier"]
+        for marker in (
+            "isOutcomeComparisonFingerprintRetryable",
+            'verification.status === "MISMATCH"',
+            "RETRYABLE_REASON_CODES.has(verification.reason_code)",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "retryFingerprintVerification",
+            "isOutcomeComparisonFingerprintRetryable(existing)",
+            "attempts >= 1",
+            "delete results[verificationKey]",
+            "retry_attempts: { ...current.retry_attempts, [verificationKey]: 1 }",
+            "await verifyOutcomeComparisonFingerprint(cohort)",
+            "current.view === comparisonView",
+            "retryable && <button",
+            "Retry local verification",
+            "browser-only check without requesting new data",
+        )
+    ) and not any(
+        marker in retry_function
+        for marker in ("fetch(", "refresh(", "loadOutcomeReview(", "sessionStorage", "localStorage")
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            'status: "MISMATCH", reason_code: "CRYPTO_UNAVAILABLE"',
+            'status: "MISMATCH", reason_code: "VERIFICATION_ERROR"',
+            'status: "MISMATCH", reason_code: "DIGEST_MISMATCH"',
+            'status: "VERIFIED", reason_code: "MATCH"',
+            "attempts >= 1",
+            "delete results\\[verificationKey\\]",
+        )
+    )
+    css_bounded = all(
+        marker in text["css"]
+        for marker in ("comparison-local-retry", "cursor: pointer")
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "Exactly two reason codes are retryable",
+            "structural failures and never expose the retry control",
+            "Each cohort receives at most one local retry for the currently loaded comparison response",
+            "runs the same verifier against the same cohort object",
+            "only if the original comparison-view object is still current",
+            "never calls refresh, `fetch`, the Operations API, or any other network surface",
+            "adds no API request, route, telemetry, persistence, browser storage, identifier exposure",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_comparison_retry_boundary",
+            "governance",
+            verifier_bounded
+            and page_bounded
+            and tests_bounded
+            and css_bounded
+            and contract_bounded,
+            "Comparison re-verification remains one-attempt, same-response, browser-local, transient-reason-only, fail-closed, and free of network, storage, telemetry, mutation, or production authority.",
+            "Comparison re-verification expanded to structural failures or repeated attempts, changed response scope, weakened content withholding, or gained network, storage, telemetry, mutation, or production authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "api": "lambda/glap_operations_api.py",
@@ -2300,6 +3176,16 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
+    checks.extend(check_outcome_decision_provenance_boundary(root))
+    checks.extend(check_decision_contract_outcome_cohort_boundary(root))
+    checks.extend(check_outcome_cohort_evidence_sufficiency_boundary(root))
+    checks.extend(check_outcome_cohort_evidence_gap_boundary(root))
+    checks.extend(check_outcome_cohort_descriptive_comparison_boundary(root))
+    checks.extend(check_outcome_cohort_comparison_provenance_boundary(root))
+    checks.extend(check_outcome_cohort_comparison_fingerprint_boundary(root))
+    checks.extend(check_outcome_cohort_comparison_verifier_boundary(root))
+    checks.extend(check_outcome_cohort_comparison_diagnostics_boundary(root))
+    checks.extend(check_outcome_cohort_comparison_retry_boundary(root))
     checks.extend(check_outcome_learning_evidence_boundary(root))
     checks.extend(check_provider_label_readiness_boundary(root))
     checks.extend(check_audit_automation(root))

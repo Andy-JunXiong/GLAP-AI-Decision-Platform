@@ -1,0 +1,55 @@
+# Outcome Review decision provenance v1
+
+**Status:** implemented and locally verified; not deployed
+
+This contract lets an authenticated reviewer see which immutable Decision
+Brief proposal produced the Action connected to each cutoff-eligible Outcome.
+It extends the existing `GET /v1/outcomes` response; it adds no endpoint,
+mutation, table, or approval authority.
+
+## Read-only relationship
+
+The Outcome remains linked to its Action only by the existing immutable
+`action_id`. The Operations API joins that identifier to the current Action
+view at read time and returns two nullable fields:
+
+```json
+{
+  "decision_brief_version": "decision-brief.v1",
+  "selected_alternative": "EXPEDITE_MILESTONE"
+}
+```
+
+Both the Outcome and the joined Action must be `OPERATIONAL` /
+`ACTUAL_CALENDAR` and cutoff-eligible under the server-derived Sydney date.
+The API does not copy Decision provenance into the Outcome table. This keeps
+the immutable Action proposal as the single source and avoids creating a
+second history that could drift.
+
+Legacy Actions and `COST_ANOMALY` Actions return null provenance because they
+have no implemented Decision Brief binding. The cockpit labels them as legacy
+or unbound rather than inferring or backfilling a source.
+
+## Evaluation and governance boundary
+
+The added fields let a private evaluator group synthetic Outcome effects by
+the proposal contract and selected alternative instead of only broad Action
+type. They establish traceability, not causality. In particular, this contract:
+
+- does not claim the selected alternative was human-approved or executed;
+- does not treat a simulated effect as real logistics performance;
+- does not estimate incremental impact, financial value, or model quality;
+- does not change Learning thresholds, policy state, or deterministic rules;
+- does not add an Outcome, Action, approval, completion, or activation write.
+
+The Action-side fields depend on the additive, plan-only staging migration in
+`sql/16_decision_action_binding_v1.sql`. That migration must be separately
+reviewed and applied before this repository code can be deployed. Local tests
+establish query, API-type, cockpit-disclosure, legacy-null, and drift behavior
+only.
+
+The next repository-local consumer is the versioned Decision-contract Outcome
+cohort summary. It uses these two nullable provenance fields as governed group
+keys, admits only observed bound Outcomes, and reports descriptive synthetic
+statistics without inferring causality or value. See
+[`decision_contract_outcome_cohort_v1.md`](decision_contract_outcome_cohort_v1.md).
