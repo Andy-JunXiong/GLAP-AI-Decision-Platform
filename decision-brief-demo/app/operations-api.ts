@@ -141,6 +141,75 @@ export type LearningEvidence = {
   };
 };
 
+export type LabelBinaryTargetReadiness = {
+  evaluation_eligible: boolean;
+  positive_count: number;
+  negative_count: number;
+  remaining_observed: number;
+  remaining_positive: number;
+  remaining_negative: number;
+  blockers: string[];
+};
+
+export type LabelCostTargetReadiness = {
+  evaluation_eligible: boolean;
+  label_count: number;
+  distinct_value_count: number;
+  remaining_observed: number;
+  remaining_distinct_values: number;
+  blockers: string[];
+};
+
+export type ProviderLabelReadiness = {
+  schema_version: "operations-api.v1";
+  label_contract_version: "multimodal_outcome_label_v1";
+  readiness_policy_version: "supervised_label_readiness_v1";
+  as_of_date: string;
+  status: "blocked_insufficient_observed_labels" | "partially_ready" | "ready";
+  source: {
+    execution_mode: "OPERATIONAL";
+    time_basis: "ACTUAL_CALENDAR";
+    evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_LABEL_EVIDENCE";
+  };
+  thresholds: {
+    minimum_observed_per_provider: number;
+    minimum_positive_and_negative_per_binary_target: number;
+    minimum_distinct_cost_variance_values: number;
+  };
+  coverage: {
+    provider_groups: number;
+    ready_provider_groups: number;
+    eligible_targets: number;
+    total_targets: number;
+    observed_labels: number;
+    pending_labels: number;
+  };
+  groups: {
+    transport_mode: "AIR" | "OCEAN";
+    provider_code: string;
+    source_latest_date: string;
+    status: "blocked_insufficient_observed_labels" | "partially_ready" | "ready";
+    cohort_shipments: number;
+    observed_label_count: number;
+    pending_label_count: number;
+    observed_rate_pct: number | null;
+    targets: {
+      sla_breach: LabelBinaryTargetReadiness;
+      delay_risk: LabelBinaryTargetReadiness;
+      cost_variance: LabelCostTargetReadiness;
+    };
+  }[];
+  governance: {
+    decision_use: "SUPERVISED_EVALUATION_GATE_ONLY";
+    pending_labels_excluded: true;
+    future_simulations_included: false;
+    entity_identifiers_included: false;
+    model_training_authorized: false;
+    model_promotion_authorized: false;
+    production_readiness: false;
+  };
+};
+
 export type PipelineCheck = {
   name: string;
   status: "passed" | "failed";
@@ -348,6 +417,10 @@ export async function loadOutcomeReview(token: string, status?: OutcomeStatus) {
 
 export async function loadLearningEvidence(token: string) {
   return request<LearningEvidence>("/v1/learning", token);
+}
+
+export async function loadLabelReadiness(token: string) {
+  return request<ProviderLabelReadiness>("/v1/label-readiness", token);
 }
 
 export async function loadPipelineHealth(token: string) {

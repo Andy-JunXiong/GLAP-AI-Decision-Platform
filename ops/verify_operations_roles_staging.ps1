@@ -7,6 +7,7 @@ param(
     [switch]$RequireActionAssignment,
     [switch]$RequireActionEvidence,
     [switch]$RequireLearningEvidence,
+    [switch]$RequireLabelReadiness,
     [switch]$Apply
 )
 
@@ -21,6 +22,7 @@ Write-Host "  Existing Action mutation: False (unguessable missing Action ID)"
 Write-Host "  Require Action assignment role checks: $RequireActionAssignment"
 Write-Host "  Require Action evidence role checks: $RequireActionEvidence"
 Write-Host "  Require Learning evidence role checks: $RequireLearningEvidence"
+Write-Host "  Require provider label-readiness role checks: $RequireLabelReadiness"
 Write-Host "  Test users deleted after verification: True"
 Write-Host "  Tokens or user identifiers printed: False"
 if (-not $Apply) {
@@ -143,6 +145,7 @@ try {
     $outcomeReadStatuses = [ordered]@{}
     $healthReadStatuses = [ordered]@{}
     $forecastReadStatuses = [ordered]@{}
+    $labelReadinessStatuses = [ordered]@{}
     $networkReadStatuses = [ordered]@{}
     $shipmentReadStatuses = [ordered]@{}
     $evidenceReadStatuses = [ordered]@{}
@@ -153,6 +156,10 @@ try {
         $outcomeReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/outcomes?limit=1" $tokens[$role]
         $healthReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/pipeline-health" $tokens[$role]
         $forecastReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/forecasts" $tokens[$role]
+        if ($RequireLabelReadiness) {
+            $labelReadinessStatuses[$role] = Invoke-ApiStatus `
+                "$endpoint/v1/label-readiness" $tokens[$role]
+        }
         $networkReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/network" $tokens[$role]
         $shipmentReadStatuses[$role] = Invoke-ApiStatus "$endpoint/v1/shipments?limit=1" $tokens[$role]
         if ($RequireActionEvidence) {
@@ -292,6 +299,32 @@ try {
         $forecastPayload.accuracy.model_promotion_status -eq "BLOCKED"
     $forecastSafeJson = $forecastPayload | ConvertTo-Json -Depth 10 -Compress
     $forecastRedacted = $forecastSafeJson -notmatch 'shipment_id|function_name|s3://|arn:'
+    $labelReadinessPayload = $null
+    $labelReadinessTemporalBoundaryValid = $true
+    $labelReadinessGovernanceValid = $true
+    $labelReadinessRedacted = $true
+    if ($RequireLabelReadiness) {
+        $labelReadinessPayload = Invoke-ApiJson "$endpoint/v1/label-readiness" $tokens.viewer
+        $labelReadinessGroups = @($labelReadinessPayload.groups)
+        $labelReadinessTemporalBoundaryValid = `
+            $labelReadinessPayload.as_of_date -eq $logicalDate -and `
+            $labelReadinessPayload.source.execution_mode -eq "OPERATIONAL" -and `
+            $labelReadinessPayload.source.time_basis -eq "ACTUAL_CALENDAR" -and `
+            @($labelReadinessGroups | Where-Object {
+                [datetime]$_.source_latest_date -gt [datetime]$logicalDate
+            }).Count -eq 0
+        $labelReadinessGovernanceValid = `
+            $labelReadinessPayload.governance.decision_use -eq "SUPERVISED_EVALUATION_GATE_ONLY" -and `
+            $labelReadinessPayload.governance.pending_labels_excluded -eq $true -and `
+            $labelReadinessPayload.governance.future_simulations_included -eq $false -and `
+            $labelReadinessPayload.governance.entity_identifiers_included -eq $false -and `
+            $labelReadinessPayload.governance.model_training_authorized -eq $false -and `
+            $labelReadinessPayload.governance.model_promotion_authorized -eq $false -and `
+            $labelReadinessPayload.governance.production_readiness -eq $false
+        $labelReadinessJson = $labelReadinessPayload | ConvertTo-Json -Depth 12 -Compress
+        $labelReadinessRedacted = `
+            $labelReadinessJson -notmatch 'shipment_id|action_id|outcome_id|s3://|arn:'
+    }
     $networkPayload = Invoke-ApiJson "$endpoint/v1/network" $tokens.viewer
     $networkItems = @($networkPayload.items)
     $networkTemporalBoundaryValid = `
@@ -409,6 +442,20 @@ try {
             $learningPayload.schema_version -eq "operations-api.v1"
         $checks["Learning evidence governance boundary valid"] = $learningBoundaryValid
     }
+    if ($RequireLabelReadiness) {
+        $checks["viewer label readiness read allowed"] = $labelReadinessStatuses.viewer -eq 200
+        $checks["operator label readiness read allowed"] = $labelReadinessStatuses.operator -eq 200
+        $checks["approver label readiness read allowed"] = $labelReadinessStatuses.approver -eq 200
+        $checks["administrator label readiness read allowed"] = $labelReadinessStatuses.administrator -eq 200
+        $checks["label readiness response contract valid"] = `
+            $labelReadinessPayload.schema_version -eq "operations-api.v1"
+        $checks["label readiness temporal boundary valid"] = `
+            $labelReadinessTemporalBoundaryValid
+        $checks["label readiness governance boundary valid"] = `
+            $labelReadinessGovernanceValid
+        $checks["label readiness entity and infrastructure identifiers redacted"] = `
+            $labelReadinessRedacted
+    }
     Write-Host "Queue read HTTP statuses: viewer=$($readStatuses.viewer), operator=$($readStatuses.operator), approver=$($readStatuses.approver), administrator=$($readStatuses.administrator)"
     Write-Host "Risk read HTTP statuses: viewer=$($riskReadStatuses.viewer), operator=$($riskReadStatuses.operator), approver=$($riskReadStatuses.approver), administrator=$($riskReadStatuses.administrator)"
     Write-Host "Outcome read HTTP statuses: viewer=$($outcomeReadStatuses.viewer), operator=$($outcomeReadStatuses.operator), approver=$($outcomeReadStatuses.approver), administrator=$($outcomeReadStatuses.administrator)"
@@ -423,6 +470,10 @@ try {
     if ($RequireLearningEvidence) {
         Write-Host "Learning evidence read HTTP statuses: viewer=$($learningReadStatuses.viewer), operator=$($learningReadStatuses.operator), approver=$($learningReadStatuses.approver), administrator=$($learningReadStatuses.administrator)"
         Write-Host "Learning evidence summary: status=$($learningPayload.status), eligible=$($learningPayload.gate.eligible_observed_outcomes)/$($learningPayload.gate.minimum_observed_outcomes), proposal_present=$([bool]$learningPayload.proposal)"
+    }
+    if ($RequireLabelReadiness) {
+        Write-Host "Label readiness read HTTP statuses: viewer=$($labelReadinessStatuses.viewer), operator=$($labelReadinessStatuses.operator), approver=$($labelReadinessStatuses.approver), administrator=$($labelReadinessStatuses.administrator)"
+        Write-Host "Label readiness summary: status=$($labelReadinessPayload.status), provider_groups=$($labelReadinessPayload.coverage.provider_groups), ready_groups=$($labelReadinessPayload.coverage.ready_provider_groups), eligible_targets=$($labelReadinessPayload.coverage.eligible_targets)/$($labelReadinessPayload.coverage.total_targets)"
     }
     Write-Host "Open operational Risk rows returned: $($riskItems.Count)"
     Write-Host "Operational Outcome rows returned: pending=$($pendingOutcomes.Count), observed=$($observedOutcomes.Count)"

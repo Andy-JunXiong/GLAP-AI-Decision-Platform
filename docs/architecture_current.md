@@ -273,6 +273,16 @@ gate still blocked at `1/20`, with no proposal present. The earlier
 merge-triggered run remained plan-only; the later separately authorized
 workflow dispatch performed the deployment.
 
+The repository now also implements a local, authenticated
+`GET /v1/label-readiness` projection and Provider Label Readiness cockpit page.
+They aggregate only the governed operational label view by mode/provider under
+the server-derived Sydney cutoff. Pending labels are coverage-only; future
+simulations and entity identifiers are excluded. Exact 200/20/20/10 threshold
+gaps permit supervised evaluation only and cannot authorize training,
+promotion, deployment, scheduling, or production. The route, least-privilege
+resource inventory, deployment preflight, role verifier, frontend, and tests
+are locally verified but not deployed or runtime-verified.
+
 The repository implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a
 separate approver. A named human applied the additive staging schema migration
@@ -285,7 +295,12 @@ the narrow protected path, the original request ID replayed with HTTP 200 and
 no duplicate audit row, and a different named approver moved the Action from
 `EDITED` to `APPROVED`. Reconciliation retained one `EDIT`, one `APPROVE`, two
 distinct named actors, and the original assignment. `COMPLETE` and Outcome
-creation remain separate human-owned steps and have not occurred.
+creation remained separate human-owned steps. They were later separately
+authorized and executed on `2026-08-25`: a named human recorded `COMPLETE`, and
+one bounded actual-calendar continuation created a single `PENDING` simulated
+Outcome due on `2026-08-28`. Both states passed aggregate-only reconciliation.
+Observation remains calendar-gated and separately unauthorized before that
+date; no production, schedule, alias, policy, or model authority was created.
 
 The mutation Lambda release boundary is deployed and verified. A read-only Plan
 precedes two separately protected GitHub environments: Prepare uploads one

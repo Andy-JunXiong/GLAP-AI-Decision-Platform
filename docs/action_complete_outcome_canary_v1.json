@@ -1,0 +1,220 @@
+{
+  "schema_version": "action-complete-outcome-canary.v1",
+  "status": "OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE",
+  "authority_semantics": "CURRENT_AND_FUTURE_AUTHORITY_AFTER_PENDING_OUTCOME",
+  "business_timezone": "Australia/Sydney",
+  "evidence_boundary": "SYNTHETIC_STAGING_ACTUAL_CALENDAR_ONLY",
+  "authority": {
+    "agent_action_mutation_authorized": false,
+    "named_human_complete_authorized": false,
+    "lifecycle_continuation_authorized": false,
+    "aws_write_authorized": false,
+    "deployment_authorized": false,
+    "production_authorized": false,
+    "recurring_schedule_authorized": false,
+    "policy_activation_authorized": false,
+    "model_promotion_authorized": false
+  },
+  "source_capability": {
+    "rollout_contract": "docs/action_assignment_rollout_contract.json",
+    "required_rollout_status": "CANARY_COMPLETE_VERIFIED",
+    "required_action_status": "COMPLETED",
+    "required_audit_counts": {
+      "EDIT": 1,
+      "APPROVE": 1,
+      "REJECT": 0,
+      "COMPLETE": 1
+    },
+    "required_assignment_match_count": 1
+  },
+  "phase_order": [
+    "read_only_preflight",
+    "named_human_complete",
+    "read_only_complete_reconciliation",
+    "separately_authorized_pending_outcome_generation",
+    "read_only_pending_reconciliation",
+    "calendar_wait",
+    "separately_authorized_observed_outcome_generation",
+    "read_only_outcome_learning_reconciliation"
+  ],
+  "phases": {
+    "read_only_preflight": {
+      "mode": "READ_ONLY",
+      "gate": "EXACT_APPROVED_SOURCE_STATE",
+      "verifier": "ops/preflight_action_complete_outcome_staging.ps1",
+      "expected_outcome_count_for_action": 0
+    },
+    "named_human_complete": {
+      "mode": "NAMED_HUMAN_ONLY_SEPARATE_AUTHORIZATION_REQUIRED",
+      "operation": "COMPLETE",
+      "allowed_roles": ["operator", "administrator"],
+      "actor_source": "SIGNED_IDENTITY_CLAIMS",
+      "logical_date_source": "SYSTEM_DERIVED_SYDNEY_DATE",
+      "stable_request_id_required": true,
+      "same_request_id_retry_only": true
+    },
+    "read_only_complete_reconciliation": {
+      "mode": "READ_ONLY",
+      "verifier": "ops/reconcile_action_complete_staging.ps1",
+      "expected_action_status": "COMPLETED",
+      "expected_complete_event_count": 1,
+      "expected_named_complete_actor_count": 1,
+      "expected_assignment_match_count": 1,
+      "expected_outcome_count_for_action": 0
+    },
+    "separately_authorized_pending_outcome_generation": {
+      "mode": "NAMED_HUMAN_LIFECYCLE_CONTINUATION_AUTHORIZATION_REQUIRED",
+      "execution_mode": "OPERATIONAL",
+      "time_basis": "ACTUAL_CALENDAR",
+      "logical_date_source": "SYSTEM_DERIVED_SYDNEY_DATE",
+      "future_simulation_allowed": false
+    },
+    "read_only_pending_reconciliation": {
+      "mode": "READ_ONLY",
+      "verifier": "ops/reconcile_pending_outcome_staging.ps1",
+      "expected_outcome_count_for_action": 1,
+      "expected_outcome_status": "PENDING",
+      "expected_observed_date": null,
+      "expected_effect_pct": null,
+      "expected_provenance": "SIMULATED",
+      "expected_observation_due_date_rule": "COMPLETION_DATE_PLUS_3_DAYS"
+    },
+    "calendar_wait": {
+      "mode": "NO_EXECUTION",
+      "verifier": "ops/check_observed_outcome_due_date.ps1",
+      "observation_lag_days": 3,
+      "not_before": "SYSTEM_COMPUTED_OBSERVATION_DUE_DATE",
+      "future_date_claim_allowed": false
+    },
+    "separately_authorized_observed_outcome_generation": {
+      "mode": "NAMED_HUMAN_LIFECYCLE_CONTINUATION_AUTHORIZATION_REQUIRED",
+      "execution_mode": "OPERATIONAL",
+      "time_basis": "ACTUAL_CALENDAR",
+      "logical_date_gate": "ON_OR_AFTER_OBSERVATION_DUE_DATE_AND_ON_OR_BEFORE_CURRENT_SYDNEY_DATE",
+      "future_simulation_allowed": false
+    },
+    "read_only_outcome_learning_reconciliation": {
+      "mode": "READ_ONLY",
+      "verifier": "ops/reconcile_observed_outcome_learning_staging.ps1",
+      "expected_closed_outcome_count_for_action": 1,
+      "baseline_eligible_outcome_count": 1,
+      "eligible_outcome_delta": 1,
+      "expected_eligible_outcome_count": 2,
+      "minimum_observed_outcomes_for_proposal": 20,
+      "expected_policy_proposal_count": 0,
+      "expected_activated_policy_proposal_count": 0,
+      "automatic_policy_activation_allowed": false,
+      "real_world_performance_claim_allowed": false
+    }
+  },
+  "evidence_output": {
+    "aggregate_only": true,
+    "allowed_fields": [
+      "phase",
+      "status",
+      "sydney_date",
+      "observation_due_date",
+      "event_count",
+      "outcome_count",
+      "eligible_outcome_delta",
+      "checks"
+    ],
+    "protected_fields_must_not_be_printed": [
+      "action_id",
+      "request_id",
+      "actor",
+      "actor_subject",
+      "action_owner",
+      "shipment_id",
+      "outcome_id",
+      "alert_fingerprint",
+      "aws_arn",
+      "s3_path"
+    ]
+  },
+  "runtime_preflight": {
+    "executed": true,
+    "observed_on_sydney_date": "2026-08-25",
+    "result": "PASS",
+    "candidate_action_count": 1,
+    "edit_event_count": 1,
+    "approve_event_count": 1,
+    "reject_event_count": 0,
+    "complete_event_count": 0,
+    "separated_actor_count": 1,
+    "assignment_match_count": 1,
+    "outcome_count": 0,
+    "protected_identifiers_printed": false,
+    "action_mutation_executed": false,
+    "lifecycle_continuation_executed": false
+  },
+  "runtime_completion": {
+    "authorization_received": true,
+    "observed_on_sydney_date": "2026-08-25",
+    "execution_actor_boundary": "NAMED_HUMAN_FROM_SIGNED_IDENTITY",
+    "agent_execution": false,
+    "result": "PASS",
+    "current_action_status": "COMPLETED",
+    "edit_event_count": 1,
+    "approve_event_count": 1,
+    "reject_event_count": 0,
+    "complete_event_count": 1,
+    "named_complete_actor_count": 1,
+    "assignment_match_count": 1,
+    "outcome_count_before_continuation": 0,
+    "protected_identifiers_printed": false,
+    "lifecycle_continuation_executed": false,
+    "production_effect": false
+  },
+  "runtime_pending_outcome": {
+    "authorization_received": true,
+    "executed_on_sydney_date": "2026-08-25",
+    "execution_actor_boundary": "EXPLICIT_PROJECT_OWNER_AUTHORIZATION_VIA_NAMED_GITHUB_SESSION",
+    "agent_browser_trigger_assistance": true,
+    "workflow_run_id": 32803181376,
+    "source_commit": "291fffc",
+    "workflow_result": "PASS",
+    "execution_mode": "OPERATIONAL",
+    "time_basis": "ACTUAL_CALENDAR",
+    "logical_start_date": "2026-08-25",
+    "logical_date_count": 1,
+    "initial_seed_loaded": false,
+    "future_simulation_used": false,
+    "candidate_action_count": 1,
+    "outcome_count": 1,
+    "pending_outcome_count": 1,
+    "unobserved_outcome_count": 1,
+    "simulated_outcome_count": 1,
+    "due_date_rule_match_count": 1,
+    "observation_due_date": "2026-08-28",
+    "observation_due_date_basis": "SYSTEM_COMPUTED_FUTURE_GATE_NOT_OBSERVED",
+    "protected_identifiers_printed": false,
+    "production_effect": false,
+    "deployment_executed": false,
+    "recurring_schedule_created": false,
+    "observed_outcome_continuation_authorized": false
+  },
+  "runtime_observation_preparation": {
+    "implemented_on_sydney_date": "2026-08-25",
+    "due_date_gate_verifier": "ops/check_observed_outcome_due_date.ps1",
+    "outcome_learning_reconciler": "ops/reconcile_observed_outcome_learning_staging.ps1",
+    "due_date_check_result": "BLOCKED_AS_EXPECTED",
+    "observation_due_date": "2026-08-28",
+    "baseline_eligible_outcome_count": 1,
+    "expected_eligible_outcome_count_after_observation": 2,
+    "minimum_policy_outcomes": 20,
+    "expected_policy_proposal_count": 0,
+    "external_writes_executed": false,
+    "aws_calls_executed": false,
+    "observed_outcome_continuation_executed": false,
+    "observed_result_claimed": false,
+    "policy_activation_executed": false,
+    "production_effect": false
+  },
+  "rollback": {
+    "delete_audit_events_allowed": false,
+    "delete_outcomes_allowed": false,
+    "rewrite_action_proposal_allowed": false,
+    "forward_fix_only_after_append": true
+  }
+}

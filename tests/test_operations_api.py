@@ -103,6 +103,7 @@ class OperationsApiTests(unittest.TestCase):
             self.assertIn("forecasts:read", role)
             self.assertIn("network:read", role)
             self.assertIn("learning:read", role)
+            self.assertIn("labels:read", role)
         self.assertNotIn("shipments:read", api.ROLE_PERMISSIONS["viewer"])
         self.assertIn("shipments:read", api.ROLE_PERMISSIONS["operator"])
         self.assertIn("shipments:read", api.ROLE_PERMISSIONS["approver"])
@@ -309,6 +310,95 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(body["status"], "INSUFFICIENT_ELIGIBLE_OUTCOMES")
         self.assertEqual(body["source"]["time_basis"], "ACTUAL_CALENDAR")
+
+    def test_label_readiness_query_is_aggregate_actual_calendar_and_cutoff_bounded(self):
+        query = api.build_label_readiness_query("2026-08-07")
+        self.assertIn("vw_multimodal_outcome_label_v1", query)
+        self.assertIn("temporal_scope_id = 'OPERATIONAL'", query)
+        self.assertIn("execution_mode = 'OPERATIONAL'", query)
+        self.assertIn("time_basis = 'ACTUAL_CALENDAR'", query)
+        self.assertIn("as_of_date <= DATE '2026-08-07'", query)
+        self.assertIn("label_observed_through_date <= DATE '2026-08-07'", query)
+        self.assertIn("count_if(outcome_status = 'PENDING')", query)
+        self.assertIn("GROUP BY transport_mode, provider_code", query)
+        self.assertNotIn("shipment_id", query)
+        self.assertNotIn("FUTURE_SIMULATION", query)
+        with self.assertRaises(ValueError):
+            api.build_label_readiness_query("tomorrow")
+
+    def test_label_readiness_contract_excludes_pending_and_reports_exact_gaps(self):
+        contract = api.build_label_readiness_contract([{
+            "transport_mode": "AIR", "provider_code": "DHL",
+            "source_latest_date": "2026-08-07", "cohort_shipments": "50",
+            "pending_label_count": "40", "observed_label_count": "10",
+            "sla_positive_count": "1", "sla_negative_count": "9",
+            "delay_positive_count": "0", "delay_negative_count": "10",
+            "cost_label_count": "10", "cost_variance_distinct_count": "2",
+        }], "2026-08-07")
+        self.assertEqual(contract["status"], "blocked_insufficient_observed_labels")
+        self.assertEqual(contract["coverage"]["observed_labels"], 10)
+        self.assertEqual(contract["coverage"]["pending_labels"], 40)
+        group = contract["groups"][0]
+        self.assertEqual(group["targets"]["sla_breach"]["remaining_observed"], 190)
+        self.assertEqual(group["targets"]["sla_breach"]["remaining_positive"], 19)
+        self.assertEqual(group["targets"]["cost_variance"]["remaining_distinct_values"], 8)
+        self.assertTrue(contract["governance"]["pending_labels_excluded"])
+        self.assertFalse(contract["governance"]["future_simulations_included"])
+        self.assertFalse(contract["governance"]["entity_identifiers_included"])
+        self.assertFalse(contract["governance"]["model_training_authorized"])
+        self.assertFalse(contract["governance"]["model_promotion_authorized"])
+        self.assertFalse(contract["governance"]["production_readiness"])
+
+    def test_label_readiness_contract_marks_all_targets_evaluation_ready(self):
+        contract = api.build_label_readiness_contract([{
+            "transport_mode": "OCEAN", "provider_code": "KN",
+            "source_latest_date": "2026-08-07", "cohort_shipments": "250",
+            "pending_label_count": "0", "observed_label_count": "250",
+            "sla_positive_count": "30", "sla_negative_count": "220",
+            "delay_positive_count": "40", "delay_negative_count": "210",
+            "cost_label_count": "250", "cost_variance_distinct_count": "25",
+        }], "2026-08-07")
+        self.assertEqual(contract["status"], "ready")
+        self.assertEqual(contract["coverage"]["ready_provider_groups"], 1)
+        self.assertEqual(contract["coverage"]["eligible_targets"], 3)
+        self.assertTrue(all(
+            target["evaluation_eligible"]
+            for target in contract["groups"][0]["targets"].values()
+        ))
+        self.assertFalse(contract["governance"]["model_training_authorized"])
+
+    def test_label_readiness_contract_fails_closed_on_unreconciled_counts(self):
+        with self.assertRaisesRegex(RuntimeError, "cohort does not reconcile"):
+            api.build_label_readiness_contract([{
+                "transport_mode": "AIR", "provider_code": "DHL",
+                "source_latest_date": "2026-08-07", "cohort_shipments": "51",
+                "pending_label_count": "40", "observed_label_count": "10",
+                "sla_positive_count": "1", "sla_negative_count": "9",
+                "delay_positive_count": "0", "delay_negative_count": "10",
+                "cost_label_count": "10", "cost_variance_distinct_count": "2",
+            }], "2026-08-07")
+
+    def test_viewer_can_read_label_readiness(self):
+        rows = [{
+            "transport_mode": "AIR", "provider_code": "DHL",
+            "source_latest_date": "2026-08-07", "cohort_shipments": "10",
+            "pending_label_count": "10", "observed_label_count": "0",
+            "sla_positive_count": "0", "sla_negative_count": "0",
+            "delay_positive_count": "0", "delay_negative_count": "0",
+            "cost_label_count": "0", "cost_variance_distinct_count": "0",
+        }]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-07"):
+            response = api.lambda_handler(
+                request(path="/v1/label-readiness", groups="viewer"), None
+            )
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(body["status"], "blocked_insufficient_observed_labels")
+        self.assertEqual(body["source"]["time_basis"], "ACTUAL_CALENDAR")
+        self.assertFalse(body["governance"]["model_training_authorized"])
 
     def test_forecast_query_is_operational_actual_calendar_and_sydney_bounded(self):
         query = api.build_forecast_series_query("2026-08-07")

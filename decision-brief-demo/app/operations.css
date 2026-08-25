@@ -46,6 +46,33 @@
 .learning-proposal dt { color: var(--muted); font-size: 8px; text-transform: uppercase; }
 .learning-proposal dd { color: var(--navy); font-size: 10px; font-weight: 800; margin: 0; overflow-wrap: anywhere; text-transform: capitalize; }
 
+.label-readiness-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 20px; }
+.label-readiness-card { border-left: 4px solid #d97706; }
+.label-readiness-card.ready { border-left-color: #16a34a; }
+.label-readiness-card.partially_ready { border-left-color: #2563eb; }
+.label-readiness-card > header { align-items: start; display: flex; justify-content: space-between; }
+.label-readiness-card > header div { display: grid; gap: 3px; }
+.label-readiness-card > header small { color: var(--teal); font-size: 9px; font-weight: 800; }
+.label-readiness-card > header strong { color: var(--navy); font-size: 16px; }
+.label-readiness-card > header span { color: var(--muted); font-size: 9px; }
+.label-readiness-card > header > b { background: #fffbeb; border-radius: 999px; color: #92400e; font-size: 8px; padding: 5px 8px; text-transform: capitalize; }
+.label-readiness-card.ready > header > b { background: #dcfce7; color: #166534; }
+.label-readiness-card.partially_ready > header > b { background: #dbeafe; color: #1e40af; }
+.label-coverage { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); margin: 16px 0; }
+.label-coverage div { background: #f8fafc; display: grid; gap: 3px; padding: 10px; }
+.label-coverage dt { color: var(--muted); font-size: 8px; text-transform: uppercase; }
+.label-coverage dd { font-size: 12px; font-weight: 800; margin: 0; }
+.label-targets { border-top: 1px solid var(--line); display: grid; gap: 0; }
+.label-targets > section { display: grid; gap: 5px; padding: 11px 0; }
+.label-targets > section + section { border-top: 1px solid var(--line); }
+.label-targets > section > div { align-items: center; display: flex; justify-content: space-between; }
+.label-targets strong { font-size: 11px; }
+.label-targets b { border-radius: 999px; font-size: 8px; padding: 4px 7px; }
+.label-targets b.ready { background: #dcfce7; color: #166534; }
+.label-targets b.blocked { background: #fef3c7; color: #92400e; }
+.label-targets p { color: #475569; font-size: 9px; line-height: 1.5; margin: 0; }
+.label-targets small { color: #b45309; font-size: 8px; text-transform: capitalize; }
+
 .auth-button {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -231,4 +258,5 @@
   .data-state-action { grid-column: 1 / -1; padding-left: 24px; }
   .action-evidence-flow { grid-template-columns: 1fr; }
   .learning-proposal dl { grid-template-columns: 1fr; }
+  .label-readiness-grid { grid-template-columns: 1fr; }
 }

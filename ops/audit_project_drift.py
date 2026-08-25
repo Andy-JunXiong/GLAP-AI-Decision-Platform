@@ -461,8 +461,8 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
         marker in status
         for marker in (
             "Action assignment canary",
-            "stable retry and distinct named-approver `APPROVE` runtime-verified",
-            "`COMPLETE` remains separate",
+            "named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified",
+            "One pending simulated Outcome passed 6/6 reconciliation",
         )
     )
     return [
@@ -501,7 +501,7 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
     schema = rollout.get("schema", {})
     bounded = (
         rollout.get("status")
-        == "CANARY_APPROVED_VERIFIED"
+        == "CANARY_COMPLETE_VERIFIED"
         and rollout.get("business_timezone") == "Australia/Sydney"
         and rollout.get("evidence_boundary") == "SYNTHETIC_STAGING_ONLY"
         and all(authority.get(field) is False for field in protected_authority)
@@ -632,6 +632,78 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         )
         == 1
         and rollout.get("verified_release_evidence", {}).get(
+            "complete_event_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_named_actor_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_current_completed_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_assignment_match_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_outcome_count_before_continuation"
+        )
+        == 0
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_reconciliation_passed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_protected_identifiers_printed"
+        )
+        is False
+        and rollout.get("verified_release_evidence", {}).get(
+            "complete_production_effect"
+        )
+        is False
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_workflow_run_id"
+        )
+        == 32803181376
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_workflow_result"
+        )
+        == "PASS"
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_actual_calendar_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_current_pending_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_unobserved_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_simulated_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_due_date_rule_match_count"
+        )
+        == 1
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_reconciliation_passed"
+        )
+        is True
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_protected_identifiers_printed"
+        )
+        is False
+        and rollout.get("verified_release_evidence", {}).get(
+            "pending_outcome_production_effect"
+        )
+        is False
+        and rollout.get("verified_release_evidence", {}).get(
             "evidence_refresh_interaction_canary_executed"
         )
         is True
@@ -678,16 +750,22 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         and rollout.get("canary", {}).get("stable_request_id_retry_completed") is True
         and rollout.get("canary", {}).get("named_approver_decision_completed") is True
         and rollout.get("canary", {}).get("named_approver_decision") == "APPROVE"
-        and rollout.get("canary", {}).get("current_action_status") == "APPROVED"
-        and rollout.get("canary", {}).get("action_complete_completed") is False
-        and rollout.get("canary", {}).get("current_blocker") == "NONE"
+        and rollout.get("canary", {}).get("current_action_status") == "COMPLETED"
+        and rollout.get("canary", {}).get("action_complete_completed") is True
+        and rollout.get("canary", {}).get("action_complete_agent_executed") is False
+        and rollout.get("canary", {}).get("action_complete_reconciled") is True
+        and rollout.get("canary", {}).get("pending_outcome_continuation_completed")
+        is True
+        and rollout.get("canary", {}).get("pending_outcome_reconciled") is True
+        and rollout.get("canary", {}).get("current_blocker")
+        == "OBSERVATION_DUE_DATE_NOT_REACHED_AND_CONTINUATION_NOT_AUTHORIZED"
     )
     return [
         _result(
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment, separate approval, and the auto-refreshed Evidence interaction are read-only reconciled; COMPLETE remains pending.",
+            "Action assignment, named-human COMPLETE, and the pending simulated Outcome are reconciled; observation remains calendar-gated and separately unauthorized.",
             "Action assignment rollout hides verified evidence or expands deployment, mutation, completion, or scheduling authority.",
             (
                 contract_path,
@@ -696,6 +774,46 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
                 "ops/reconcile_action_evidence_refresh_staging.ps1",
                 "sql/16_action_assignment_validation.sql",
             ),
+        )
+    ]
+
+
+def check_action_complete_outcome_canary(root: Path) -> list[CheckResult]:
+    contract_path = "docs/action_complete_outcome_canary_v1.json"
+    evidence = (
+        contract_path,
+        "docs/action_complete_outcome_canary.md",
+        "ops/validate_action_complete_outcome_canary.py",
+        "ops/render_action_complete_outcome_canary_plan.py",
+        "ops/preflight_action_complete_outcome_staging.ps1",
+        "ops/reconcile_action_complete_staging.ps1",
+        "ops/reconcile_pending_outcome_staging.ps1",
+        "ops/check_observed_outcome_due_date.ps1",
+        "ops/reconcile_observed_outcome_learning_staging.ps1",
+        "tests/test_action_complete_outcome_canary.py",
+    )
+    try:
+        validator = _load_repository_module(
+            root, "ops/validate_action_complete_outcome_canary.py"
+        )
+        contract = validator.load_contract(root / contract_path)
+        errors = validator.validate_contract(contract, root)
+        passed = not errors
+        failure = (
+            "The local COMPLETE-to-Outcome canary contract drifted: "
+            + "; ".join(errors)
+        )
+    except Exception as error:
+        passed = False
+        failure = f"The local COMPLETE-to-Outcome canary package is invalid: {error}."
+    return [
+        _result(
+            "action_complete_outcome_canary_boundary",
+            "governance",
+            passed,
+            "The pending simulated Outcome is reconciled and its observed Outcome/Learning verifier is implemented; observation remains calendar-gated and separately unauthorized.",
+            failure,
+            evidence,
         )
     ]
 
@@ -1621,6 +1739,128 @@ def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_provider_label_readiness_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "contract": "docs/project_drift_contract.json",
+        "api": "lambda/glap_operations_api.py",
+        "template": "infrastructure/operations-api-staging.yaml",
+        "workflow": ".github/workflows/deploy-operations-api-staging.yml",
+        "discovery": "ops/configure_operations_api_discovery.ps1",
+        "data_access": "ops/configure_operations_api_data_access.ps1",
+        "frontend_deploy": "ops/deploy_internal_operations_frontend.ps1",
+        "staging_verifier": "ops/verify_operations_staging.ps1",
+        "role_verifier": "ops/verify_operations_roles_staging.ps1",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "feature_contract": "docs/multimodal_forecast_feature_contract.md",
+        "temporal": "docs/temporal_truthfulness.md",
+        "operations_doc": "docs/operations_api_v1.md",
+        "status": "CURRENT_DEVELOPMENT_STATUS.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    contract = json.loads(text["contract"])
+    capability = next(
+        (
+            item for item in contract.get("capabilities", [])
+            if item.get("id") == "provider_label_readiness_dashboard"
+        ),
+        {},
+    )
+    boundary = str(capability.get("boundary", "")).lower()
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            "def build_label_readiness_query",
+            "def build_label_readiness_contract",
+            "vw_multimodal_outcome_label_v1",
+            "GROUP BY transport_mode, provider_code",
+            "label_observed_through_date <= DATE",
+            'path == "/v1/label-readiness"',
+            '"pending_labels_excluded": True',
+            '"future_simulations_included": False',
+            '"entity_identifiers_included": False',
+            '"model_training_authorized": False',
+            '"model_promotion_authorized": False',
+            '"production_readiness": False',
+        )
+    ) and "shipment_id" not in text["api"].split(
+        "def build_label_readiness_query", 1
+    )[1].split("def _label_binary_target", 1)[0]
+    route_bounded = all(
+        marker in text["template"]
+        for marker in (
+            "RouteKey: GET /v1/label-readiness",
+            "AuthorizationType: JWT",
+            "LABEL_READINESS_SOURCE_VIEW: vw_multimodal_outcome_label_v1",
+            "MINIMUM_LABEL_OBSERVED: '200'",
+            "MINIMUM_LABEL_CLASS: '20'",
+            "MINIMUM_LABEL_COST_DISTINCT: '10'",
+        )
+    ) and all(
+        forbidden not in text["template"]
+        for forbidden in ("AWS::Scheduler::Schedule", "AWS::Lambda::Alias")
+    )
+    release_bounded = all(
+        marker in text[source]
+        for source, marker in (
+            ("workflow", "vw_multimodal_outcome_label_v1"),
+            ("discovery", "${LabelReadinessSourceView}"),
+            ("data_access", "Operational label-readiness source view: SELECT, DESCRIBE"),
+            ("frontend_deploy", "Internal frontend build is missing the provider label-readiness contract"),
+            ("staging_verifier", "[switch]$RequireLabelReadiness"),
+            ("role_verifier", "[switch]$RequireLabelReadiness"),
+            ("role_verifier", "label readiness governance boundary valid"),
+            ("role_verifier", "label readiness entity and infrastructure identifiers redacted"),
+        )
+    )
+    client_bounded = all(
+        marker in (text["client"] + text["page"])
+        for marker in (
+            "export async function loadLabelReadiness",
+            "Provider Label Readiness",
+            "Pending labels and future simulations never count",
+            "model training, model promotion, deployment, recurring prediction, and production readiness remain unauthorized",
+        )
+    )
+    documentation_bounded = all(
+        marker in " ".join(text[source].split())
+        for source, marker in (
+            ("feature_contract", "GET /v1/label-readiness"),
+            ("temporal", "provider label-readiness surface"),
+            ("operations_doc", "200 observed labels per provider"),
+            ("status", "Provider label-readiness dashboard"),
+            ("status", "implemented and locally verified"),
+            ("status", "No current label count or readiness status is claimed from AWS"),
+        )
+    )
+    capability_bounded = (
+        capability.get("state") == "IMPLEMENTED_VERIFIED"
+        and "not deployed" in boundary
+        and "server-derived sydney cutoff" in boundary
+        and "pending labels are coverage-only" in boundary
+        and "future simulations" in boundary
+        and "entity identifiers" in boundary
+        and "training" in boundary
+        and "promotion" in boundary
+        and "production readiness" in boundary
+        and "operational mutation authority remain false" in boundary
+    )
+    return [
+        _result(
+            "provider_label_readiness_boundary",
+            "forecasting",
+            api_bounded and route_bounded and release_bounded and client_bounded
+            and documentation_bounded and capability_bounded,
+            "Provider label readiness remains aggregate-only, actual-calendar bounded, locally verified, undeployed, and unable to grant training, promotion, or production authority.",
+            "Provider label readiness lost its cutoff, aggregation, identifier-redaction, release-maturity, or no-authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_adapter_conformance_boundary(root: Path) -> list[CheckResult]:
     """Execute the offline package fixture and verify its fail-closed claims."""
 
@@ -1952,10 +2192,12 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
     checks.extend(check_outcome_learning_evidence_boundary(root))
+    checks.extend(check_provider_label_readiness_boundary(root))
     checks.extend(check_audit_automation(root))
     checks.extend(check_documentation_operating_model(root))
     checks.extend(check_action_contract(root, contract))
     checks.extend(check_action_assignment_rollout(root))
+    checks.extend(check_action_complete_outcome_canary(root))
     checks.extend(check_action_mutation_release(root))
     checks.extend(check_readiness_contract(root))
     checks.extend(check_temporal_boundary(root))

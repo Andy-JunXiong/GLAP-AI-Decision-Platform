@@ -51,6 +51,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /export async function loadOutcomeReview/);
   assert.match(client, /\/v1\/learning/);
   assert.match(client, /export async function loadLearningEvidence/);
+  assert.match(client, /\/v1\/label-readiness/);
+  assert.match(client, /export async function loadLabelReadiness/);
   assert.match(client, /\/v1\/pipeline-health/);
   assert.match(client, /export async function loadPipelineHealth/);
   assert.match(client, /\/v1\/forecasts/);
@@ -105,6 +107,10 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /Policy activation always requires a separate named-human approval/);
   assert.match(page, /synthetic policy-review evidence only/);
   assert.match(page, /deterministic safety rules remain in force/);
+  assert.match(page, /title="Provider Label Readiness"/);
+  assert.match(page, /Supervised evaluation remains blocked/);
+  assert.match(page, /Pending labels and future simulations never count/);
+  assert.match(page, /model training, model promotion, deployment, recurring prediction, and production readiness remain unauthorized/);
   assert.match(page, /Try again/);
 
   const operationsCss = await readFile(new URL("../app/operations.css", import.meta.url), "utf8");
@@ -114,4 +120,6 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(operationsCss, /prefers-reduced-motion: reduce/);
   assert.match(operationsCss, /\.action-evidence-flow/);
   assert.match(operationsCss, /\.learning-proposal/);
+  assert.match(operationsCss, /\.label-readiness-grid/);
+  assert.match(operationsCss, /\.label-targets/);
 });

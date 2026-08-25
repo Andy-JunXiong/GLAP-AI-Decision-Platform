@@ -102,3 +102,19 @@ can never be interpreted as a negative label. The readiness report returns
 `blocked_insufficient_observed_labels`, `partially_ready`, or `ready`, plus
 target-specific blockers. These thresholds permit evaluation only; they do not
 authorize deployment or recurring prediction.
+
+### Authenticated provider-readiness surface
+
+The repository implements a private, read-only `GET /v1/label-readiness`
+projection over the governed operational label view. It groups only by
+transport mode and provider, returns exact gaps to each frozen threshold, and
+contains no entity identifiers. The server derives the Sydney cutoff; callers
+cannot supply an `as_of_date`. `PENDING` labels remain visible only as excluded
+coverage, while `FUTURE_SIMULATION` rows cannot enter the query or response.
+
+The private cockpit renders provider and target blockers without changing the
+gate. Even a `ready` response means eligible for supervised evaluation only.
+The response fixes `model_training_authorized`, `model_promotion_authorized`,
+and `production_readiness` to false. The implementation and its plan-first
+staging route, least-privilege resource inventory, tests, and verifier are
+locally complete but have not been deployed or runtime-verified.

@@ -49,8 +49,8 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     if contract.get("schema_version") != "action-assignment-rollout.v1":
         errors.append("unsupported schema_version")
-    if contract.get("status") != "CANARY_APPROVED_VERIFIED":
-        errors.append("rollout must expose the verified approved canary state")
+    if contract.get("status") != "CANARY_COMPLETE_VERIFIED":
+        errors.append("rollout must expose the verified completed canary state")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ONLY":
@@ -166,6 +166,26 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "approver_distinct_named_actor_count": 2,
         "approver_current_approved_count": 1,
         "approver_assignment_match_count": 1,
+        "complete_observed_on_sydney_date": "2026-08-25",
+        "complete_event_count": 1,
+        "complete_named_actor_count": 1,
+        "complete_current_completed_count": 1,
+        "complete_assignment_match_count": 1,
+        "complete_outcome_count_before_continuation": 0,
+        "complete_reconciliation_passed": True,
+        "complete_protected_identifiers_printed": False,
+        "complete_production_effect": False,
+        "pending_outcome_observed_on_sydney_date": "2026-08-25",
+        "pending_outcome_workflow_run_id": 32803181376,
+        "pending_outcome_workflow_result": "PASS",
+        "pending_outcome_actual_calendar_count": 1,
+        "pending_outcome_current_pending_count": 1,
+        "pending_outcome_unobserved_count": 1,
+        "pending_outcome_simulated_count": 1,
+        "pending_outcome_due_date_rule_match_count": 1,
+        "pending_outcome_reconciliation_passed": True,
+        "pending_outcome_protected_identifiers_printed": False,
+        "pending_outcome_production_effect": False,
         "evidence_refresh_frontend_git_commit": "adfd2a5656a217f2eac792853d8fd2d947741732",
         "evidence_refresh_frontend_deployed": True,
         "evidence_refresh_frontend_observed_on_sydney_date": "2026-08-23",
@@ -197,6 +217,10 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("named-human evidence refresh interaction observation is hidden")
     if release_evidence.get("evidence_refresh_interaction_canary_backend_reconciled") is not True:
         errors.append("read-only Evidence refresh backend reconciliation is hidden")
+    if release_evidence.get("complete_reconciliation_passed") is not True:
+        errors.append("read-only COMPLETE reconciliation evidence is hidden")
+    if release_evidence.get("pending_outcome_reconciliation_passed") is not True:
+        errors.append("read-only pending Outcome reconciliation evidence is hidden")
     if contract.get("role_matrix") != EXPECTED_ROLE_MATRIX:
         errors.append("Action assignment role matrix has changed")
     rollback = contract.get("rollback", {})
@@ -227,12 +251,22 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("verified separate approver decision evidence is hidden")
     if canary.get("named_approver_decision") != "APPROVE":
         errors.append("verified approver decision must remain APPROVE")
-    if canary.get("current_action_status") != "APPROVED":
-        errors.append("verified current Action status must remain APPROVED")
-    if canary.get("action_complete_completed") is not False:
-        errors.append("Action COMPLETE must remain pending and separately authorized")
-    if canary.get("current_blocker") != "NONE":
-        errors.append("completed canary must not retain the response-fix blocker")
+    if canary.get("current_action_status") != "COMPLETED":
+        errors.append("verified current Action status must remain COMPLETED")
+    if canary.get("action_complete_completed") is not True:
+        errors.append("verified named-human COMPLETE evidence is hidden")
+    if canary.get("action_complete_agent_executed") is not False:
+        errors.append("the agent cannot execute Action COMPLETE")
+    if canary.get("action_complete_reconciled") is not True:
+        errors.append("verified read-only COMPLETE reconciliation is hidden")
+    if canary.get("pending_outcome_continuation_completed") is not True:
+        errors.append("verified pending Outcome continuation evidence is hidden")
+    if canary.get("pending_outcome_reconciled") is not True:
+        errors.append("verified read-only pending Outcome reconciliation is hidden")
+    if canary.get("current_blocker") != (
+        "OBSERVATION_DUE_DATE_NOT_REACHED_AND_CONTINUATION_NOT_AUTHORIZED"
+    ):
+        errors.append("observed Outcome continuation must remain calendar-gated and unauthorized")
 
     role_script = (root / "ops" / "verify_operations_roles_staging.ps1").read_text(
         encoding="utf-8"
@@ -264,8 +298,9 @@ def main() -> int:
     print(
         "PASS: response fix, stable retry, separate approver decision, and "
         "private frontend refresh release are verified; the named-human UI "
-        "refresh interaction and read-only backend reconciliation pass, and "
-        "COMPLETE remains pending"
+        "refresh interaction, named-human COMPLETE, and read-only completion "
+        "reconciliation pass; the pending simulated Outcome is reconciled and "
+        "observed-Outcome continuation remains calendar-gated and unauthorized"
     )
     return 0
 

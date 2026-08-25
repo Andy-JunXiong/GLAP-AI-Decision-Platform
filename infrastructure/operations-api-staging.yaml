@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Authenticated, internal-only GLAP Operations API for staging Risks, Actions, Action evidence, Outcomes, Learning evidence, Network Drill-down, Forecasts, and Pipeline Health.
+Description: Authenticated, internal-only GLAP Operations API for staging Risks, Actions, Action evidence, Outcomes, Learning evidence, provider label readiness, Network Drill-down, Forecasts, and Pipeline Health.
 
 Parameters:
   ArtifactBucket: {Type: String}
@@ -58,8 +58,10 @@ Resources:
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_lifecycle_outcome_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_policy_proposal_staging_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_forecast_feature_daily_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_outcome_label_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_shipment_daily_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_forecast_feature_daily_context_v1
+                  - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_outcome_label_context_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_provider_daily_context_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/vw_multimodal_shipment_daily_context_v1
                   - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/${SourceDatabase}/fact_shipment_lifecycle_staging_v1
@@ -111,6 +113,10 @@ Resources:
           LIFECYCLE_ACTION_AUDIT_TABLE: fact_lifecycle_action_audit_staging_v1
           LIFECYCLE_ACTION_TABLE: fact_lifecycle_action_staging_v1
           FORECAST_SOURCE_TABLE: vw_multimodal_forecast_feature_daily_v1
+          LABEL_READINESS_SOURCE_VIEW: vw_multimodal_outcome_label_v1
+          MINIMUM_LABEL_OBSERVED: '200'
+          MINIMUM_LABEL_CLASS: '20'
+          MINIMUM_LABEL_COST_DISTINCT: '10'
           NETWORK_SOURCE_VIEW: vw_multimodal_shipment_daily_v1
           PIPELINE_STATUS_S3_URI: !Ref PipelineStatusS3Uri
 
@@ -221,6 +227,15 @@ Resources:
     Properties:
       ApiId: !Ref OperationsApi
       RouteKey: GET /v1/forecasts
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Join ['/', [integrations, !Ref OperationsIntegration]]
+
+  ReadLabelReadinessRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref OperationsApi
+      RouteKey: GET /v1/label-readiness
       AuthorizationType: JWT
       AuthorizerId: !Ref JwtAuthorizer
       Target: !Join ['/', [integrations, !Ref OperationsIntegration]]

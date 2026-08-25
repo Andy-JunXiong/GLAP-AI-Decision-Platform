@@ -97,6 +97,23 @@ system-derived staging `FUTURE_SIMULATION` scenario with
 production effect. Rolling accuracy requires at least seven past-only holdouts;
 it never authorizes model promotion.
 
+`GET /v1/label-readiness` returns the aggregate-only supervised-label evidence
+gate by transport mode and provider. It reads only
+`vw_multimodal_outcome_label_v1`, derives the current Sydney cutoff on the
+server, and requires `OPERATIONAL` / `ACTUAL_CALENDAR` rows observed through
+that cutoff. The query returns no shipment, Action, Outcome, infrastructure, or
+storage identifiers. Pending labels are reported for coverage but excluded
+from every target; future simulations are absent.
+
+The frozen thresholds remain 200 observed labels per provider, 20 positive and
+20 negative labels for each binary target, and 10 distinct observed
+cost-variance values. The response reports exact remaining counts and target-
+specific blockers for SLA breach, delay risk, and cost variance. Passing these
+thresholds permits governed supervised evaluation only. The endpoint cannot
+start training, promote a model, deploy prediction, create a schedule, or
+establish production readiness. All four authenticated roles receive the same
+aggregate-only read surface through the explicit `labels:read` permission.
+
 `GET /v1/network?mode=AIR&provider=DHL&lane=PVG-SYD` returns at most 100
 provider/lane aggregates from the latest snapshot of each shipment. All four
 internal roles may read this aggregate. The response states whether the caller
@@ -156,6 +173,46 @@ boundary. The fix was released through the protected narrow path on
 approver then selected `APPROVE`. Read-only reconciliation found one `EDIT`,
 one `APPROVE`, two distinct named actors, one current `APPROVED` row, and an
 unchanged assignment. No `COMPLETE` or Outcome creation occurred.
+
+A local-only `COMPLETE`-to-Outcome canary package bound the next use of this
+endpoint to the already verified `APPROVED` source state. It requires a
+separately authorized `operator` or `administrator`, the existing signed-claim
+actor derivation, the API-derived Sydney logical date, and same-request-ID
+retry semantics. The package renders only a redacted plan and grants no
+mutation authority. Pending and observed Outcome generation require their own
+later actual-calendar lifecycle-continuation authorizations. Future
+simulation, deployment, production, schedules, policy activation, and model
+promotion remain excluded. See
+[`action_complete_outcome_canary.md`](action_complete_outcome_canary.md).
+An aggregate-only staging preflight passed on `2026-08-25` with one eligible
+`APPROVED` candidate, the exact prior `EDIT`/`APPROVE` history, no
+`REJECT`/`COMPLETE`, a matching assignment, and no Outcome. It did not call
+this mutation endpoint and printed no protected identifiers.
+After explicit project-owner authorization on `2026-08-25`, a signed-in named
+human used the private Action Board to submit `COMPLETE`; the agent did not
+click or submit it. The post-`COMPLETE` aggregate-only reconciler then passed
+all eight checks with one current `COMPLETED` candidate, the exact prior
+`EDIT`/`APPROVE` history, zero `REJECT`, exactly one named-human `COMPLETE`,
+the unchanged assignment, and zero Outcomes. It printed no protected
+identifiers. The one-time completion authority is consumed.
+After a new explicit project-owner authorization, the agent used the named
+GitHub session to trigger manual workflow run `32803181376` from commit
+`291fffc`. It extended only `2026-08-25` in `OPERATIONAL` /
+`ACTUAL_CALENDAR` mode with one date, no seed, and no future simulation. The
+pending-Outcome aggregate-only verifier then passed all six checks: one
+completed candidate, one `PENDING` / `SIMULATED` Outcome, null observed date
+and effect, and the three-day due-date rule. It printed no protected
+identifiers. The pending record is not observed evidence. Its system-computed
+`2026-08-28` due date is a future gate, and the later continuation remains
+separately unauthorized.
+
+The local observation package is now implemented. Its system-derived Sydney
+due-date checker blocked as expected on `2026-08-25` before any AWS setup or
+call. Its aggregate-only post-observation reconciler will select only the
+latest Outcome version, require a closed simulated result within the due-date
+and current-cutoff window, verify the Learning eligible count increases from 1
+to 2, and require zero policy proposals or activations while the 20-Outcome
+threshold remains unmet. It has not run and does not claim an observed result.
 
 The ordered release, validation, role-check, canary, and evidence-preserving
 rollback boundary is defined in

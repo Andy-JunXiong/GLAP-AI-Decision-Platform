@@ -18,11 +18,13 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation through `2026-08-24` passed 41 checks per date, baseline run `32729202007` replaced one aggregate view at the 24 August cutoff and passed the deployed 10 checks, and the later Pages exporter exercised the stricter cutoff/source equality gate successfully; the SQL correction remains repository-delivered rather than separately redeployed by Pages |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
-| Action assignment canary | `IMPLEMENTED_STAGING` | Response fix deployed; stable retry and distinct named-approver `APPROVE` runtime-verified; `COMPLETE` remains separate |
+| Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
+| `COMPLETE`-to-Outcome canary | `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE` | One pending simulated Outcome passed 6/6 reconciliation; the local due-date gate blocked as expected on 2026-08-25, and the latest-version Outcome/Learning reconciler is ready but cannot run before 2026-08-28 |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
 | Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed; the `2026-08-24` expanded-chain refresh was named-human observed and aggregate-only backend-reconciled |
 | Outcome–Learning evidence gate | `IMPLEMENTED_STAGING` | Private read-only eligible-Outcome threshold and review-only policy proposal; deployed and runtime-verified, with no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
+| Provider label-readiness dashboard | `IMPLEMENTED_LOCAL_NOT_DEPLOYED` | Authenticated aggregate-only API and cockpit projection are locally verified; all four plan-first release surfaces and the sanitized static package pass locally, while staging data access, deployment, and runtime verification remain unperformed |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
 | Governed Agent Runtime parity | `IMPLEMENTED_VERIFIED` | One reference adapter and one independently implemented registered local adapter run from distinct source paths under the same content-addressed cutoff bundle and no-mutation envelope; this proves local implementation and interface mechanics only |
 | Agent Runtime host registry | `IMPLEMENTED_VERIFIED` | Exactly two import-free local adapters are bound to distinct implementation IDs, groups, modules, and source digests; no host authentication, model identity, network, package-install, file-write, approval, or Action claim |
@@ -142,21 +144,69 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Governed `COMPLETE`-to-Outcome evidence canary
 
-**Status:** `RECOMMENDED_NOT_APPROVED`
+**Status:** `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE`
 
 **Goal**
 
 Prepare one bounded staging canary that lets a separately authorized named
-human complete an already approved Action, then verifies the delayed simulated
+human complete an already approved Action, then verify the delayed simulated
 Outcome through the authenticated Action evidence chain and existing Learning
-gate.
+gate without merging the separate write authorities.
+
+**Completed**
+
+- Added a versioned, machine-readable contract with eight ordered phases from
+  read-only preflight through `COMPLETE`, pending Outcome, the three-day
+  calendar wait, closed Outcome, and Learning reconciliation.
+- Added a local validator that binds the plan to the verified `APPROVED`
+  source canary, signed-identity `COMPLETE`, Sydney date derivation, stable
+  request-ID retries, actual-calendar-only Outcome generation, the 20-Outcome
+  review gate, append-only evidence, and all-false authority.
+- Added a redacted renderer that prints no Action, request, actor, shipment,
+  Outcome, AWS, or storage identifiers and performs no network call or write.
+  Eighteen focused tests and project-drift check 34 protect the boundary.
+- Ran the dedicated aggregate-only staging preflight on `2026-08-25`. All
+  eight checks passed: one approved candidate, one `EDIT`, one `APPROVE`, zero
+  `REJECT`, zero `COMPLETE`, separated operator/approver, matching assignment,
+  and zero Outcomes. Protected identifiers were not printed.
+- After explicit project-owner authorization, a signed-in named human clicked
+  `Mark complete` in the private Action Board. The agent positioned the page
+  but did not click or submit the mutation.
+- Ran the post-`COMPLETE` aggregate-only reconciler. All eight checks passed:
+  one completed candidate, one `EDIT`, one `APPROVE`, zero `REJECT`, exactly
+  one named-human `COMPLETE`, preserved assignment, and zero Outcomes.
+  Protected identifiers were not printed.
+- After a new explicit project-owner authorization, the agent used the named
+  GitHub session to trigger one manual `extend-integration-validate` run from
+  commit `291fffc`. Run `32803181376` succeeded for only `2026-08-25` in
+  `OPERATIONAL` / `ACTUAL_CALENDAR` mode with one date, no seed, and no future
+  simulation.
+- Ran the pending-Outcome aggregate-only reconciler. All six checks passed:
+  one completed candidate, exactly one Outcome, current `PENDING` status,
+  null observed date and effect, `SIMULATED` provenance, and a due date exactly
+  three days after completion. Protected identifiers were not printed.
+- Added a local system-derived Sydney due-date gate. On `2026-08-25` it
+  returned `BLOCKED` against the governed `2026-08-28` due date before any AWS
+  setup or call and reported `external_writes_executed=false`.
+- Added the aggregate-only observed Outcome/Learning reconciler for later use.
+  It selects only the latest version of each Outcome, requires one closed
+  simulated result observed on or after its due date and by the current Sydney
+  cutoff, freezes the eligible Learning count from 1 to 2, keeps the 20-Outcome
+  review threshold unmet, and requires zero policy proposals or activations.
+  It is implemented and locally verified but has not queried AWS or run against
+  an observed Outcome.
 
 **Boundary**
 
-This is a recommendation only, not approved or implemented work. The agent may
-not complete an operational Action. Any future canary requires a separate
-named-human mutation authorization and must retain staging, synthetic Outcome,
-actual-calendar cutoff, append-only audit, and no-production boundaries.
+The local package, preflight, named-human completion, pending-Outcome
+continuation, and both read-only reconciliations are verified. The one-time
+continuation authority is consumed and creates no standing authority. The
+Outcome is pending synthetic staging evidence, not an observed result. Its
+system-computed due date is `2026-08-28`, which is a future gate relative to
+today and must not be described as observed or actual evidence. A later
+actual-calendar continuation requires new separate named-human authorization
+on or after that date. No deployment, production effect, schedule, future
+simulation, policy activation, or model promotion occurred.
 
 ## Recently completed — Read-only Evaluation publication canary
 
@@ -701,6 +751,14 @@ separately owned.
 
 ## Pending validation
 
+- The provider label-readiness API route, cockpit page, exact Glue/Lake
+  Formation inventory, deployment preflight, and role-matrix verifier are
+  implemented and locally verified. The API, exact governed-read access,
+  private frontend, and four-role plans all exited before AWS access; a
+  sanitized static export and temporary URL-compatible ZIP also passed the
+  release-package checks. They have not been committed, deployed, granted
+  staging data access, or runtime-verified. No current label count or readiness
+  status is claimed from AWS.
 - Cyclone Gabrielle T1 and T2 have five-review 3:2 results at 60% consensus,
   with score deltas of 17 and 31. Separate named-human records resolve the
   governance step as `RETAIN_INCONCLUSIVE`; neither raw no-winner result nor
@@ -736,9 +794,10 @@ done.
 - A303 continuation: closed. Both bounded A303.v2 guardrails failed, and the
   human project owner selected option 1. A303.v1 is retired from progression;
   a fundamentally new rule is not currently authorized.
-- Provider/model readiness: eligible actual-calendar DHL/KN history and closed
-  labels remain insufficient; the date-effective integrity correction does not
-  clear this maturity gate.
+- Provider/model readiness: the local dashboard now exposes the frozen gate and
+  exact provider/target gaps without identifiers, but eligible actual-calendar
+  DHL/KN history and closed labels remain insufficient; local implementation
+  does not clear this maturity gate.
 - Supervised learning: blocked by governed observed-label thresholds.
 - AWS cost and maintenance controls: designed but require separate human
   infrastructure approval.
@@ -747,6 +806,17 @@ done.
 
 ## Recently completed — current seven-day window
 
+- Implemented and locally verified the authenticated Provider Label Readiness
+  Dashboard. The new aggregate-only API and cockpit surface group governed
+  actual-calendar labels by mode/provider, preserve the frozen 200/20/20/10
+  thresholds, report exact SLA/delay/cost blockers, count pending labels only
+  as excluded coverage, and reject future-simulation or post-cutoff evidence.
+  The plan-first staging template, exact Lake Formation dependency inventory,
+  JWT route, unauthenticated and four-role verifier paths, frontend states, and
+  tests are synchronized. All four release plans and the sanitized static
+  package pass locally. No AWS call, permission grant, deployment, training,
+  model promotion, schedule, production change, or entity-level export
+  occurred.
 - The Action assignment canary now has bounded end-to-end staging evidence:
   the response fix is deployed, the original request ID replayed with HTTP 200
   without duplicating its audit row, and a different named approver moved the
@@ -1161,18 +1231,19 @@ done.
 
 ### Incomplete
 
-- Action `COMPLETE` and delayed simulated Outcome creation remain separately
-  human-owned; the recommended staging canary is not yet approved.
+- Action `COMPLETE` and creation of one pending simulated Outcome are
+  separately authorized, executed, and read-only reconciled. Due-date
+  observation remains separately human-owned and cannot run before
+  `2026-08-28`.
 
 ## Next Up
 
-1. Recommended next feature: prepare one separately governed staging
-   `COMPLETE` to delayed simulated Outcome evidence canary for an already
-   approved Action, so the authenticated Action evidence chain can reach the
-   existing Outcome and Learning gates end to end.
-2. This is a recommendation only. Action completion must be performed by a
-   separately authorized named human; it grants no agent mutation, production,
-   schedule, alias, policy activation, or model-promotion authority.
+1. Recommended next feature: on or after Sydney date `2026-08-28`, separately
+   authorize one bounded `OPERATIONAL` / `ACTUAL_CALENDAR` staging lifecycle
+   continuation, then reconcile the now-due Outcome and Learning delta.
+2. This is a future recommendation, not current authority. Before the due date
+   the correct action is to wait; the eventual continuation grants no
+   production, schedule, alias, policy, or model authority.
 
 ## Current-week history
 

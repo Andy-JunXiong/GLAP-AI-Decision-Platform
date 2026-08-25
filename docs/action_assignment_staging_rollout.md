@@ -1,7 +1,8 @@
 # Action assignment staging rollout
 
-**Status:** assignment canary and Evidence-chain refresh interaction
-runtime-verified; Action completion remains a separate named-human decision
+**Status:** assignment, approval, Evidence refresh, named-human Action
+completion, and pending simulated Outcome runtime-verified; observation waits
+for the separately governed due-date continuation
 
 This package governs the repository implementation of Action `EDIT`, owner,
 due date, and `EDITED` review state for private staging. The Action mutation
@@ -11,8 +12,11 @@ human on 2026-08-13. The Operations API and private frontend were then released
 through their separately approved plan-first paths. This document does not
 authorize another deployment, persistent user creation, or an operational
 Action mutation. The separately authorised named-human canary now covers the
-operator `EDIT`, stable request-ID retry, and different-person `APPROVE`; it
-does not create standing authority for `COMPLETE` or any other mutation.
+operator `EDIT`, stable request-ID retry, different-person `APPROVE`, and the
+later separately authorized named-human `COMPLETE`. A later separately
+authorized actual-calendar continuation created one pending simulated Outcome.
+Neither consumed authority creates standing authority; observation remains a
+separate decision.
 
 ## Preflight and release order
 
@@ -108,9 +112,19 @@ does not create standing authority for `COMPLETE` or any other mutation.
 Steps 3-12 and the later refresh interaction reconciliation are complete. The
 original operator identity was independently
 confirmed as operator-only, and the decision used a different named approver.
-The Action remains `APPROVED`; no `COMPLETE`, Outcome creation, production
-mutation, Pages publication, schedule activation, alias movement, or policy
-activation occurred.
+On `2026-08-25`, the project owner explicitly authorized the next bounded
+canary step. A signed-in named human used the private Action Board to submit
+one `COMPLETE`; the agent did not click or submit it. Aggregate-only read-only
+reconciliation then found one current `COMPLETED` candidate, one `EDIT`, one
+`APPROVE`, zero `REJECT`, exactly one named-human `COMPLETE`, a matching
+assignment, and zero Outcomes before continuation. Protected identifiers were
+not printed. A later explicit project-owner authorization allowed the agent to
+trigger manual workflow run `32803181376` through the named GitHub session.
+The run extended only `2026-08-25` in `OPERATIONAL` / `ACTUAL_CALENDAR` mode;
+the aggregate-only pending reconciler passed 6/6 with one unobserved
+`PENDING` / `SIMULATED` Outcome and the three-day due-date rule. The consumed
+authority grants no observation, production, Pages, deployment, schedule,
+alias, policy, or model authority.
 
 The agent may prepare and validate these artifacts but may not perform steps
 3, 6-7, 9, 11-12, or any future release write. Temporary role-test users in

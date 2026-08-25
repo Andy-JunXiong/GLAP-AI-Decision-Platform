@@ -46,9 +46,34 @@
       ]
     },
     {
+      "id": "provider_label_readiness_dashboard",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local authenticated aggregate-only provider label-readiness API and cockpit are verified but not deployed; the server-derived Sydney cutoff admits only OPERATIONAL ACTUAL_CALENDAR rows, pending labels are coverage-only, future simulations and entity identifiers are excluded, thresholds permit evaluation only, and training, promotion, scheduling, deployment, production readiness, and operational mutation authority remain false",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "infrastructure/operations-api-staging.yaml",
+        ".github/workflows/deploy-operations-api-staging.yml",
+        "ops/configure_operations_api_discovery.ps1",
+        "ops/configure_operations_api_data_access.ps1",
+        "ops/deploy_internal_operations_frontend.ps1",
+        "ops/verify_operations_staging.ps1",
+        "ops/verify_operations_roles_staging.ps1",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "tests/test_operations_api.py",
+        "tests/test_operations_api_infrastructure.py",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/multimodal_forecast_feature_contract.md",
+        "docs/temporal_truthfulness.md",
+        "docs/operations_api_v1.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "action_edit_owner_due_date",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "staging response fix, stable same-request replay, distinct named-approver APPROVE, and the later auto-refreshed Evidence interaction are read-only reconciled; COMPLETE remains separate and unauthorized",
+      "boundary": "staging response fix, stable same-request replay, distinct named-approver APPROVE, later auto-refreshed Evidence interaction, named-human COMPLETE, one authorized actual-calendar pending-Outcome continuation, and both aggregate reconciliations are verified; observation remains calendar-gated and separately unauthorized",
       "evidence_files": [
         "lambda/glap_action_mutation.py",
         "lambda/glap_operations_api.py",
@@ -97,6 +122,26 @@
         "ops/deploy_internal_operations_frontend.ps1",
         "ops/verify_operations_staging.ps1",
         "ops/verify_operations_roles_staging.ps1",
+        "docs/operations_api_v1.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "complete_outcome_canary_preparation",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local redacted planning, contract validation, the 2026-08-25 aggregate-only staging preflight, named-human COMPLETE, authorized workflow run 32803181376, one pending simulated Outcome, both completed runtime reconciliations, the fail-closed Sydney due-date gate, and the latest-version observed Outcome/Learning reconciler are verified; the due-date check blocked before any AWS setup on 2026-08-25, the observed reconciler has not run, the consumed authority grants no standing authority, observation remains blocked before 2026-08-28 and separately unauthorized, and no deployment, future simulation, policy activation, model promotion, production effect, observed result, or real-world performance claim occurred",
+      "evidence_files": [
+        "docs/action_complete_outcome_canary_v1.json",
+        "docs/action_complete_outcome_canary.md",
+        "ops/validate_action_complete_outcome_canary.py",
+        "ops/render_action_complete_outcome_canary_plan.py",
+        "ops/preflight_action_complete_outcome_staging.ps1",
+        "ops/reconcile_action_complete_staging.ps1",
+        "ops/reconcile_pending_outcome_staging.ps1",
+        "ops/check_observed_outcome_due_date.ps1",
+        "ops/reconcile_observed_outcome_learning_staging.ps1",
+        "tests/test_action_complete_outcome_canary.py",
+        "docs/governed_closed_loop.md",
         "docs/operations_api_v1.md",
         "CURRENT_DEVELOPMENT_STATUS.md"
       ]

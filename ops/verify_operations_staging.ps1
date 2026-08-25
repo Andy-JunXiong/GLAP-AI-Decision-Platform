@@ -6,7 +6,8 @@ param(
     [string]$ApiStackName = "glap-operations-api-staging",
     [switch]$RequireActionAssignment,
     [switch]$RequireActionEvidence,
-    [switch]$RequireLearningEvidence
+    [switch]$RequireLearningEvidence,
+    [switch]$RequireLabelReadiness
 )
 
 $ErrorActionPreference = "Stop"
@@ -85,6 +86,14 @@ try {
 } catch {
     $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
 }
+if ($RequireLabelReadiness) {
+    try {
+        Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/label-readiness") `
+            -UseBasicParsing -TimeoutSec 20 | Out-Null
+    } catch {
+        $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
+    }
+}
 try {
     Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/network") `
         -UseBasicParsing -TimeoutSec 20 | Out-Null
@@ -113,7 +122,8 @@ if ($RequireLearningEvidence) {
         $unauthorizedStatuses += [int]$_.Exception.Response.StatusCode
     }
 }
-$expectedUnauthorizedCount = 7 + [int][bool]$RequireActionEvidence + [int][bool]$RequireLearningEvidence
+$expectedUnauthorizedCount = 7 + [int][bool]$RequireActionEvidence + `
+    [int][bool]$RequireLearningEvidence + [int][bool]$RequireLabelReadiness
 $preflight = Invoke-WebRequest -Uri ($endpoint.TrimEnd('/') + "/v1/actions") `
     -Method Options -Headers @{
         Origin = $origin
@@ -157,6 +167,11 @@ $checks = [ordered]@{
         ($deployedJavaScript.Contains("Learning Review") -and `
          $deployedJavaScript.Contains("Policy activation always requires a separate named-human approval") -and `
          $deployedJavaScript.Contains("synthetic policy-review evidence only"))
+    "Provider label readiness controls deployed when required" = `
+        -not $RequireLabelReadiness -or `
+        ($deployedJavaScript.Contains("Provider Label Readiness") -and `
+         $deployedJavaScript.Contains("Pending labels and future simulations never count") -and `
+         $deployedJavaScript.Contains("model training, model promotion, deployment, recurring prediction, and production readiness remain unauthorized"))
     "Unauthenticated API routes rejected with 401" = $unauthorizedStatuses.Count -eq $expectedUnauthorizedCount -and @($unauthorizedStatuses | Where-Object { $_ -ne 401 }).Count -eq 0
     "CORS preflight successful" = $preflight.StatusCode -ge 200 -and $preflight.StatusCode -lt 300
     "CORS origin exact match" = $preflight.Headers["access-control-allow-origin"] -eq $origin

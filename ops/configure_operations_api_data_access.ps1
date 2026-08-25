@@ -11,6 +11,7 @@ param(
     [string]$OutcomeTable = "fact_lifecycle_outcome_staging_v1",
     [string]$PolicyProposalTable = "fact_policy_proposal_staging_v1",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
+    [string]$LabelReadinessSourceView = "vw_multimodal_outcome_label_v1",
     [string]$NetworkSourceView = "vw_multimodal_shipment_daily_v1",
     [switch]$Apply
 )
@@ -43,13 +44,18 @@ if ($PolicyProposalTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
 if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "Invalid Glue Forecast source table name"
 }
+if ($LabelReadinessSourceView -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "Invalid Glue label-readiness source view name"
+}
 if ($NetworkSourceView -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "Invalid Glue Network source view name"
 }
 $analyticsDependencies = @(
     $ForecastSourceTable,
+    $LabelReadinessSourceView,
     $NetworkSourceView,
     "vw_multimodal_forecast_feature_daily_context_v1",
+    "vw_multimodal_outcome_label_context_v1",
     "vw_multimodal_provider_daily_context_v1",
     "vw_multimodal_shipment_daily_context_v1",
     "fact_shipment_lifecycle_staging_v1",
@@ -64,6 +70,7 @@ Write-Host "  Operational Alert table: SELECT, DESCRIBE"
 Write-Host "  Operational Outcome table: SELECT, DESCRIBE"
 Write-Host "  Operational policy proposal table: SELECT, DESCRIBE"
 Write-Host "  Operational Forecast source table: SELECT, DESCRIBE"
+Write-Host "  Operational label-readiness source view: SELECT, DESCRIBE"
 Write-Host "  Operational Network source view: SELECT, DESCRIBE"
 Write-Host "  Other tables or views: False"
 Write-Host "  Write or grantable permissions: False"
@@ -233,6 +240,7 @@ Write-Host "Governed operational Alert table permissions configured: True"
 Write-Host "Governed operational Outcome table permissions configured: True"
 Write-Host "Governed operational policy proposal table permissions configured: True"
 Write-Host "Governed operational Forecast source table permissions configured: True"
+Write-Host "Governed operational label-readiness source view permissions configured: True"
 Write-Host "Governed operational Network source view permissions configured: True"
 Write-Host "Lake Formation IAM allowed-principals mode: $iamAllowedPrincipals"
 Write-Host "Exact table access enforced by Lambda IAM policy: True"

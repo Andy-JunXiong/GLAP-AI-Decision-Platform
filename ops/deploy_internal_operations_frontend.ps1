@@ -74,6 +74,11 @@ if (-not $builtJavaScript.Contains("Learning Review") -or
     -not $builtJavaScript.Contains("synthetic policy-review evidence only")) {
     throw "Internal frontend build is missing the Learning evidence contract"
 }
+if (-not $builtJavaScript.Contains("Provider Label Readiness") -or
+    -not $builtJavaScript.Contains("Pending labels and future simulations never count") -or
+    -not $builtJavaScript.Contains("model training, model promotion, deployment, recurring prediction, and production readiness remain unauthorized")) {
+    throw "Internal frontend build is missing the provider label-readiness contract"
+}
 New-Item -ItemType Directory -Path (Split-Path $archive -Parent) -Force | Out-Null
 if (Test-Path -LiteralPath $archive) {
     Remove-Item -LiteralPath $archive -Force

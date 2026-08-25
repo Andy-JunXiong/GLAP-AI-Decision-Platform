@@ -38,6 +38,12 @@ MINIMUM_POLICY_OUTCOMES = int(os.getenv("MINIMUM_POLICY_OUTCOMES", "20"))
 FORECAST_SOURCE_TABLE = os.getenv(
     "FORECAST_SOURCE_TABLE", "vw_multimodal_forecast_feature_daily_v1"
 )
+LABEL_READINESS_SOURCE_VIEW = os.getenv(
+    "LABEL_READINESS_SOURCE_VIEW", "vw_multimodal_outcome_label_v1"
+)
+MINIMUM_LABEL_OBSERVED = int(os.getenv("MINIMUM_LABEL_OBSERVED", "200"))
+MINIMUM_LABEL_CLASS = int(os.getenv("MINIMUM_LABEL_CLASS", "20"))
+MINIMUM_LABEL_COST_DISTINCT = int(os.getenv("MINIMUM_LABEL_COST_DISTINCT", "10"))
 NETWORK_SOURCE_VIEW = os.getenv(
     "NETWORK_SOURCE_VIEW", "vw_multimodal_shipment_daily_v1"
 )
@@ -74,20 +80,21 @@ PIPELINE_RUNBOOK_URL = (
 ROLE_PERMISSIONS = {
     "viewer": {
         "risks:read", "actions:read", "outcomes:read", "health:read", "forecasts:read",
-        "network:read", "learning:read",
+        "network:read", "learning:read", "labels:read",
     },
     "operator": {
         "risks:read", "actions:read", "actions:edit", "actions:complete", "outcomes:read", "health:read",
-        "forecasts:read", "network:read", "shipments:read", "learning:read",
+        "forecasts:read", "network:read", "shipments:read", "learning:read", "labels:read",
     },
     "approver": {
         "risks:read", "actions:read", "actions:approve", "actions:reject", "outcomes:read",
         "health:read", "forecasts:read", "network:read", "shipments:read", "learning:read",
+        "labels:read",
     },
     "administrator": {
         "risks:read", "actions:read", "actions:edit", "actions:approve", "actions:reject", "actions:complete",
         "outcomes:read", "health:read", "forecasts:read", "network:read", "shipments:read",
-        "learning:read",
+        "learning:read", "labels:read",
     },
 }
 OPERATION_PERMISSION = {
@@ -641,6 +648,208 @@ def build_learning_evidence_contract(
     }
 
 
+def build_label_readiness_query(as_of_date: str) -> str:
+    """Aggregate provider label coverage without returning shipment identifiers."""
+
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid operational cutoff date")
+    return f"""SELECT transport_mode, provider_code,
+       max(label_observed_through_date) AS source_latest_date,
+       count(*) AS cohort_shipments,
+       count_if(outcome_status = 'PENDING') AS pending_label_count,
+       count_if(outcome_status = 'OBSERVED') AS observed_label_count,
+       count_if(outcome_status = 'OBSERVED' AND sla_breach_label = true)
+           AS sla_positive_count,
+       count_if(outcome_status = 'OBSERVED' AND sla_breach_label = false)
+           AS sla_negative_count,
+       count_if(outcome_status = 'OBSERVED' AND delivery_late_label = true)
+           AS delay_positive_count,
+       count_if(outcome_status = 'OBSERVED' AND delivery_late_label = false)
+           AS delay_negative_count,
+       count_if(outcome_status = 'OBSERVED' AND cost_variance_pct_label IS NOT NULL)
+           AS cost_label_count,
+       count(DISTINCT CASE WHEN outcome_status = 'OBSERVED'
+             THEN cost_variance_pct_label END) AS cost_variance_distinct_count
+FROM {_identifier(DATABASE)}.{_identifier(LABEL_READINESS_SOURCE_VIEW)}
+WHERE temporal_scope_id = 'OPERATIONAL'
+  AND execution_mode = 'OPERATIONAL'
+  AND time_basis = 'ACTUAL_CALENDAR'
+  AND as_of_date <= DATE '{as_of_date}'
+  AND booking_cohort_date <= DATE '{as_of_date}'
+  AND label_observed_through_date <= DATE '{as_of_date}'
+  AND outcome_status IN ('PENDING', 'OBSERVED')
+GROUP BY transport_mode, provider_code
+ORDER BY transport_mode, provider_code"""
+
+
+def _label_binary_target(
+    observed: int,
+    positive: int,
+    negative: int,
+    minimum_observed: int,
+    minimum_class: int,
+) -> dict[str, Any]:
+    blockers = []
+    if observed < minimum_observed:
+        blockers.append("MIN_OBSERVED_LABELS")
+    if positive < minimum_class:
+        blockers.append("MIN_POSITIVE_LABELS")
+    if negative < minimum_class:
+        blockers.append("MIN_NEGATIVE_LABELS")
+    return {
+        "evaluation_eligible": not blockers,
+        "positive_count": positive,
+        "negative_count": negative,
+        "remaining_observed": max(0, minimum_observed - observed),
+        "remaining_positive": max(0, minimum_class - positive),
+        "remaining_negative": max(0, minimum_class - negative),
+        "blockers": blockers,
+    }
+
+
+def build_label_readiness_contract(
+    rows: list[dict[str, str | None]],
+    as_of_date: str,
+    minimum_observed: int = MINIMUM_LABEL_OBSERVED,
+    minimum_class: int = MINIMUM_LABEL_CLASS,
+    minimum_cost_distinct: int = MINIMUM_LABEL_COST_DISTINCT,
+) -> dict[str, Any]:
+    """Shape a read-only label gate; it never grants training or promotion authority."""
+
+    cutoff = date.fromisoformat(as_of_date)
+    if minimum_observed < 1 or minimum_class < 1 or minimum_cost_distinct < 2:
+        raise ValueError("Label-readiness thresholds are outside the governed range")
+
+    groups = []
+    seen_groups: set[tuple[str, str]] = set()
+    observed_total = 0
+    pending_total = 0
+    eligible_targets = 0
+    for row in rows:
+        mode = str(row.get("transport_mode") or "").upper()
+        provider = str(row.get("provider_code") or "").upper()
+        if mode not in {"AIR", "OCEAN"} or not SAFE_PROVIDER.fullmatch(provider):
+            raise RuntimeError("Label-readiness provider group is invalid")
+        group_key = (mode, provider)
+        if group_key in seen_groups:
+            raise RuntimeError("Duplicate label-readiness provider group")
+        seen_groups.add(group_key)
+        try:
+            source_latest = date.fromisoformat(str(row.get("source_latest_date") or ""))
+            counts = {
+                field: int(str(row.get(field) or "0"))
+                for field in (
+                    "cohort_shipments", "pending_label_count", "observed_label_count",
+                    "sla_positive_count", "sla_negative_count", "delay_positive_count",
+                    "delay_negative_count", "cost_label_count",
+                    "cost_variance_distinct_count",
+                )
+            }
+        except ValueError as error:
+            raise RuntimeError("Label-readiness aggregate is invalid") from error
+        if source_latest > cutoff or any(value < 0 for value in counts.values()):
+            raise RuntimeError("Label-readiness aggregate exceeds its governed cutoff")
+        observed = counts["observed_label_count"]
+        pending = counts["pending_label_count"]
+        if pending + observed != counts["cohort_shipments"]:
+            raise RuntimeError("Label-readiness cohort does not reconcile")
+        if counts["sla_positive_count"] + counts["sla_negative_count"] != observed:
+            raise RuntimeError("SLA labels do not reconcile to observed Outcomes")
+        if counts["delay_positive_count"] + counts["delay_negative_count"] != observed:
+            raise RuntimeError("Delay labels do not reconcile to observed Outcomes")
+        if counts["cost_label_count"] != observed:
+            raise RuntimeError("Cost labels do not reconcile to observed Outcomes")
+
+        sla = _label_binary_target(
+            observed, counts["sla_positive_count"], counts["sla_negative_count"],
+            minimum_observed, minimum_class,
+        )
+        delay = _label_binary_target(
+            observed, counts["delay_positive_count"], counts["delay_negative_count"],
+            minimum_observed, minimum_class,
+        )
+        cost_blockers = []
+        if counts["cost_label_count"] < minimum_observed:
+            cost_blockers.append("MIN_OBSERVED_LABELS")
+        if counts["cost_variance_distinct_count"] < minimum_cost_distinct:
+            cost_blockers.append("MIN_DISTINCT_COST_LABELS")
+        cost = {
+            "evaluation_eligible": not cost_blockers,
+            "label_count": counts["cost_label_count"],
+            "distinct_value_count": counts["cost_variance_distinct_count"],
+            "remaining_observed": max(0, minimum_observed - counts["cost_label_count"]),
+            "remaining_distinct_values": max(
+                0, minimum_cost_distinct - counts["cost_variance_distinct_count"]
+            ),
+            "blockers": cost_blockers,
+        }
+        targets = {"sla_breach": sla, "delay_risk": delay, "cost_variance": cost}
+        group_eligible = sum(bool(target["evaluation_eligible"]) for target in targets.values())
+        eligible_targets += group_eligible
+        observed_total += observed
+        pending_total += pending
+        groups.append({
+            "transport_mode": mode,
+            "provider_code": provider,
+            "source_latest_date": source_latest.isoformat(),
+            "status": (
+                "ready" if group_eligible == len(targets)
+                else "partially_ready" if group_eligible else "blocked_insufficient_observed_labels"
+            ),
+            "cohort_shipments": counts["cohort_shipments"],
+            "observed_label_count": observed,
+            "pending_label_count": pending,
+            "observed_rate_pct": round(100.0 * observed / counts["cohort_shipments"], 2)
+            if counts["cohort_shipments"] else None,
+            "targets": targets,
+        })
+
+    groups.sort(key=lambda item: (str(item["transport_mode"]), str(item["provider_code"])))
+    total_targets = len(groups) * 3
+    ready_groups = sum(group["status"] == "ready" for group in groups)
+    if total_targets and eligible_targets == total_targets:
+        status = "ready"
+    elif eligible_targets:
+        status = "partially_ready"
+    else:
+        status = "blocked_insufficient_observed_labels"
+    return {
+        "schema_version": "operations-api.v1",
+        "label_contract_version": "multimodal_outcome_label_v1",
+        "readiness_policy_version": "supervised_label_readiness_v1",
+        "as_of_date": as_of_date,
+        "status": status,
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_LABEL_EVIDENCE",
+        },
+        "thresholds": {
+            "minimum_observed_per_provider": minimum_observed,
+            "minimum_positive_and_negative_per_binary_target": minimum_class,
+            "minimum_distinct_cost_variance_values": minimum_cost_distinct,
+        },
+        "coverage": {
+            "provider_groups": len(groups),
+            "ready_provider_groups": ready_groups,
+            "eligible_targets": eligible_targets,
+            "total_targets": total_targets,
+            "observed_labels": observed_total,
+            "pending_labels": pending_total,
+        },
+        "groups": groups,
+        "governance": {
+            "decision_use": "SUPERVISED_EVALUATION_GATE_ONLY",
+            "pending_labels_excluded": True,
+            "future_simulations_included": False,
+            "entity_identifiers_included": False,
+            "model_training_authorized": False,
+            "model_promotion_authorized": False,
+            "production_readiness": False,
+        },
+    }
+
+
 def build_forecast_series_query(as_of_date: str, history_days: int = 90) -> str:
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
         raise ValueError("Invalid operational cutoff date")
@@ -1174,6 +1383,16 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             cutoff = _sydney_date()
             rows = _query_rows(boto3.client("athena"), build_forecast_series_query(cutoff))
             return _response(200, build_forecast_contract(rows, cutoff))
+
+        if method == "GET" and path == "/v1/label-readiness":
+            if "labels:read" not in permissions:
+                raise PermissionError("Role cannot read label readiness")
+            import boto3
+            cutoff = _sydney_date()
+            rows = _query_rows(
+                boto3.client("athena"), build_label_readiness_query(cutoff)
+            )
+            return _response(200, build_label_readiness_contract(rows, cutoff))
 
         if method == "GET" and path == "/v1/pipeline-health":
             if "health:read" not in permissions:

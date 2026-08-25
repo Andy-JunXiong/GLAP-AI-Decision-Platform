@@ -184,6 +184,7 @@ jobs:
           aws glue get-table --database-name simulated_iceberg_m --name fact_lifecycle_outcome_staging_v1 >/dev/null
           aws glue get-table --database-name simulated_iceberg_m --name fact_policy_proposal_staging_v1 >/dev/null
           aws glue get-table --database-name simulated_iceberg_m --name vw_multimodal_forecast_feature_daily_v1 >/dev/null
+          aws glue get-table --database-name simulated_iceberg_m --name vw_multimodal_outcome_label_v1 >/dev/null
           aws glue get-table --database-name simulated_iceberg_m --name vw_multimodal_shipment_daily_v1 >/dev/null
 
       - name: Render deployment plan

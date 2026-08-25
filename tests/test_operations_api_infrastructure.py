@@ -8,7 +8,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
     def test_api_is_jwt_protected_and_staging_scoped(self):
         template = (ROOT / "infrastructure" / "operations-api-staging.yaml").read_text(encoding="utf-8")
         self.assertIn("AuthorizerType: JWT", template)
-        self.assertEqual(template.count("AuthorizationType: JWT"), 10)
+        self.assertEqual(template.count("AuthorizationType: JWT"), 11)
         self.assertIn("GET /v1/risks", template)
         self.assertIn("GET /v1/outcomes", template)
         self.assertIn("GET /v1/learning", template)
@@ -16,6 +16,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("GET /v1/actions/{action_id}/evidence", template)
         self.assertIn("GET /v1/pipeline-health", template)
         self.assertIn("GET /v1/forecasts", template)
+        self.assertIn("GET /v1/label-readiness", template)
         self.assertIn("GET /v1/network", template)
         self.assertIn("GET /v1/shipments", template)
         self.assertIn("POST /v1/actions/{action_id}/events", template)
@@ -53,6 +54,12 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("POLICY_PROPOSAL_TABLE", template)
         self.assertIn("MINIMUM_POLICY_OUTCOMES: '20'", template)
         self.assertIn("vw_multimodal_forecast_feature_daily_v1", template)
+        self.assertIn("vw_multimodal_outcome_label_v1", template)
+        self.assertIn("vw_multimodal_outcome_label_context_v1", template)
+        self.assertIn("LABEL_READINESS_SOURCE_VIEW", template)
+        self.assertIn("MINIMUM_LABEL_OBSERVED: '200'", template)
+        self.assertIn("MINIMUM_LABEL_CLASS: '20'", template)
+        self.assertIn("MINIMUM_LABEL_COST_DISTINCT: '10'", template)
         self.assertIn("vw_multimodal_shipment_daily_v1", template)
         self.assertIn("fact_shipment_lifecycle_metrics_staging_v1", template)
         self.assertIn("Action: lakeformation:GetDataAccess", template)
@@ -86,6 +93,8 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("Outcome read HTTP statuses:", role_verifier)
         self.assertIn("Pipeline Health read HTTP statuses:", role_verifier)
         self.assertIn("Forecast read HTTP statuses:", role_verifier)
+        self.assertIn("Label readiness read HTTP statuses:", role_verifier)
+        self.assertIn("[switch]$RequireLabelReadiness", role_verifier)
         self.assertIn("Network read HTTP statuses:", role_verifier)
         self.assertIn("Shipment entity read HTTP statuses:", role_verifier)
         self.assertIn("Action evidence read HTTP statuses:", role_verifier)
@@ -103,6 +112,9 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("forecast future simulation isolated", role_verifier)
         self.assertIn("forecast evidence classification valid", role_verifier)
         self.assertIn("forecast entity and infrastructure identifiers redacted", role_verifier)
+        self.assertIn("label readiness temporal boundary valid", role_verifier)
+        self.assertIn("label readiness governance boundary valid", role_verifier)
+        self.assertIn("label readiness entity and infrastructure identifiers redacted", role_verifier)
         self.assertIn("network temporal boundary valid", role_verifier)
         self.assertIn("viewer shipment entity denied", role_verifier)
         self.assertNotIn("Tokens or user identifiers printed: True", role_verifier)
@@ -122,6 +134,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("fact_lifecycle_outcome_staging_v1", workflow)
         self.assertIn("fact_policy_proposal_staging_v1", workflow)
         self.assertIn("vw_multimodal_shipment_daily_v1", workflow)
+        self.assertIn("vw_multimodal_outcome_label_v1", workflow)
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
         self.assertIn("CF_EXECUTION_ROLE_ARN", workflow)
         self.assertIn("glap-operations-api-cloudformation-staging-role", workflow)
@@ -145,6 +158,20 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.action == 'deploy'", workflow)
         self.assertIn("Public Pages write access: \\`false\\`", workflow)
         self.assertNotIn("schedule:", workflow)
+
+        staging_verifier = (
+            ROOT / "ops" / "verify_operations_staging.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$RequireLabelReadiness", staging_verifier)
+        self.assertIn("Provider label readiness controls deployed when required", staging_verifier)
+
+        frontend_deploy = (
+            ROOT / "ops" / "deploy_internal_operations_frontend.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "Internal frontend build is missing the provider label-readiness contract",
+            frontend_deploy,
+        )
 
     def test_operations_api_deployer_is_two_role_update_only_and_plan_first(self):
         script = (
@@ -207,6 +234,9 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn("Operational policy proposal table: SELECT, DESCRIBE", script)
         self.assertIn("fact_policy_proposal_staging_v1", script)
         self.assertIn("Operational Forecast source table: SELECT, DESCRIBE", script)
+        self.assertIn("Operational label-readiness source view: SELECT, DESCRIBE", script)
+        self.assertIn("vw_multimodal_outcome_label_v1", script)
+        self.assertIn("vw_multimodal_outcome_label_context_v1", script)
         self.assertIn("Operational Network source view: SELECT, DESCRIBE", script)
         self.assertIn("IAM_ALLOWED_PRINCIPALS", script)
         self.assertIn("Exact table access enforced by Lambda IAM policy: True", script)
@@ -273,6 +303,7 @@ class OperationsApiInfrastructureTests(unittest.TestCase):
         self.assertIn('"glue:GetTable"', script)
         self.assertIn('table/${SourceDatabase}/vw_lifecycle_action_current_staging_v1', script)
         self.assertIn('table/${SourceDatabase}/${ForecastSourceTable}', script)
+        self.assertIn('table/${SourceDatabase}/${LabelReadinessSourceView}', script)
         self.assertIn('table/${SourceDatabase}/${NetworkSourceView}', script)
         self.assertIn("Deployment permissions: False", script)
         self.assertIn("Self-modifying deployer permission: False", script)

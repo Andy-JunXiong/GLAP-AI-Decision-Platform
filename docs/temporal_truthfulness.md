@@ -65,6 +65,11 @@ contract is unavailable or being diagnosed.
 - Operational backtest and label-readiness defaults end at the current Sydney
   date. A later cutoff requires the explicit future-simulation mode and remains
   scenario evidence.
+- The authenticated provider label-readiness surface derives that Sydney cutoff
+  on the server and reads only the aggregate operational label view. Pending
+  labels are coverage-only, future simulations and entity identifiers are
+  excluded, and a threshold result grants neither training nor promotion
+  authority.
 - Closed staging Action Outcomes with `OPERATIONAL` / `ACTUAL_CALENDAR` labels
   may count only toward the synthetic, review-only policy-proposal gate. Meeting
   that gate is not factual treatment-effect evidence, model readiness,

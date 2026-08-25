@@ -133,6 +133,13 @@ The values are deliberately omitted because they identify environment-specific r
   over the existing Outcome and policy-proposal tables; IAM and Lake Formation
   inventories name the policy table exactly and grant no write, grant-option,
   activation, schedule, alias, or production capability
+- the repository provider label-readiness extension adds one authenticated
+  aggregate-only read route over `vw_multimodal_outcome_label_v1`; the template
+  and plan-first Lake Formation inventory name that view and its governed
+  dependencies exactly, while the response excludes entity identifiers,
+  future simulations, training authority, model promotion, schedules, and
+  production capability. This extension is locally implemented and verified,
+  not deployed or runtime-verified
 
 PR #76 merged both read-only extensions as `c4f367fb`. The merge-triggered
 Operations API workflow passed its protected configuration, dependency, and

@@ -9,6 +9,7 @@ import {
   PipelineHealth as PipelineHealthData,
   ForecastContract,
   LearningEvidence,
+  ProviderLabelReadiness,
   NetworkResponse,
   NetworkSummary,
   OperationsRisk,
@@ -20,6 +21,7 @@ import {
   loadPipelineHealth,
   loadForecastAccuracy,
   loadLearningEvidence,
+  loadLabelReadiness,
   loadNetworkSummary,
   loadRiskHotspots,
   loadShipmentDrilldown,
@@ -35,7 +37,7 @@ import {
 } from "./operations-auth";
 import "./operations.css";
 
-type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "learning" | "forecasts" | "health" | "brief";
+type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "learning" | "readiness" | "forecasts" | "health" | "brief";
 type OperationsLoadState = "demo" | "loading" | "connected" | "auth_required" | "error";
 type ShipmentLoadState = "idle" | "loading" | "connected" | "partial" | "error";
 type DataStateKind = "loading" | "empty" | "stale" | "partial" | "failed" | "auth_required" | "idle";
@@ -48,6 +50,7 @@ const navItems: { id: View; label: string; icon: string; internalOnly?: boolean 
   { id: "outcomes", label: "Outcomes", icon: "↗" },
   { id: "actions", label: "Action Board", icon: "A" },
   { id: "learning", label: "Learning Review", icon: "L", internalOnly: true },
+  { id: "readiness", label: "Label Readiness", icon: "R", internalOnly: true },
   { id: "health", label: "Pipeline Health", icon: "H" },
   { id: "forecasts", label: "Forecast Accuracy", icon: "F" },
 ];
@@ -87,6 +90,7 @@ export default function Home() {
   const [pipelineHealth, setPipelineHealth] = useState<PipelineHealthData | null>(null);
   const [forecastContract, setForecastContract] = useState<ForecastContract | null>(null);
   const [learningContract, setLearningContract] = useState<LearningEvidence | null>(null);
+  const [labelReadinessContract, setLabelReadinessContract] = useState<ProviderLabelReadiness | null>(null);
   const [networkContract, setNetworkContract] = useState<NetworkResponse | null>(null);
   const [shipmentEntities, setShipmentEntities] = useState<ShipmentEntity[]>([]);
   const [shipmentNextToken, setShipmentNextToken] = useState<string | null>(null);
@@ -107,6 +111,10 @@ export default function Home() {
     internalOperationsEnabled() ? "loading" : "demo",
   );
   const [learningMessage, setLearningMessage] = useState("");
+  const [labelReadinessState, setLabelReadinessState] = useState<OperationsLoadState>(
+    internalOperationsEnabled() ? "loading" : "demo",
+  );
+  const [labelReadinessMessage, setLabelReadinessMessage] = useState("");
   const [networkState, setNetworkState] = useState<OperationsLoadState>(
     internalOperationsEnabled() ? "loading" : "demo",
   );
@@ -197,6 +205,25 @@ export default function Home() {
     }
   }, []);
 
+  const refreshLabelReadiness = useCallback(async () => {
+    if (!internalOperationsEnabled()) return;
+    const token = readOperationsToken();
+    if (!token) {
+      setLabelReadinessState("auth_required");
+      setLabelReadinessMessage("Sign in through the approved internal identity provider.");
+      return;
+    }
+    setLabelReadinessState("loading");
+    try {
+      setLabelReadinessContract(await loadLabelReadiness(token));
+      setLabelReadinessState("connected");
+      setLabelReadinessMessage("");
+    } catch (error) {
+      setLabelReadinessState("error");
+      setLabelReadinessMessage(error instanceof Error ? error.message : "Unable to load label readiness");
+    }
+  }, []);
+
   const refreshNetwork = useCallback(async () => {
     if (!internalOperationsEnabled()) return;
     const token = readOperationsToken();
@@ -264,7 +291,7 @@ export default function Home() {
       void finishOperationsSignIn()
         .then(() => {
           setSignedIn(operationsSignedIn());
-          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts(), refreshLearning(), refreshNetwork()]);
+          return Promise.all([refreshOperations(), refreshPipelineHealth(), refreshForecasts(), refreshLearning(), refreshLabelReadiness(), refreshNetwork()]);
         })
         .catch((error) => {
           const signInMessage = error instanceof Error ? error.message : "Internal sign-in failed";
@@ -276,12 +303,14 @@ export default function Home() {
           setForecastMessage(signInMessage);
           setLearningState("error");
           setLearningMessage(signInMessage);
+          setLabelReadinessState("error");
+          setLabelReadinessMessage(signInMessage);
           setNetworkState("error");
           setNetworkMessage(signInMessage);
         });
     }, 0);
     return () => window.clearTimeout(initialLoad);
-  }, [refreshOperations, refreshPipelineHealth, refreshForecasts, refreshLearning, refreshNetwork]);
+  }, [refreshOperations, refreshPipelineHealth, refreshForecasts, refreshLearning, refreshLabelReadiness, refreshNetwork]);
 
   const submitOperation = useCallback(async (
     actionId: string, operation: ActionOperation, reason: string,
@@ -364,6 +393,7 @@ export default function Home() {
         />}
         {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "learning" && <LearningReview contract={learningContract} state={learningState} message={learningMessage} refresh={refreshLearning} />}
+        {view === "readiness" && <LabelReadiness contract={labelReadinessContract} state={labelReadinessState} message={labelReadinessMessage} refresh={refreshLabelReadiness} />}
         {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
         {view === "forecasts" && <ForecastAccuracy contract={forecastContract} state={forecastState} message={forecastMessage} refresh={refreshForecasts} />}
         {view === "brief" && (
@@ -870,6 +900,58 @@ function LearningReview({ contract, state, message, refresh }: {
         </dl>
       </article>}
       <p className="data-disclaimer">Sydney cutoff {contract.as_of_date}. This gate is synthetic policy-review evidence only; it is not model or production readiness. Policy activation always requires a separate named-human approval. These simulated Outcomes are never real logistics performance, and deterministic safety rules remain in force.</p>
+    </>}
+  </div>;
+}
+
+function LabelReadiness({ contract, state, message, refresh }: {
+  contract: ProviderLabelReadiness | null;
+  state: OperationsLoadState;
+  message: string;
+  refresh: () => Promise<void>;
+}) {
+  if (state === "demo") return <div className="page">
+    <PageTitle eyebrow="EVALUATE" title="Provider Label Readiness" copy="Governed provider-level label evidence is available only inside the authenticated staging cockpit." />
+    <p className="data-disclaimer">The public demonstration cannot claim label maturity, model readiness, or training authority.</p>
+  </div>;
+  const readable = (value: string) => value.replaceAll("_", " ").toLowerCase();
+  return <div className="page">
+    <PageTitle eyebrow="EVALUATE" title="Provider Label Readiness" copy="See exactly which observed actual-calendar labels are eligible for supervised evaluation and why each provider remains blocked." action={<button className="outline-button" onClick={() => void refresh()}>Refresh readiness</button>} />
+    <OperationsState state={state} message={message} label="Provider Label Readiness" onRetry={refresh} />
+    {state === "connected" && contract && <>
+      {contract.status !== "ready" && <DataState kind="partial" title="Supervised evaluation remains blocked" message={`${contract.coverage.ready_provider_groups} of ${contract.coverage.provider_groups} provider groups meet every target gate. Pending labels and future simulations never count.`} />}
+      {contract.groups.length === 0 && <DataState kind="empty" title="No eligible provider cohorts" message={`No operational actual-calendar label cohorts are available at the ${contract.as_of_date} Sydney cutoff.`} />}
+      <section className="metric-grid compact">
+        <Metric label="Provider groups ready" value={`${contract.coverage.ready_provider_groups}/${contract.coverage.provider_groups}`} note="Every target must pass independently" tone={contract.status === "ready" ? "green" : "amber"} />
+        <Metric label="Eligible targets" value={`${contract.coverage.eligible_targets}/${contract.coverage.total_targets}`} note="Evaluation gate only" />
+        <Metric label="Observed labels" value={String(contract.coverage.observed_labels)} note={`Minimum ${contract.thresholds.minimum_observed_per_provider} per provider`} />
+        <Metric label="Pending labels" value={String(contract.coverage.pending_labels)} note="Excluded from all targets" tone="amber" />
+      </section>
+      <section className="label-readiness-grid">
+        {contract.groups.map((group) => {
+          const targets = [
+            { name: "SLA breach", target: group.targets.sla_breach },
+            { name: "Delay risk", target: group.targets.delay_risk },
+            { name: "Cost variance", target: group.targets.cost_variance },
+          ];
+          return <article className={`card label-readiness-card ${group.status}`} key={`${group.transport_mode}-${group.provider_code}`}>
+            <header><div><small>{group.transport_mode}</small><strong>{group.provider_code}</strong><span>Latest eligible label date {group.source_latest_date}</span></div><b>{readable(group.status)}</b></header>
+            <dl className="label-coverage">
+              <div><dt>Observed</dt><dd>{group.observed_label_count}</dd></div>
+              <div><dt>Pending</dt><dd>{group.pending_label_count}</dd></div>
+              <div><dt>Observed rate</dt><dd>{group.observed_rate_pct === null ? "Unavailable" : `${group.observed_rate_pct}%`}</dd></div>
+            </dl>
+            <div className="label-targets">{targets.map(({ name, target }) => <section key={name}>
+              <div><strong>{name}</strong><b className={target.evaluation_eligible ? "ready" : "blocked"}>{target.evaluation_eligible ? "Evaluation eligible" : "Blocked"}</b></div>
+              {"positive_count" in target
+                ? <p>{target.positive_count} positive / {target.negative_count} negative · gaps: {target.remaining_observed} observed, {target.remaining_positive} positive, {target.remaining_negative} negative</p>
+                : <p>{target.label_count} labels / {target.distinct_value_count} distinct values · gaps: {target.remaining_observed} observed, {target.remaining_distinct_values} distinct</p>}
+              {target.blockers.length > 0 && <small>{target.blockers.map(readable).join(" · ")}</small>}
+            </section>)}</div>
+          </article>;
+        })}
+      </section>
+      <p className="data-disclaimer">Sydney cutoff {contract.as_of_date}. This aggregate contains no shipment, Action, or Outcome identifiers. It excludes pending labels and future simulations. Passing a threshold permits governed evaluation only; model training, model promotion, deployment, recurring prediction, and production readiness remain unauthorized.</p>
     </>}
   </div>;
 }

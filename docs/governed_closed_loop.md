@@ -67,6 +67,52 @@ named approver selected `APPROVE`. Reconciliation found one `EDIT`, one
 current `APPROVED` row, and an unchanged assignment. This authorizes neither
 `COMPLETE` nor Outcome creation.
 
+The next canary package is prepared locally. Its versioned contract freezes
+eight ordered gates: read-only verification of
+the existing `APPROVED` source state; a separately authorized named-human
+`COMPLETE`; read-only completion reconciliation; a separately authorized
+actual-calendar continuation that creates one pending Outcome; read-only
+pending reconciliation; the three-day calendar wait; a separately authorized
+actual-calendar continuation on or after the due date; and read-only
+Outcome/Learning reconciliation. Each write phase is a separate authority
+decision. Future simulation cannot satisfy the canary, and the redacted local
+plan prints no entity, request, identity, or AWS identifiers. See
+[`action_complete_outcome_canary.md`](action_complete_outcome_canary.md).
+The dedicated aggregate-only staging preflight subsequently passed all eight
+checks on `2026-08-25`: exactly one approved candidate, one `EDIT`, one
+`APPROVE`, zero `REJECT`, zero `COMPLETE`, preserved role separation, one
+assignment match, and zero Outcomes. It printed no protected identifiers and
+executed no mutation or lifecycle continuation.
+After explicit project-owner authorization on `2026-08-25`, a signed-in named
+human selected `Mark complete` in the private Action Board. The agent only
+positioned the page and did not click or submit the mutation. The subsequent
+aggregate-only reconciliation passed all eight checks: one `COMPLETED`
+candidate, one `EDIT`, one `APPROVE`, zero `REJECT`, exactly one named-human
+`COMPLETE`, the preserved assignment, and zero Outcomes. It printed no
+protected identifiers. This supersedes the earlier `APPROVED` source state;
+the one-time completion authority is consumed and creates no standing
+authority.
+After a new explicit project-owner authorization, the agent used the named
+GitHub session to trigger manual workflow run `32803181376` from commit
+`291fffc`. It succeeded for only `2026-08-25` in `OPERATIONAL` /
+`ACTUAL_CALENDAR` mode, with one date, no seed, and no future simulation. The
+pending-Outcome reconciliation then passed all six checks: one completed
+candidate, one `PENDING` / `SIMULATED` Outcome, null observed date and effect,
+and a due date three days after completion. It printed no protected
+identifiers. The consumed authority creates no standing authority.
+The system-computed due date is `2026-08-28`. Relative to the execution date it
+is a future calendar gate, not observed evidence. A new separately authorized
+actual-calendar continuation may be considered only on or after that date.
+
+The repository now prepares that later evidence check without advancing the
+calendar. A local Australia/Sydney due-date verifier returned `BLOCKED` on
+`2026-08-25` before any AWS setup or call. The companion aggregate-only
+observed Outcome/Learning reconciler selects the latest version per Outcome,
+requires one closed simulated result observed within the governed calendar
+window, verifies an eligible-count increase from 1 to 2, and requires the
+20-Outcome review threshold to remain unmet with no policy proposal or
+activation. It is locally verified but has not run against an observed Outcome.
+
 Outcomes remain `PENDING` until their observation lag expires. Once due, the
 result is reproducible from stable entity/version identifiers and depends on
 action type, alert type and severity, shipment stage, carrier, execution delay,

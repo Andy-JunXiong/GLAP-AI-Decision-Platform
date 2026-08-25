@@ -14,6 +14,7 @@ param(
     [string]$OutcomeTable = "fact_lifecycle_outcome_staging_v1",
     [string]$PolicyProposalTable = "fact_policy_proposal_staging_v1",
     [string]$ForecastSourceTable = "vw_multimodal_forecast_feature_daily_v1",
+    [string]$LabelReadinessSourceView = "vw_multimodal_outcome_label_v1",
     [string]$NetworkSourceView = "vw_multimodal_shipment_daily_v1",
     [switch]$Apply
 )
@@ -39,6 +40,9 @@ foreach ($tableName in @($ActionTable, $ActionAuditTable, $OutcomeTable, $Policy
 }
 if ($ForecastSourceTable -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "ForecastSourceTable must be a safe Glue identifier"
+}
+if ($LabelReadinessSourceView -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "LabelReadinessSourceView must be a safe Glue identifier"
 }
 if ($NetworkSourceView -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
     throw "NetworkSourceView must be a safe Glue identifier"
@@ -110,6 +114,7 @@ $policy = @{
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${OutcomeTable}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${PolicyProposalTable}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${ForecastSourceTable}",
+                "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${LabelReadinessSourceView}",
                 "arn:aws:glue:${Region}:${accountId}:table/${SourceDatabase}/${NetworkSourceView}"
             )
         }

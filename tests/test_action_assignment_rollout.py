@@ -79,12 +79,15 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
         for statement in ("insert into", "merge into", "update ", "delete from"):
             self.assertNotIn(statement, lower)
 
-    def test_completed_canary_cannot_hide_verified_steps_or_claim_complete(self):
+    def test_completed_canary_cannot_hide_verified_steps_or_completion(self):
         contract = copy.deepcopy(validator.load_contract())
         contract["canary"]["operator_edit_completed"] = False
         contract["canary"]["stable_request_id_retry_completed"] = False
         contract["canary"]["named_approver_decision_completed"] = False
-        contract["canary"]["action_complete_completed"] = True
+        contract["canary"]["action_complete_completed"] = False
+        contract["canary"]["action_complete_reconciled"] = False
+        contract["canary"]["pending_outcome_continuation_completed"] = False
+        contract["canary"]["pending_outcome_reconciled"] = False
         errors = validator.validate_contract(contract)
         self.assertIn(
             "canary must retain the completed operator EDIT evidence",
@@ -99,7 +102,19 @@ class ActionAssignmentRolloutTests(unittest.TestCase):
             errors,
         )
         self.assertIn(
-            "Action COMPLETE must remain pending and separately authorized",
+            "verified named-human COMPLETE evidence is hidden",
+            errors,
+        )
+        self.assertIn(
+            "verified read-only COMPLETE reconciliation is hidden",
+            errors,
+        )
+        self.assertIn(
+            "verified pending Outcome continuation evidence is hidden",
+            errors,
+        )
+        self.assertIn(
+            "verified read-only pending Outcome reconciliation is hidden",
             errors,
         )
 

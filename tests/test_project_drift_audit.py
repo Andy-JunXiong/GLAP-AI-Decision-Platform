@@ -155,6 +155,40 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_stateful_recovery_evidence_boundary(root, contract)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_provider_label_readiness_authority_drift_is_detected(self):
+        paths = (
+            "docs/project_drift_contract.json",
+            "lambda/glap_operations_api.py",
+            "infrastructure/operations-api-staging.yaml",
+            ".github/workflows/deploy-operations-api-staging.yml",
+            "ops/configure_operations_api_discovery.ps1",
+            "ops/configure_operations_api_data_access.ps1",
+            "ops/deploy_internal_operations_frontend.ps1",
+            "ops/verify_operations_staging.ps1",
+            "ops/verify_operations_roles_staging.ps1",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/multimodal_forecast_feature_contract.md",
+            "docs/temporal_truthfulness.md",
+            "docs/operations_api_v1.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_provider_label_readiness_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda" / "glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"model_training_authorized": False',
+                    '"model_training_authorized": True',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_provider_label_readiness_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_deployed_evidence_maturity_requires_release_run(self):
         paths = (
             "lambda/glap_operations_api.py",
@@ -195,6 +229,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 "agent_runtime_adapter_conformance",
                 "action_outcome_evidence_chain",
                 "outcome_learning_evidence_gate",
+                "provider_label_readiness_dashboard",
             }
             <= capability_ids
         )
@@ -522,6 +557,32 @@ class ProjectDriftAuditTests(unittest.TestCase):
             record["disposition"]["resolution"] = "FAVORS_GLAP_A303_ON"
             record_path.write_text(json.dumps(record), encoding="utf-8")
             result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_action_complete_outcome_canary_authority_expansion_is_detected(self):
+        paths = (
+            "docs/action_complete_outcome_canary_v1.json",
+            "docs/action_assignment_rollout_contract.json",
+            "ops/validate_action_complete_outcome_canary.py",
+            "ops/render_action_complete_outcome_canary_plan.py",
+            "ops/preflight_action_complete_outcome_staging.ps1",
+            "ops/reconcile_action_complete_staging.ps1",
+            "ops/reconcile_pending_outcome_staging.ps1",
+            "ops/check_observed_outcome_due_date.ps1",
+            "ops/reconcile_observed_outcome_learning_staging.ps1",
+            "tests/test_action_complete_outcome_canary.py",
+            "lambda/glap_action_mutation.py",
+            "lambda/glap_operations_api.py",
+            "lambda/glap_governed_closed_loop.py",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            contract_path = root / "docs/action_complete_outcome_canary_v1.json"
+            contract = json.loads(contract_path.read_text(encoding="utf-8"))
+            contract["authority"]["named_human_complete_authorized"] = True
+            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            result = AUDIT.check_action_complete_outcome_canary(root)[0]
         self.assertEqual(result.status, "DRIFT")
 
     def test_public_evaluation_snapshot_boundary_and_authority_drift(self):
