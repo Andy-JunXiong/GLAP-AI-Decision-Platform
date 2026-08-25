@@ -31,6 +31,23 @@ missing candidate resolves an open alert; it does not delete its history.
 shipment total-cost comparison. Public use is aggregate-only and every row is
 labelled simulated.
 
+Before Action review, the authenticated Risk surface can now derive one
+`decision-brief.v1` for a current open `SLA_BREACH`. The brief preserves the
+existing `EXPEDITE_MILESTONE` rule, distinguishes observed Alert inputs from
+derived delay exposure, includes monitor and no-action alternatives, and keeps
+expected benefit `NOT_ESTIMATED`. It neither creates nor changes the immutable
+Action proposal. The repository implementation is locally verified and not
+deployed; see [`decision_brief_v1.md`](decision_brief_v1.md).
+
+The repository now also implements the next local contract: every newly
+generated, eligible SLA Action preserves `decision_brief_version`, the
+deterministically selected `EXPEDITE_MILESTONE` alternative, and the exact
+proposal rationale on its immutable row. Invalid SLA inputs fail closed;
+legacy and `COST_ANOMALY` Actions receive no invented binding. Human review
+reasons remain chronological append-only audit events. The additive staging
+migration is plan-only and has not been applied; see
+[`decision_action_binding_v1.md`](decision_action_binding_v1.md).
+
 ## Action and outcome contract
 
 Every proposed action requires a named human reviewer. System, automation and
@@ -42,6 +59,11 @@ appends every `EDIT`, `APPROVE`, `REJECT`, or `COMPLETE` event to an Iceberg aud
 Valid transitions are fail closed, and stable request IDs make retries
 idempotent. A view overlays the latest audit event to expose current Action
 state without erasing its history.
+
+Decision-to-Action binding does not change that state machine. The system's
+selected alternative is a proposal requiring human review, not approval or
+execution. A named human's actual judgment is evidenced only by the signed
+audit actor and reason on `EDIT`, `APPROVE`, or `REJECT`.
 
 The repository now also exposes that relationship as one authenticated,
 read-only evidence chain: immutable proposal, chronological audit events,

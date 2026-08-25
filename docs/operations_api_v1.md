@@ -35,11 +35,30 @@ basis, and excludes later-dated rows. `status` may be `OPEN` or `RESOLVED`.
 The `alert_fingerprint` in each item is the same governed key carried into a
 downstream Action.
 
+For each current `OPEN` `SLA_BREACH` at `SHIPMENT_MILESTONE` grain, the same
+response now includes a `decision_brief` using the versioned
+`decision-brief.v1` contract. It validates the exact milestone/delay-metric
+pair, derives delay exposure and urgency, preserves the existing deterministic
+`EXPEDITE_MILESTONE` recommendation, and presents expedite, monitor, and no
+action as bounded alternatives. Resolved Alerts and `COST_ANOMALY` receive
+`decision_brief: null`.
+
+The brief reports no-action exposure in delay hours. Its expected benefit is
+`NOT_ESTIMATED`, its `assumption_set_version` is `null`, and every execution,
+Outcome, and financial-value authority flag is false. The authenticated
+cockpit can display the brief and navigate to the existing governed Action
+Board, but reading the brief creates no Action or mutation. See
+[`decision_brief_v1.md`](decision_brief_v1.md).
+
 `GET /v1/actions?status=PROPOSED&limit=50` returns at most 100 operational,
 actual-calendar Action records. The v1 response is
 `{"schema_version":"operations-api.v1","items":[],"next_token":null}`.
 Supported states include `PROPOSED`, `EDITED`, `APPROVED`, `REJECTED`, and
 `COMPLETED`; assignment fields are `action_owner` and `action_due_date`.
+New eligible SLA proposals also expose immutable `decision_brief_version`,
+`selected_alternative`, and `selection_rationale`. These values describe the
+deterministic proposal, not human approval. Existing and `COST_ANOMALY`
+Actions may return null binding fields and are never backfilled by inference.
 
 `GET /v1/actions/{action_id}/evidence` returns one authenticated, read-only
 Action–Outcome evidence chain. It joins the immutable Action table to its
@@ -54,9 +73,17 @@ The response distinguishes `ACTION_OPEN`, `ACTION_REJECTED`,
 `ACTION_COMPLETED_AWAITING_OUTCOME`, `OUTCOME_PENDING`, and
 `OUTCOME_OBSERVED`. A pending Outcome remains `NOT_OBSERVED` with no observation
 date or effect. The governance block states that the proposal is immutable,
-the audit is append-only, and every Outcome is synthetic rather than real
+the Decision binding is immutable, the audit is append-only, and every Outcome is synthetic rather than real
 logistics performance. Request IDs, scenario IDs, infrastructure identifiers,
 and future-simulation rows are not returned.
+
+The Action Board displays the immutable proposal binding beside the existing
+audit events. The later named-human reason comes only from an append-only
+`EDIT`, `APPROVE`, or `REJECT` event; the API does not pretend that a human
+decision existed at proposal-generation time. The additive schema and view
+change is defined in plan-only `sql/16_decision_action_binding_v1.sql` and has
+not been applied or deployed. See
+[`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
 Outcome version for each completed Action, bounded by the current Sydney date.

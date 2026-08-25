@@ -121,6 +121,9 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("alert_fingerprint", query)
         self.assertIn("action_owner", query)
         self.assertIn("action_due_date", query)
+        self.assertIn("decision_brief_version", query)
+        self.assertIn("selected_alternative", query)
+        self.assertIn("selection_rationale", query)
         self.assertIn("status = 'EDITED'", api.build_action_queue_query(50, "EDITED"))
 
     def test_action_evidence_query_joins_only_bounded_operational_history(self):
@@ -139,6 +142,9 @@ class OperationsApiTests(unittest.TestCase):
         self.assertIn("ORDER BY e.occurred_at, e.event_id", query)
         self.assertIn("coalesce(e.new_status, a.status)", query)
         self.assertIn("latest_audit_event", query)
+        self.assertIn("a.decision_brief_version", query)
+        self.assertIn("a.selected_alternative", query)
+        self.assertIn("a.selection_rationale", query)
         self.assertNotIn("FUTURE_SIMULATION", query)
 
     def test_action_evidence_query_rejects_unsafe_identifier_and_cutoff(self):
@@ -154,7 +160,11 @@ class OperationsApiTests(unittest.TestCase):
             "alert_type": "SLA_BREACH", "alert_severity": "HIGH",
             "action_status": "COMPLETED", "approval_required": "true",
             "approved_by": "Approver", "approved_at": "2026-08-06 10:00:00.000",
-            "completed_at": "2026-08-06 11:00:00.000", "action_owner": "Operator",
+            "completed_at": "2026-08-06 11:00:00.000",
+            "decision_brief_version": "decision-brief.v1",
+            "selected_alternative": "EXPEDITE_MILESTONE",
+            "selection_rationale": "Review the governed SLA breach.",
+            "action_owner": "Operator",
             "action_due_date": "2026-08-07", "action_created_date": "2026-08-05",
             "outcome_id": "outcome-123", "observation_due_date": "2026-08-09",
             "outcome_status": "PENDING", "observed_date": None, "effect_pct": None,
@@ -175,7 +185,11 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(contract["chain_status"], "OUTCOME_PENDING")
         self.assertEqual([event["event_type"] for event in contract["events"]], ["EDIT", "COMPLETE"])
         self.assertEqual(contract["outcome"]["evidence_status"], "NOT_OBSERVED")
+        self.assertEqual(contract["action"]["decision_brief_version"], "decision-brief.v1")
+        self.assertEqual(contract["action"]["selected_alternative"], "EXPEDITE_MILESTONE")
+        self.assertEqual(contract["action"]["selection_rationale"], "Review the governed SLA breach.")
         self.assertTrue(contract["governance"]["proposal_immutable"])
+        self.assertTrue(contract["governance"]["decision_binding_immutable"])
         self.assertTrue(contract["governance"]["outcome_is_simulated"])
         self.assertFalse(contract["governance"]["real_logistics_performance"])
 
@@ -222,6 +236,93 @@ class OperationsApiTests(unittest.TestCase):
             api.build_risk_hotspots_query(25, "PENDING", "2026-08-07")
         with self.assertRaises(ValueError):
             api.build_risk_hotspots_query(25, "OPEN", "tomorrow")
+
+    def test_sla_breach_decision_brief_is_deterministic_and_not_estimated(self):
+        alert = {
+            "alert_type": "SLA_BREACH",
+            "alert_grain": "SHIPMENT_MILESTONE",
+            "status": "OPEN",
+            "alert_dimension": "P2P_ARRIVAL",
+            "metric_name": "arrival_delay_hours",
+            "metric_value": "52",
+            "threshold_value": "0",
+            "severity": "HIGH",
+        }
+        brief = api.build_sla_breach_decision_brief(alert, "2026-08-25")
+        self.assertEqual(brief["schema_version"], "decision-brief.v1")
+        self.assertEqual(brief["decision_type"], "SLA_BREACH")
+        self.assertEqual(brief["exposure"]["breach_margin_hours"], 52.0)
+        self.assertEqual(brief["exposure"]["affected_shipments"], 1)
+        self.assertIsNone(brief["exposure"]["monetary_value"])
+        self.assertEqual(brief["urgency"]["status"], "REVIEW_WITHIN_4_HOURS")
+        self.assertEqual(brief["recommendation"]["action_type"], "EXPEDITE_MILESTONE")
+        self.assertEqual(
+            [alternative["action_type"] for alternative in brief["alternatives"]],
+            ["EXPEDITE_MILESTONE", "MONITOR_NEXT_MILESTONE", "NO_ACTION"],
+        )
+        self.assertEqual(brief["benefit_estimate"]["status"], "NOT_ESTIMATED")
+        self.assertEqual(
+            brief["benefit_estimate"]["estimate_evidence_class"], "NOT_ESTIMATED"
+        )
+        self.assertIsNone(brief["benefit_estimate"]["assumption_set_version"])
+        self.assertFalse(brief["governance"]["execution_authorized"])
+        self.assertFalse(brief["governance"]["financial_value_estimated"])
+
+    def test_decision_brief_supports_only_valid_sla_breach_inputs(self):
+        cost_alert = {"alert_type": "COST_ANOMALY"}
+        self.assertIsNone(
+            api.build_sla_breach_decision_brief(cost_alert, "2026-08-25")
+        )
+        invalid = {
+            "alert_type": "SLA_BREACH",
+            "alert_grain": "SHIPMENT_MILESTONE",
+            "status": "OPEN",
+            "alert_dimension": "P2P_ARRIVAL",
+            "metric_name": "cost_variance_pct",
+            "metric_value": "52",
+            "threshold_value": "0",
+            "severity": "HIGH",
+        }
+        with self.assertRaisesRegex(ValueError, "metric and milestone"):
+            api.build_sla_breach_decision_brief(invalid, "2026-08-25")
+        with self.assertRaisesRegex(ValueError, "cutoff"):
+            api.build_sla_breach_decision_brief(invalid, "tomorrow")
+
+    def test_risk_response_attaches_brief_only_to_sla_breach(self):
+        rows = [
+            {
+                "alert_type": "SLA_BREACH",
+                "alert_grain": "SHIPMENT_MILESTONE",
+                "status": "OPEN",
+                "alert_dimension": "P2P_ARRIVAL",
+                "metric_name": "arrival_delay_hours",
+                "metric_value": "72",
+                "threshold_value": "0",
+                "severity": "CRITICAL",
+            },
+            {"alert_type": "COST_ANOMALY"},
+        ]
+        response = api.build_risk_response(rows, "2026-08-25")
+        self.assertEqual(response["as_of_date"], "2026-08-25")
+        self.assertEqual(
+            response["items"][0]["decision_brief"]["decision_type"], "SLA_BREACH"
+        )
+        self.assertIsNone(response["items"][1]["decision_brief"])
+
+    def test_resolved_sla_breach_cannot_recommend_intervention(self):
+        resolved = {
+            "alert_type": "SLA_BREACH",
+            "alert_grain": "SHIPMENT_MILESTONE",
+            "status": "RESOLVED",
+            "alert_dimension": "P2P_ARRIVAL",
+            "metric_name": "arrival_delay_hours",
+            "metric_value": "72",
+            "threshold_value": "0",
+            "severity": "CRITICAL",
+        }
+        self.assertIsNone(
+            api.build_sla_breach_decision_brief(resolved, "2026-08-25")
+        )
 
     def test_outcome_query_separates_pending_from_observed_evidence(self):
         query = api.build_outcome_review_query(50, "PENDING", "2026-08-07")
@@ -568,6 +669,35 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(json.loads(response["body"])["items"][0]["alert_fingerprint"], "alert-123")
         self.assertIn("as_of_date <= DATE '2026-08-07'", client.query)
+
+    def test_viewer_risk_response_includes_governed_sla_decision_brief(self):
+        rows = [{
+            "alert_fingerprint": "alert-123",
+            "alert_type": "SLA_BREACH",
+            "alert_grain": "SHIPMENT_MILESTONE",
+            "alert_dimension": "P2P_ARRIVAL",
+            "severity": "HIGH",
+            "status": "OPEN",
+            "metric_name": "arrival_delay_hours",
+            "metric_value": "52",
+            "threshold_value": "0",
+        }]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-25"):
+            response = api.lambda_handler(request(path="/v1/risks"), None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(body["as_of_date"], "2026-08-25")
+        self.assertEqual(
+            body["items"][0]["decision_brief"]["schema_version"],
+            "decision-brief.v1",
+        )
+        self.assertEqual(
+            body["items"][0]["decision_brief"]["benefit_estimate"]["status"],
+            "NOT_ESTIMATED",
+        )
 
     def test_viewer_can_read_outcomes(self):
         class AthenaClient:

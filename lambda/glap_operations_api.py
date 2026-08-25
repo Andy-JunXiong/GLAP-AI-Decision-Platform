@@ -107,6 +107,21 @@ SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
 SAFE_PROVIDER = re.compile(r"^[A-Z0-9][A-Z0-9._-]{1,31}$")
 SAFE_LANE = re.compile(r"^[A-Z0-9]{2,8}-[A-Z0-9]{2,8}$")
 LOGGER = logging.getLogger(__name__)
+SLA_DELAY_METRICS = {
+    "ORIGIN_GATE_IN": "gate_in_delay_hours",
+    "ORIGIN_HANDOVER": "origin_delay_hours",
+    "P2P_DEPARTURE": "departure_delay_hours",
+    "P2P_ARRIVAL": "arrival_delay_hours",
+    "DESTINATION_DISCHARGE": "discharge_delay_hours",
+    "DESTINATION_RELEASE": "destination_release_delay_hours",
+    "FINAL_DELIVERY": "delivery_delay_hours",
+}
+SLA_URGENCY = {
+    "CRITICAL": "IMMEDIATE_REVIEW",
+    "HIGH": "REVIEW_WITHIN_4_HOURS",
+    "MEDIUM": "REVIEW_SAME_DAY",
+    "LOW": "MONITOR",
+}
 
 
 def _identifier(value: str) -> str:
@@ -208,7 +223,8 @@ def build_action_queue_query(limit: int, status: str | None) -> str:
         where += f" AND status = '{status}'"
     return f"""SELECT action_id, alert_fingerprint, shipment_id, action_type,
 alert_type, alert_severity, status, approval_required, approved_by,
-approved_at, completed_at, action_owner, action_due_date, created_date
+approved_at, completed_at, decision_brief_version, selected_alternative,
+selection_rationale, action_owner, action_due_date, created_date
 FROM {_identifier(DATABASE)}.{_identifier(ACTION_VIEW)}
 {where}
 ORDER BY created_date DESC, action_id
@@ -225,7 +241,8 @@ def build_action_evidence_query(action_id: str, as_of_date: str) -> str:
     return f"""WITH ranked_actions AS (
     SELECT action_id, alert_fingerprint, shipment_id, action_type,
            alert_type, alert_severity, status, approval_required,
-           approved_by, approved_at, completed_at, created_date,
+           approved_by, approved_at, completed_at, decision_brief_version,
+           selected_alternative, selection_rationale, created_date,
            row_number() OVER (
                PARTITION BY action_id
                ORDER BY as_of_date DESC, created_date DESC
@@ -270,6 +287,8 @@ def build_action_evidence_query(action_id: str, as_of_date: str) -> str:
            coalesce(e.approved_by, a.approved_by) AS approved_by,
            coalesce(e.approved_at, a.approved_at) AS approved_at,
            coalesce(e.completed_at, a.completed_at) AS completed_at,
+           a.decision_brief_version, a.selected_alternative,
+           a.selection_rationale,
            e.action_owner, e.action_due_date, a.created_date
     FROM immutable_action a
     LEFT JOIN latest_audit_event e ON a.action_id = e.action_id
@@ -301,6 +320,8 @@ SELECT a.action_id, a.alert_fingerprint, a.shipment_id, a.action_type,
        CAST(a.approval_required AS varchar) AS approval_required,
        a.approved_by, CAST(a.approved_at AS varchar) AS approved_at,
        CAST(a.completed_at AS varchar) AS completed_at,
+       a.decision_brief_version, a.selected_alternative,
+       a.selection_rationale,
        a.action_owner, CAST(a.action_due_date AS varchar) AS action_due_date,
        CAST(a.created_date AS varchar) AS action_created_date,
        e.event_id, e.event_type, e.previous_status, e.new_status, e.actor,
@@ -345,6 +366,9 @@ def build_action_evidence_contract(
         "approved_by": first.get("approved_by"),
         "approved_at": first.get("approved_at"),
         "completed_at": first.get("completed_at"),
+        "decision_brief_version": first.get("decision_brief_version"),
+        "selected_alternative": first.get("selected_alternative"),
+        "selection_rationale": first.get("selection_rationale"),
         "action_owner": first.get("action_owner"),
         "action_due_date": first.get("action_due_date"),
         "created_date": first.get("action_created_date"),
@@ -408,6 +432,7 @@ def build_action_evidence_contract(
         "outcome": outcome,
         "governance": {
             "proposal_immutable": True,
+            "decision_binding_immutable": True,
             "audit_append_only": True,
             "outcome_is_simulated": True,
             "real_logistics_performance": False,
@@ -449,6 +474,131 @@ ORDER BY CASE severity WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2
          WHEN 'MEDIUM' THEN 3 ELSE 4 END,
          last_detected_date DESC, alert_fingerprint
 LIMIT {limit}"""
+
+
+def build_sla_breach_decision_brief(
+    alert: dict[str, str | None], as_of_date: str
+) -> dict[str, Any] | None:
+    """Build one deterministic SLA-breach brief without inventing effect value."""
+
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid Decision Brief cutoff date")
+    if alert.get("alert_type") != "SLA_BREACH":
+        return None
+    if alert.get("status") != "OPEN" or alert.get("alert_grain") != "SHIPMENT_MILESTONE":
+        return None
+    dimension = str(alert.get("alert_dimension") or "")
+    metric_name = str(alert.get("metric_name") or "")
+    if SLA_DELAY_METRICS.get(dimension) != metric_name:
+        raise ValueError("SLA_BREACH metric and milestone do not match")
+    severity = str(alert.get("severity") or "")
+    if severity not in SLA_URGENCY:
+        raise ValueError("Unsupported SLA_BREACH severity")
+    try:
+        metric_value = float(str(alert.get("metric_value")))
+        threshold_value = float(str(alert.get("threshold_value")))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("SLA_BREACH values must be numeric") from exc
+    if (
+        not math.isfinite(metric_value)
+        or not math.isfinite(threshold_value)
+        or metric_value < 0
+        or threshold_value < 0
+        or metric_value <= threshold_value
+    ):
+        raise ValueError("SLA_BREACH must exceed a non-negative threshold")
+    breach_margin = round(metric_value - threshold_value, 2)
+    return {
+        "schema_version": "decision-brief.v1",
+        "decision_type": "SLA_BREACH",
+        "as_of_date": as_of_date,
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_ALERT",
+        },
+        "risk": {
+            "severity": severity,
+            "milestone": dimension,
+            "evidence_class": "OBSERVED_INPUT",
+        },
+        "exposure": {
+            "metric_name": metric_name,
+            "delay_hours": metric_value,
+            "threshold_hours": threshold_value,
+            "breach_margin_hours": breach_margin,
+            "affected_shipments": 1,
+            "monetary_value": None,
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "urgency": {
+            "status": SLA_URGENCY[severity],
+            "basis": f"{severity} SLA breach at {dimension}",
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "recommendation": {
+            "action_type": "EXPEDITE_MILESTONE",
+            "rationale": (
+                f"Review an expedite intervention for {dimension}; the governed "
+                f"delay is {breach_margin:g} hours above threshold."
+            ),
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "alternatives": [
+            {
+                "action_type": "EXPEDITE_MILESTONE",
+                "label": "Expedite the affected milestone",
+                "recommended": True,
+            },
+            {
+                "action_type": "MONITOR_NEXT_MILESTONE",
+                "label": "Monitor the next milestone before intervening",
+                "recommended": False,
+            },
+            {
+                "action_type": "NO_ACTION",
+                "label": "Take no action and retain the current delay exposure",
+                "recommended": False,
+            },
+        ],
+        "no_action_exposure": {
+            "status": "DERIVED",
+            "delay_hours_at_risk": metric_value,
+            "breach_margin_hours": breach_margin,
+            "monetary_value": None,
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "benefit_estimate": {
+            "status": "NOT_ESTIMATED",
+            "estimate_evidence_class": "NOT_ESTIMATED",
+            "assumption_set_version": None,
+        },
+        "governance": {
+            "human_review_required": True,
+            "execution_authorized": False,
+            "outcome_observed": False,
+            "financial_value_estimated": False,
+            "deterministic_rule": True,
+        },
+    }
+
+
+def build_risk_response(
+    rows: list[dict[str, str | None]], as_of_date: str
+) -> dict[str, Any]:
+    """Attach a Decision Brief only where the implemented v1 contract applies."""
+
+    items = []
+    for row in rows:
+        item: dict[str, Any] = dict(row)
+        item["decision_brief"] = build_sla_breach_decision_brief(row, as_of_date)
+        items.append(item)
+    return {
+        "schema_version": "operations-api.v1",
+        "as_of_date": as_of_date,
+        "items": items,
+        "next_token": None,
+    }
 
 
 def build_outcome_review_query(limit: int, status: str | None, as_of_date: str) -> str:
@@ -1409,11 +1559,12 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             import boto3
             params = event.get("queryStringParameters") or {}
             limit = min(max(int(params.get("limit", 50)), 1), 100)
+            cutoff = _sydney_date()
             rows = _query_rows(
                 boto3.client("athena"),
-                build_risk_hotspots_query(limit, params.get("status"), _sydney_date()),
+                build_risk_hotspots_query(limit, params.get("status"), cutoff),
             )
-            return _response(200, {"schema_version": "operations-api.v1", "items": rows, "next_token": None})
+            return _response(200, build_risk_response(rows, cutoff))
 
         if method == "GET" and path == "/v1/outcomes":
             if "outcomes:read" not in permissions:

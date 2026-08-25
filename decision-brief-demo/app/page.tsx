@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActionEvidence,
   ActionOperation,
+  DecisionBriefV1,
   OperationsAction,
   OperationsOutcome,
   PipelineHealth as PipelineHealthData,
@@ -84,6 +85,7 @@ export default function Home() {
   const [diverted, setDiverted] = useState(8);
   const [decision, setDecision] = useState<"pending" | "approved" | "rejected">("pending");
   const [signalFilter, setSignalFilter] = useState("All");
+  const [selectedDecisionBrief, setSelectedDecisionBrief] = useState<DecisionBriefV1 | null>(null);
   const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
   const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
@@ -342,6 +344,11 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openDecisionBrief = (brief: DecisionBriefV1) => {
+    setSelectedDecisionBrief(brief);
+    go("brief");
+  };
+
   return (
     <div className="product-shell">
       <aside className="sidebar">
@@ -382,7 +389,7 @@ export default function Home() {
         </header>
 
         {view === "overview" && <Overview go={go} />}
-        {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} risks={operationsRisks} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
+        {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} openBrief={openDecisionBrief} risks={operationsRisks} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments
@@ -403,6 +410,7 @@ export default function Home() {
             decision={decision}
             setDecision={setDecision}
             economics={economics}
+            contract={selectedDecisionBrief}
             go={go}
           />
         )}
@@ -469,10 +477,11 @@ function Overview({ go }: { go: (view: View) => void }) {
   </div>;
 }
 
-function Signals({ filter, setFilter, go, risks, operationsState, operationsMessage, refresh }: {
+function Signals({ filter, setFilter, go, openBrief, risks, operationsState, operationsMessage, refresh }: {
   filter: string;
   setFilter: (v: string) => void;
   go: (view: View) => void;
+  openBrief: (brief: DecisionBriefV1) => void;
   risks: OperationsRisk[];
   operationsState: OperationsLoadState;
   operationsMessage: string;
@@ -486,7 +495,7 @@ function Signals({ filter, setFilter, go, risks, operationsState, operationsMess
     <OperationsState state={operationsState} message={operationsMessage} label="risk hotspots" onRetry={refresh} />
     {operationsState === "connected" && <div className="table-card">
       <div className="data-row table-head"><span>Risk</span><span>Alert</span><span>Current reading</span><span>Exposure</span><span>Detected</span><span /></div>
-      {visibleRisks.map((risk) => <button className="data-row" key={risk.alert_fingerprint} onClick={() => go("decisions")}>
+      {visibleRisks.map((risk) => <button className="data-row" key={risk.alert_fingerprint} onClick={() => risk.decision_brief ? openBrief(risk.decision_brief) : go("decisions")}>
         <span><b className={`risk-pill ${risk.severity.toLowerCase()}`}>{risk.severity}</b></span>
         <span><strong>{risk.alert_type.replaceAll("_", " ")}</strong><small>{risk.alert_grain} · {risk.alert_dimension}</small></span>
         <span><strong>{risk.metric_value}</strong><small>Threshold {risk.threshold_value}</small></span>
@@ -523,7 +532,7 @@ function Decisions({ go, actions, operationsState, operationsMessage, refresh }:
     {operationsState === "connected" && <div className="decision-list">
       {actions.filter((item) => item.status === "PROPOSED" || item.status === "EDITED").map((item) => <button className="decision-card" key={item.action_id} onClick={() => go("actions")}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
-        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id}</span></div>
+        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id}</span><span>{item.decision_brief_version ? `Bound to ${item.decision_brief_version}` : "Legacy proposal — no Decision Brief binding"}</span></div>
         <div className="decision-value"><small>Alert</small><strong>{item.alert_type.replaceAll("_", " ")}</strong></div>
         <div className="decision-due"><small>{item.action_due_date ? "Due" : "Created"}</small><strong>{item.action_due_date ?? item.created_date}</strong></div>
         <span className="status-button">Review now</span>
@@ -607,7 +616,7 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
         <label className="select-label"><span>Action due date (used by Edit)</span><input className="operations-reason" type="date" value={actionDueDate} onChange={(event) => setActionDueDate(event.target.value)} /></label>
         <div className="decision-list">{actions.map((item) => <article className="decision-card" key={item.action_id}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
-        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span><span>Owner: {item.action_owner ?? "Unassigned"} · Due: {item.action_due_date ?? "Not set"}</span></div>
+        <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span><span>Owner: {item.action_owner ?? "Unassigned"} · Due: {item.action_due_date ?? "Not set"}</span><span>{item.decision_brief_version ? `${item.decision_brief_version} · Selected ${item.selected_alternative?.replaceAll("_", " ")}` : "Legacy proposal — no Decision Brief binding"}</span>{item.selection_rationale && <span>{item.selection_rationale}</span>}</div>
         <div className="decision-value"><small>Status</small><strong>{item.status}</strong></div>
         <div className="decision-buttons">
           <button disabled={evidenceState === "loading" && selectedEvidence === item.action_id} onClick={() => void reviewEvidence(item.action_id)}>{selectedEvidence === item.action_id && evidenceState === "connected" ? "Hide evidence" : "Evidence chain"}</button>
@@ -622,14 +631,14 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
           {evidenceState === "connected" && evidence && <>
             <header><div><small>Action–Outcome evidence chain</small><strong>{evidence.chain_status.replaceAll("_", " ")}</strong></div><span>Sydney cutoff {evidence.as_of_date}</span></header>
             <div className="action-evidence-flow">
-              <article><small>Immutable proposal</small><strong>{evidence.action.action_type.replaceAll("_", " ")}</strong><span>{evidence.action.created_date} · {evidence.action.status}</span></article>
+              <article><small>Immutable proposal</small><strong>{evidence.action.action_type.replaceAll("_", " ")}</strong><span>{evidence.action.created_date} · {evidence.action.status}</span><span>{evidence.action.decision_brief_version ? `${evidence.action.decision_brief_version} · ${evidence.action.selected_alternative?.replaceAll("_", " ")}` : "Legacy proposal — binding unavailable"}</span>{evidence.action.selection_rationale && <span>{evidence.action.selection_rationale}</span>}</article>
               <div className="action-audit-events">{evidence.events.length
                 ? evidence.events.map((event) => <article key={event.event_id}><i /><div><small>{event.occurred_at}</small><strong>{event.event_type}: {event.previous_status} → {event.new_status}</strong><span>{event.actor} · {event.reason}</span></div></article>)
                 : <p>No human mutation has been recorded; the proposal remains unchanged.</p>}
               </div>
               <article className={evidence.outcome?.evidence_status === "OBSERVED_ACTUAL_CALENDAR" ? "observed" : "pending"}><small>Simulated Outcome</small><strong>{evidence.outcome ? evidence.outcome.outcome_status.replaceAll("_", " ") : "Not created"}</strong><span>{evidence.outcome?.evidence_status === "OBSERVED_ACTUAL_CALENDAR" ? `Observed ${evidence.outcome.observed_date} · ${evidence.outcome.effect_pct}% effect` : evidence.outcome ? `Due ${evidence.outcome.observation_due_date} · not observed` : "Requires an approved, completed Action"}</span></article>
             </div>
-            <p className="data-disclaimer">The proposal is immutable and audit events are append-only. Outcomes are reproducible synthetic staging evidence, never real logistics performance.</p>
+            <p className="data-disclaimer">The proposal is immutable and audit events are append-only. The Decision Brief version, selected deterministic alternative, and proposal rationale are immutable. Named-human review reasons remain append-only audit events. Outcomes are reproducible synthetic staging evidence, never real logistics performance.</p>
           </>}
         </section>}
       </article>)}</div></>}
@@ -972,12 +981,16 @@ function DemoOutcomes() {
   </div>;
 }
 
-function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics, go }: {
+function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics, contract, go }: {
   diverted: number; setDiverted: (n: number) => void; decision: string;
   setDecision: (v: "pending" | "approved" | "rejected") => void;
   economics: { noAction: number; avoided: number; reroute: number; net: number; stockout: string };
+  contract: DecisionBriefV1 | null;
   go: (view: View) => void;
 }) {
+  if (internalOperationsEnabled() && contract) {
+    return <OperationalDecisionBrief contract={contract} go={go} />;
+  }
   return <div className="page brief-page" data-claim-id="next-decision-brief" data-claim-classification="ILLUSTRATIVE">
     <button className="back-link" onClick={() => go("decisions")}>← Back to decision queue</button>
     <div className="brief-title">
@@ -991,6 +1004,30 @@ function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics
       <article className="card"><CardHead title="Decision economics" copy="Scenario changes with diversion volume" /><div className="economics-list"><div><span>No-action exposure</span><strong>{money(economics.noAction)}</strong></div><div><span>Avoided storage</span><strong className="green-text">+{money(economics.avoided)}</strong></div><div><span>Reroute cost</span><strong className="amber-text">−{money(economics.reroute)}</strong></div></div><div className="net-benefit"><span>Net modelled benefit</span><strong>{money(economics.net)}</strong><small>Stockout risk after action · <b>{economics.stockout}</b></small></div></article>
       <article className="card review-card"><CardHead title="Operator review" copy="Human approval required before execution" /><label className="range-label"><span>FCL to divert <strong>{diverted}</strong></span><input aria-label="FCL to divert" type="range" min="0" max="12" value={diverted} onChange={(e) => {setDiverted(Number(e.target.value)); setDecision("pending");}} /><small><span>0</span><span>Recommended · 8</span><span>12</span></small></label><label className="select-label"><span>Decision owner</span><select><option>Mia Chen · Import Operations</option><option>James Wu · Inventory Planning</option><option>Sarah Lim · Control Tower</option></select></label><div className="rationale"><span>Decision rationale</span><p>Expected dwell exceeds inventory cover and free-storage time. Selective diversion protects critical inventory while limiting unnecessary reroute cost.</p></div><div className="decision-buttons"><button onClick={() => setDecision("rejected")}>Reject</button><button onClick={() => setDecision("approved")}>Approve diversion</button></div><small className="demo-note">Demonstration only · no instruction is sent to a carrier or terminal.</small></article>
     </section>
+  </div>;
+}
+
+function OperationalDecisionBrief({ contract, go }: { contract: DecisionBriefV1; go: (view: View) => void }) {
+  const readable = (value: string) => value.replaceAll("_", " ");
+  return <div className="page brief-page">
+    <button className="back-link" onClick={() => go("signals")}>← Back to risk hotspots</button>
+    <div className="brief-title">
+      <div><span className="critical-label">{contract.decision_type}</span><small>DECISION BRIEF V1 · Sydney cutoff {contract.as_of_date}</small><h1>Review the governed response to an SLA breach.</h1><p>This brief is derived from one operational-calendar synthetic Alert. It recommends a bounded review action; it does not claim execution, an observed Outcome, or financial value.</p></div>
+      <div className="decision-status pending"><span>Review status</span><strong>Human review required</strong><small>{readable(contract.urgency.status)}</small></div>
+    </div>
+    <section className="metric-grid compact brief-metrics">
+      <Metric label="Risk" value={contract.risk.severity} note={readable(contract.risk.milestone)} tone="red" />
+      <Metric label="Delay exposure" value={`${contract.exposure.delay_hours} h`} note={readable(contract.exposure.metric_name)} />
+      <Metric label="Above threshold" value={`${contract.exposure.breach_margin_hours} h`} note="Derived exposure" />
+      <Metric label="Expected benefit" value="NOT ESTIMATED" note="No intervention-effect model" />
+    </section>
+    <section className="brief-grid">
+      <article className="card"><CardHead title="Why review is required" copy="Observed input and derived exposure stay separate" /><div className="economics-list"><div><span>Observed delay input</span><strong>{contract.exposure.delay_hours} hours</strong></div><div><span>Governed threshold</span><strong>{contract.exposure.threshold_hours} hours</strong></div><div><span>Derived breach margin</span><strong>{contract.exposure.breach_margin_hours} hours</strong></div></div><p className="data-disclaimer">Risk evidence: {contract.risk.evidence_class} · exposure evidence: {contract.exposure.evidence_class}</p></article>
+      <article className="card"><CardHead title="Recommended action" copy="Deterministic SLA_BREACH rule" /><div className="recommendation"><i>↗</i><div><strong>{readable(contract.recommendation.action_type)}</strong><p>{contract.recommendation.rationale}</p></div></div><p className="data-disclaimer">This recommendation requires human review and does not authorize execution.</p></article>
+      <article className="card"><CardHead title="Bounded alternatives" copy="Including an explicit no-action path" /><div className="economics-list">{contract.alternatives.map((alternative) => <div key={alternative.action_type}><span>{alternative.label}</span><strong>{alternative.recommended ? "RECOMMENDED" : "AVAILABLE"}</strong></div>)}</div></article>
+      <article className="card review-card"><CardHead title="Benefit and authority" copy="No pseudo-precision" /><div className="economics-list"><div><span>Benefit estimate</span><strong>{readable(contract.benefit_estimate.status)}</strong></div><div><span>Assumption set</span><strong>{contract.benefit_estimate.assumption_set_version ?? "NONE"}</strong></div><div><span>Monetary exposure</span><strong>NOT ESTIMATED</strong></div></div><button className="primary-button" onClick={() => go("actions")}>Open governed Action Board</button><p className="data-disclaimer">The Action Board retains signed-human role checks and append-only audit semantics. This brief itself performs no mutation.</p></article>
+    </section>
+    <p className="data-disclaimer">Source: {contract.source.evidence_class} · execution authorized: no · Outcome observed: no · financial value estimated: no.</p>
   </div>;
 }
 

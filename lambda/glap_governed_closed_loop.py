@@ -10,11 +10,23 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 import hashlib
+import math
 from typing import Any, Iterable
 
 
 UTC = timezone.utc
 OUTCOME_STATES = {"SUCCESSFUL", "PARTIALLY_SUCCESSFUL", "FAILED", "INCONCLUSIVE"}
+DECISION_BRIEF_VERSION = "decision-brief.v1"
+SLA_DELAY_METRICS = {
+    "ORIGIN_GATE_IN": "gate_in_delay_hours",
+    "ORIGIN_HANDOVER": "origin_delay_hours",
+    "P2P_DEPARTURE": "departure_delay_hours",
+    "P2P_ARRIVAL": "arrival_delay_hours",
+    "DESTINATION_DISCHARGE": "discharge_delay_hours",
+    "DESTINATION_RELEASE": "destination_release_delay_hours",
+    "FINAL_DELIVERY": "delivery_delay_hours",
+}
+SLA_SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 
 
 def _stable_int(*parts: object, modulo: int) -> int:
@@ -75,6 +87,43 @@ def propose_actions(alerts: Iterable[dict[str, Any]], policy_version: str) -> li
             continue
         action_type = "EXPEDITE_MILESTONE" if alert["alert_type"] == "SLA_BREACH" else "REVIEW_COST"
         action_id = _fingerprint("ACTION", alert["alert_fingerprint"], policy_version)
+        decision_binding = {
+            "decision_brief_version": None,
+            "selected_alternative": None,
+            "selection_rationale": None,
+        }
+        if alert["alert_type"] == "SLA_BREACH":
+            dimension = str(alert.get("alert_dimension") or "")
+            metric_name = str(alert.get("metric_name") or "")
+            if (
+                alert.get("alert_grain") != "SHIPMENT_MILESTONE"
+                or SLA_DELAY_METRICS.get(dimension) != metric_name
+            ):
+                raise ValueError("SLA_BREACH metric and milestone do not match")
+            if alert.get("severity") not in SLA_SEVERITIES:
+                raise ValueError("Unsupported SLA_BREACH severity")
+            try:
+                metric_value = float(alert["metric_value"])
+                threshold_value = float(alert["threshold_value"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError("SLA_BREACH values must be numeric") from exc
+            if (
+                not math.isfinite(metric_value)
+                or not math.isfinite(threshold_value)
+                or metric_value < 0
+                or threshold_value < 0
+                or metric_value <= threshold_value
+            ):
+                raise ValueError("SLA_BREACH must exceed a non-negative threshold")
+            breach_margin = round(metric_value - threshold_value, 2)
+            decision_binding = {
+                "decision_brief_version": DECISION_BRIEF_VERSION,
+                "selected_alternative": action_type,
+                "selection_rationale": (
+                    f"Review an expedite intervention for {dimension}; the governed "
+                    f"delay is {breach_margin:g} hours above threshold."
+                ),
+            }
         actions.append({
             "action_id": action_id,
             "alert_fingerprint": alert["alert_fingerprint"],
@@ -87,6 +136,7 @@ def propose_actions(alerts: Iterable[dict[str, Any]], policy_version: str) -> li
             "approved_at": None,
             "completed_at": None,
             "provenance": "SIMULATED",
+            **decision_binding,
         })
     return actions
 

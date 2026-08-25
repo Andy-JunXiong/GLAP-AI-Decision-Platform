@@ -41,6 +41,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
+| `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
+| Decision-to-Action binding v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; the additive staging migration is plan-only and has not been applied |
 | Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
 | Learning operation | `DORMANT_EVIDENCE_GATED` | `implementation_status=IMPLEMENTED_VERIFIED`, `operational_status=DORMANT`, `evidence_status=INSUFFICIENT_ELIGIBLE_OUTCOMES`, and `progression_status=EVIDENCE_GATED`; current inspected state remains 1/20 |
 
@@ -145,7 +147,64 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Public Claim Truth v1
+## Active slice — none; formal day closeout
+
+**Status:** `NO_ACTIVE_IMPLEMENTATION`
+
+The 2026-08-25 development slices are complete, locally verified, and prepared
+for repository delivery. Outcome Review decision provenance v1 is the next
+recommended slice, but it has not started and receives no implementation,
+deployment, mutation, or production authority from this closeout.
+
+## Recently completed — Decision-to-Action binding v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Make every newly generated eligible SLA Action prove which implemented
+Decision Brief recommendation produced its immutable proposal.
+
+**Completed**
+
+- Extended the existing lifecycle proposal generator rather than adding a
+  second Action-creation endpoint or state machine.
+- New valid `SLA_BREACH` proposals persist `decision_brief_version = decision-brief.v1`,
+  `selected_alternative = EXPEDITE_MILESTONE`, and the
+  exact deterministic rationale on the immutable Action row.
+- Applied the same fail-closed milestone, delay-metric, severity, numeric, and
+  threshold boundary used by Decision Brief v1. Invalid SLA proposals cannot
+  claim a brief binding.
+- Kept legacy and `COST_ANOMALY` Actions explicitly unbound rather than
+  inferring history or inventing an unimplemented Cost Decision Brief.
+- Preserved human truth separately: the system proposal remains
+  `approval_required`; named-human judgments and reasons remain append-only
+  `EDIT`, `APPROVE`, or `REJECT` events.
+- Added the binding to Action Queue, Action Board, and the read-only evidence
+  chain, plus fresh-table DDL and an additive plan-only staging migration.
+- Added persistence, API, UI, schema, immutability, legacy-null, and drift
+  tests plus synchronized contract and architecture documentation.
+
+**Boundary**
+
+This is repository-local implementation evidence. The migration has not been
+applied and the lifecycle generator, Operations API, and private frontend have
+not been deployed. No AWS call, Action creation or mutation, Outcome
+observation, Pages publication, production change, new model, Agent, or RAG
+layer occurred. Existing deployed Actions remain unchanged.
+
+## Recently completed — `SLA_BREACH` Decision Brief v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+The authenticated Risk response derives one bounded `decision-brief.v1` only
+for valid current open shipment-milestone SLA Alerts. It exposes deterministic
+delay exposure, urgency, expedite/monitor/no-action alternatives, and
+`NOT_ESTIMATED` benefit without granting mutation or execution authority. The
+private cockpit renders the contract and links to the existing Action Board.
+No deployment has occurred.
+
+## Recently completed — Public Claim Truth v1
 
 **Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED`
 
@@ -1032,6 +1091,20 @@ done.
 
 ### Codex-run validation
 
+- Decision-to-Action binding v1 passes the 103-test governed-loop,
+  persistence-adapter, Operations API, and drift focused set. Frontend lint,
+  production build, and all three rendered contract tests pass. Python
+  compilation, all 539 repository tests, the 36/36 project drift audit, Claim
+  Truth validation, and `git diff --check` pass. Validation was local only;
+  the plan-only migration was not applied and no external write occurred.
+- `SLA_BREACH` Decision Brief v1 passes 46 focused Operations API tests, the
+  combined 88-test API/project-drift/Claim Truth suite, frontend lint/build and
+  all three rendered contract tests, Python compilation, all 539 repository
+  tests, the 36/36 project drift audit, Claim Truth validation, and
+  `git diff --check`. Validation was local only and performed no AWS call,
+  deployment, Pages publication, Action mutation, Outcome observation, model,
+  or production operation. The higher repository total includes the later
+  Decision-to-Action binding tests.
 - Public Claim Truth v1 passes its seven-claim validator, all seven focused
   failure-path tests, the combined 61-test claim/offline/project-drift suite,
   frontend lint/build and all three rendered contract tests, Python
@@ -1333,14 +1406,15 @@ done.
 
 ## Next Up
 
-1. Recommended next feature: implement one `SLA_BREACH` Decision Brief v1
-   vertical slice. It should derive risk, exposure, urgency, alternatives, and
-   no-action cost from governed inputs while setting expected benefit to
-   `NOT_ESTIMATED` until a versioned intervention-effect assumption set exists.
-2. The Claim Truth manifest becomes that feature's public-output acceptance
-   boundary: every new Decision Brief field must map to a governed source or be
-   explicitly illustrative, so decision-engine growth cannot recreate the
-   current demo/engine gap.
+1. Recommended next feature: Outcome Review decision provenance v1. Expose the
+   immutable Decision Brief version and selected alternative beside each
+   eligible Outcome so evaluation can group synthetic effects by the actual
+   proposal contract rather than only by broad Action type.
+2. Decision-to-Action binding supplies the immutable source fields and Action
+   identity; the existing Outcome already preserves `action_id`. The next
+   slice should join those contracts read-only without copying mutable claims,
+   estimating causality, changing Learning thresholds, or adding write
+   authority.
 3. On or after Sydney date `2026-08-28`, separately authorize only the one
    already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
    reconcile its due Outcome/Learning delta. Stop after that canary; do not

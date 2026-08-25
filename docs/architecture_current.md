@@ -28,6 +28,25 @@ disclosure, and requires a repository backing source for modelled or runtime
 claims. This is a display/evidence contract, not a new operational component;
 it performs no network call, publication, deployment, or mutation.
 
+Decision Truth now has one narrow repository implementation. The authenticated
+Risk response derives `decision-brief.v1` only for current open
+`SLA_BREACH` shipment-milestone Alerts. It uses the Alert's governed delay,
+threshold, milestone, and severity to produce delay exposure, urgency, the
+existing deterministic `EXPEDITE_MILESTONE` recommendation, and bounded
+expedite/monitor/no-action alternatives. Expected benefit is
+`NOT_ESTIMATED`; no monetary exposure, intervention effect, execution, or
+Outcome is inferred. The private UI reads this contract and links onward to the
+existing Action Board without performing a mutation. The implementation is
+local and has not been deployed.
+
+Decision-to-Action binding now extends that local slice without introducing a
+new write surface. The lifecycle generator stamps the brief version,
+deterministic alternative, and rationale onto each newly eligible immutable
+SLA Action proposal. The authenticated queue and evidence chain read those
+fields beside append-only named-human review reasons. Legacy and cost Actions
+remain explicitly unbound. The additive staging migration is plan-only; no
+deployed schema or runtime changed.
+
 ## Cross-cutting evaluation boundary
 
 The repository now includes a local, deterministic, read-only Evaluation

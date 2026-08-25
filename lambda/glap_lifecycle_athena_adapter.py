@@ -89,7 +89,8 @@ ALERT_COLUMNS = (
 ACTION_COLUMNS = (
     "action_id", "alert_fingerprint", "shipment_id", "action_type", "alert_type",
     "alert_severity", "policy_version", "status", "approval_required", "approved_by",
-    "approved_at", "completed_at", "provenance", "created_date", *TEMPORAL_COLUMNS,
+    "approved_at", "completed_at", "decision_brief_version", "selected_alternative",
+    "selection_rationale", "provenance", "created_date", *TEMPORAL_COLUMNS,
 )
 OUTCOME_COLUMNS = (
     "outcome_id", "action_id", "alert_fingerprint", "shipment_id", "dt",

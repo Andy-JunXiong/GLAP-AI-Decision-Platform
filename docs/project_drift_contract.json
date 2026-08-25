@@ -526,6 +526,48 @@
       ]
     },
     {
+      "id": "sla_breach_decision_brief_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the authenticated Risk response derives decision-brief.v1 only for current open SLA_BREACH shipment-milestone Alerts; milestone and delay metric must match, delay exposure and urgency are deterministic, alternatives include no action, benefit remains NOT_ESTIMATED with no assumption set, and the brief grants no execution, Outcome, financial-value, deployment, or production authority",
+      "evidence_files": [
+        "lambda/glap_operations_api.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/decision_brief_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "DEVELOPMENT_PLAN.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "decision_action_binding_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "new valid SLA_BREACH proposals persist decision-brief.v1, the deterministic EXPEDITE_MILESTONE alternative, and its rationale on the immutable Action row; legacy and COST_ANOMALY Actions remain explicitly unbound, named-human judgments remain append-only audit events, the migration is plan-only, and no schema application, deployment, Action mutation, production effect, or new write surface occurred",
+      "evidence_files": [
+        "lambda/glap_governed_closed_loop.py",
+        "lambda/glap_lifecycle_athena_adapter.py",
+        "lambda/glap_operations_api.py",
+        "sql/04_stateful_lifecycle_config.sql",
+        "sql/16_decision_action_binding_v1.sql",
+        "tests/test_governed_closed_loop.py",
+        "tests/test_lifecycle_athena_adapter.py",
+        "tests/test_operations_api.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/decision_action_binding_v1.md",
+        "docs/decision_brief_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "pre_commit_drift_gate",
       "state": "IMPLEMENTED_VERIFIED",
       "boundary": "local staged-snapshot validation before commit",
@@ -547,6 +589,11 @@
     "required_assignment_fields": [
       "owner",
       "due_date"
+    ],
+    "required_decision_binding_fields": [
+      "decision_brief_version",
+      "selected_alternative",
+      "selection_rationale"
     ],
     "not_implemented": []
   },

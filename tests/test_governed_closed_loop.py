@@ -18,7 +18,9 @@ def candidate(kind="SLA_BREACH", fingerprint="alert-1"):
         "signal_fingerprint": fingerprint, "shipment_id": "SHP-1", "signal_type": kind,
         "signal_grain": "SHIPMENT_MILESTONE" if kind == "SLA_BREACH" else "SHIPMENT_COST",
         "signal_dimension": "P2P_ARRIVAL" if kind == "SLA_BREACH" else "TOTAL_COST",
-        "severity": "HIGH", "metric_name": "delay_hours", "metric_value": 48.0,
+        "severity": "HIGH",
+        "metric_name": "arrival_delay_hours" if kind == "SLA_BREACH" else "total_cost_variance_pct",
+        "metric_value": 48.0,
         "threshold_value": 0.0,
     }
 
@@ -40,6 +42,32 @@ class GovernedClosedLoopTests(unittest.TestCase):
         actions = closed_loop.propose_actions(alerts, "policy-v1")
         self.assertEqual({row["action_type"] for row in actions}, {"EXPEDITE_MILESTONE", "REVIEW_COST"})
         self.assertTrue(all(row["approval_required"] for row in actions))
+
+    def test_sla_action_preserves_decision_brief_binding(self):
+        alert = closed_loop.reconcile_alerts([candidate()], [], date(2026, 8, 6))[0]
+        action = closed_loop.propose_actions([alert], "policy-v1")[0]
+        self.assertEqual(action["decision_brief_version"], "decision-brief.v1")
+        self.assertEqual(action["selected_alternative"], "EXPEDITE_MILESTONE")
+        self.assertEqual(
+            action["selection_rationale"],
+            "Review an expedite intervention for P2P_ARRIVAL; the governed delay is 48 hours above threshold.",
+        )
+        self.assertEqual(action["status"], "PROPOSED")
+        self.assertTrue(action["approval_required"])
+
+    def test_unimplemented_or_invalid_decision_brief_binding_is_not_invented(self):
+        alerts = closed_loop.reconcile_alerts(
+            [candidate("COST_ANOMALY", "alert-cost")], [], date(2026, 8, 6)
+        )
+        cost_action = closed_loop.propose_actions(alerts, "policy-v1")[0]
+        self.assertIsNone(cost_action["decision_brief_version"])
+        self.assertIsNone(cost_action["selected_alternative"])
+        self.assertIsNone(cost_action["selection_rationale"])
+
+        invalid_alert = closed_loop.reconcile_alerts([candidate()], [], date(2026, 8, 6))[0]
+        invalid_alert["metric_name"] = "delivery_delay_hours"
+        with self.assertRaisesRegex(ValueError, "metric and milestone"):
+            closed_loop.propose_actions([invalid_alert], "policy-v1")
 
     def test_action_requires_named_human_approval(self):
         alert = closed_loop.reconcile_alerts([candidate()], [], date(2026, 8, 6))[0]

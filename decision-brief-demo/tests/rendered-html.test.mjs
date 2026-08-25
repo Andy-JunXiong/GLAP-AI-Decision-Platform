@@ -74,6 +74,15 @@ test("keeps authenticated Action writes behind the internal API client", async (
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(page, /loadRiskHotspots\(token, "OPEN"\)/);
   assert.match(page, /title="Risk hotspots"/);
+  assert.match(page, /risk\.decision_brief \? openBrief\(risk\.decision_brief\)/);
+  assert.match(page, /function OperationalDecisionBrief/);
+  assert.match(page, /Expected benefit" value="NOT ESTIMATED"/);
+  assert.match(page, /This brief itself performs no mutation/);
+  assert.match(page, /Bound to \$\{item\.decision_brief_version\}/);
+  assert.match(page, /selected deterministic alternative/);
+  assert.match(page, /Named-human review reasons remain append-only audit events/);
+  assert.match(client, /decision_brief_version: "decision-brief\.v1" \| null/);
+  assert.match(client, /decision_binding_immutable: true/);
   assert.match(page, /onClick=\{\(\) => go\("decisions"\)\}/);
   assert.match(page, /loadOutcomeReview\(token\)/);
   assert.match(page, /title="Outcome review"/);

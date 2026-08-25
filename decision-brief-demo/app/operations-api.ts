@@ -13,12 +13,74 @@ export type OperationsAction = {
   approved_by: string | null;
   approved_at: string | null;
   completed_at: string | null;
+  decision_brief_version: "decision-brief.v1" | null;
+  selected_alternative: string | null;
+  selection_rationale: string | null;
   action_owner: string | null;
   action_due_date: string | null;
   created_date: string;
 };
 
 export type RiskStatus = "OPEN" | "RESOLVED";
+
+export type DecisionBriefV1 = {
+  schema_version: "decision-brief.v1";
+  decision_type: "SLA_BREACH";
+  as_of_date: string;
+  source: {
+    execution_mode: "OPERATIONAL";
+    time_basis: "ACTUAL_CALENDAR";
+    evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_ALERT";
+  };
+  risk: {
+    severity: string;
+    milestone: string;
+    evidence_class: "OBSERVED_INPUT";
+  };
+  exposure: {
+    metric_name: string;
+    delay_hours: number;
+    threshold_hours: number;
+    breach_margin_hours: number;
+    affected_shipments: 1;
+    monetary_value: null;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  urgency: {
+    status: "IMMEDIATE_REVIEW" | "REVIEW_WITHIN_4_HOURS" | "REVIEW_SAME_DAY" | "MONITOR";
+    basis: string;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  recommendation: {
+    action_type: "EXPEDITE_MILESTONE";
+    rationale: string;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  alternatives: {
+    action_type: "EXPEDITE_MILESTONE" | "MONITOR_NEXT_MILESTONE" | "NO_ACTION";
+    label: string;
+    recommended: boolean;
+  }[];
+  no_action_exposure: {
+    status: "DERIVED";
+    delay_hours_at_risk: number;
+    breach_margin_hours: number;
+    monetary_value: null;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  benefit_estimate: {
+    status: "NOT_ESTIMATED";
+    estimate_evidence_class: "NOT_ESTIMATED";
+    assumption_set_version: null;
+  };
+  governance: {
+    human_review_required: true;
+    execution_authorized: false;
+    outcome_observed: false;
+    financial_value_estimated: false;
+    deterministic_rule: true;
+  };
+};
 
 export type OperationsRisk = {
   alert_fingerprint: string;
@@ -35,6 +97,7 @@ export type OperationsRisk = {
   metric_value: string;
   threshold_value: string;
   as_of_date: string;
+  decision_brief: DecisionBriefV1 | null;
 };
 
 export type OutcomeStatus = "PENDING" | "SUCCESSFUL" | "PARTIALLY_SUCCESSFUL" | "FAILED" | "INCONCLUSIVE";
@@ -86,6 +149,7 @@ export type ActionEvidence = {
   > | null;
   governance: {
     proposal_immutable: true;
+    decision_binding_immutable: true;
     audit_append_only: true;
     outcome_is_simulated: true;
     real_logistics_performance: false;
@@ -356,6 +420,7 @@ type QueueResponse = {
 
 type RiskResponse = {
   schema_version: "operations-api.v1";
+  as_of_date: string;
   items: OperationsRisk[];
   next_token: string | null;
 };

@@ -103,6 +103,9 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         )
         self.assertEqual(len(rows["alerts"]), 1)
         self.assertEqual(len(rows["actions"]), 1)
+        self.assertEqual(rows["actions"][0]["decision_brief_version"], "decision-brief.v1")
+        self.assertEqual(rows["actions"][0]["selected_alternative"], "EXPEDITE_MILESTONE")
+        self.assertIn("48 hours above threshold", rows["actions"][0]["selection_rationale"])
         self.assertEqual(rows["outcomes"][0]["status"], "PENDING")
         self.assertEqual(rows["outcomes"][0]["observation_due_date"], date(2026, 8, 8))
         replay = adapter.build_closed_loop_rows(
@@ -116,6 +119,18 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         )
         self.assertEqual(replay["actions"], [])
         self.assertEqual(replay["outcomes"], [])
+
+    def test_action_schema_and_plan_only_migration_preserve_decision_binding(self):
+        self.assertIn("decision_brief_version", adapter.ACTION_COLUMNS)
+        self.assertIn("selected_alternative", adapter.ACTION_COLUMNS)
+        self.assertIn("selection_rationale", adapter.ACTION_COLUMNS)
+        migration = (
+            Path(__file__).parents[1] / "sql" / "16_decision_action_binding_v1.sql"
+        ).read_text(encoding="utf-8")
+        self.assertIn("PLAN ONLY", migration)
+        self.assertIn("ADD COLUMNS", migration)
+        self.assertIn("action.decision_brief_version", migration)
+        self.assertNotIn("DROP TABLE", migration.upper())
 
     def test_closed_loop_tables_use_temporal_scope_in_merge_keys(self):
         cases = (

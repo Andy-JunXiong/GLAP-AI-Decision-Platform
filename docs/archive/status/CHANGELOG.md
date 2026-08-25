@@ -6,6 +6,25 @@ preserved handoffs.
 
 ## 2026-08-25
 
+- Implemented Decision-to-Action binding v1. Every newly generated valid SLA
+  proposal now preserves `decision-brief.v1`, the deterministic
+  `EXPEDITE_MILESTONE` selection, and its exact rationale on the immutable
+  Action row. Human review remains separate in signed append-only audit
+  events; legacy and `COST_ANOMALY` Actions receive no invented binding. The
+  authenticated queue, Action Board, and evidence chain expose the source
+  read-only. Fresh-schema DDL and a plan-only additive staging migration are
+  included, but no migration, deployment, Action mutation, or AWS write has
+  occurred.
+- Implemented `SLA_BREACH` Decision Brief v1 as the first Decision Truth
+  vertical slice. The authenticated Risk response now derives a versioned
+  brief only for current open shipment-milestone SLA Alerts with exact
+  milestone/delay-metric validation. It separates observed Alert inputs from
+  derived delay exposure, maps severity to deterministic urgency, retains the
+  existing `EXPEDITE_MILESTONE` rule, and exposes expedite, monitor, and no
+  action as bounded alternatives. Expected benefit and monetary value remain
+  `NOT_ESTIMATED` with no assumption set. The typed private cockpit can render
+  the brief and continue to the governed Action Board without creating or
+  mutating an Action. The implementation is locally verified and not deployed.
 - Implemented Public Claim Truth v1 for the project's high-risk decision,
   execution, Outcome, and value statements. A compact seven-entry manifest
   maps the Next demo, public Scenario Lab, and README case to exactly
