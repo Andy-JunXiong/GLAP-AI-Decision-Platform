@@ -81,8 +81,9 @@ The Action Board displays the immutable proposal binding beside the existing
 audit events. The later named-human reason comes only from an append-only
 `EDIT`, `APPROVE`, or `REJECT` event; the API does not pretend that a human
 decision existed at proposal-generation time. The additive schema and view
-change is defined in plan-only `sql/16_decision_action_binding_v1.sql` and has
-not been applied or deployed. See
+change is defined in `sql/16_decision_action_binding_v1.sql`; a named human
+applied it and all six aggregate checks returned zero on `2026-08-25`. This API
+projection is still undeployed. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational

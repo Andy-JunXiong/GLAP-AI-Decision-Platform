@@ -48,6 +48,16 @@ Air uses airport receipt/cargo-availability events and chargeable-weight cost.
 - `.github/workflows/deploy-stateful-lifecycle-staging.yml` provides the manual
   GitHub OIDC plan/deploy/replay/validate path.
 
+The local `plan-stack-only` / `deploy-stack-only` pair adds a plan-first
+Decision Truth producer release path without lifecycle execution. Both require
+separate manual dispatches. The deploy action uploads only the commit-addressed
+generator artifact, preserves the existing controller and quality-gate
+artifact parameters, and fails unless the inspected change set contains
+exactly one non-replacing `LifecycleGeneratorFunction` modification. Neither
+action applies schema, seeds data, replays dates, invokes an integration date,
+extends the controller, changes an alias, or creates a schedule. The options
+are local and have not been pushed or dispatched.
+
 All PowerShell deployment commands are plan-only unless `-Apply` is explicit.
 They use `AWS_PROFILE` when it exists and otherwise use the temporary AWS
 credentials supplied by GitHub OIDC.
@@ -89,6 +99,13 @@ Run `action=plan` first. The first `deploy-replay-validate` execution must set
 `load_initial_seed=true`; repeat executions leave it false. The workflow does
 not create a schedule, modify a production alias, or connect the function to
 the production controller.
+
+After successful Decision Truth schema validation, first use only
+`action=plan-stack-only`, `execution_mode=OPERATIONAL`, an empty scenario ID,
+and `load_initial_seed=false`. Review that completed run, then separately decide
+whether to dispatch `action=deploy-stack-only` with the same bounded inputs.
+Neither option consumes the replay or integration date fields or can establish
+a bound-Action runtime canary.
 
 ### One-time deployer permission bootstrap
 

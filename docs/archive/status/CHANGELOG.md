@@ -4,6 +4,19 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-26
+
+- Implemented the Decision Truth generator-only staging release path. The new
+  separately dispatched `plan-stack-only` / `deploy-stack-only` pair preserves
+  the deployed controller and quality-gate artifacts, uploads only the commit-
+  addressed generator, and
+  rejects any change set other than exactly one non-replacing
+  `LifecycleGeneratorFunction` modification. Schema execution, seed, replay,
+  date invocation, continuation, Action mutation, schedule, alias, and
+  production paths remain excluded. A named human separately applied and
+  six-check validated the additive schema; no-deploy plan run `32853867334`
+  succeeded, while the new release path remains undispatched and undeployed.
+
 ## 2026-08-25
 
 - Implemented the plan-only Decision Truth private-staging rollout handoff.

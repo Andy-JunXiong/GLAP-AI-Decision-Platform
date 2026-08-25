@@ -1,6 +1,7 @@
 # Decision Truth private staging rollout
 
-**Status:** plan-only handoff; no deployment or migration authorized
+**Status:** staging schema applied and aggregate-validated; generator release
+path implemented and verified but not dispatched or deployed
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -26,15 +27,23 @@ not authorize the next.
 
 1. A named staging data administrator reviews and applies only
    `sql/16_decision_action_binding_v1.sql` to the isolated staging database.
-   Existing Action rows remain null; no backfill is allowed.
+   Existing Action rows remain null; no backfill is allowed. Completed by the
+   named human on `2026-08-25`.
 2. The administrator runs only the read-only
    `sql/17_decision_action_binding_validation.sql`. All six aggregate
    `failure_count` values must be zero. Stop on any nonzero or missing result.
+   Completed on `2026-08-25`; all six checks returned zero.
 3. A named staging release owner reviews and deploys the current isolated
-   lifecycle producer through the existing manual stateful-lifecycle workflow.
+   lifecycle producer through the manual stateful-lifecycle workflow. After
+   the new options are committed and pushed, first dispatch only
+   `action=plan-stack-only`; review that completed run, then make a separate
+   decision whether to dispatch `action=deploy-stack-only`.
    This producer step is required because the immutable binding is written
    when a new Action proposal is generated; deploying only readers cannot
-   create truthful bindings.
+   create truthful bindings. The deployer preserves the existing controller
+   and quality-gate artifacts and fails closed unless the CloudFormation change
+   set contains exactly one non-replacing `LifecycleGeneratorFunction`
+   modification. It does not apply schema or invoke a lifecycle date.
 4. A named staging release owner runs the existing Operations API workflow in
    `plan`, reviews it, and separately dispatches `action=deploy` if approved.
 5. A named staging release owner first runs
@@ -47,6 +56,23 @@ not authorize the next.
 
 The agent may prepare, validate, and explain this handoff. It may not perform
 steps 1, 3, 4, 5, or the write-capable role-verification step.
+
+## Verified staging progress
+
+The named human applied the two additive statements and ran the aggregate-only
+validator on `2026-08-25`. The Athena result completed with exactly six rows;
+all six checks returned zero. This establishes the three Action-table columns,
+the three current-view columns, no partial or invalid v1 binding, no unexpected
+Cost binding, and table/view agreement at that query time. It does not prove a
+new bound Action exists.
+
+Manual workflow run `32853867334` from commit `978beb8` then completed with
+`action=plan`, `execution_mode=OPERATIONAL`, an empty scenario ID, and
+`time_basis=ACTUAL_CALENDAR`. It created no artifact and performed no stack
+deployment, schema write, seed, replay, lifecycle invocation, or continuation.
+The repository-local `deploy-stack-only` candidate and its separate
+`plan-stack-only` prerequisite were implemented afterward. Neither has been
+committed, pushed, dispatched, or deployed.
 
 ## Runtime evidence boundary
 

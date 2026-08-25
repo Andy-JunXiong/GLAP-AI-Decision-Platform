@@ -51,8 +51,9 @@ authority, deployment approval, or production readiness.
 
 This feature reuses the existing aggregate response and adds no query, route,
 table, environment value, CloudFormation change, mutation, schedule, AWS call,
-or external write. The prerequisite Action binding migration remains plan-only,
-and staging activation requires separate migration and deployment authority.
+or external write. The prerequisite Action binding migration is applied and
+six-check validated; staging activation requires separate producer and reader
+deployment authority.
 
 Each displayed cohort includes the aggregate-only provenance contract defined
 in

@@ -44,8 +44,9 @@ generated, eligible SLA Action preserves `decision_brief_version`, the
 deterministically selected `EXPEDITE_MILESTONE` alternative, and the exact
 proposal rationale on its immutable row. Invalid SLA inputs fail closed;
 legacy and `COST_ANOMALY` Actions receive no invented binding. Human review
-reasons remain chronological append-only audit events. The additive staging
-migration is plan-only and has not been applied; see
+reasons remain chronological append-only audit events. A named human applied
+the additive staging migration and all six aggregate checks returned zero on
+`2026-08-25`; the producer and readers remain undeployed. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 ## Action and outcome contract

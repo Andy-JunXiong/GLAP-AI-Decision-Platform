@@ -44,16 +44,22 @@ new write surface. The lifecycle generator stamps the brief version,
 deterministic alternative, and rationale onto each newly eligible immutable
 SLA Action proposal. The authenticated queue and evidence chain read those
 fields beside append-only named-human review reasons. Legacy and cost Actions
-remain explicitly unbound. The additive staging migration is plan-only; no
-deployed schema or runtime changed.
+remain explicitly unbound. A named human applied the additive isolated-staging
+migration on `2026-08-25`; all six aggregate checks returned zero. The
+producer, API, frontend, and runtime binding remain undeployed.
 
-The plan-only Decision Truth staging handoff now makes the producer dependency
-explicit: after the additive schema and six aggregate checks, the isolated
-lifecycle producer must be released before new proposals can carry truthful
-bindings. Operations API and private-frontend releases are downstream readers,
-not substitutes for that producer step. Every migration, producer/API/frontend
-release, temporary-user role check, and later operational continuation remains
-separately human-owned; no rollout step has been executed.
+The Decision Truth staging handoff makes the producer dependency explicit:
+after the now-validated additive schema, the isolated lifecycle producer must
+be released before new proposals can carry truthful bindings. The local
+`plan-stack-only` / `deploy-stack-only` pair requires separate manual
+dispatches, preserves the deployed controller and quality-gate artifact
+identities, and accepts only one non-replacing
+`LifecycleGeneratorFunction` change. It performs no schema execution or
+lifecycle invocation. Operations API and private-frontend releases are
+downstream readers, not substitutes for that producer step. Every producer,
+API/frontend release, temporary-user role check, and later operational
+continuation remains separately human-owned; only schema application,
+aggregate validation, and a no-deploy plan have occurred.
 
 ## Cross-cutting evaluation boundary
 
@@ -317,8 +323,9 @@ projection. The existing `GET /v1/outcomes` read joins each cutoff-eligible
 Outcome to its immutable Action by `action_id` and exposes the nullable
 Decision Brief version and selected alternative. It does not add a table,
 write route, inferred legacy binding, causal-effect claim, deployment, or
-production authority. The prerequisite Action schema migration remains
-plan-only and unapplied.
+production authority. The prerequisite Action schema migration is applied and
+six-check validated in isolated staging; the API/frontend projection and
+runtime binding remain undeployed and unverified.
 
 The next local projection adds `outcome-cohort-summary.v1` to that same
 authenticated response. It performs a separate no-limit aggregate over only

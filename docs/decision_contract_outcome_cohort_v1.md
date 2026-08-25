@@ -70,9 +70,10 @@ activation authority.
 
 The feature reuses the existing authenticated endpoint, tables, roles, and
 read permissions. It adds no route, table, mutation, Learning threshold,
-schedule, model, or production path. The Action binding migration in
-`sql/16_decision_action_binding_v1.sql` remains plan-only and must receive
-separate human review before any staging deployment can use these cohorts.
+schedule, model, or production path. A named human applied the Action binding
+migration in `sql/16_decision_action_binding_v1.sql` and all six aggregate
+checks returned zero; producer/API/frontend deployment and cohort runtime
+verification remain separate.
 
 The response now also carries a fail-closed evidence-sufficiency gate. Its
 mechanics evaluate the project-owner-approved minimum of 20 observed Outcomes

@@ -53,9 +53,9 @@ Alert + deterministic Decision Brief
   proposal — binding unavailable`, not an inferred Decision Brief.
 - `COST_ANOMALY` remains unbound because no Cost Decision Brief contract has
   been implemented; its three binding fields remain null.
-- `sql/16_decision_action_binding_v1.sql` is an additive, plan-only migration
-  for isolated staging. It must be separately reviewed and applied before this
-  code can be deployed.
+- `sql/16_decision_action_binding_v1.sql` is an additive migration for isolated
+  staging. A named human applied it on `2026-08-25`; the following aggregate
+  validator returned all six checks with zero failures.
 - `sql/17_decision_action_binding_validation.sql` and the local-only renderer
   now provide the exact aggregate post-migration checks and human-owned release
   order. See
@@ -63,7 +63,8 @@ Alert + deterministic Decision Brief
 - The authenticated Action Queue, Action Board, and evidence chain expose the
   binding read-only. They gain no new mutation or approval authority.
 
-Local tests establish schema, persistence, API, cockpit, immutability, and
-legacy-null behavior only. No SQL was applied, no AWS resource was changed, no
-Action was created or mutated, and no staging, production, or public surface
-was deployed.
+Local tests establish persistence, API, cockpit, immutability, legacy-null, and
+generator-release behavior. The staging schema is applied and validated, but
+the generator-only release candidate is not committed, pushed, dispatched, or
+deployed. No Action was created or mutated, and no staging reader, production,
+or public surface was deployed.

@@ -546,7 +546,7 @@
     {
       "id": "decision_action_binding_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "new valid SLA_BREACH proposals persist decision-brief.v1, the deterministic EXPEDITE_MILESTONE alternative, and its rationale on the immutable Action row; legacy and COST_ANOMALY Actions remain explicitly unbound, named-human judgments remain append-only audit events, and a local-only handoff now binds the additive migration to six aggregate validation checks plus the human-owned lifecycle-producer, API, private-frontend, and read-only verification order; no schema application, deployment, Action mutation, production effect, or new write surface occurred",
+      "boundary": "new valid SLA_BREACH proposals persist decision-brief.v1, the deterministic EXPEDITE_MILESTONE alternative, and its rationale on the immutable Action row; legacy and COST_ANOMALY Actions remain explicitly unbound, named-human judgments remain append-only audit events; a named human applied the additive isolated-staging schema and all six aggregate checks returned zero; the local separately dispatched plan-stack-only and deploy-stack-only path preserves controller and quality-gate artifacts and fails unless its change set is exactly one non-replacing LifecycleGeneratorFunction modification; the successful general plan created no deployment, lifecycle invocation, Action mutation, production effect, or new write surface",
       "evidence_files": [
         "lambda/glap_governed_closed_loop.py",
         "lambda/glap_lifecycle_athena_adapter.py",
@@ -555,10 +555,13 @@
         "sql/16_decision_action_binding_v1.sql",
         "sql/17_decision_action_binding_validation.sql",
         "ops/plan_decision_truth_staging_rollout.ps1",
+        "ops/deploy_stateful_lifecycle_stack.ps1",
+        ".github/workflows/deploy-stateful-lifecycle-staging.yml",
         "tests/test_governed_closed_loop.py",
         "tests/test_lifecycle_athena_adapter.py",
         "tests/test_operations_api.py",
         "tests/test_decision_truth_staging_rollout.py",
+        "tests/test_stateful_lifecycle_deployment.py",
         "decision-brief-demo/app/operations-api.ts",
         "decision-brief-demo/app/page.tsx",
         "decision-brief-demo/tests/rendered-html.test.mjs",
@@ -575,7 +578,7 @@
     {
       "id": "outcome_review_decision_provenance_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "the authenticated Outcome Review joins each cutoff-eligible Outcome to its immutable Action by action_id and exposes nullable decision-brief.v1 and selected alternative fields read-only; legacy and COST_ANOMALY Actions remain unbound, synthetic effects establish no causality or real performance, the prerequisite migration remains plan-only, and no table, write route, deployment, Action mutation, Learning change, or production authority was added",
+      "boundary": "the authenticated Outcome Review joins each cutoff-eligible Outcome to its immutable Action by action_id and exposes nullable decision-brief.v1 and selected alternative fields read-only; legacy and COST_ANOMALY Actions remain unbound, synthetic effects establish no causality or real performance, the prerequisite isolated-staging migration is applied and six-check validated while producer and readers remain undeployed, and no write route, Action mutation, Learning change, or production authority was added",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "tests/test_operations_api.py",
@@ -594,7 +597,7 @@
     {
       "id": "decision_contract_outcome_cohort_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "the existing authenticated Outcome response includes a versioned no-limit aggregate of latest observed numeric synthetic Outcomes grouped only by complete immutable Decision Brief version and selected alternative; pending, future-simulation, and unbound rows are excluded, counts and effect distributions fail closed, every causal, value, real-performance, model, policy, deployment, mutation, and production authority remains false, and the prerequisite Action migration remains plan-only",
+      "boundary": "the existing authenticated Outcome response includes a versioned no-limit aggregate of latest observed numeric synthetic Outcomes grouped only by complete immutable Decision Brief version and selected alternative; pending, future-simulation, and unbound rows are excluded, counts and effect distributions fail closed, every causal, value, real-performance, model, policy, deployment, mutation, and production authority remains false, and the prerequisite Action migration is applied and six-check validated while producer and readers remain undeployed",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "tests/test_operations_api.py",

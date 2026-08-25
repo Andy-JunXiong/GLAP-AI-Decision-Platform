@@ -1735,7 +1735,10 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
         "migration": "sql/16_decision_action_binding_v1.sql",
         "validation": "sql/17_decision_action_binding_validation.sql",
         "plan": "ops/plan_decision_truth_staging_rollout.ps1",
+        "workflow": ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+        "stack_deployer": "ops/deploy_stateful_lifecycle_stack.ps1",
         "tests": "tests/test_decision_truth_staging_rollout.py",
+        "deployment_tests": "tests/test_stateful_lifecycle_deployment.py",
         "runbook": "docs/decision_truth_staging_rollout.md",
     }
     text = {
@@ -1824,6 +1827,39 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             "test_runtime_proof_cannot_be_manufactured_or_overclaimed",
         )
     )
+    generator_release_bounded = (
+        all(
+            marker in text["workflow"]
+            for marker in (
+                "- plan-stack-only",
+                "- deploy-stack-only",
+                '$parameters.GeneratorOnly = $true',
+                "Generator-only stack release",
+                "Lifecycle date invoked",
+                "Lifecycle schema applied",
+                "Initial seed requested",
+            )
+        )
+        and all(
+            marker in text["stack_deployer"]
+            for marker in (
+                "[switch]$GeneratorOnly",
+                "preserve existing stack parameter",
+                "$generatorChanges.Count -eq 1",
+                'LogicalResourceId -eq "LifecycleGeneratorFunction"',
+                'ResourceType -eq "AWS::Lambda::Function"',
+                'Replacement -eq "False"',
+                "without schema execution, lifecycle invocation",
+            )
+        )
+        and all(
+            marker in text["deployment_tests"]
+            for marker in (
+                "test_stack_only_workflow_deploys_only_generator_without_invocation",
+                "test_generator_only_stack_change_set_is_exact_and_non_replacing",
+            )
+        )
+    )
     runbook_bounded = all(
         marker in normalized_runbook
         for marker in (
@@ -1831,6 +1867,9 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             "deploying only readers cannot create truthful bindings",
             "Do not create, backfill, or mutate an Action merely to satisfy the test",
             "every `COST_ANOMALY` Action remains unbound",
+            "all six checks returned zero",
+            "`deploy-stack-only`",
+            "exactly one non-replacing `LifecycleGeneratorFunction` modification",
             "The additive columns are retained",
             "Rollback never changes production",
         )
@@ -1843,9 +1882,10 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             and validation_bounded
             and plan_bounded
             and tests_bounded
+            and generator_release_bounded
             and runbook_bounded,
-            "Decision Truth staging rollout remains a local-only additive migration and aggregate-validation handoff with explicit producer-before-reader order and separate human authority for every external write.",
-            "Decision Truth rollout lost additive/read-only validation, producer ordering, legacy-null compatibility, or the human-owned no-execution boundary.",
+            "Decision Truth staging rollout preserves its validated additive schema plus a generator-only, exact-change-set, no-invocation release path with producer-before-reader order and separate human authority for every external write.",
+            "Decision Truth rollout lost additive/read-only validation, exact generator-only release scope, producer ordering, legacy-null compatibility, or the human-owned execution boundary.",
             tuple(paths.values()),
         )
     ]
@@ -1897,7 +1937,8 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "does not copy Decision provenance into the Outcome table",
             "establish traceability, not causality",
             "does not add an Outcome, Action, approval, completion, or activation write",
-            "plan-only staging migration",
+            "applied it and all six aggregate checks returned zero",
+            "producer, API, and cockpit remain undeployed",
         )
     )
     return [
@@ -1974,7 +2015,8 @@ def check_decision_contract_outcome_cohort_boundary(root: Path) -> list[CheckRes
             "cohort counts are not derived from the separately bounded Outcome card list",
             "does not establish treatment assignment",
             "adds no route, table, mutation, Learning threshold",
-            "remains plan-only",
+            "all six aggregate checks returned zero",
+            "producer/API/frontend deployment and cohort runtime verification remain separate",
         )
     )
     return [

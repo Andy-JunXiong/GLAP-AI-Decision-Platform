@@ -113,6 +113,13 @@ The values are deliberately omitted because they identify environment-specific r
   and visible dead-letter queue messages
 - GitHub Actions assumes a repository- and environment-scoped OIDC role for
   manual staging deployments; no long-lived AWS key is stored in GitHub
+- the local Decision Truth `plan-stack-only` / `deploy-stack-only` pair requires
+  separate manual dispatches, packages only the lifecycle generator, preserves
+  the deployed controller and quality-gate artifacts, and rejects any change
+  set other than one non-replacing generator Lambda modification. It has not
+  been committed, pushed, dispatched, or deployed; schema validation and the
+  earlier general no-deploy plan run `32853867334` are the current staging
+  evidence
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

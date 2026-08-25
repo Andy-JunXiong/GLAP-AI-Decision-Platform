@@ -66,6 +66,6 @@ establish real logistics performance, authorize a model or policy, or grant
 deployment or production authority. It adds no route, table, CloudFormation
 change, environment configuration, mutation, schedule, or external write.
 
-The prerequisite Action binding migration remains plan-only. Activating this
-gate in staging still separately requires migration review, deployment
-authority, and runtime verification.
+The prerequisite Action binding migration is applied and six-check validated
+in isolated staging. Activating this gate still separately requires producer
+and reader deployment authority plus runtime verification.

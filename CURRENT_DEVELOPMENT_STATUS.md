@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-25`
+**Sydney as-of date:** `2026-08-26`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -42,8 +42,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
-| Decision-to-Action binding v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; the additive staging migration is plan-only and has not been applied |
-| Decision Truth private-staging rollout handoff | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_EXECUTED` | A local-only renderer binds the two-statement additive migration to six aggregate read-only checks and the human-owned schema → lifecycle producer → Operations API → private frontend → verification order; no AWS session, migration, deployment, or continuation occurred |
+| Decision-to-Action binding v1 | `STAGING_SCHEMA_APPLIED_VALIDATED_PRODUCER_NOT_DEPLOYED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; a named human applied the additive staging migration and all six aggregate checks returned zero, but no bound runtime proposal has been generated |
+| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_GENERATOR_RELEASE_PATH_IMPLEMENTED_NOT_DEPLOYED` | General no-deploy plan run `32853867334` succeeded from commit `978beb8`; the separately dispatched `plan-stack-only` / `deploy-stack-only` pair preserves controller/quality artifacts and permits exactly one non-replacing generator change without schema, date invocation, seed, replay, continuation, or production effect; the new path has not been dispatched or deployed |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -160,15 +160,50 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Decision Truth private-staging rollout handoff complete
+## Active slice — Decision Truth generator-only staging release path complete
 
-**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_EXECUTED`
+**Status:** `IMPLEMENTED_VERIFIED_NOT_DEPLOYED`
 
-The repository now has the minimum non-executing handoff needed for a named
-human to review the Decision Truth staging rollout. It renders the existing
-additive migration, validates six aggregate post-migration conditions, and
-makes the isolated lifecycle producer an explicit dependency before the API
-and private frontend readers. It opens no AWS session and performs no rollout.
+The repository now closes the unsafe coupling between lifecycle package release
+and lifecycle-date execution. `plan-stack-only` and `deploy-stack-only` require
+separate manual dispatches. They package only the current generator and preserve
+the deployed controller and quality-gate artifacts; deploy fails closed unless
+CloudFormation reports exactly one non-replacing generator Lambda modification.
+Neither runs schema, seed, replay, integration, extension, baseline, analytics,
+Action mutation, schedule, alias, or production paths. No workflow was
+dispatched from this local implementation.
+
+## Recently completed — Decision Truth generator-only staging release path
+
+**Status:** `IMPLEMENTED_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Release the Decision Truth proposal writer without silently consuming separate
+authority for schema work, lifecycle continuation, or broader runtime-package
+replacement.
+
+**Completed**
+
+- Added separate manual `plan-stack-only` and `deploy-stack-only` choices with
+  `OPERATIONAL`, empty-scenario, and no-seed preconditions.
+- Made its plan path render only the generator-only stack boundary.
+- Preserved the currently deployed controller and quality-gate artifact keys
+  instead of uploading or replacing those packages.
+- Required exactly one non-replacing `LifecycleGeneratorFunction` change before
+  executing the CloudFormation change set.
+- Kept schema application and every replay, integration, extension, recovery,
+  baseline, analytics, and lifecycle-date step excluded from this action.
+- Added workflow, deployer, regression, drift, architecture, rollout, and
+  deployment-contract coverage.
+
+**Boundary**
+
+The named human already applied and six-check validated the staging schema.
+Manual plan run `32853867334` succeeded from commit `978beb8` but deployed
+nothing. The new release path has not been dispatched or deployed and grants no
+standing AWS or operational authority. Source-control delivery maturity is
+recorded by Git history and the session handoff rather than predicted here.
 
 ## Recently completed — Decision Truth private-staging rollout handoff
 
@@ -493,9 +528,10 @@ auditable input for descriptive synthetic Outcome cohort comparison.
 
 This is repository-local implementation evidence. The threshold approval is
 real project-governance evidence, while all logistics Outcomes remain synthetic.
-The prerequisite Action migration remains plan-only and unapplied; the API and
-private frontend have not been deployed. No AWS call, CloudFormation or
-environment change, table mutation, Action or Outcome mutation,
+The prerequisite Action migration is applied and six-check validated in
+isolated staging; the API and private frontend have not been deployed. No
+CloudFormation or reader deployment, environment change, table mutation,
+Action or Outcome mutation,
 Learning/model/policy operation, Pages publication, production change, causal
 claim, or financial-value claim occurred.
 
@@ -526,9 +562,10 @@ the bounded Outcome card list or synthetic averages for causal evidence.
 **Boundary**
 
 This is repository-local implementation evidence. The prerequisite Action
-schema migration remains plan-only and unapplied; the API and private frontend
-have not been deployed. No AWS call, CloudFormation change, table change,
-Action or Outcome mutation, Learning threshold change, Pages publication,
+schema migration is applied and six-check validated in isolated staging; the
+API and private frontend have not been deployed. No CloudFormation or reader
+deployment, table mutation, Action or Outcome mutation, Learning threshold
+change, Pages publication,
 model or policy operation, production change, causal claim, or financial-value
 claim occurred.
 
@@ -558,10 +595,10 @@ synthetic result instead of grouping evidence only by broad Action type.
 **Boundary**
 
 This is repository-local implementation evidence. The prerequisite Action
-schema migration remains plan-only and unapplied; the API and private frontend
-have not been deployed. No AWS call, table change, Action or Outcome mutation,
-Learning threshold change, Pages publication, production change, or causal or
-financial-value claim occurred.
+schema migration is applied and six-check validated in isolated staging; the
+API and private frontend have not been deployed. No reader deployment, Action
+or Outcome mutation, Learning threshold change, Pages publication, production
+change, or causal or financial-value claim occurred.
 
 ## Recently completed — Decision-to-Action binding v1
 
@@ -1498,6 +1535,14 @@ done.
 
 ### Codex-run validation
 
+- Decision Truth generator-only release passes the 28-test lifecycle deployment
+  suite plus two focused drift scenarios, Python compilation, all 567 repository
+  tests, the 48/48 project drift audit, JSON contract parsing, PowerShell parser
+  validation, required CloudFormation artifact checks, the local no-AWS
+  generator-only renderer, and `git diff --check`. The renderer preserves the
+  existing controller and quality-gate identities and reports no schedule. No
+  workflow dispatch, AWS session, artifact upload, change set, stack update,
+  schema write, lifecycle invocation, or external mutation occurred.
 - Decision Truth private-staging rollout handoff passes five focused migration,
   aggregate-validation, non-execution, release-order, and no-manufactured-proof
   scenarios. The local renderer reports two additive migration statements, one
@@ -1901,13 +1946,15 @@ done.
 
 ## Next Up
 
-1. The Decision Truth private-staging handoff is locally complete and has not
-   executed. The next maturity gate is human-owned execution in the frozen
-   order: additive Action binding migration, six-check read-only validation,
-   isolated lifecycle producer, Operations API, private frontend, then
-   read-only contract verification. Four-role verification separately creates
-   temporary users. None of these external writes is agent-authorized or
-   implied by this completed plan.
+1. The additive Action binding migration and six-check read-only validation are
+   complete in isolated staging. The generator-only release path is verified
+   but not deployed. Its next maturity gate after source-control delivery and
+   main CI is a human-dispatched `action=plan-stack-only` run and a separate
+   decision whether to dispatch `action=deploy-stack-only`.
+   After read-only stack/function verification,
+   the remaining order is Operations API, private frontend, then read-only
+   contract verification. Four-role verification separately creates temporary
+   users. No source-control request implies any external deployment.
 2. Recommended next product feature after that staging evidence:
    `COST_ANOMALY` Decision Brief v1. It should reuse the existing immutable
    binding and Outcome provenance chain, expose exact rate-card/source version

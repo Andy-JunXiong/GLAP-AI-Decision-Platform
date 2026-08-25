@@ -40,8 +40,8 @@ policy authority, deployment approval, or production readiness.
 This feature reuses the existing authenticated aggregate response and adds no
 query, route, table, environment value, CloudFormation change, mutation,
 schedule, AWS call, public export, or external write. The prerequisite Action
-binding migration remains plan-only, and staging activation requires separate
-migration and deployment authority.
+binding migration is applied and six-check validated; staging activation
+requires separate producer and reader deployment authority.
 
 The companion
 [`outcome_cohort_comparison_fingerprint_v1.md`](outcome_cohort_comparison_fingerprint_v1.md)

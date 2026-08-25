@@ -555,6 +555,81 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertNotIn("update-alias", workflow)
         self.assertNotIn("scheduler", workflow.lower())
 
+    def test_stack_only_workflow_deploys_only_generator_without_invocation(self):
+        workflow = (
+            ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
+        ).read_text(encoding="utf-8")
+
+        def step(name: str) -> str:
+            match = re.search(
+                rf"^      - name: {re.escape(name)}\n(.*?)(?=^      - name: |\Z)",
+                workflow,
+                re.MULTILINE | re.DOTALL,
+            )
+            self.assertIsNotNone(match, name)
+            return match.group(0)
+
+        self.assertIn("          - plan-stack-only", workflow)
+        self.assertIn("          - deploy-stack-only", workflow)
+        environment_check = step("Verify required private environment variables")
+        self.assertIn('inputs.action }}" == "plan-stack-only"', environment_check)
+        self.assertIn('inputs.action }}" == "deploy-stack-only"', environment_check)
+        self.assertIn('inputs.execution_mode }}" = "OPERATIONAL"', environment_check)
+        self.assertIn('inputs.load_initial_seed }}" = "false"', environment_check)
+
+        render = step("Render deployment plans")
+        self.assertIn('$action -in @("plan-stack-only", "deploy-stack-only")', render)
+        self.assertIn("-GeneratorOnly", render)
+        self.assertLess(render.index("-GeneratorOnly"), render.index("return"))
+
+        deployment = step("Deploy unscheduled lifecycle and integration stack")
+        self.assertIn("inputs.action == 'deploy-stack-only'", deployment)
+        self.assertNotIn("plan-stack-only", deployment)
+        self.assertIn('$parameters.GeneratorOnly = $true', deployment)
+        for excluded_step in (
+            "Create lifecycle schema and optional first seed",
+            "Backfill and verify row-level temporal isolation",
+            "Deploy Q4 simulated rate configuration",
+            "Deploy and validate operational as-of baseline",
+            "Deploy read-only analytics contract",
+            "Verify deployed temporal truthfulness guard",
+            "Validate deployed analytics contract",
+            "Replay 28 logical dates",
+            "Reconcile every logical date",
+            "Validate lifecycle pipeline integration",
+            "Extend lifecycle through governed controller",
+            "Recover one failed lifecycle date through governed controller",
+        ):
+            self.assertNotIn("plan-stack-only", step(excluded_step), excluded_step)
+            self.assertNotIn("deploy-stack-only", step(excluded_step), excluded_step)
+
+        summary = step("Write staging evidence summary")
+        self.assertIn("Generator-only stack plan", summary)
+        self.assertIn("Generator-only stack release", summary)
+        self.assertIn("Lifecycle date invoked", summary)
+        self.assertIn("Lifecycle schema applied", summary)
+        self.assertIn("Initial seed requested", summary)
+
+    def test_generator_only_stack_change_set_is_exact_and_non_replacing(self):
+        script = (
+            ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("[switch]$GeneratorOnly", script)
+        self.assertIn("Generator-only change-set boundary", script)
+        self.assertIn("preserve existing stack parameter", script)
+        self.assertIn('foreach ($parameterName in @("ControllerArtifactKey", "QualityGateArtifactKey"))', script)
+        self.assertIn("$ControllerArtifactKey = $preservedArtifactKeys.ControllerArtifactKey", script)
+        self.assertIn("$QualityGateArtifactKey = $preservedArtifactKeys.QualityGateArtifactKey", script)
+        self.assertIn("if (-not $GeneratorOnly)", script)
+        self.assertIn("$generatorChanges.Count -eq 1", script)
+        self.assertIn('LogicalResourceId -eq "LifecycleGeneratorFunction"', script)
+        self.assertIn('ResourceType -eq "AWS::Lambda::Function"', script)
+        self.assertIn('Replacement -eq "False"', script)
+        guard = "Generator-only deployment change set must contain exactly one non-replacing LifecycleGeneratorFunction modification"
+        self.assertIn(guard, script)
+        self.assertLess(script.index(guard), script.index("cloudformation execute-change-set"))
+        self.assertIn("without schema execution, lifecycle invocation", script)
+
     def test_forecast_backtest_is_manual_read_only_and_private(self):
         script = (
             ROOT / "ops" / "run_multimodal_forecast_backtest.ps1"

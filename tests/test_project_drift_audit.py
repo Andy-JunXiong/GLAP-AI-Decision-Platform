@@ -109,7 +109,10 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "sql/16_decision_action_binding_v1.sql",
             "sql/17_decision_action_binding_validation.sql",
             "ops/plan_decision_truth_staging_rollout.ps1",
+            ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+            "ops/deploy_stateful_lifecycle_stack.ps1",
             "tests/test_decision_truth_staging_rollout.py",
+            "tests/test_stateful_lifecycle_deployment.py",
             "docs/decision_truth_staging_rollout.md",
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -122,6 +125,33 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 plan_path.read_text(encoding="utf-8").replace(
                     "Operational continuation authorized: False",
                     "Operational continuation authorized: True",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_decision_truth_generator_release_scope_drift_is_detected(self):
+        paths = (
+            "sql/16_decision_action_binding_v1.sql",
+            "sql/17_decision_action_binding_validation.sql",
+            "ops/plan_decision_truth_staging_rollout.ps1",
+            ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+            "ops/deploy_stateful_lifecycle_stack.ps1",
+            "tests/test_decision_truth_staging_rollout.py",
+            "tests/test_stateful_lifecycle_deployment.py",
+            "docs/decision_truth_staging_rollout.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            deployer_path = root / "ops/deploy_stateful_lifecycle_stack.ps1"
+            deployer_path.write_text(
+                deployer_path.read_text(encoding="utf-8").replace(
+                    "$generatorChanges.Count -eq 1",
+                    "$generatorChanges.Count -ge 1",
                 ),
                 encoding="utf-8",
             )

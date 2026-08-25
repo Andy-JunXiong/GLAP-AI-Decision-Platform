@@ -40,8 +40,8 @@ policy authority, deployment approval, or production readiness.
 
 This feature adds no query, route, table, environment value, CloudFormation
 change, mutation, schedule, AWS call, or external write. The prerequisite
-Action binding migration remains plan-only, and staging activation still
-requires separate migration and deployment authority.
+Action binding migration is applied and six-check validated; staging activation
+still requires separate producer and reader deployment authority.
 
 The companion
 [`outcome_cohort_descriptive_comparison_v1.md`](outcome_cohort_descriptive_comparison_v1.md)

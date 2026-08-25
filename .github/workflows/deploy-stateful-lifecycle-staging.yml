@@ -10,6 +10,8 @@ on:
         default: plan
         options:
           - plan
+          - plan-stack-only
+          - deploy-stack-only
           - deploy-replay-validate
           - deploy-integration-validate
           - deploy-analytics-contract
@@ -139,6 +141,11 @@ jobs:
             test "${{ inputs.execution_mode }}" = "OPERATIONAL"
             test -z "${{ inputs.scenario_id }}"
           fi
+          if [[ "${{ inputs.action }}" == "plan-stack-only" || "${{ inputs.action }}" == "deploy-stack-only" ]]; then
+            test "${{ inputs.execution_mode }}" = "OPERATIONAL"
+            test -z "${{ inputs.scenario_id }}"
+            test "${{ inputs.load_initial_seed }}" = "false"
+          fi
           test "${{ inputs.population_size }}" -ge 1
           test "${{ inputs.population_size }}" -le 5000
 
@@ -165,6 +172,23 @@ jobs:
         if: inputs.action != 'recover-stack-rollback'
         shell: pwsh
         run: |
+          $action = "${{ inputs.action }}"
+          if ($action -in @("plan-stack-only", "deploy-stack-only")) {
+            ./ops/deploy_stateful_lifecycle_stack.ps1 `
+              -Region $env:AWS_REGION `
+              -StackName $env:STACK_NAME `
+              -FunctionName $env:FUNCTION_NAME `
+              -SourceDatabase $env:SOURCE_DATABASE `
+              -Workgroup $env:ATHENA_WORKGROUP `
+              -ArtifactBucket $env:ARTIFACT_BUCKET `
+              -LifecycleDataBucket $env:DATA_BUCKET `
+              -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
+              -AthenaOutputUri $env:ATHENA_OUTPUT `
+              -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
+              -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
+              -GeneratorOnly
+            return
+          }
           $schemaPlan = @{
             Region = $env:AWS_REGION
             SourceDatabase = $env:SOURCE_DATABASE
@@ -197,7 +221,6 @@ jobs:
             -PopulationSize ${{ inputs.population_size }} `
             -ExecutionMode "${{ inputs.execution_mode }}" `
             -ScenarioId "${{ inputs.scenario_id }}"
-          $action = "${{ inputs.action }}"
           if ($action -in @("plan", "deploy-operational-baseline")) {
             ./ops/deploy_operational_baseline.ps1 `
               -Region $env:AWS_REGION `
@@ -289,24 +312,29 @@ jobs:
             -Apply
 
       - name: Deploy unscheduled lifecycle and integration stack
-        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
+        if: inputs.action == 'deploy-stack-only' || inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
         shell: pwsh
         run: |
-          ./ops/deploy_stateful_lifecycle_stack.ps1 `
-            -Region $env:AWS_REGION `
-            -StackName $env:STACK_NAME `
-            -FunctionName $env:FUNCTION_NAME `
-            -SourceDatabase $env:SOURCE_DATABASE `
-            -Workgroup $env:ATHENA_WORKGROUP `
-            -ArtifactBucket $env:ARTIFACT_BUCKET `
-            -LifecycleDataBucket $env:DATA_BUCKET `
-            -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
-            -AthenaOutputUri $env:ATHENA_OUTPUT `
-            -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
-            -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
-            -ControllerArtifactKey "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip" `
-            -QualityGateArtifactKey "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip" `
-            -Apply
+          $parameters = @{
+            Region = $env:AWS_REGION
+            StackName = $env:STACK_NAME
+            FunctionName = $env:FUNCTION_NAME
+            SourceDatabase = $env:SOURCE_DATABASE
+            Workgroup = $env:ATHENA_WORKGROUP
+            ArtifactBucket = $env:ARTIFACT_BUCKET
+            LifecycleDataBucket = $env:DATA_BUCKET
+            LifecycleDataPrefix = $env:LIFECYCLE_DATA_PREFIX
+            AthenaOutputUri = $env:ATHENA_OUTPUT
+            CloudFormationRoleArn = $env:CF_EXECUTION_ROLE_ARN
+            ArtifactKey = "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip"
+            ControllerArtifactKey = "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip"
+            QualityGateArtifactKey = "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip"
+            Apply = $true
+          }
+          if ("${{ inputs.action }}" -eq "deploy-stack-only") {
+            $parameters.GeneratorOnly = $true
+          }
+          ./ops/deploy_stateful_lifecycle_stack.ps1 @parameters
 
       - name: Recover failed CloudFormation rollback
         if: inputs.action == 'recover-stack-rollback'
@@ -526,6 +554,11 @@ jobs:
             echo "- CloudFormation rollback recovered: \`${{ inputs.action == 'recover-stack-rollback' }}\`"
             echo "- Row-level temporal isolation deployed: \`${{ inputs.action == 'deploy-recovery-controller' }}\`"
             echo "- Operational-calendar baseline deployed: \`${{ inputs.action == 'deploy-operational-baseline' }}\`"
+            echo "- Generator-only stack plan: \`${{ inputs.action == 'plan-stack-only' }}\`"
+            echo "- Generator-only stack release: \`${{ inputs.action == 'deploy-stack-only' }}\`"
+            echo "- Lifecycle date invoked: \`${{ inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'extend-integration-validate' || inputs.action == 'recover-failed-integration-date' }}\`"
+            echo "- Lifecycle schema applied: \`${{ inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller' }}\`"
+            echo "- Initial seed requested: \`${{ inputs.action == 'deploy-replay-validate' && inputs.load_initial_seed }}\`"
             echo "- Real-world evidence claimed: \`false\`"
             echo "- Lifecycle integration controller: isolated and manual"
             echo "- Production alias changed: \`false\`"

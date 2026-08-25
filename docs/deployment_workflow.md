@@ -118,13 +118,24 @@ additive schema migration, read-only validation, mutation Lambda, Operations
 API, private frontend, read-only smoke checks, four-role checks, then a
 named-human canary.
 
-The later Decision Truth extension has a separate plan-only handoff in
+The later Decision Truth extension has a separate staging handoff in
 [`decision_truth_staging_rollout.md`](decision_truth_staging_rollout.md). Its
-additive Action proposal columns and six-check aggregate validation must pass
-before any reader or producer release. The lifecycle producer is an explicit
-dependency because it creates immutable bindings; an API/frontend-only release
-cannot establish end-to-end binding evidence. Schema application, lifecycle
-producer deployment, Operations API deployment, private frontend publication,
+additive Action proposal columns were applied by a named human and all six
+aggregate checks returned zero on `2026-08-25`. The subsequent workflow plan
+run `32853867334` succeeded without deployment. The lifecycle producer remains
+an explicit dependency because it creates immutable bindings; an API/frontend-
+only release cannot establish end-to-end binding evidence.
+
+The local `plan-stack-only` / `deploy-stack-only` workflow pair is the narrow
+producer release candidate. The plan and deploy actions require separate
+manual dispatches. They package only the generator and retain the deployed
+controller and quality-gate artifact keys; deploy refuses to execute unless
+the CloudFormation change set contains exactly one non-replacing
+`LifecycleGeneratorFunction` modification. Both skip schema application, seed,
+replay, integration-date
+invocation, extension, baseline, analytics, schedule, alias, Action mutation,
+and production paths. They are not committed, pushed, or dispatched. Producer
+deployment, Operations API deployment, private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.
 

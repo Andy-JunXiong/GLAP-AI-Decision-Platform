@@ -42,11 +42,11 @@ type. They establish traceability, not causality. In particular, this contract:
 - does not change Learning thresholds, policy state, or deterministic rules;
 - does not add an Outcome, Action, approval, completion, or activation write.
 
-The Action-side fields depend on the additive, plan-only staging migration in
-`sql/16_decision_action_binding_v1.sql`. That migration must be separately
-reviewed and applied before this repository code can be deployed. Local tests
-establish query, API-type, cockpit-disclosure, legacy-null, and drift behavior
-only.
+The Action-side fields depend on the additive staging migration in
+`sql/16_decision_action_binding_v1.sql`. A named human applied it and all six
+aggregate checks returned zero on `2026-08-25`. The producer, API, and cockpit
+remain undeployed; local tests establish query, API-type, cockpit-disclosure,
+legacy-null, and drift behavior only.
 
 The next repository-local consumer is the versioned Decision-contract Outcome
 cohort summary. It uses these two nullable provenance fields as governed group
