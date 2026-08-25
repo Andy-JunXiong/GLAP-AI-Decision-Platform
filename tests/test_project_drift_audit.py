@@ -368,6 +368,32 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_outcome_cohort_comparison_retry_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_outcome_cohort_comparison_envelope_authority_drift_is_detected(self):
+        paths = (
+            "decision-brief-demo/app/outcome-comparison-envelope.ts",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/tests/rendered-html.test.mjs",
+            "docs/outcome_cohort_comparison_envelope_validator_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_outcome_cohort_comparison_envelope_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            validator_path = (
+                root
+                / "decision-brief-demo/app/outcome-comparison-envelope.ts"
+            )
+            validator_path.write_text(
+                validator_path.read_text(encoding="utf-8").replace(
+                    "governance.action_recommended !== false",
+                    "governance.action_recommended === false",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_outcome_cohort_comparison_envelope_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_outcome_learning_activation_drift_is_detected(self):
         paths = (
             "lambda/glap_operations_api.py",

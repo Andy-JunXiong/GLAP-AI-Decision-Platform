@@ -54,6 +54,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Private cockpit comparison fingerprint verifier v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Browser Web Crypto recomputes each digest and withholds covered comparison metrics and provenance until verification succeeds; missing, malformed, drifted, or mismatched contracts fail closed |
 | Comparison fingerprint verification diagnostics v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Every browser result carries one bounded local reason code; mismatch codes expose no raw error or covered evidence and create no telemetry or persistence |
 | Bounded local comparison re-verification v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Only transient browser failures receive one same-response local retry per cohort; structural failures cannot retry, content stays hidden, and no network or storage is used |
+| Outcome comparison envelope runtime validator v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | A present comparison view must reconcile its schema, status, counts, descriptive-only scope, all-false governance, and iterable cohort shape before React or per-cohort verification can use it; malformed envelopes fail the complete Outcome load closed |
 | Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
 | Learning operation | `DORMANT_EVIDENCE_GATED` | `implementation_status=IMPLEMENTED_VERIFIED`, `operational_status=DORMANT`, `evidence_status=INSUFFICIENT_ELIGIBLE_OUTCOMES`, and `progression_status=EVIDENCE_GATED`; current inspected state remains 1/20 |
 
@@ -158,15 +159,51 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Bounded local comparison re-verification v1 complete
+## Active slice — Outcome comparison envelope runtime validator v1 complete
 
 **Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
 
-The private cockpit now offers at most one local re-verification per cohort and
-loaded response, only for `CRYPTO_UNAVAILABLE` or `VERIFICATION_ERROR`.
-Structural mismatches remain non-retryable. Retry reuses the same in-memory
-cohort, returns content to the hidden pending state, and performs no network or
-storage operation. The slice is local and not deployed.
+The authenticated Outcome client now validates a present descriptive comparison
+envelope before React or per-cohort fingerprint verification can iterate it.
+Schema drift, status/count disagreement, a non-array cohort payload, or any
+expanded governance flag fails the complete Outcome load closed. A missing
+comparison view remains a supported partial-data state for older API builds.
+The slice is local and not deployed.
+
+## Recently completed — Outcome comparison envelope runtime validator v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+**Goal**
+
+Close the structural gap between untrusted Operations API JSON and the typed
+comparison client before any cohort-level integrity work or rendering begins.
+
+**Completed**
+
+- Added a runtime validator at the `loadOutcomeReview` boundary before the
+  response is cast to the typed client contract.
+- Required the exact comparison schema, two-cohort entry threshold,
+  descriptive-only scope, non-negative safe counts, and parent-count
+  reconciliation.
+- Required `AVAILABLE` to carry every eligible cohort and
+  `INSUFFICIENT_ELIGIBLE_COHORTS` to carry an empty comparison array.
+- Required an iterable cohort array with non-empty Decision Brief and selected-
+  alternative keys plus safe observed counts.
+- Required ranking, preferred-alternative selection, causal superiority,
+  statistical significance, and Action recommendation to remain exactly false.
+- Preserved omission of the cohort summary or comparison view as the existing
+  backwards-compatible partial-data state.
+- Added valid, non-iterable, count-drift, status-drift, and authority-expansion
+  tests plus a project-drift guard.
+
+**Boundary**
+
+This is a client-side structural consistency check, not source authentication,
+business validation, causal analysis, ranking, selection, Action authority, or
+deployment evidence. It adds no endpoint, request, retry, storage, telemetry,
+identifier exposure, mutation, infrastructure, AWS call, publication, or
+production effect.
 
 ## Recently completed — Bounded local comparison re-verification v1
 
@@ -1428,6 +1465,13 @@ done.
 
 ### Codex-run validation
 
+- Outcome comparison envelope runtime validator v1 passes valid-envelope,
+  non-iterable payload, count reconciliation, status/array reconciliation, and
+  governance-expansion scenarios, frontend lint, and the production build.
+  All 47 project-drift tests, the 47/47 drift audit, Python compilation, all
+  558 repository tests, and all five frontend contract tests pass. Validation
+  is local only; no request, route, storage, telemetry, deployment, AWS call,
+  mutation, or publication occurred.
 - Bounded local comparison re-verification v1 passes retry allow/deny contract
   scenarios, one-attempt and hidden-state cockpit checks, frontend lint, and the
   production build. All 46 project-drift tests, the 46/46 drift audit, Python
@@ -1817,16 +1861,19 @@ done.
 
 ## Next Up
 
-1. Recommended next feature: comparison-envelope runtime validator v1. It
-   should validate the top-level comparison schema, status/count reconciliation,
-   governance all-false flags, and cohort-array shape before React iterates the
-   response, failing the whole comparison view closed when the envelope is
-   malformed.
-2. The current verifier, diagnostics, and retry control safely govern each
-   individual cohort only after an iterable comparison envelope exists. A
-   runtime envelope validator would provide that prerequisite and prevent
-   malformed top-level responses from reaching cohort verification or render
-   logic. Staging use still requires separate deployment authority.
+1. The local `SLA_BREACH` Decision-to-Outcome truth chain is now structurally
+   complete through comparison-envelope validation. Do not add another
+   comparison governance micro-layer. Its next maturity gate is a separately
+   human-authorized private-staging rollout of the additive Action binding
+   migration, Operations API, and cockpit, followed by read-only role and
+   contract verification. This work is not authorized by the current local
+   development request.
+2. Recommended next product feature after that staging evidence:
+   `COST_ANOMALY` Decision Brief v1. It should reuse the existing immutable
+   binding and Outcome provenance chain, expose exact rate-card/source version
+   provenance, and keep expected benefit `NOT_ESTIMATED` unless a separately
+   governed intervention-effect assumption contract exists. This is a
+   recommendation, not approved work.
 3. On or after Sydney date `2026-08-28`, separately authorize only the one
    already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
    reconcile its due Outcome/Learning delta. Stop after that canary; do not

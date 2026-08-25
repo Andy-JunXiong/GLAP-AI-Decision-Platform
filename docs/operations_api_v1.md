@@ -176,6 +176,14 @@ reuses the same response object, returns content to the hidden pending state,
 and performs no API request. See
 [`outcome_cohort_comparison_retry_v1.md`](outcome_cohort_comparison_retry_v1.md).
 
+Before the cockpit or per-cohort verifier iterates a present comparison view,
+`outcome-cohort-comparison-envelope-validator.v1` checks the exact schema,
+status/count reconciliation, descriptive-only scope, all-false governance, and
+cohort-array shape. A present malformed envelope fails the complete Outcome
+load closed with fixed safe copy. Omission remains a supported partial-data
+state for older API builds. See
+[`outcome_cohort_comparison_envelope_validator_v1.md`](outcome_cohort_comparison_envelope_validator_v1.md).
+
 `GET /v1/learning` returns the governed bridge from observed Outcomes to a
 review-only policy proposal. One bounded Athena query de-duplicates Outcomes,
 counts only closed `OPERATIONAL` / `ACTUAL_CALENDAR` records observed on or

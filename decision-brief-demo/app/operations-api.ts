@@ -1,3 +1,5 @@
+import { validateOutcomeComparisonResponse } from "./outcome-comparison-envelope";
+
 export type ActionStatus = "PROPOSED" | "EDITED" | "APPROVED" | "REJECTED" | "COMPLETED";
 export type ActionOperation = "EDIT" | "APPROVE" | "REJECT" | "COMPLETE";
 
@@ -624,7 +626,9 @@ export async function loadRiskHotspots(token: string, status?: RiskStatus) {
 
 export async function loadOutcomeReview(token: string, status?: OutcomeStatus) {
   const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : "?limit=100";
-  return request<OutcomeResponse>(`/v1/outcomes${query}`, token);
+  const response = await request<unknown>(`/v1/outcomes${query}`, token);
+  validateOutcomeComparisonResponse(response);
+  return response as OutcomeResponse;
 }
 
 export async function loadLearningEvidence(token: string) {

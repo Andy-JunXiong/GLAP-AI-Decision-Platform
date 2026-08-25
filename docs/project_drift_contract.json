@@ -792,6 +792,23 @@
       ]
     },
     {
+      "id": "outcome_cohort_comparison_envelope_validator_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the authenticated Outcome client validates a present comparison envelope before React or per-cohort fingerprint verification can iterate it; exact schema, status/count reconciliation, descriptive-only scope, all-false governance, and cohort-array shape are required, malformed present envelopes fail the complete Outcome load closed, omission remains a partial-data compatibility state, and no request, storage, telemetry, mutation, deployment, or production authority is added",
+      "evidence_files": [
+        "decision-brief-demo/app/outcome-comparison-envelope.ts",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/outcome_cohort_comparison_envelope_validator_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "pre_commit_drift_gate",
       "state": "IMPLEMENTED_VERIFIED",
       "boundary": "local staged-snapshot validation before commit",

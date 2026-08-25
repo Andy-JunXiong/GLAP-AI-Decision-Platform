@@ -146,6 +146,76 @@ test("verifies the server comparison fingerprint and fails closed on drift", asy
   }), false);
 });
 
+test("validates the comparison envelope before the cockpit can iterate it", async () => {
+  const { validateOutcomeComparisonResponse } = await import(
+    "../app/outcome-comparison-envelope.ts"
+  );
+  const eligibleCohort = (selectedAlternative) => ({
+    decision_brief_version: "decision-brief.v1",
+    selected_alternative: selectedAlternative,
+    observed_outcome_count: 20,
+  });
+  const response = {
+    cohort_summary: {
+      cohorts: [{}, {}, {}],
+      descriptive_comparison_view: {
+        schema_version: "outcome-cohort-descriptive-comparison.v1",
+        status: "AVAILABLE",
+        required_eligible_cohort_count: 2,
+        eligible_cohort_count: 2,
+        excluded_cohort_count: 1,
+        cohorts: [eligibleCohort("EXPEDITE"), eligibleCohort("MONITOR")],
+        comparison_scope: "DESCRIPTIVE_SYNTHETIC_ONLY",
+        governance: {
+          ranking_produced: false,
+          preferred_alternative_selected: false,
+          causal_superiority_estimated: false,
+          statistical_significance_estimated: false,
+          action_recommended: false,
+        },
+      },
+    },
+  };
+  assert.doesNotThrow(() => validateOutcomeComparisonResponse(response));
+  assert.doesNotThrow(() => validateOutcomeComparisonResponse({}));
+
+  const validInsufficient = structuredClone(response);
+  validInsufficient.cohort_summary.cohorts = [{}];
+  validInsufficient.cohort_summary.descriptive_comparison_view.status = "INSUFFICIENT_ELIGIBLE_COHORTS";
+  validInsufficient.cohort_summary.descriptive_comparison_view.eligible_cohort_count = 1;
+  validInsufficient.cohort_summary.descriptive_comparison_view.excluded_cohort_count = 0;
+  validInsufficient.cohort_summary.descriptive_comparison_view.cohorts = [];
+  assert.doesNotThrow(() => validateOutcomeComparisonResponse(validInsufficient));
+
+  const nonIterable = structuredClone(response);
+  nonIterable.cohort_summary.descriptive_comparison_view.cohorts = {};
+  assert.throws(
+    () => validateOutcomeComparisonResponse(nonIterable),
+    /Outcome comparison envelope failed closed/,
+  );
+
+  const inconsistentCounts = structuredClone(response);
+  inconsistentCounts.cohort_summary.descriptive_comparison_view.excluded_cohort_count = 0;
+  assert.throws(
+    () => validateOutcomeComparisonResponse(inconsistentCounts),
+    /Outcome comparison envelope failed closed/,
+  );
+
+  const unavailableStatus = structuredClone(response);
+  unavailableStatus.cohort_summary.descriptive_comparison_view.status = "INSUFFICIENT_ELIGIBLE_COHORTS";
+  assert.throws(
+    () => validateOutcomeComparisonResponse(unavailableStatus),
+    /Outcome comparison envelope failed closed/,
+  );
+
+  const expandedAuthority = structuredClone(response);
+  expandedAuthority.cohort_summary.descriptive_comparison_view.governance.action_recommended = true;
+  assert.throws(
+    () => validateOutcomeComparisonResponse(expandedAuthority),
+    /Outcome comparison envelope failed closed/,
+  );
+});
+
 test("keeps authenticated Action writes behind the internal API client", async () => {
   const client = await readFile(new URL("../app/operations-api.ts", import.meta.url), "utf8");
   assert.match(client, /NEXT_PUBLIC_GLAP_OPERATIONS_API_URL/);
@@ -161,6 +231,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(client, /export async function loadRiskHotspots/);
   assert.match(client, /\/v1\/outcomes\$\{query\}/);
   assert.match(client, /export async function loadOutcomeReview/);
+  assert.match(client, /request<unknown>\(`\/v1\/outcomes\$\{query\}`/);
+  assert.match(client, /validateOutcomeComparisonResponse\(response\)/);
   assert.match(client, /\/v1\/learning/);
   assert.match(client, /export async function loadLearningEvidence/);
   assert.match(client, /\/v1\/label-readiness/);

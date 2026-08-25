@@ -375,6 +375,15 @@ only while the same comparison-view object remains current. Structural
 mismatches cannot retry, and no request, storage, telemetry, or mutation is
 added.
 
+An `outcome-cohort-comparison-envelope-validator.v1` boundary now runs on the
+loaded Outcome response before React or per-cohort verification can iterate the
+comparison. It reconciles the schema, availability status, parent and eligible
+counts, cohort-array shape, descriptive-only scope, and all-false governance.
+A present malformed envelope fails the complete Outcome load closed; omission
+remains a backwards-compatible partial state. The validator makes no new
+request and grants no authenticity, business-validity, Action, Learning,
+deployment, or production authority.
+
 The staging runtime now also exposes an authenticated
 `GET /v1/label-readiness` projection and Provider Label Readiness cockpit page.
 They aggregate only the governed operational label view by mode/provider under

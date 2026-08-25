@@ -6,6 +6,13 @@ preserved handoffs.
 
 ## 2026-08-25
 
+- Implemented Outcome comparison envelope runtime validation v1. The private
+  cockpit now checks the top-level schema, status/count reconciliation,
+  descriptive-only scope, all-false governance, and iterable cohort shape
+  before React or per-cohort fingerprint verification can use the response.
+  A present malformed envelope fails the complete Outcome load closed; an
+  omitted comparison remains a supported partial-data state. No endpoint,
+  request, storage, telemetry, mutation, deployment, or authority was added.
 - Implemented bounded local comparison re-verification v1. The private cockpit
   offers exactly one same-response browser-local retry only for
   `CRYPTO_UNAVAILABLE` or `VERIFICATION_ERROR`; structural, contract, and

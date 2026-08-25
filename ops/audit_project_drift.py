@@ -2606,6 +2606,97 @@ def check_outcome_cohort_comparison_retry_boundary(
     ]
 
 
+def check_outcome_cohort_comparison_envelope_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "validator": "decision-brief-demo/app/outcome-comparison-envelope.ts",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "tests": "decision-brief-demo/tests/rendered-html.test.mjs",
+        "contract": "docs/outcome_cohort_comparison_envelope_validator_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    validator_bounded = all(
+        marker in text["validator"]
+        for marker in (
+            'const ENVELOPE_ERROR = "Outcome comparison envelope failed closed"',
+            "export function validateOutcomeComparisonResponse",
+            "if (summary === undefined) return",
+            "if (envelope === undefined) return",
+            'envelope.schema_version !== "outcome-cohort-descriptive-comparison.v1"',
+            'status !== "AVAILABLE" && status !== "INSUFFICIENT_ELIGIBLE_COHORTS"',
+            "envelope.required_eligible_cohort_count !== 2",
+            'envelope.comparison_scope !== "DESCRIPTIVE_SYNTHETIC_ONLY"',
+            "eligibleCount + excludedCount !== summary.cohorts.length",
+            "!Array.isArray(cohorts)",
+            "!cohorts.every(hasCohortIdentity)",
+            "governance.ranking_produced !== false",
+            "governance.preferred_alternative_selected !== false",
+            "governance.causal_superiority_estimated !== false",
+            "governance.statistical_significance_estimated !== false",
+            "governance.action_recommended !== false",
+            'if (status === "AVAILABLE")',
+            "eligibleCount < 2 || cohorts.length !== eligibleCount",
+            "eligibleCount >= 2 || cohorts.length !== 0",
+        )
+    ) and not any(
+        marker in text["validator"]
+        for marker in ("fetch(", "sessionStorage", "localStorage", "sendBeacon")
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'import { validateOutcomeComparisonResponse } from "./outcome-comparison-envelope"',
+            "const response = await request<unknown>",
+            "validateOutcomeComparisonResponse(response)",
+            "return response as OutcomeResponse",
+        )
+    ) and (
+        text["client"].index("const response = await request<unknown>")
+        < text["client"].index("validateOutcomeComparisonResponse(response)")
+        < text["client"].index("return response as OutcomeResponse")
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "validates the comparison envelope before the cockpit can iterate it",
+            "nonIterable.cohort_summary.descriptive_comparison_view.cohorts = {}",
+            "inconsistentCounts.cohort_summary.descriptive_comparison_view.excluded_cohort_count = 0",
+            'unavailableStatus.cohort_summary.descriptive_comparison_view.status = "INSUFFICIENT_ELIGIBLE_COHORTS"',
+            "expandedAuthority.cohort_summary.descriptive_comparison_view.governance.action_recommended = true",
+            "validateOutcomeComparisonResponse(response)",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "before React or the per-cohort fingerprint verifier can iterate it",
+            "eligible and excluded counts are non-negative safe integers whose sum equals the parent summary cohort count",
+            "all five governance flags remain exactly false",
+            "A present but malformed summary or comparison envelope throws one fixed safe error",
+            "does not validate the covered metrics or provenance inside a cohort",
+            "adds no endpoint, request, retry, telemetry, persistence, browser storage",
+        )
+    )
+    return [
+        _result(
+            "outcome_cohort_comparison_envelope_boundary",
+            "governance",
+            validator_bounded
+            and client_bounded
+            and tests_bounded
+            and contract_bounded,
+            "The Outcome client validates an iterable, count-reconciled, descriptive-only, all-false comparison envelope before rendering and fails malformed present responses closed without adding network, storage, mutation, or production authority.",
+            "The comparison envelope can reach rendering without structural reconciliation, fail-open governance, or has gained network, storage, mutation, or production authority.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_outcome_learning_evidence_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "api": "lambda/glap_operations_api.py",
@@ -3186,6 +3277,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_outcome_cohort_comparison_verifier_boundary(root))
     checks.extend(check_outcome_cohort_comparison_diagnostics_boundary(root))
     checks.extend(check_outcome_cohort_comparison_retry_boundary(root))
+    checks.extend(check_outcome_cohort_comparison_envelope_boundary(root))
     checks.extend(check_outcome_learning_evidence_boundary(root))
     checks.extend(check_provider_label_readiness_boundary(root))
     checks.extend(check_audit_automation(root))

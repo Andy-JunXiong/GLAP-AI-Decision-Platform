@@ -148,6 +148,14 @@ rechecked, content stays hidden, and no network, telemetry, persistence, or
 mutation path is introduced; see
 [`outcome_cohort_comparison_retry_v1.md`](outcome_cohort_comparison_retry_v1.md).
 
+The client now validates the complete comparison envelope before React or the
+per-cohort verifier can iterate it. Schema drift, inconsistent eligible and
+excluded counts, an invalid status/array combination, or any true governance
+flag fails the Outcome load closed. A wholly omitted comparison remains the
+existing partial-data state. This local structural prerequisite adds no new
+request or authority; see
+[`outcome_cohort_comparison_envelope_validator_v1.md`](outcome_cohort_comparison_envelope_validator_v1.md).
+
 The repository extension uses `PROPOSED -> EDITED` to record a named owner and
 due date without approving the Action. `EDITED` then requires a separate
 approver to approve or reject it. Assignment is carried forward into later
