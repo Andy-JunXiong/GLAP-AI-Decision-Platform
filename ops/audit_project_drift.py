@@ -1832,13 +1832,16 @@ def check_provider_label_readiness_boundary(root: Path) -> list[CheckResult]:
             ("temporal", "provider label-readiness surface"),
             ("operations_doc", "200 observed labels per provider"),
             ("status", "Provider label-readiness dashboard"),
-            ("status", "implemented and locally verified"),
+            ("status", "implemented, pushed, and plan-verified"),
+            ("status", "32807768764"),
             ("status", "No current label count or readiness status is claimed from AWS"),
         )
     )
     capability_bounded = (
         capability.get("state") == "IMPLEMENTED_VERIFIED"
         and "not deployed" in boundary
+        and "pushed" in boundary
+        and "plan-verified" in boundary
         and "server-derived sydney cutoff" in boundary
         and "pending labels are coverage-only" in boundary
         and "future simulations" in boundary
@@ -1854,7 +1857,7 @@ def check_provider_label_readiness_boundary(root: Path) -> list[CheckResult]:
             "forecasting",
             api_bounded and route_bounded and release_bounded and client_bounded
             and documentation_bounded and capability_bounded,
-            "Provider label readiness remains aggregate-only, actual-calendar bounded, locally verified, undeployed, and unable to grant training, promotion, or production authority.",
+            "Provider label readiness remains aggregate-only, actual-calendar bounded, pushed and plan-verified, undeployed, and unable to grant training, promotion, or production authority.",
             "Provider label readiness lost its cutoff, aggregation, identifier-redaction, release-maturity, or no-authority boundary.",
             tuple(paths.values()),
         )

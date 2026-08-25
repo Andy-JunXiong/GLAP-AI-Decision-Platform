@@ -48,7 +48,7 @@
     {
       "id": "provider_label_readiness_dashboard",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "local authenticated aggregate-only provider label-readiness API and cockpit are verified but not deployed; the server-derived Sydney cutoff admits only OPERATIONAL ACTUAL_CALENDAR rows, pending labels are coverage-only, future simulations and entity identifiers are excluded, thresholds permit evaluation only, and training, promotion, scheduling, deployment, production readiness, and operational mutation authority remain false",
+      "boundary": "repository implementation is pushed and plan-verified but not deployed; the authenticated aggregate-only provider label-readiness API and cockpit use a server-derived Sydney cutoff that admits only OPERATIONAL ACTUAL_CALENDAR rows, pending labels are coverage-only, future simulations and entity identifiers are excluded, thresholds permit evaluation only, and training, promotion, scheduling, deployment, production readiness, and operational mutation authority remain false",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",

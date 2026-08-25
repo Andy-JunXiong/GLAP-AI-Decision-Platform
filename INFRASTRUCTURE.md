@@ -138,8 +138,14 @@ The values are deliberately omitted because they identify environment-specific r
   and plan-first Lake Formation inventory name that view and its governed
   dependencies exactly, while the response excludes entity identifiers,
   future simulations, training authority, model promotion, schedules, and
-  production capability. This extension is locally implemented and verified,
-  not deployed or runtime-verified
+  production capability. Commit `eb35a3f` is pushed, and Operations API plan
+  run `32807768764` passed protected configuration, dependency, and deployment-
+  plan checks with the deploy step skipped. A later read-only inspection found
+  the healthy existing stack still exposed 10 routes and lacked the label
+  environment contract, private frontend content, and Lambda Glue-policy view
+  entry. The extension remains not deployed or runtime-verified; no Lake
+  Formation database mode is claimed because that permission inventory was not
+  readable by the inspection identity.
 
 PR #76 merged both read-only extensions as `c4f367fb`. The merge-triggered
 Operations API workflow passed its protected configuration, dependency, and

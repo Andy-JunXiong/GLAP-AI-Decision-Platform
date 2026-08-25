@@ -178,6 +178,15 @@ class ProjectDriftAuditTests(unittest.TestCase):
             self._copy_paths(root, paths)
             current = AUDIT.check_provider_label_readiness_boundary(root)[0]
             self.assertEqual(current.status, "PASS")
+            status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
+            original_status = status_path.read_text(encoding="utf-8")
+            status_path.write_text(
+                original_status.replace("32807768764", "plan-run-missing"),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_provider_label_readiness_boundary(root)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            status_path.write_text(original_status, encoding="utf-8")
             api_path = root / "lambda" / "glap_operations_api.py"
             api_path.write_text(
                 api_path.read_text(encoding="utf-8").replace(
