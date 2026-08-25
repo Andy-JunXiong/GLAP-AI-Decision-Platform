@@ -1,7 +1,8 @@
 # Decision Truth private staging rollout
 
 **Status:** staging schema applied and aggregate-validated; generator release
-path implemented and verified but not dispatched or deployed
+attempt failed closed before execution; diagnostic plan correction implemented
+locally and not deployed
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -43,7 +44,10 @@ not authorize the next.
    create truthful bindings. The deployer preserves the existing controller
    and quality-gate artifacts and fails closed unless the CloudFormation change
    set contains exactly one non-replacing `LifecycleGeneratorFunction`
-   modification. It does not apply schema or invoke a lifecycle date.
+   modification. The corrected plan creates and deletes an unexecuted temporary
+   change set and reports only logical resource ID, type, action, and replacement
+   status; it uploads no artifact. It does not apply schema or invoke a lifecycle
+   date.
 4. A named staging release owner runs the existing Operations API workflow in
    `plan`, reviews it, and separately dispatches `action=deploy` if approved.
 5. A named staging release owner first runs
@@ -70,9 +74,18 @@ Manual workflow run `32853867334` from commit `978beb8` then completed with
 `action=plan`, `execution_mode=OPERATIONAL`, an empty scenario ID, and
 `time_basis=ACTUAL_CALENDAR`. It created no artifact and performed no stack
 deployment, schema write, seed, replay, lifecycle invocation, or continuation.
-The repository-local `deploy-stack-only` candidate and its separate
-`plan-stack-only` prerequisite were implemented afterward. Neither has been
-committed, pushed, dispatched, or deployed.
+Commit `59a9eaa` delivered the repository-local `deploy-stack-only` candidate
+and its separate `plan-stack-only` prerequisite. Run `32901614061` completed
+the original render-only `plan-stack-only` path. Human-dispatched deploy run
+`32905914076` reached the exact change-set gate, uploaded the inactive
+commit-addressed generator artifact, and failed closed because the change set
+was not exactly one non-replacing generator modification. The change set was
+deleted before execution; no stack resource, schema, lifecycle date, alias,
+schedule, Action, or production path changed. The locally corrected plan now
+creates, sanitizes, validates, and deletes an unexecuted temporary change set so
+the mismatch can be diagnosed before any later deployment decision. That
+correction is included in this source-control delivery but remains undispatched
+and runtime-unverified.
 
 ## Runtime evidence boundary
 

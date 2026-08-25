@@ -128,14 +128,23 @@ only release cannot establish end-to-end binding evidence.
 
 The local `plan-stack-only` / `deploy-stack-only` workflow pair is the narrow
 producer release candidate. The plan and deploy actions require separate
-manual dispatches. They package only the generator and retain the deployed
-controller and quality-gate artifact keys; deploy refuses to execute unless
-the CloudFormation change set contains exactly one non-replacing
-`LifecycleGeneratorFunction` modification. Both skip schema application, seed,
+manual dispatches. The corrected plan action creates an unexecuted temporary
+change set, prints only logical resource ID, resource type, action, and
+replacement status, applies the same exact-one-generator gate, and deletes the
+change set without uploading an artifact. Deploy packages only the generator
+and retains the deployed controller and quality-gate artifact keys; it refuses
+to execute unless the CloudFormation change set contains exactly one
+non-replacing `LifecycleGeneratorFunction` modification. Both skip schema application, seed,
 replay, integration-date
 invocation, extension, baseline, analytics, schedule, alias, Action mutation,
-and production paths. They are not committed, pushed, or dispatched. Producer
-deployment, Operations API deployment, private frontend publication,
+and production paths. Commit `59a9eaa` delivered the first path. Plan-only run
+`32901614061` succeeded under the earlier render-only behavior. Human-dispatched
+deploy run `32905914076` then uploaded an inactive generator artifact and
+failed closed before change-set execution because the actual change set was not
+exactly one non-replacing generator modification; its temporary change set was
+deleted and no stack resource changed. This source-control correction delivers
+the diagnostic plan path but does not dispatch it. Producer deployment,
+Operations API deployment, private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.
 

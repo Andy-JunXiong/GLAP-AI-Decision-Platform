@@ -50,13 +50,20 @@ Air uses airport receipt/cargo-availability events and chargeable-weight cost.
 
 The local `plan-stack-only` / `deploy-stack-only` pair adds a plan-first
 Decision Truth producer release path without lifecycle execution. Both require
-separate manual dispatches. The deploy action uploads only the commit-addressed
-generator artifact, preserves the existing controller and quality-gate
-artifact parameters, and fails unless the inspected change set contains
-exactly one non-replacing `LifecycleGeneratorFunction` modification. Neither
+separate manual dispatches. The corrected plan action creates an unexecuted
+temporary change set, prints only logical resource ID, type, action, and
+replacement status, enforces the exact-one-generator boundary, and deletes the
+change set without uploading an artifact. The deploy action uploads only the
+commit-addressed generator artifact, preserves the existing controller and
+quality-gate artifact parameters, and fails unless the inspected change set
+contains exactly one non-replacing `LifecycleGeneratorFunction` modification. Neither
 action applies schema, seeds data, replays dates, invokes an integration date,
 extends the controller, changes an alias, or creates a schedule. The options
-are local and have not been pushed or dispatched.
+were delivered in commit `59a9eaa`. Human run `32905914076` failed closed at
+the exact change-set gate before execution; the temporary change set was
+deleted, the uploaded generator artifact remained inactive, and no stack
+resource changed. This source-control correction delivers the diagnostic plan
+path but does not dispatch it.
 
 All PowerShell deployment commands are plan-only unless `-Apply` is explicit.
 They use `AWS_PROFILE` when it exists and otherwise use the temporary AWS

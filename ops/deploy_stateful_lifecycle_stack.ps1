@@ -22,10 +22,18 @@ param(
     [string]$ControllerArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-controller.zip",
     [string]$QualityGateArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-quality-gate.zip",
     [switch]$GeneratorOnly,
+    [switch]$InspectChangeSet,
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($Apply -and $InspectChangeSet) {
+    throw "Apply and InspectChangeSet are mutually exclusive"
+}
+if ($InspectChangeSet -and -not $GeneratorOnly) {
+    throw "InspectChangeSet is restricted to the generator-only release path"
+}
 
 foreach ($identifier in @(
     $StackName,
@@ -110,17 +118,18 @@ if ($GeneratorOnly) {
 Write-Host "  Action mutation: $ActionMutationFunctionName"
 Write-Host "  Action mutation artifact preserved from the existing stack: True"
 Write-Host "  Generator-only change-set boundary: $([bool]$GeneratorOnly)"
+Write-Host "  Temporary change-set inspection: $([bool]$InspectChangeSet)"
 Write-Host "  Dedicated CloudFormation service role configured: $([bool]$CloudFormationRoleArn)"
 Write-Host "  Lifecycle data: s3://$LifecycleDataBucket/$dataPrefix/"
 Write-Host "  Athena results prefix configured: True"
 Write-Host "  Schedule created: False"
 
-if (-not $Apply) {
+if (-not $Apply -and -not $InspectChangeSet) {
     Write-Host "Plan only. Re-run with -Apply after validating buckets and the OIDC role."
     return
 }
 if (-not $CloudFormationRoleArn) {
-    throw "CloudFormationRoleArn is required for lifecycle stack deployment"
+    throw "CloudFormationRoleArn is required for lifecycle change-set inspection or deployment"
 }
 
 $awsScope = @("--region", $Region)
@@ -182,68 +191,70 @@ if ($LASTEXITCODE -ne 0 -or $effectiveEngine -notmatch 'Athena engine version 3'
     throw "Athena workgroup must use engine version 3 for transactional Iceberg MERGE"
 }
 
-New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $root "lambda/glap_lifecycle_athena_adapter.py") `
-    -Destination (Join-Path $packageDir "lambda_function.py") -Force
-Copy-Item -LiteralPath (Join-Path $root "lambda/glap_stateful_lifecycle_generator.py") `
-    -Destination (Join-Path $packageDir "glap_stateful_lifecycle_generator.py") -Force
-Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-    -Destination (Join-Path $packageDir "glap_temporal_boundary.py") -Force
-Copy-Item -LiteralPath (Join-Path $root "lambda/glap_governed_closed_loop.py") `
-    -Destination (Join-Path $packageDir "glap_governed_closed_loop.py") -Force
-Compress-Archive -LiteralPath `
-    (Join-Path $packageDir "lambda_function.py"), `
-    (Join-Path $packageDir "glap_stateful_lifecycle_generator.py"), `
-    (Join-Path $packageDir "glap_temporal_boundary.py"), `
-    (Join-Path $packageDir "glap_governed_closed_loop.py") `
-    -DestinationPath $archivePath -Force
-
-if (-not $GeneratorOnly) {
-    New-Item -ItemType Directory -Path $controllerPackageDir -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_pipeline_controller.py") `
-        -Destination (Join-Path $controllerPackageDir "lambda_function.py") -Force
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
-        -Destination (Join-Path $controllerPackageDir "glap_quality_contracts.py") -Force
+if ($Apply) {
+    New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_lifecycle_athena_adapter.py") `
+        -Destination (Join-Path $packageDir "lambda_function.py") -Force
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_stateful_lifecycle_generator.py") `
+        -Destination (Join-Path $packageDir "glap_stateful_lifecycle_generator.py") -Force
     Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-        -Destination (Join-Path $controllerPackageDir "glap_temporal_boundary.py") -Force
+        -Destination (Join-Path $packageDir "glap_temporal_boundary.py") -Force
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_governed_closed_loop.py") `
+        -Destination (Join-Path $packageDir "glap_governed_closed_loop.py") -Force
     Compress-Archive -LiteralPath `
-        (Join-Path $controllerPackageDir "lambda_function.py"), `
-        (Join-Path $controllerPackageDir "glap_quality_contracts.py"), `
-        (Join-Path $controllerPackageDir "glap_temporal_boundary.py") `
-        -DestinationPath $controllerArchivePath -Force
+        (Join-Path $packageDir "lambda_function.py"), `
+        (Join-Path $packageDir "glap_stateful_lifecycle_generator.py"), `
+        (Join-Path $packageDir "glap_temporal_boundary.py"), `
+        (Join-Path $packageDir "glap_governed_closed_loop.py") `
+        -DestinationPath $archivePath -Force
 
-    New-Item -ItemType Directory -Path $qualityPackageDir -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_data_quality_gate.py") `
-        -Destination (Join-Path $qualityPackageDir "lambda_function.py") -Force
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
-        -Destination (Join-Path $qualityPackageDir "glap_quality_contracts.py") -Force
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-        -Destination (Join-Path $qualityPackageDir "glap_temporal_boundary.py") -Force
-    Copy-Item -LiteralPath (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") `
-        -Destination (Join-Path $qualityPackageDir "lifecycle_validation.sql") -Force
-    Copy-Item -LiteralPath (Join-Path $root "sql/10_multimodal_ops_validation.sql") `
-        -Destination (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") -Force
-    Compress-Archive -LiteralPath `
-        (Join-Path $qualityPackageDir "lambda_function.py"), `
-        (Join-Path $qualityPackageDir "glap_quality_contracts.py"), `
-        (Join-Path $qualityPackageDir "glap_temporal_boundary.py"), `
-        (Join-Path $qualityPackageDir "lifecycle_validation.sql"), `
-        (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
-        -DestinationPath $qualityArchivePath -Force
-}
+    if (-not $GeneratorOnly) {
+        New-Item -ItemType Directory -Path $controllerPackageDir -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_pipeline_controller.py") `
+            -Destination (Join-Path $controllerPackageDir "lambda_function.py") -Force
+        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
+            -Destination (Join-Path $controllerPackageDir "glap_quality_contracts.py") -Force
+        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+            -Destination (Join-Path $controllerPackageDir "glap_temporal_boundary.py") -Force
+        Compress-Archive -LiteralPath `
+            (Join-Path $controllerPackageDir "lambda_function.py"), `
+            (Join-Path $controllerPackageDir "glap_quality_contracts.py"), `
+            (Join-Path $controllerPackageDir "glap_temporal_boundary.py") `
+            -DestinationPath $controllerArchivePath -Force
 
-& aws s3 cp $archivePath "s3://$ArtifactBucket/$ArtifactKey" @awsScope --only-show-errors
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to upload the lifecycle Lambda artifact"
-}
-if (-not $GeneratorOnly) {
-    & aws s3 cp $controllerArchivePath "s3://$ArtifactBucket/$ControllerArtifactKey" @awsScope --only-show-errors
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to upload the lifecycle integration controller artifact"
+        New-Item -ItemType Directory -Path $qualityPackageDir -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_data_quality_gate.py") `
+            -Destination (Join-Path $qualityPackageDir "lambda_function.py") -Force
+        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
+            -Destination (Join-Path $qualityPackageDir "glap_quality_contracts.py") -Force
+        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+            -Destination (Join-Path $qualityPackageDir "glap_temporal_boundary.py") -Force
+        Copy-Item -LiteralPath (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") `
+            -Destination (Join-Path $qualityPackageDir "lifecycle_validation.sql") -Force
+        Copy-Item -LiteralPath (Join-Path $root "sql/10_multimodal_ops_validation.sql") `
+            -Destination (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") -Force
+        Compress-Archive -LiteralPath `
+            (Join-Path $qualityPackageDir "lambda_function.py"), `
+            (Join-Path $qualityPackageDir "glap_quality_contracts.py"), `
+            (Join-Path $qualityPackageDir "glap_temporal_boundary.py"), `
+            (Join-Path $qualityPackageDir "lifecycle_validation.sql"), `
+            (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
+            -DestinationPath $qualityArchivePath -Force
     }
-    & aws s3 cp $qualityArchivePath "s3://$ArtifactBucket/$QualityGateArtifactKey" @awsScope --only-show-errors
+
+    & aws s3 cp $archivePath "s3://$ArtifactBucket/$ArtifactKey" @awsScope --only-show-errors
     if ($LASTEXITCODE -ne 0) {
-        throw "Unable to upload the lifecycle integration quality artifact"
+        throw "Unable to upload the lifecycle Lambda artifact"
+    }
+    if (-not $GeneratorOnly) {
+        & aws s3 cp $controllerArchivePath "s3://$ArtifactBucket/$ControllerArtifactKey" @awsScope --only-show-errors
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to upload the lifecycle integration controller artifact"
+        }
+        & aws s3 cp $qualityArchivePath "s3://$ArtifactBucket/$QualityGateArtifactKey" @awsScope --only-show-errors
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to upload the lifecycle integration quality artifact"
+        }
     }
 }
 $parameterOverrides = @(
@@ -333,6 +344,26 @@ try {
         throw "Unable to inspect the lifecycle staging change set"
     }
     $changeSet = $changeSetJson -join "`n" | ConvertFrom-Json
+    $safeChanges = @(
+        $changeSet.Changes | ForEach-Object {
+            [pscustomobject]@{
+                LogicalResourceId = [string]$_.ResourceChange.LogicalResourceId
+                ResourceType = [string]$_.ResourceChange.ResourceType
+                Action = [string]$_.ResourceChange.Action
+                Replacement = [string]$_.ResourceChange.Replacement
+            }
+        }
+    )
+    Write-Host "Sanitized lifecycle change-set summary ($($safeChanges.Count) resources)"
+    foreach ($safeChange in @($safeChanges | Sort-Object LogicalResourceId, ResourceType)) {
+        Write-Host (
+            "  Action={0}; LogicalResourceId={1}; ResourceType={2}; Replacement={3}" -f
+            $safeChange.Action,
+            $safeChange.LogicalResourceId,
+            $safeChange.ResourceType,
+            $safeChange.Replacement
+        )
+    }
     $protectedChanges = @(
         $changeSet.Changes | Where-Object {
             $_.ResourceChange.LogicalResourceId -in @(
@@ -355,6 +386,16 @@ try {
         if (-not $generatorChangeIsNarrow) {
             throw "Generator-only deployment change set must contain exactly one non-replacing LifecycleGeneratorFunction modification"
         }
+    }
+    if ($InspectChangeSet) {
+        & aws cloudformation delete-change-set `
+            --stack-name $StackName --change-set-name $changeSetName @awsScope | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to delete the inspected lifecycle staging change set"
+        }
+        $changeSetCreated = $false
+        Write-Host "Generator-only change set inspected and deleted without execution or artifact upload."
+        return
     }
     & aws cloudformation execute-change-set `
         --stack-name $StackName --change-set-name $changeSetName @awsScope

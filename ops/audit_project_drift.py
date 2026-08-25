@@ -1833,6 +1833,7 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             for marker in (
                 "- plan-stack-only",
                 "- deploy-stack-only",
+                "$stackParameters.InspectChangeSet = $true",
                 '$parameters.GeneratorOnly = $true',
                 "Generator-only stack release",
                 "Lifecycle date invoked",
@@ -1844,11 +1845,14 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             marker in text["stack_deployer"]
             for marker in (
                 "[switch]$GeneratorOnly",
+                "[switch]$InspectChangeSet",
                 "preserve existing stack parameter",
+                "Sanitized lifecycle change-set summary",
                 "$generatorChanges.Count -eq 1",
                 'LogicalResourceId -eq "LifecycleGeneratorFunction"',
                 'ResourceType -eq "AWS::Lambda::Function"',
                 'Replacement -eq "False"',
+                "without execution or artifact upload",
                 "without schema execution, lifecycle invocation",
             )
         )

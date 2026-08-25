@@ -174,19 +174,24 @@ jobs:
         run: |
           $action = "${{ inputs.action }}"
           if ($action -in @("plan-stack-only", "deploy-stack-only")) {
-            ./ops/deploy_stateful_lifecycle_stack.ps1 `
-              -Region $env:AWS_REGION `
-              -StackName $env:STACK_NAME `
-              -FunctionName $env:FUNCTION_NAME `
-              -SourceDatabase $env:SOURCE_DATABASE `
-              -Workgroup $env:ATHENA_WORKGROUP `
-              -ArtifactBucket $env:ARTIFACT_BUCKET `
-              -LifecycleDataBucket $env:DATA_BUCKET `
-              -LifecycleDataPrefix $env:LIFECYCLE_DATA_PREFIX `
-              -AthenaOutputUri $env:ATHENA_OUTPUT `
-              -CloudFormationRoleArn $env:CF_EXECUTION_ROLE_ARN `
-              -ArtifactKey "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip" `
-              -GeneratorOnly
+            $stackParameters = @{
+              Region = $env:AWS_REGION
+              StackName = $env:STACK_NAME
+              FunctionName = $env:FUNCTION_NAME
+              SourceDatabase = $env:SOURCE_DATABASE
+              Workgroup = $env:ATHENA_WORKGROUP
+              ArtifactBucket = $env:ARTIFACT_BUCKET
+              LifecycleDataBucket = $env:DATA_BUCKET
+              LifecycleDataPrefix = $env:LIFECYCLE_DATA_PREFIX
+              AthenaOutputUri = $env:ATHENA_OUTPUT
+              CloudFormationRoleArn = $env:CF_EXECUTION_ROLE_ARN
+              ArtifactKey = "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip"
+              GeneratorOnly = $true
+            }
+            if ($action -eq "plan-stack-only") {
+              $stackParameters.InspectChangeSet = $true
+            }
+            ./ops/deploy_stateful_lifecycle_stack.ps1 @stackParameters
             return
           }
           $schemaPlan = @{
@@ -555,6 +560,7 @@ jobs:
             echo "- Row-level temporal isolation deployed: \`${{ inputs.action == 'deploy-recovery-controller' }}\`"
             echo "- Operational-calendar baseline deployed: \`${{ inputs.action == 'deploy-operational-baseline' }}\`"
             echo "- Generator-only stack plan: \`${{ inputs.action == 'plan-stack-only' }}\`"
+            echo "- Temporary generator change set inspected and deleted: \`${{ inputs.action == 'plan-stack-only' }}\`"
             echo "- Generator-only stack release: \`${{ inputs.action == 'deploy-stack-only' }}\`"
             echo "- Lifecycle date invoked: \`${{ inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'extend-integration-validate' || inputs.action == 'recover-failed-integration-date' }}\`"
             echo "- Lifecycle schema applied: \`${{ inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller' }}\`"

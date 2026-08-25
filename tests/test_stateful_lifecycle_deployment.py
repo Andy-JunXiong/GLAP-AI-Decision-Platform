@@ -464,8 +464,9 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         )
         for script in (stack, validation):
             self.assertIn("[switch]$Apply", script)
-            self.assertIn("if (-not $Apply)", script)
             self.assertIn("[string]$Profile = $env:AWS_PROFILE", script)
+        self.assertIn("if (-not $Apply -and -not $InspectChangeSet)", stack)
+        self.assertIn("if (-not $Apply)", validation)
         self.assertIn("Athena engine version 3", stack)
         self.assertIn("cloudformation create-change-set", stack)
         self.assertIn("cloudformation execute-change-set", stack)
@@ -579,8 +580,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
 
         render = step("Render deployment plans")
         self.assertIn('$action -in @("plan-stack-only", "deploy-stack-only")', render)
-        self.assertIn("-GeneratorOnly", render)
-        self.assertLess(render.index("-GeneratorOnly"), render.index("return"))
+        self.assertIn("GeneratorOnly = $true", render)
+        self.assertIn('$action -eq "plan-stack-only"', render)
+        self.assertIn("$stackParameters.InspectChangeSet = $true", render)
+        self.assertLess(render.index("InspectChangeSet"), render.index("return"))
 
         deployment = step("Deploy unscheduled lifecycle and integration stack")
         self.assertIn("inputs.action == 'deploy-stack-only'", deployment)
@@ -605,6 +608,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
 
         summary = step("Write staging evidence summary")
         self.assertIn("Generator-only stack plan", summary)
+        self.assertIn("Temporary generator change set inspected and deleted", summary)
         self.assertIn("Generator-only stack release", summary)
         self.assertIn("Lifecycle date invoked", summary)
         self.assertIn("Lifecycle schema applied", summary)
@@ -615,7 +619,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
             ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
         ).read_text(encoding="utf-8")
         self.assertIn("[switch]$GeneratorOnly", script)
+        self.assertIn("[switch]$InspectChangeSet", script)
+        self.assertIn("Apply and InspectChangeSet are mutually exclusive", script)
+        self.assertIn("InspectChangeSet is restricted to the generator-only release path", script)
         self.assertIn("Generator-only change-set boundary", script)
+        self.assertIn("Temporary change-set inspection", script)
         self.assertIn("preserve existing stack parameter", script)
         self.assertIn('foreach ($parameterName in @("ControllerArtifactKey", "QualityGateArtifactKey"))', script)
         self.assertIn("$ControllerArtifactKey = $preservedArtifactKeys.ControllerArtifactKey", script)
@@ -625,9 +633,16 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('LogicalResourceId -eq "LifecycleGeneratorFunction"', script)
         self.assertIn('ResourceType -eq "AWS::Lambda::Function"', script)
         self.assertIn('Replacement -eq "False"', script)
+        self.assertIn("Sanitized lifecycle change-set summary", script)
+        self.assertIn("LogicalResourceId={1}", script)
+        self.assertIn("ResourceType={2}", script)
+        self.assertIn("Replacement={3}", script)
         guard = "Generator-only deployment change set must contain exactly one non-replacing LifecycleGeneratorFunction modification"
         self.assertIn(guard, script)
         self.assertLess(script.index(guard), script.index("cloudformation execute-change-set"))
+        inspection = "Generator-only change set inspected and deleted without execution or artifact upload."
+        self.assertIn(inspection, script)
+        self.assertLess(script.index(inspection), script.index("cloudformation execute-change-set"))
         self.assertIn("without schema execution, lifecycle invocation", script)
 
     def test_forecast_backtest_is_manual_read_only_and_private(self):

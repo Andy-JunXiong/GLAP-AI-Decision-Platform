@@ -114,12 +114,15 @@ The values are deliberately omitted because they identify environment-specific r
 - GitHub Actions assumes a repository- and environment-scoped OIDC role for
   manual staging deployments; no long-lived AWS key is stored in GitHub
 - the local Decision Truth `plan-stack-only` / `deploy-stack-only` pair requires
-  separate manual dispatches, packages only the lifecycle generator, preserves
-  the deployed controller and quality-gate artifacts, and rejects any change
-  set other than one non-replacing generator Lambda modification. It has not
-  been committed, pushed, dispatched, or deployed; schema validation and the
-  earlier general no-deploy plan run `32853867334` are the current staging
-  evidence
+  separate manual dispatches, packages only the lifecycle generator for deploy,
+  preserves the deployed controller and quality-gate artifacts, and rejects any
+  change set other than one non-replacing generator Lambda modification. Commit
+  `59a9eaa` delivered the first path. Human deploy run `32905914076` uploaded an
+  inactive generator artifact but failed closed before change-set execution;
+  no stack resource changed. This source-control correction makes `plan-stack-only`
+  create, summarize at logical-resource level, validate, and delete an
+  unexecuted temporary change set without artifact upload; the correction does
+  not dispatch the workflow or change runtime resources
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

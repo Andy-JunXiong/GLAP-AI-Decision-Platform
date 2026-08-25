@@ -15,7 +15,12 @@ preserved handoffs.
   date invocation, continuation, Action mutation, schedule, alias, and
   production paths remain excluded. A named human separately applied and
   six-check validated the additive schema; no-deploy plan run `32853867334`
-  succeeded, while the new release path remains undispatched and undeployed.
+  succeeded. Human deploy run `32905914076` later failed closed before
+  change-set execution because the actual diff exceeded the exact-one-generator
+  gate; no stack resource changed. The follow-up diagnostic correction makes
+  `plan-stack-only` create, sanitize, validate, and delete an unexecuted
+  temporary change set without artifact upload. It is included in this
+  source-control delivery and remains undispatched and runtime-unverified.
 
 ## 2026-08-25
 

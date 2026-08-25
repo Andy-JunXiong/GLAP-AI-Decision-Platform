@@ -54,12 +54,16 @@ be released before new proposals can carry truthful bindings. The local
 `plan-stack-only` / `deploy-stack-only` pair requires separate manual
 dispatches, preserves the deployed controller and quality-gate artifact
 identities, and accepts only one non-replacing
-`LifecycleGeneratorFunction` change. It performs no schema execution or
-lifecycle invocation. Operations API and private-frontend releases are
+`LifecycleGeneratorFunction` change. The corrected plan creates an unexecuted
+temporary change set, emits only a logical-resource-level summary, validates
+the same boundary, and deletes it without an artifact upload. It performs no
+schema execution or lifecycle invocation. Operations API and private-frontend releases are
 downstream readers, not substitutes for that producer step. Every producer,
 API/frontend release, temporary-user role check, and later operational
-continuation remains separately human-owned; only schema application,
-aggregate validation, and a no-deploy plan have occurred.
+continuation remains separately human-owned. Human-dispatched deploy run
+`32905914076` failed closed before change-set execution when the actual diff
+exceeded the one-generator boundary; no stack resource changed and the local
+diagnostic correction is not deployed.
 
 ## Cross-cutting evaluation boundary
 
