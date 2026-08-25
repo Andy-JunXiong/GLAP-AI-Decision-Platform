@@ -273,7 +273,7 @@ gate still blocked at `1/20`, with no proposal present. The earlier
 merge-triggered run remained plan-only; the later separately authorized
 workflow dispatch performed the deployment.
 
-The repository now also implements a local, authenticated
+The staging runtime now also exposes an authenticated
 `GET /v1/label-readiness` projection and Provider Label Readiness cockpit page.
 They aggregate only the governed operational label view by mode/provider under
 the server-derived Sydney cutoff. Pending labels are coverage-only; future
@@ -281,7 +281,10 @@ simulations and entity identifiers are excluded. Exact 200/20/20/10 threshold
 gaps permit supervised evaluation only and cannot authorize training,
 promotion, deployment, scheduling, or production. The route, least-privilege
 resource inventory, deployment preflight, role verifier, frontend, and tests
-are locally verified but not deployed or runtime-verified.
+are deployed and runtime-verified in private staging. All four read roles passed
+the aggregate contract and the temporary verification users were removed. The
+surface grants no training, promotion, schedule, production, or mutation
+authority and no current provider readiness result is claimed from AWS.
 
 The repository implements an append-only `EDIT` event for a named
 Action owner and due date. It moves `PROPOSED` to `EDITED` and still requires a

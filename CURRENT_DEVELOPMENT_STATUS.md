@@ -24,7 +24,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed; the `2026-08-24` expanded-chain refresh was named-human observed and aggregate-only backend-reconciled |
 | Outcome–Learning evidence gate | `IMPLEMENTED_STAGING` | Private read-only eligible-Outcome threshold and review-only policy proposal; deployed and runtime-verified, with no activation authority |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
-| Provider label-readiness dashboard | `IMPLEMENTED_PUSHED_PLAN_VERIFIED_NOT_DEPLOYED` | Commit `eb35a3f` is pushed and plan run `32807768764` passed with deploy skipped; read-only inspection still found the old 10-route API, no label environment contract, no matching private frontend, and no label-view entry in the Lambda Glue policy |
+| Provider label-readiness dashboard | `IMPLEMENTED_STAGING` | Commit `eb35a3f` passed CI, staging deploy run `32809501684` from `af52ea7` succeeded, the private frontend and 11-route API are live, and both staging and four-role runtime verifiers passed with four temporary users removed |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
 | Governed Agent Runtime parity | `IMPLEMENTED_VERIFIED` | One reference adapter and one independently implemented registered local adapter run from distinct source paths under the same content-addressed cutoff bundle and no-mutation envelope; this proves local implementation and interface mechanics only |
 | Agent Runtime host registry | `IMPLEMENTED_VERIFIED` | Exactly two import-free local adapters are bound to distinct implementation IDs, groups, modules, and source digests; no host authentication, model identity, network, package-install, file-write, approval, or Action claim |
@@ -751,16 +751,6 @@ separately owned.
 
 ## Pending validation
 
-- The provider label-readiness API route, cockpit page, exact Glue/Lake
-  Formation inventory, deployment preflight, and role-matrix verifier are
-  implemented, pushed, and plan-verified. Commit `eb35a3f` passed CI and
-  Operations API plan run `32807768764`; the deploy step was skipped. A later
-  read-only inspection found the healthy existing stack still had 10 routes,
-  no label-readiness route or environment thresholds, no matching private
-  frontend bundle, and no label-view entry in the Lambda Glue policy. The
-  read-only identity could not inspect Lake Formation database permissions, so
-  no database-mode or grant-readiness claim is made. Nothing was deployed or
-  granted. No current label count or readiness status is claimed from AWS.
 - Cyclone Gabrielle T1 and T2 have five-review 3:2 results at 60% consensus,
   with score deltas of 17 and 31. Separate named-human records resolve the
   governance step as `RETAIN_INCONCLUSIVE`; neither raw no-winner result nor
@@ -815,12 +805,20 @@ done.
   as excluded coverage, and reject future-simulation or post-cutoff evidence.
   The plan-first staging template, exact Lake Formation dependency inventory,
   JWT route, unauthenticated and four-role verifier paths, frontend states, and
-  tests are synchronized. All four release plans and the sanitized static
-  package pass locally; commit `eb35a3f` is pushed and remote plan run
-  `32807768764` passed with deploy skipped. A later read-only gap inspection
-  confirmed the deployed API and private frontend remain on the older baseline.
-  No permission grant, deployment, training, model promotion, schedule,
-  production change, or entity-level export occurred.
+  tests are synchronized. Commit `eb35a3f` passed CI, and plan run
+  `32807768764` passed with deployment skipped. A named human then confirmed
+  Lake Formation IAM-allowed-principals mode and the exact read-only inventory;
+  the apply check reported every governed permission configured with no
+  permission change. Separately authorized staging deploy run `32809501684`
+  from commit `af52ea7` succeeded. Read-only inspection verified 11 routes,
+  the JWT-protected label route, its source-view binding and frozen thresholds,
+  exact Lambda IAM inclusion, and unauthenticated HTTP 401. The private
+  frontend was then deployed by the named human. The full staging verifier and
+  four-role matrix passed, including response, temporal, governance, and
+  identifier-redaction checks; all four temporary users were removed. No
+  current label count or readiness status is claimed from AWS, and no training,
+  model promotion, schedule, production change, Pages publication, Action
+  mutation, or entity-level export occurred.
 - The Action assignment canary now has bounded end-to-end staging evidence:
   the response fix is deployed, the original request ID replayed with HTTP 200
   without duplicating its audit row, and a different named approver moved the

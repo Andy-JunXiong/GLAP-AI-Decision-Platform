@@ -6,15 +6,20 @@ preserved handoffs.
 
 ## 2026-08-25
 
-- Implemented and locally verified the authenticated Provider Label Readiness
-  Dashboard. A new aggregate-only `GET /v1/label-readiness` route and private
+- Implemented, deployed to private staging, and runtime-verified the
+  authenticated Provider Label Readiness Dashboard. A new aggregate-only
+  `GET /v1/label-readiness` route and private
   cockpit page expose exact mode/provider gaps against the frozen 200 observed,
   20-positive, 20-negative, and 10-distinct-cost thresholds. The server derives
   the Sydney cutoff, pending labels remain coverage-only, future simulations
   and entity identifiers are excluded, and all training, promotion, schedule,
-  deployment, and production authority remains false. The exact Glue/Lake
-  Formation inventory and post-release verifier paths are implemented plan-
-  first; nothing was deployed or granted in AWS.
+  deployment, and production authority remains false. Commit `eb35a3f` passed
+  CI; staging deploy run `32809501684` from `af52ea7` succeeded after the named
+  human confirmed the exact read-only data-access inventory. The API/private
+  frontend verifier and four-role matrix passed, and all four temporary users
+  were removed. No provider readiness result, permission change, Pages
+  publication, production change, schedule, model/policy authority, or Action
+  mutation was created.
 - Implemented a local-only governed `COMPLETE`-to-Outcome canary preparation
   package. Its versioned contract and redacted renderer freeze eight phases
   from the existing `APPROVED` Action through pending and observed simulated

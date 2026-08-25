@@ -140,12 +140,16 @@ The values are deliberately omitted because they identify environment-specific r
   future simulations, training authority, model promotion, schedules, and
   production capability. Commit `eb35a3f` is pushed, and Operations API plan
   run `32807768764` passed protected configuration, dependency, and deployment-
-  plan checks with the deploy step skipped. A later read-only inspection found
-  the healthy existing stack still exposed 10 routes and lacked the label
-  environment contract, private frontend content, and Lambda Glue-policy view
-  entry. The extension remains not deployed or runtime-verified; no Lake
-  Formation database mode is claimed because that permission inventory was not
-  readable by the inspection identity.
+  plan checks with the deploy step skipped. A named human later confirmed Lake
+  Formation IAM-allowed-principals mode and the exact read-only inventory; the
+  apply check reported every governed permission configured with no permission
+  change. Separately authorized staging deploy run `32809501684` from commit
+  `af52ea7` succeeded. Read-only inspection verified the 11-route API, label
+  environment contract, source-view IAM inclusion, HTTP 401 protection, exact
+  CORS, alarms, redacted access log, throttle metric, and private frontend.
+  The four-role matrix passed and removed all four temporary users. No Pages,
+  schedule, production alias, policy/model authority, or operational mutation
+  was introduced.
 
 PR #76 merged both read-only extensions as `c4f367fb`. The merge-triggered
 Operations API workflow passed its protected configuration, dependency, and

@@ -181,7 +181,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
             original_status = status_path.read_text(encoding="utf-8")
             status_path.write_text(
-                original_status.replace("32807768764", "plan-run-missing"),
+                original_status.replace("32809501684", "deploy-run-missing"),
                 encoding="utf-8",
             )
             detected = AUDIT.check_provider_label_readiness_boundary(root)[0]
