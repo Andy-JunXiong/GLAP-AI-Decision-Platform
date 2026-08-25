@@ -477,9 +477,13 @@
     {
       "id": "production_readiness_governance",
       "state": "PARTIAL",
-      "boundary": "validated plan-only contracts; no AWS controls deployed",
+      "boundary": "the offline evidence harness reconciles ten required Operations production-readiness gates and currently reports exactly four staging-runtime-verified gates, six blocked gates, and NOT_READY_INCOMPLETE_EVIDENCE; it performs no network access or external write, production readiness remains false, and every deployment, alias, schedule, production-data, mutation, policy, and model authority remains false",
       "evidence_files": [
         "docs/production_readiness_contract.json",
+        "docs/operations_production_readiness_evidence_v1.schema.json",
+        "docs/operations_production_readiness_evidence_v1.json",
+        "ops/evaluate_operations_production_readiness.py",
+        "tests/test_operations_production_readiness.py",
         "docs/athena_cost_governance.md",
         "docs/incremental_refresh_contract.md",
         "docs/data_governance_operations.md",

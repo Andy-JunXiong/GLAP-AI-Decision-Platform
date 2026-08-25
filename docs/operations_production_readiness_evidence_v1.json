@@ -1,0 +1,126 @@
+{
+  "schema_version": "operations-production-readiness-evidence.v1",
+  "as_of_date": "2026-08-25",
+  "business_timezone": "Australia/Sydney",
+  "scope": "PRIVATE_OPERATIONS_STAGING",
+  "evidence_boundary": "SYNTHETIC_ENGINEERING_ONLY",
+  "execution": {
+    "mode": "OFFLINE_REPOSITORY_EVIDENCE_RECONCILIATION",
+    "network_access": false,
+    "external_writes_executed": false
+  },
+  "authority": {
+    "production_deployment_authorized": false,
+    "production_alias_change_authorized": false,
+    "recurring_schedule_authorized": false,
+    "production_table_write_authorized": false,
+    "operational_mutation_authorized": false,
+    "policy_activation_authorized": false,
+    "model_promotion_authorized": false
+  },
+  "required_gates": [
+    {
+      "id": "authenticated_access_and_rbac",
+      "state": "RUNTIME_VERIFIED_STAGING",
+      "evidence_class": "STAGING_ENGINEERING",
+      "evidence_refs": [
+        "CURRENT_DEVELOPMENT_STATUS.md",
+        "docs/operations_api_v1.md"
+      ],
+      "finding": "Authenticated route protection and the four-role allow/deny matrix passed in private staging; temporary users were removed."
+    },
+    {
+      "id": "mutation_idempotency_and_concurrency",
+      "state": "RUNTIME_VERIFIED_STAGING",
+      "evidence_class": "STAGING_ENGINEERING",
+      "evidence_refs": [
+        "docs/runbooks/operations_api_reliability.md"
+      ],
+      "finding": "Sequential and concurrent replay preserved one immutable audit event in the bounded staging reliability exercise."
+    },
+    {
+      "id": "controlled_dependency_failure_and_recovery",
+      "state": "RUNTIME_VERIFIED_STAGING",
+      "evidence_class": "STAGING_ENGINEERING",
+      "evidence_refs": [
+        "docs/runbooks/operations_api_reliability.md"
+      ],
+      "finding": "A bounded staging dependency isolation produced controlled 503 behavior and the original configuration was restored."
+    },
+    {
+      "id": "throttling_alarm_and_recovery",
+      "state": "RUNTIME_VERIFIED_STAGING",
+      "evidence_class": "STAGING_ENGINEERING",
+      "evidence_refs": [
+        "docs/runbooks/operations_api_reliability.md"
+      ],
+      "finding": "A bounded 429 burst exercised the staging throttle alarm and recovery to OK with the original limits restored."
+    },
+    {
+      "id": "sustained_read_load",
+      "state": "NOT_EXECUTED",
+      "evidence_class": "NONE",
+      "evidence_refs": [],
+      "finding": "No governed sustained-load baseline has been executed for the authenticated Operations API."
+    },
+    {
+      "id": "security_negative_suite",
+      "state": "PARTIAL_EVIDENCE",
+      "evidence_class": "STAGING_ENGINEERING",
+      "evidence_refs": [
+        "CURRENT_DEVELOPMENT_STATUS.md",
+        "docs/operations_api_v1.md"
+      ],
+      "finding": "Unauthenticated rejection, exact-origin CORS, redacted logs, and role denials are verified; a broader governed security exercise is not complete."
+    },
+    {
+      "id": "athena_query_cost_baseline",
+      "state": "NOT_EXECUTED",
+      "evidence_class": "NONE",
+      "evidence_refs": [
+        "docs/production_readiness_contract.json"
+      ],
+      "finding": "Operations API read and operational-baseline query classes still require measured scan baselines before enforcement."
+    },
+    {
+      "id": "backup_restore_exercise",
+      "state": "NOT_EXECUTED",
+      "evidence_class": "NONE",
+      "evidence_refs": [
+        "docs/data_governance_operations.md"
+      ],
+      "finding": "No governed backup-and-restore exercise has established the proposed staging recovery target."
+    },
+    {
+      "id": "iceberg_maintenance_exercise",
+      "state": "NOT_EXECUTED",
+      "evidence_class": "NONE",
+      "evidence_refs": [
+        "docs/data_governance_operations.md"
+      ],
+      "finding": "Compaction, snapshot expiration, and orphan-file cleanup remain plan-only and unexecuted."
+    },
+    {
+      "id": "slo_incident_ownership_exercise",
+      "state": "DESIGNED_NOT_EXERCISED",
+      "evidence_class": "REPOSITORY_ENGINEERING",
+      "evidence_refs": [
+        "docs/data_governance_operations.md",
+        "docs/production_readiness_contract.json"
+      ],
+      "finding": "Engineering targets and incident severity are documented, but named ownership and an end-to-end exercise are not evidenced."
+    }
+  ],
+  "summary": {
+    "required_gate_count": 10,
+    "eligible_gate_count": 4,
+    "blocked_gate_count": 6,
+    "production_readiness": false
+  },
+  "claim_boundary": {
+    "status": "NOT_READY_INCOMPLETE_EVIDENCE",
+    "real_logistics_performance": false,
+    "production_sla": false,
+    "production_readiness": false
+  }
+}

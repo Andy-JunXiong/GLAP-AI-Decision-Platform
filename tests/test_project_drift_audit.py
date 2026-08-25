@@ -57,6 +57,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "ops/verify_operations_staging.ps1",
             "ops/verify_operations_roles_staging.ps1",
             "CURRENT_DEVELOPMENT_STATUS.md",
+            "INFRASTRUCTURE.md",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -68,6 +69,35 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 template_path.read_text(encoding="utf-8").replace(
                     "RouteKey: GET /v1/actions/{action_id}/evidence",
                     "RouteKey: POST /v1/actions/{action_id}/evidence",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_action_outcome_infrastructure_maturity_drift_is_detected(self):
+        paths = (
+            "lambda/glap_operations_api.py",
+            "infrastructure/operations-api-staging.yaml",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            ".github/workflows/deploy-operations-api-staging.yml",
+            "ops/deploy_internal_operations_frontend.ps1",
+            "ops/verify_operations_staging.ps1",
+            "ops/verify_operations_roles_staging.ps1",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+            "INFRASTRUCTURE.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            infrastructure_path = root / "INFRASTRUCTURE.md"
+            infrastructure_path.write_text(
+                infrastructure_path.read_text(encoding="utf-8").replace(
+                    "32621697316",
+                    "release-run-missing",
                 ),
                 encoding="utf-8",
             )
@@ -108,6 +138,34 @@ class ProjectDriftAuditTests(unittest.TestCase):
         report = AUDIT.run_audit(ROOT)
         self.assertEqual(report["overall_status"], "PASS")
         self.assertEqual(report["summary"]["drift"], 0)
+
+    def test_production_readiness_evidence_maturity_drift_is_detected(self):
+        paths = (
+            "docs/production_readiness_contract.json",
+            "docs/operations_production_readiness_evidence_v1.json",
+            "docs/operations_production_readiness_evidence_v1.schema.json",
+            "ops/evaluate_operations_production_readiness.py",
+            "tests/test_operations_production_readiness.py",
+            "docs/athena_cost_governance.md",
+            "docs/incremental_refresh_contract.md",
+            "docs/data_governance_operations.md",
+            "docs/operations_api_v1.md",
+            "docs/runbooks/operations_api_reliability.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_readiness_contract(root)[0]
+            self.assertEqual(current.status, "PASS")
+            evidence_path = (
+                root / "docs" / "operations_production_readiness_evidence_v1.json"
+            )
+            evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+            evidence["summary"]["production_readiness"] = True
+            evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+            detected = AUDIT.check_readiness_contract(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
 
     def test_stateful_cross_gap_recovery_maturity_cannot_regress(self):
         paths = (
@@ -209,6 +267,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "ops/verify_operations_staging.ps1",
             "ops/verify_operations_roles_staging.ps1",
             "CURRENT_DEVELOPMENT_STATUS.md",
+            "INFRASTRUCTURE.md",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -462,6 +521,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "tests/test_decision_quality_adjudication.py",
             "blinded-review-survey/data/review-bundle.json",
             "docs/decision_quality_evaluation.md",
+            "docs/architecture_current.md",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -494,6 +554,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "tests/test_decision_quality_adjudication.py",
             "blinded-review-survey/data/review-bundle.json",
             "docs/decision_quality_evaluation.md",
+            "docs/architecture_current.md",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -524,6 +585,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "tests/test_decision_quality_adjudication.py",
             "blinded-review-survey/data/review-bundle.json",
             "docs/decision_quality_evaluation.md",
+            "docs/architecture_current.md",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -536,6 +598,40 @@ class ProjectDriftAuditTests(unittest.TestCase):
             record_path.write_text(json.dumps(record), encoding="utf-8")
             result = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
         self.assertEqual(result.status, "DRIFT")
+
+    def test_five_review_architecture_maturity_drift_is_detected(self):
+        paths = (
+            "docs/decision_quality_adjudication_v1.schema.json",
+            "docs/decision_quality_adjudication_cyclone_gabrielle_t1_v1.json",
+            "docs/decision_quality_five_review_reconciliation_v1.schema.json",
+            "docs/decision_quality_five_review_reconciliation_v1.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.schema.json",
+            "docs/decision_quality_five_review_corpus_summary_v1.json",
+            "docs/decision_quality_human_disposition_v1.schema.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t1_v2.json",
+            "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json",
+            "docs/decision_quality_rubric_v1.json",
+            "ops/validate_decision_quality_adjudication.py",
+            "tests/test_decision_quality_adjudication.py",
+            "blinded-review-survey/data/review-bundle.json",
+            "docs/decision_quality_evaluation.md",
+            "docs/architecture_current.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            architecture_path = root / "docs/architecture_current.md"
+            architecture_path.write_text(
+                architecture_path.read_text(encoding="utf-8").replace(
+                    "Five compatible reviews per cutoff",
+                    "Four compatible reviews per cutoff",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_quality_adjudication_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
 
     def test_five_review_human_disposition_winner_drift_is_detected(self):
         paths = (
@@ -553,6 +649,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "tests/test_decision_quality_adjudication.py",
             "blinded-review-survey/data/review-bundle.json",
             "docs/decision_quality_evaluation.md",
+            "docs/architecture_current.md",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

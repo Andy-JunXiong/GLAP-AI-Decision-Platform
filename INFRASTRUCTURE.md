@@ -128,7 +128,11 @@ The values are deliberately omitted because they identify environment-specific r
 - the repository Operations API extension reads the already allow-listed
   immutable Action table, Action audit table, and Outcome table in one bounded
   query to assemble a private Action–Outcome evidence chain; its explicit JWT
-  route and environment binding are merged to `main` but not deployed
+  route and environment binding are deployed and runtime-verified in private
+  staging. Separately authorized run `32621697316` deployed the API, the
+  matching private cockpit was deployed manually, both post-release verifiers
+  passed, and all four temporary role-check users were removed. The extension
+  adds no Action mutation, approval, schedule, alias, or production authority
 - the repository Outcome-to-Learning extension adds one authenticated read route
   over the existing Outcome and policy-proposal tables; IAM and Lake Formation
   inventories name the policy table exactly and grant no write, grant-option,

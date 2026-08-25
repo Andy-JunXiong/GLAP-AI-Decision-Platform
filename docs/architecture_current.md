@@ -126,22 +126,25 @@ container-port congestion events plus the Rio Grande do Sul flood-damaged
 highway network. A version-frozen manifest runs 30 historical cutoffs across
 OCEAN, AIR, RAIL, and ROAD, preserves scenario-level
 attribution, and validates HIGH and MEDIUM severity bands. Structural coverage
-gates, including scenario count, now pass. Four compatible reviews per cutoff
-meet the minimum-review count; fifteen package results remain no-winner results
-and must not be filled or presented as wins. Public facts remain paraphrased
-and digested; enterprise state remains aggregate controlled synthetic. The
-corpus is evaluation-only and cannot enter operational views, readiness
-evidence, or production reporting.
+gates, including scenario count, now pass. Five compatible reviews per cutoff
+meet the minimum-review count. Fourteen package results favour
+`glap-a303-on`, fourteen controls remain unanimous ties, and Cyclone Gabrielle
+T1 and T2 are the two non-control no-winner packages; neither may be filled or
+presented as a win. Public facts remain paraphrased and digested; enterprise
+state remains aggregate controlled synthetic. The corpus is evaluation-only
+and cannot enter operational views, readiness evidence, or production
+reporting.
 
 A content-addressed review freeze now binds the exact corpus manifest, ten
 scenario bodies, and Decision Quality rubric. A deterministic local builder
 produces 30 reviewer-safe packages and a separately held study-owner key while
-excluding post-decision reveals. Four complete eligible human reviews now exist
-outside the repository, and the governed aggregate reports mixed package-level
-Decision Quality results. A separate local evaluator consumes the full
-attributed set and negative controls independently of review preference to
-create explicitly `SIMULATED_COUNTERFACTUAL` robustness evidence; it never
-writes the governed staging Outcome store.
+excluding post-decision reveals. Five complete eligible human reviews now exist
+across the governed collection surfaces, and the identity-free aggregate
+reports the complete mixed package-level Decision Quality result. A separate
+local evaluator consumes the full attributed set and negative controls
+independently of review preference to create explicitly
+`SIMULATED_COUNTERFACTUAL` robustness evidence; it never writes the governed
+staging Outcome store.
 
 The calibration runner consumes that private simulated report only as a model
 prediction. It cannot accept the generated staging Outcome as factual treatment
@@ -398,4 +401,8 @@ data-quality controls. Future simulations remain isolated engineering evidence
 and do not establish operational performance, outcome maturity, model
 readiness, promotion, or production reporting. See the
 [development plan](../DEVELOPMENT_PLAN.md) for remaining production
-readiness dependencies.
+readiness dependencies. The local-only Operations production-readiness evidence
+harness reconciles those dependencies without calling AWS: its `2026-08-25`
+manifest records four staging-runtime-verified gates and six incomplete gates,
+so it fails closed to `NOT_READY_INCOMPLETE_EVIDENCE` and grants no production
+authority.

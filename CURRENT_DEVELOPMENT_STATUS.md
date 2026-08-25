@@ -39,7 +39,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | A303 Outcome calibration interface | `INACTIVE_REUSABLE_INFRASTRUCTURE` | Contract and validator remain available for a separately authorized future rule, but A303.v1 calibration is `CLOSED_NOT_APPLICABLE` and no eligible controlled pairs exist |
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
-| Production readiness | `PARTIAL` | Plan-only controls; no production authorization |
+| Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
@@ -287,6 +287,42 @@ and deployed the aggregate-only site. Post-publication checks returned HTTP 200
 for the page and JSON and confirmed the v1 schema, `2026-08-24` as-of date,
 10/30, 5, 150, 14/16, all-false authority, JSON loader, and fail-closed state.
 No AWS write, production, schedule, alias, data, or Action mutation occurred.
+
+## Recently completed — Operations Production Readiness Evidence Harness v1
+
+**Status:** `IMPLEMENTED_VERIFIED_LOCAL_NOT_READY`
+
+**Goal**
+
+Turn the existing production-readiness design and staging reliability evidence
+into one truthful, machine-readable gap assessment without rerunning privileged
+failure injection or implying production approval.
+
+**Completed current slice**
+
+- Added a versioned ten-gate evidence manifest and JSON Schema covering access,
+  RBAC, mutation concurrency, dependency failure, throttling, sustained load,
+  security, Athena cost, backup/restore, Iceberg maintenance, and SLO/incident
+  ownership.
+- Reconciled four existing staging-runtime-verified gates while retaining six
+  partial, designed-only, or unexecuted gates. The frozen result is
+  `NOT_READY_INCOMPLETE_EVIDENCE`; production readiness is false.
+- Added a standard-library-only evaluator that validates Sydney dates, exact
+  gate inventory, evidence references, derived totals, privacy, and all-false
+  authority before emitting aggregate JSON or Markdown. It performs no network
+  request, AWS call, subprocess, deployment, or external write.
+- Added fail-closed tests and extended the project drift audit so unsupported
+  maturity, missing gates, incorrect totals, future dates, runtime-evidence
+  inflation, and protected-authority expansion are rejected.
+
+**Boundary and next step**
+
+This capability organizes existing synthetic engineering evidence; it does not
+execute a readiness exercise or establish a production SLA. The next
+recommended production-readiness feature is a plan-only sustained authenticated
+read-load contract and sanitized baseline format. Any actual staging load run
+would remain a separate named-human authorization and must not mutate Actions
+or production resources.
 
 ## Recently completed — Action–Outcome–Learning evidence chain
 
@@ -798,6 +834,16 @@ done.
 
 ## Recently completed — current seven-day window
 
+- Reconciled two stale canonical architecture claims with current runtime and
+  evaluation truth. `INFRASTRUCTURE.md` now records the deployed and verified
+  private Action–Outcome evidence chain instead of the earlier plan-only state;
+  `docs/architecture_current.md` now records five reviews per cutoff, 14
+  favourable packages, 14 unanimous control ties, and the two non-control
+  no-winner packages. The existing Action-evidence and Decision Quality drift
+  checks now cross-check those canonical documents and fail on a missing
+  staging release or a four-review/15-no-winner regression. This repository-
+  only hardening performed no AWS call, deployment, publication, Action
+  mutation, policy/model change, or production operation.
 - Implemented and locally verified the authenticated Provider Label Readiness
   Dashboard. The new aggregate-only API and cockpit surface group governed
   actual-calendar labels by mode/provider, preserve the frozen 200/20/20/10
@@ -1246,6 +1292,10 @@ done.
 2. This is a future recommendation, not current authority. Before the due date
    the correct action is to wait; the eventual continuation grants no
    production, schedule, alias, policy, or model authority.
+3. In parallel, the next recommended local production-readiness slice is a
+   plan-only sustained authenticated read-load contract and sanitized baseline
+   format. Developing the contract is local-only; executing a staging load run
+   requires separate named-human authority.
 
 ## Current-week history
 

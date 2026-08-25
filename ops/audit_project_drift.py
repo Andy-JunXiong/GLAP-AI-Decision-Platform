@@ -949,7 +949,12 @@ def check_action_mutation_release(root: Path) -> list[CheckResult]:
 
 def check_readiness_contract(root: Path) -> list[CheckResult]:
     contract_path = "docs/production_readiness_contract.json"
+    evidence_path = "docs/operations_production_readiness_evidence_v1.json"
+    schema_path = "docs/operations_production_readiness_evidence_v1.schema.json"
+    evaluator_path = "ops/evaluate_operations_production_readiness.py"
     contract = json.loads((root / contract_path).read_text(encoding="utf-8"))
+    evidence = json.loads((root / evidence_path).read_text(encoding="utf-8"))
+    evaluator = _load_repository_module(root, evaluator_path)
     authority = contract.get("authority", {})
     forbidden_authority = (
         "recurring_schedule_enabled",
@@ -958,21 +963,44 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
         "policy_activation_authorized",
         "model_promotion_authorized",
     )
-    bounded = (
+    contract_bounded = (
         contract.get("status") == "DESIGNED_NOT_DEPLOYED"
         and authority.get("named_human_owner_required") is True
         and all(authority.get(field) is False for field in forbidden_authority)
         and contract.get("business_timezone") == "Australia/Sydney"
         and contract.get("evidence_boundary") == "SYNTHETIC_ENGINEERING_ONLY"
     )
+    evidence_errors = evaluator.validate_evidence(
+        evidence,
+        today=sydney_business_date(),
+        root=root,
+    )
+    summary = evidence.get("summary", {})
+    evidence_bounded = (
+        evidence_errors == []
+        and summary.get("required_gate_count") == 10
+        and summary.get("eligible_gate_count") == 4
+        and summary.get("blocked_gate_count") == 6
+        and summary.get("production_readiness") is False
+        and evidence.get("claim_boundary", {}).get("status")
+        == "NOT_READY_INCOMPLETE_EVIDENCE"
+    )
     return [
         _result(
             "production_readiness_boundary",
             "governance",
-            bounded,
-            "Production-readiness controls remain explicit, plan-only, and authority bounded.",
-            "The production-readiness contract claims deployment or expands protected authority.",
-            (contract_path, "docs/athena_cost_governance.md", "docs/incremental_refresh_contract.md"),
+            contract_bounded and evidence_bounded,
+            "Production-readiness controls remain plan-only while the offline evidence harness truthfully reports 4/10 eligible gates and no production authority.",
+            "The production-readiness contract or evidence harness claims unsupported maturity, loses required gates, or expands protected authority.",
+            (
+                contract_path,
+                evidence_path,
+                schema_path,
+                evaluator_path,
+                "tests/test_operations_production_readiness.py",
+                "docs/athena_cost_governance.md",
+                "docs/incremental_refresh_contract.md",
+            ),
         )
     ]
 
@@ -1566,6 +1594,7 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
     staging_verifier_path = "ops/verify_operations_staging.ps1"
     role_verifier_path = "ops/verify_operations_roles_staging.ps1"
     status_path = "CURRENT_DEVELOPMENT_STATUS.md"
+    infrastructure_path = "INFRASTRUCTURE.md"
     api = (root / api_path).read_text(encoding="utf-8")
     template = (root / template_path).read_text(encoding="utf-8")
     client = (root / client_path).read_text(encoding="utf-8")
@@ -1575,7 +1604,9 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
     staging_verifier = (root / staging_verifier_path).read_text(encoding="utf-8")
     role_verifier = (root / role_verifier_path).read_text(encoding="utf-8")
     status = (root / status_path).read_text(encoding="utf-8")
+    infrastructure = (root / infrastructure_path).read_text(encoding="utf-8")
     normalized_status = " ".join(status.split())
+    normalized_infrastructure = " ".join(infrastructure.split())
     api_bounded = all(
         marker in api
         for marker in (
@@ -1631,18 +1662,31 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
             "No new write, role, table, or production path was added.",
         )
     )
+    infrastructure_maturity_bounded = all(
+        marker in normalized_infrastructure
+        for marker in (
+            "Action–Outcome evidence chain",
+            "deployed and runtime-verified in private staging",
+            "run `32621697316` deployed the API",
+            "all four temporary role-check users were removed",
+            "adds no Action mutation, approval, schedule, alias, or production authority",
+        )
+    ) and (
+        "route and environment binding are merged to `main` but not deployed"
+        not in normalized_infrastructure
+    )
     return [
         _result(
             "action_outcome_evidence_chain_boundary",
             "architecture",
             api_bounded and route_bounded and client_bounded and release_bounded
-            and maturity_bounded,
+            and maturity_bounded and infrastructure_maturity_bounded,
             "The Action–Outcome evidence chain remains authenticated, cutoff-bounded, synthetic, read-only, and runtime-verified in private staging.",
             "The Action–Outcome evidence chain lost a temporal, governance, JWT, UI-disclosure, or deployment-maturity boundary.",
             (
                 api_path, template_path, client_path, page_path, workflow_path,
                 frontend_deploy_path, staging_verifier_path, role_verifier_path,
-                status_path,
+                status_path, infrastructure_path,
             ),
         )
     ]
@@ -1955,6 +1999,7 @@ def check_decision_quality_adjudication_boundary(root: Path) -> list[CheckResult
         "tests/test_decision_quality_adjudication.py",
         "blinded-review-survey/data/review-bundle.json",
         "docs/decision_quality_evaluation.md",
+        "docs/architecture_current.md",
     )
     passed = False
     failure = "The Decision Quality adjudication record is missing, resolved without authority, or has expanded its claim boundary."
@@ -1983,6 +2028,27 @@ def check_decision_quality_adjudication_boundary(root: Path) -> list[CheckResult
             root / "docs/decision_quality_human_disposition_cyclone_gabrielle_t2_v1.json"
         )
         rubric = validator.load_json(root / "docs/decision_quality_rubric_v1.json")
+        architecture = (root / "docs/architecture_current.md").read_text(
+            encoding="utf-8"
+        )
+        normalized_architecture = " ".join(architecture.split())
+        architecture_current = all(
+            marker in normalized_architecture
+            for marker in (
+                "Five compatible reviews per cutoff meet the minimum-review count",
+                "Fourteen package results favour `glap-a303-on`",
+                "fourteen controls remain unanimous ties",
+                "Cyclone Gabrielle T1 and T2 are the two non-control no-winner packages",
+                "Five complete eligible human reviews now exist across the governed collection surfaces",
+            )
+        ) and all(
+            stale not in normalized_architecture
+            for stale in (
+                "Four compatible reviews per cutoff",
+                "fifteen package results remain no-winner",
+                "Four complete eligible human reviews now exist outside the repository",
+            )
+        )
         passed = (
             validator.validate_record(record, bundle, today=sydney_business_date())
             == []
@@ -2055,6 +2121,7 @@ def check_decision_quality_adjudication_boundary(root: Path) -> list[CheckResult
             == "REVIEWERS_DO_NOT_AGREE"
             and t1_disposition["operational_mutations"] == []
             and t2_disposition["operational_mutations"] == []
+            and architecture_current
         )
     except Exception as error:
         failure = f"The Decision Quality adjudication boundary drifted: {error}."

@@ -245,6 +245,18 @@ state. If another request consumes that state first, the losing request returns
 Gateway access-log filter counts 429 responses. See the
 [Operations API reliability runbook](runbooks/operations_api_reliability.md).
 
+### Offline production-readiness evidence
+
+`ops/evaluate_operations_production_readiness.py` reconciles the versioned
+`docs/operations_production_readiness_evidence_v1.json` manifest without any
+network request or external write. It reuses the bounded staging reliability
+evidence above rather than rerunning failure injection. As of `2026-08-25`,
+four of ten required gates are runtime-verified in staging and six remain
+blocked or incomplete, so the only valid result is
+`NOT_READY_INCOMPLETE_EVIDENCE`. The report is synthetic engineering evidence;
+it is not a production SLA, real logistics performance, deployment approval,
+or production-readiness decision.
+
 Risk, queue, and Outcome reads use the existing governed Glue/Athena tables and
 view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena

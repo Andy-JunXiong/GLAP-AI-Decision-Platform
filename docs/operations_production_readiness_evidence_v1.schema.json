@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.local/schemas/operations-production-readiness-evidence-v1.schema.json",
+  "title": "GLAP Operations production-readiness evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_date",
+    "business_timezone",
+    "scope",
+    "evidence_boundary",
+    "execution",
+    "authority",
+    "required_gates",
+    "summary",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "operations-production-readiness-evidence.v1"
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "business_timezone": {
+      "const": "Australia/Sydney"
+    },
+    "scope": {
+      "const": "PRIVATE_OPERATIONS_STAGING"
+    },
+    "evidence_boundary": {
+      "const": "SYNTHETIC_ENGINEERING_ONLY"
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network_access", "external_writes_executed"],
+      "properties": {
+        "mode": {"const": "OFFLINE_REPOSITORY_EVIDENCE_RECONCILIATION"},
+        "network_access": {"const": false},
+        "external_writes_executed": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "production_deployment_authorized",
+        "production_alias_change_authorized",
+        "recurring_schedule_authorized",
+        "production_table_write_authorized",
+        "operational_mutation_authorized",
+        "policy_activation_authorized",
+        "model_promotion_authorized"
+      ],
+      "properties": {
+        "production_deployment_authorized": {"const": false},
+        "production_alias_change_authorized": {"const": false},
+        "recurring_schedule_authorized": {"const": false},
+        "production_table_write_authorized": {"const": false},
+        "operational_mutation_authorized": {"const": false},
+        "policy_activation_authorized": {"const": false},
+        "model_promotion_authorized": {"const": false}
+      }
+    },
+    "required_gates": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "state", "evidence_class", "evidence_refs", "finding"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "state": {
+            "enum": [
+              "RUNTIME_VERIFIED_STAGING",
+              "PARTIAL_EVIDENCE",
+              "DESIGNED_NOT_EXERCISED",
+              "NOT_EXECUTED"
+            ]
+          },
+          "evidence_class": {
+            "enum": ["STAGING_ENGINEERING", "REPOSITORY_ENGINEERING", "NONE"]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "finding": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_gate_count",
+        "eligible_gate_count",
+        "blocked_gate_count",
+        "production_readiness"
+      ],
+      "properties": {
+        "required_gate_count": {"const": 10},
+        "eligible_gate_count": {"const": 4},
+        "blocked_gate_count": {"const": 6},
+        "production_readiness": {"const": false}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "real_logistics_performance", "production_sla", "production_readiness"],
+      "properties": {
+        "status": {"const": "NOT_READY_INCOMPLETE_EVIDENCE"},
+        "real_logistics_performance": {"const": false},
+        "production_sla": {"const": false},
+        "production_readiness": {"const": false}
+      }
+    }
+  }
+}

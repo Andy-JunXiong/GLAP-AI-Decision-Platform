@@ -68,3 +68,10 @@ approved and must never run concurrently with lifecycle mutation or recovery.
 
 Backup, restore, load, security, and failure-injection exercises remain required
 before production expansion. Documentation completion is not runtime proof.
+
+The offline Operations production-readiness evidence harness records that
+distinction in a ten-gate manifest. It may reconcile existing repository and
+staging engineering evidence, but it cannot execute a test, call AWS, write an
+external artifact, or convert partial and plan-only evidence into a passing
+gate. Its `2026-08-25` result is four eligible gates, six blocked gates, and
+`NOT_READY_INCOMPLETE_EVIDENCE`.
