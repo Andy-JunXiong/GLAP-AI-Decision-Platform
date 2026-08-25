@@ -118,6 +118,16 @@ additive schema migration, read-only validation, mutation Lambda, Operations
 API, private frontend, read-only smoke checks, four-role checks, then a
 named-human canary.
 
+The later Decision Truth extension has a separate plan-only handoff in
+[`decision_truth_staging_rollout.md`](decision_truth_staging_rollout.md). Its
+additive Action proposal columns and six-check aggregate validation must pass
+before any reader or producer release. The lifecycle producer is an explicit
+dependency because it creates immutable bindings; an API/frontend-only release
+cannot establish end-to-end binding evidence. Schema application, lifecycle
+producer deployment, Operations API deployment, private frontend publication,
+temporary-user role verification, and any operational continuation remain
+separate human-owned actions.
+
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The
 named human configured distinct GitHub OIDC orchestration identities and a

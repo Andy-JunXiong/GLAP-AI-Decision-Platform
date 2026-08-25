@@ -6,6 +6,13 @@ preserved handoffs.
 
 ## 2026-08-25
 
+- Implemented the plan-only Decision Truth private-staging rollout handoff.
+  The exact additive migration now has a six-check aggregate read-only
+  validator and a local renderer that makes the lifecycle producer an explicit
+  prerequisite before the API and private frontend readers. Human-owned
+  release order, legacy-null compatibility, forward-fix rollback, and the
+  no-manufactured-canary boundary are documented and tested. No AWS session,
+  migration, deployment, continuation, or operational mutation occurred.
 - Implemented Outcome comparison envelope runtime validation v1. The private
   cockpit now checks the top-level schema, status/count reconciliation,
   descriptive-only scope, all-false governance, and iterable cohort shape

@@ -1730,6 +1730,127 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
     ]
 
 
+def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "migration": "sql/16_decision_action_binding_v1.sql",
+        "validation": "sql/17_decision_action_binding_validation.sql",
+        "plan": "ops/plan_decision_truth_staging_rollout.ps1",
+        "tests": "tests/test_decision_truth_staging_rollout.py",
+        "runbook": "docs/decision_truth_staging_rollout.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_runbook = " ".join(text["runbook"].split())
+    migration_body = re.sub(r"(?m)^\s*--.*$", "", text["migration"])
+    validation_body = re.sub(r"(?m)^\s*--.*$", "", text["validation"])
+    migration_statements = [
+        item for item in migration_body.split(";") if item.strip()
+    ]
+    validation_statements = [
+        item for item in validation_body.split(";") if item.strip()
+    ]
+    migration_bounded = (
+        len(migration_statements) == 2
+        and all(
+            marker in text["migration"]
+            for marker in (
+                "PLAN ONLY",
+                "fact_lifecycle_action_staging_v1",
+                "vw_lifecycle_action_current_staging_v1",
+                "decision_brief_version",
+                "selected_alternative",
+                "selection_rationale",
+            )
+        )
+        and not re.search(
+            r"(?i)\b(DROP|DELETE|INSERT|UPDATE|MERGE|TRUNCATE)\b",
+            migration_body,
+        )
+    )
+    validation_bounded = (
+        len(validation_statements) == 1
+        and all(
+            marker in text["validation"]
+            for marker in (
+                "missing_action_binding_columns",
+                "missing_action_current_binding_columns",
+                "partial_action_binding",
+                "invalid_decision_brief_v1_binding",
+                "unexpected_cost_action_binding",
+                "current_view_binding_mismatch",
+                "SELECT check_name, failure_count",
+            )
+        )
+        and not re.search(
+            r"(?i)\b(ALTER|CREATE|DROP|DELETE|INSERT|UPDATE|MERGE|TRUNCATE)\b",
+            validation_body,
+        )
+    )
+    plan_bounded = all(
+        marker in text["plan"]
+        for marker in (
+            "Mode: local render only",
+            "Aggregate validation checks: 6",
+            "Release order: schema, validation, lifecycle producer, Operations API, private frontend, read-only verification",
+            "Existing Actions backfilled: False",
+            "COST_ANOMALY binding enabled: False",
+            "AWS session inspected: False",
+            "Athena query started: False",
+            "Schema migration applied: False",
+            "Staging package deployed: False",
+            "Operational continuation authorized: False",
+            "Public Pages deployment: False",
+            "Production effect: False",
+        )
+    ) and not any(
+        marker in text["plan"].lower()
+        for marker in (
+            "[switch]$apply",
+            "& aws",
+            "start-query-execution",
+            "workflow run",
+            "invoke-webrequest",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "test_migration_is_two_statement_additive_staging_only",
+            "test_post_migration_validation_is_one_read_only_aggregate",
+            "test_plan_renderer_has_no_aws_or_apply_path",
+            "test_runbook_preserves_human_owned_release_order",
+            "test_runtime_proof_cannot_be_manufactured_or_overclaimed",
+        )
+    )
+    runbook_bounded = all(
+        marker in normalized_runbook
+        for marker in (
+            "Each numbered write is a separate human authority decision",
+            "deploying only readers cannot create truthful bindings",
+            "Do not create, backfill, or mutate an Action merely to satisfy the test",
+            "every `COST_ANOMALY` Action remains unbound",
+            "The additive columns are retained",
+            "Rollback never changes production",
+        )
+    )
+    return [
+        _result(
+            "decision_truth_staging_rollout_boundary",
+            "governance",
+            migration_bounded
+            and validation_bounded
+            and plan_bounded
+            and tests_bounded
+            and runbook_bounded,
+            "Decision Truth staging rollout remains a local-only additive migration and aggregate-validation handoff with explicit producer-before-reader order and separate human authority for every external write.",
+            "Decision Truth rollout lost additive/read-only validation, producer ordering, legacy-null compatibility, or the human-owned no-execution boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "api": "lambda/glap_operations_api.py",
@@ -3267,6 +3388,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
+    checks.extend(check_decision_truth_staging_rollout_boundary(root))
     checks.extend(check_outcome_decision_provenance_boundary(root))
     checks.extend(check_decision_contract_outcome_cohort_boundary(root))
     checks.extend(check_outcome_cohort_evidence_sufficiency_boundary(root))

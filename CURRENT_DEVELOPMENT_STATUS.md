@@ -43,6 +43,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
 | Decision-to-Action binding v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; the additive staging migration is plan-only and has not been applied |
+| Decision Truth private-staging rollout handoff | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_EXECUTED` | A local-only renderer binds the two-statement additive migration to six aggregate read-only checks and the human-owned schema → lifecycle producer → Operations API → private frontend → verification order; no AWS session, migration, deployment, or continuation occurred |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -159,16 +160,48 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Outcome comparison envelope runtime validator v1 complete
+## Active slice — Decision Truth private-staging rollout handoff complete
 
-**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_EXECUTED`
 
-The authenticated Outcome client now validates a present descriptive comparison
-envelope before React or per-cohort fingerprint verification can iterate it.
-Schema drift, status/count disagreement, a non-array cohort payload, or any
-expanded governance flag fails the complete Outcome load closed. A missing
-comparison view remains a supported partial-data state for older API builds.
-The slice is local and not deployed.
+The repository now has the minimum non-executing handoff needed for a named
+human to review the Decision Truth staging rollout. It renders the existing
+additive migration, validates six aggregate post-migration conditions, and
+makes the isolated lifecycle producer an explicit dependency before the API
+and private frontend readers. It opens no AWS session and performs no rollout.
+
+## Recently completed — Decision Truth private-staging rollout handoff
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_EXECUTED`
+
+**Goal**
+
+Replace an unsafe hand-assembled staging release with one exact local plan that
+preserves human ownership and makes every producer/reader dependency visible.
+
+**Completed**
+
+- Added one aggregate-only validation statement with six checks for required
+  table/view columns, partial bindings, invalid v1 bindings, forbidden Cost
+  bindings, and immutable-row/current-view reconciliation.
+- Added a local renderer that requires the reviewed two-statement migration and
+  one-statement read-only validator, rejects destructive or write-bearing SQL,
+  and never opens an AWS session.
+- Froze the human release order as schema, validation, isolated lifecycle
+  producer, Operations API, private frontend, then read-only verification.
+- Documented that API/frontend-only deployment cannot create truthful bindings;
+  the producer writes them when a new eligible Action proposal is generated.
+- Preserved existing Actions as legacy-null and prohibited creating, backfilling,
+  or mutating an Action merely to manufacture runtime proof.
+- Added forward-fix rollback rules that retain additive columns and immutable
+  proposal/audit evidence.
+
+**Boundary**
+
+This handoff performs no AWS inspection, Athena execution, migration,
+deployment, publication, role-user creation, lifecycle continuation, Action or
+Outcome mutation, schedule, alias movement, policy/model operation, or
+production change. Every external write remains a separate named-human action.
 
 ## Recently completed — Outcome comparison envelope runtime validator v1
 
@@ -1465,6 +1498,13 @@ done.
 
 ### Codex-run validation
 
+- Decision Truth private-staging rollout handoff passes five focused migration,
+  aggregate-validation, non-execution, release-order, and no-manufactured-proof
+  scenarios. The local renderer reports two additive migration statements, one
+  read-only statement, six aggregate checks, and every AWS/deployment/continuation
+  flag false. All 48 project-drift checks, Python compilation, all 564 repository
+  tests, required SQL artifacts, and required CloudFormation template presence
+  pass. No AWS session, migration, deployment, or external write occurred.
 - Outcome comparison envelope runtime validator v1 passes valid-envelope,
   non-iterable payload, count reconciliation, status/array reconciliation, and
   governance-expansion scenarios, frontend lint, and the production build.
@@ -1861,13 +1901,13 @@ done.
 
 ## Next Up
 
-1. The local `SLA_BREACH` Decision-to-Outcome truth chain is now structurally
-   complete through comparison-envelope validation. Do not add another
-   comparison governance micro-layer. Its next maturity gate is a separately
-   human-authorized private-staging rollout of the additive Action binding
-   migration, Operations API, and cockpit, followed by read-only role and
-   contract verification. This work is not authorized by the current local
-   development request.
+1. The Decision Truth private-staging handoff is locally complete and has not
+   executed. The next maturity gate is human-owned execution in the frozen
+   order: additive Action binding migration, six-check read-only validation,
+   isolated lifecycle producer, Operations API, private frontend, then
+   read-only contract verification. Four-role verification separately creates
+   temporary users. None of these external writes is agent-authorized or
+   implied by this completed plan.
 2. Recommended next product feature after that staging evidence:
    `COST_ANOMALY` Decision Brief v1. It should reuse the existing immutable
    binding and Outcome provenance chain, expose exact rate-card/source version

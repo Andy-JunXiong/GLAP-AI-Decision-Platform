@@ -104,6 +104,30 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_action_outcome_evidence_chain_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_decision_truth_rollout_execution_authority_drift_is_detected(self):
+        paths = (
+            "sql/16_decision_action_binding_v1.sql",
+            "sql/17_decision_action_binding_validation.sql",
+            "ops/plan_decision_truth_staging_rollout.ps1",
+            "tests/test_decision_truth_staging_rollout.py",
+            "docs/decision_truth_staging_rollout.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            plan_path = root / "ops/plan_decision_truth_staging_rollout.ps1"
+            plan_path.write_text(
+                plan_path.read_text(encoding="utf-8").replace(
+                    "Operational continuation authorized: False",
+                    "Operational continuation authorized: True",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_outcome_decision_provenance_causal_claim_drift_is_detected(self):
         paths = (
             "lambda/glap_operations_api.py",

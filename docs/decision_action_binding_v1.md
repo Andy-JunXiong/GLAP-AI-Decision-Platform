@@ -56,6 +56,10 @@ Alert + deterministic Decision Brief
 - `sql/16_decision_action_binding_v1.sql` is an additive, plan-only migration
   for isolated staging. It must be separately reviewed and applied before this
   code can be deployed.
+- `sql/17_decision_action_binding_validation.sql` and the local-only renderer
+  now provide the exact aggregate post-migration checks and human-owned release
+  order. See
+  [`decision_truth_staging_rollout.md`](decision_truth_staging_rollout.md).
 - The authenticated Action Queue, Action Board, and evidence chain expose the
   binding read-only. They gain no new mutation or approval authority.
 

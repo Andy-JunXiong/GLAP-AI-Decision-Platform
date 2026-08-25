@@ -47,6 +47,14 @@ fields beside append-only named-human review reasons. Legacy and cost Actions
 remain explicitly unbound. The additive staging migration is plan-only; no
 deployed schema or runtime changed.
 
+The plan-only Decision Truth staging handoff now makes the producer dependency
+explicit: after the additive schema and six aggregate checks, the isolated
+lifecycle producer must be released before new proposals can carry truthful
+bindings. Operations API and private-frontend releases are downstream readers,
+not substitutes for that producer step. Every migration, producer/API/frontend
+release, temporary-user role check, and later operational continuation remains
+separately human-owned; no rollout step has been executed.
+
 ## Cross-cutting evaluation boundary
 
 The repository now includes a local, deterministic, read-only Evaluation
