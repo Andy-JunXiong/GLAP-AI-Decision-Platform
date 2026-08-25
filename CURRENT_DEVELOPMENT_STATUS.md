@@ -40,6 +40,9 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
+| Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
+| Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
+| Learning operation | `DORMANT_EVIDENCE_GATED` | `implementation_status=IMPLEMENTED_VERIFIED`, `operational_status=DORMANT`, `evidence_status=INSUFFICIENT_ELIGIBLE_OUTCOMES`, and `progression_status=EVIDENCE_GATED`; current inspected state remains 1/20 |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
@@ -142,7 +145,44 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Governed `COMPLETE`-to-Outcome evidence canary
+## Active slice — Public Claim Truth v1
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED`
+
+**Goal**
+
+Make the public product surfaces explicit about whether decision, execution,
+Outcome, and value statements are runtime-backed, modelled from synthetic
+inputs, or purely illustrative before expanding the decision engine.
+
+**Completed**
+
+- Added a compact seven-entry manifest limited to
+  `HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1`; it is not an attempt
+  to classify every ordinary UI metric.
+- Bound each in-scope semantic region to a source marker, evidence class,
+  disclosure, and—only for modelled claims—a repository calculation source.
+- Reworded the Next demo so fixed portfolio and Outcome examples no longer
+  claim executed decisions, realised value, prevented stockouts, or
+  operational forecast accuracy. Scenario confidence is now explicitly an
+  assumption.
+- Preserved the useful public Scenario Lab instead of downgrading it twice:
+  its recommendation remains illustrative, while its deterministic scenario
+  economics are `MODELLED_SYNTHETIC` and backed by the existing calculation
+  case.
+- Added a standard-library validator, seven focused tests, and project-drift
+  integration. The validator rejects unsupported evidence classes, missing
+  semantic mappings or disclosures, invalid backing sources, and the prior
+  unqualified executed-value wording.
+
+**Boundary**
+
+This is implemented and locally verified only. The current public Pages site
+has not changed, and the Next frontend has not been redeployed. No AWS call,
+Pages publication, staging deployment, Action mutation, production change, or
+new intelligence layer occurred.
+
+## Date-gated carry-over — Governed `COMPLETE`-to-Outcome evidence canary
 
 **Status:** `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE`
 
@@ -992,6 +1032,13 @@ done.
 
 ### Codex-run validation
 
+- Public Claim Truth v1 passes its seven-claim validator, all seven focused
+  failure-path tests, the combined 61-test claim/offline/project-drift suite,
+  frontend lint/build and all three rendered contract tests, Python
+  compilation, all 531 repository tests, the 36/36 project drift audit, and
+  `git diff --check`. Validation was local only and performed no AWS call,
+  Pages publication, staging deployment, Action mutation, production change,
+  or policy/model operation.
 - The private-frontend release evidence synchronization passes Python
   compilation, all 434 repository tests, the updated fail-closed rollout
   contract validator, the 30/30 project drift audit, JSON contract parsing,
@@ -1286,16 +1333,19 @@ done.
 
 ## Next Up
 
-1. Recommended next feature: on or after Sydney date `2026-08-28`, separately
-   authorize one bounded `OPERATIONAL` / `ACTUAL_CALENDAR` staging lifecycle
-   continuation, then reconcile the now-due Outcome and Learning delta.
-2. This is a future recommendation, not current authority. Before the due date
-   the correct action is to wait; the eventual continuation grants no
-   production, schedule, alias, policy, or model authority.
-3. In parallel, the next recommended local production-readiness slice is a
-   plan-only sustained authenticated read-load contract and sanitized baseline
-   format. Developing the contract is local-only; executing a staging load run
-   requires separate named-human authority.
+1. Recommended next feature: implement one `SLA_BREACH` Decision Brief v1
+   vertical slice. It should derive risk, exposure, urgency, alternatives, and
+   no-action cost from governed inputs while setting expected benefit to
+   `NOT_ESTIMATED` until a versioned intervention-effect assumption set exists.
+2. The Claim Truth manifest becomes that feature's public-output acceptance
+   boundary: every new Decision Brief field must map to a governed source or be
+   explicitly illustrative, so decision-engine growth cannot recreate the
+   current demo/engine gap.
+3. On or after Sydney date `2026-08-28`, separately authorize only the one
+   already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
+   reconcile its due Outcome/Learning delta. Stop after that canary; do not
+   mechanically advance 2/20 toward 20/20. This remains future human authority
+   and grants no production, schedule, alias, policy, or model authority.
 
 ## Current-week history
 

@@ -167,6 +167,36 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_readiness_contract(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_public_claim_truth_mapping_drift_is_detected(self):
+        paths = (
+            "docs/public_claim_manifest_v1.json",
+            "ops/validate_public_claims.py",
+            "tests/test_public_claims.py",
+            "decision-brief-demo/app/page.tsx",
+            "offline/glap-demo.html",
+            "README.md",
+            "docs/case_study_port_disruption.md",
+            "docs/architecture_current.md",
+            "docs/ops_snapshot.md",
+            "DEVELOPMENT_PLAN.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_public_claim_truth(root)[0]
+            self.assertEqual(current.status, "PASS")
+            page = root / "decision-brief-demo/app/page.tsx"
+            page.write_text(
+                page.read_text(encoding="utf-8").replace(
+                    'data-claim-id="next-outcomes-summary"',
+                    'data-claim-id="unsupported-outcomes-summary"',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_public_claim_truth(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_stateful_cross_gap_recovery_maturity_cannot_regress(self):
         paths = (
             "docs/project_drift_contract.json",

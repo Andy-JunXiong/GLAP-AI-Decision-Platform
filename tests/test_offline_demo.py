@@ -99,6 +99,17 @@ class OfflineDemoTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
 
+    def test_scenario_claims_are_semantically_classified(self):
+        for marker in (
+            'data-claim-id="pages-port-diversion-decision" data-claim-classification="ILLUSTRATIVE"',
+            'data-claim-id="pages-port-diversion-economics" data-claim-classification="MODELLED_SYNTHETIC"',
+            "Assumed scenario confidence · 80%",
+            "fixed illustrative cost model",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+        self.assertNotIn("80% model confidence", self.html)
+
     def test_every_page_separates_governed_and_scenario_evidence(self):
         for marker in (
             'id="signalLaneTable"',

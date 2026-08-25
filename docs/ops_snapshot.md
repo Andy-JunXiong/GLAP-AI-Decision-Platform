@@ -67,6 +67,16 @@ Shipments, Outcomes, and Analytics. Decisions shows the existing published
 aggregate separately from a browser-only scenario lab. Scenario approval never
 writes AWS state, changes shipment data, or contributes an observed outcome.
 
+High-risk public decision, execution, Outcome, and value claims are governed by
+the separate `HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1` manifest.
+It does not change the OPS snapshot schema. Instead, it binds the public
+Scenario Lab, the Next product demonstration, and the README case to semantic
+source markers and one of three evidence classes: `RUNTIME_BACKED`,
+`MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`. Modelled claims require a repository
+calculation source; illustrative claims require an explicit disclosure and
+cannot cite a backing source. The local validator rejects unsupported classes,
+missing mappings, and the previously unqualified executed-value wording.
+
 Evaluation & Trust remains separate from the OPS snapshot contract. Its
 versioned `public-evaluation-snapshot.v1` JSON is loaded from
 `data/evaluation-snapshot.json`, not from OPS metrics or hard-coded page totals.

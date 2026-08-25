@@ -6,6 +6,17 @@ preserved handoffs.
 
 ## 2026-08-25
 
+- Implemented Public Claim Truth v1 for the project's high-risk decision,
+  execution, Outcome, and value statements. A compact seven-entry manifest
+  maps the Next demo, public Scenario Lab, and README case to exactly
+  `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`, with semantic
+  source markers, required disclosures, and repository backing sources for
+  modelled claims. The Next demo no longer presents fixed examples as executed
+  decisions, realised value, prevented stockouts, or operational accuracy.
+  Standard-library validation, focused tests, frontend render tests, and the
+  project drift audit fail closed on missing mappings, invalid evidence
+  classes, unsupported backing sources, or restored legacy wording. This is
+  locally verified and not published or deployed.
 - Implemented Operations Production Readiness Evidence Harness v1. A versioned
   ten-gate manifest and offline evaluator reconcile existing private-staging
   reliability evidence against access, concurrency, failure, throttling, load,

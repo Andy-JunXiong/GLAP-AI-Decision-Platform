@@ -27,6 +27,11 @@ and keeps human approval, execution evidence and outcomes traceable.
 > synthetic logistics data. Runtime and deployment evidence is real; scenario
 > costs and business outcomes are explicitly labelled synthetic.
 
+> **Development principle:** No new intelligence layer until the existing
+> decision, execution, and Outcome semantics are truthful end-to-end. In the
+> current milestone, truthfulness and traceability take priority over adding
+> Agents, RAG, or another model.
+
 > **5 August 2026 delivery checkpoint:** the stateful multimodal lifecycle and
 > its read-only operations-analytics foundation are validated in isolated AWS
 > staging. Maersk/KN Ocean and DHL Air share Origin/P2P/Destination semantics,
@@ -122,7 +127,8 @@ critical SKU, but available inventory covers only eight days.
 | Inventory cover | `8 days` |
 | Estimated no-action storage exposure | `AUD 15,840` |
 
-**GLAP recommendation:** divert eight high-priority containers to Melbourne,
+<!-- claim-id: readme-port-diversion-economics classification: MODELLED_SYNTHETIC -->
+**GLAP scenario recommendation:** divert eight high-priority containers to Melbourne,
 then move them to the Sydney distribution centre by rail or truck. Keep four
 containers on the original route and review the disruption daily.
 

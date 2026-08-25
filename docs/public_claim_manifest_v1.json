@@ -1,0 +1,88 @@
+{
+  "schema_version": "public-claim-manifest.v1",
+  "scope": "HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1",
+  "classifications": [
+    "RUNTIME_BACKED",
+    "MODELLED_SYNTHETIC",
+    "ILLUSTRATIVE"
+  ],
+  "claims": [
+    {
+      "claim_id": "next-decision-recommendation",
+      "surface": "NEXT_PUBLIC_DEMO",
+      "semantic": "DECISION_RECOMMENDATION",
+      "classification": "ILLUSTRATIVE",
+      "source_file": "decision-brief-demo/app/page.tsx",
+      "source_marker": "data-claim-id=\"next-decision-recommendation\" data-claim-classification=\"ILLUSTRATIVE\"",
+      "required_anchor": "Divert 8 FCL via Melbourne",
+      "required_disclosure": "Illustrative scenario recommendation",
+      "backing_source_path": null
+    },
+    {
+      "claim_id": "next-portfolio-value",
+      "surface": "NEXT_PUBLIC_DEMO",
+      "semantic": "BUSINESS_VALUE_MODELLED",
+      "classification": "ILLUSTRATIVE",
+      "source_file": "decision-brief-demo/app/page.tsx",
+      "source_marker": "data-claim-id=\"next-portfolio-value\" data-claim-classification=\"ILLUSTRATIVE\"",
+      "required_anchor": "$128,400",
+      "required_disclosure": "Fixed illustrative portfolio · not execution evidence",
+      "backing_source_path": null
+    },
+    {
+      "claim_id": "next-outcomes-summary",
+      "surface": "NEXT_PUBLIC_DEMO",
+      "semantic": "EXECUTION_OUTCOME_VALUE_SUMMARY",
+      "classification": "ILLUSTRATIVE",
+      "source_file": "decision-brief-demo/app/page.tsx",
+      "source_marker": "data-claim-id=\"next-outcomes-summary\" data-claim-classification=\"ILLUSTRATIVE\"",
+      "required_anchor": "Illustrative outcomes & value",
+      "required_disclosure": "No execution or realised-value evidence is shown.",
+      "backing_source_path": null
+    },
+    {
+      "claim_id": "next-decision-brief",
+      "surface": "NEXT_PUBLIC_DEMO",
+      "semantic": "DECISION_BRIEF_SCENARIO",
+      "classification": "ILLUSTRATIVE",
+      "source_file": "decision-brief-demo/app/page.tsx",
+      "source_marker": "data-claim-id=\"next-decision-brief\" data-claim-classification=\"ILLUSTRATIVE\"",
+      "required_anchor": "Assumed scenario confidence · 80%",
+      "required_disclosure": "Demonstration only",
+      "backing_source_path": null
+    },
+    {
+      "claim_id": "pages-port-diversion-decision",
+      "surface": "PUBLIC_PAGES_SCENARIO_LAB",
+      "semantic": "DECISION_RECOMMENDATION",
+      "classification": "ILLUSTRATIVE",
+      "source_file": "offline/glap-demo.html",
+      "source_marker": "data-claim-id=\"pages-port-diversion-decision\" data-claim-classification=\"ILLUSTRATIVE\"",
+      "required_anchor": "Assumed scenario confidence · 80%",
+      "required_disclosure": "Illustrative decision exercise",
+      "backing_source_path": null
+    },
+    {
+      "claim_id": "pages-port-diversion-economics",
+      "surface": "PUBLIC_PAGES_SCENARIO_LAB",
+      "semantic": "BUSINESS_VALUE_MODELLED",
+      "classification": "MODELLED_SYNTHETIC",
+      "source_file": "offline/glap-demo.html",
+      "source_marker": "data-claim-id=\"pages-port-diversion-economics\" data-claim-classification=\"MODELLED_SYNTHETIC\"",
+      "required_anchor": "Net modelled benefit",
+      "required_disclosure": "fixed illustrative cost model",
+      "backing_source_path": "docs/case_study_port_disruption.md"
+    },
+    {
+      "claim_id": "readme-port-diversion-economics",
+      "surface": "README",
+      "semantic": "BUSINESS_VALUE_MODELLED",
+      "classification": "MODELLED_SYNTHETIC",
+      "source_file": "README.md",
+      "source_marker": "claim-id: readme-port-diversion-economics classification: MODELLED_SYNTHETIC",
+      "required_anchor": "AUD 5,760",
+      "required_disclosure": "not a measured production saving",
+      "backing_source_path": "docs/case_study_port_disruption.md"
+    }
+  ]
+}

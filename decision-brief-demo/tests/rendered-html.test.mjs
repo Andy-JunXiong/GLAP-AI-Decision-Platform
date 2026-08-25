@@ -25,7 +25,9 @@ test("server-renders the GLAP customer control tower", async () => {
   assert.match(html, /Network risk picture/);
   assert.match(html, /Needs your attention/);
   assert.match(html, /Divert 8 FCL via Melbourne/);
-  assert.match(html, /Value delivered/);
+  assert.match(html, /Illustrative scenario value/);
+  assert.match(html, /data-claim-id="next-portfolio-value"/);
+  assert.match(html, /Fixed illustrative portfolio · not execution evidence/);
   assert.match(html, /Action Board/);
   assert.match(html, /property="og:image" content="\/og\.png"/);
 });

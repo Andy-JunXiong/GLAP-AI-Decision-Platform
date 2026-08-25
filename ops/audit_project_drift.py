@@ -1005,6 +1005,44 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_public_claim_truth(root: Path) -> list[CheckResult]:
+    validator_path = "ops/validate_public_claims.py"
+    manifest_path = "docs/public_claim_manifest_v1.json"
+    validator = _load_repository_module(root, validator_path)
+    errors = validator.validate_manifest(validator.load_manifest(root), root)
+    status = (root / "CURRENT_DEVELOPMENT_STATUS.md").read_text(encoding="utf-8")
+    architecture = (root / "docs/architecture_current.md").read_text(encoding="utf-8")
+    plan = (root / "DEVELOPMENT_PLAN.md").read_text(encoding="utf-8")
+    bounded = (
+        errors == []
+        and "IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED" in status
+        and "HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1" in architecture
+        and "No new intelligence layer is added" in plan
+        and "benefit_estimate.status = NOT_ESTIMATED" in plan
+    )
+    return [
+        _result(
+            "public_claim_truth_boundary",
+            "governance",
+            bounded,
+            "High-risk public claims remain semantically mapped, evidence-classified, disclosed, source-backed where required, and locally verified without publication.",
+            "The public Claim Truth manifest, source mapping, disclosure, backing evidence, or maturity boundary drifted.",
+            (
+                manifest_path,
+                validator_path,
+                "tests/test_public_claims.py",
+                "decision-brief-demo/app/page.tsx",
+                "offline/glap-demo.html",
+                "README.md",
+                "docs/architecture_current.md",
+                "docs/ops_snapshot.md",
+                "DEVELOPMENT_PLAN.md",
+                "CURRENT_DEVELOPMENT_STATUS.md",
+            ),
+        )
+    ]
+
+
 def check_temporal_boundary(root: Path) -> list[CheckResult]:
     api_path = "lambda/glap_operations_api.py"
     source = (root / api_path).read_text(encoding="utf-8")
@@ -2271,6 +2309,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_action_complete_outcome_canary(root))
     checks.extend(check_action_mutation_release(root))
     checks.extend(check_readiness_contract(root))
+    checks.extend(check_public_claim_truth(root))
     checks.extend(check_temporal_boundary(root))
     checks.extend(check_a303_outcome_robustness_boundary(root))
     checks.extend(check_a303_outcome_calibration_boundary(root))

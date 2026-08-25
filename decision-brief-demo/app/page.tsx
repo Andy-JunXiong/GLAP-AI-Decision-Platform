@@ -442,10 +442,10 @@ function Overview({ go }: { go: (view: View) => void }) {
       </article>
       <article className="card attention-card">
         <CardHead title="Needs your attention" copy="Decisions ranked by urgency" action={<button onClick={() => go("decisions")}>Decision queue →</button>} />
-        <button className="attention-item critical-item" onClick={() => go("brief")}>
+        <button className="attention-item critical-item" data-claim-id="next-decision-recommendation" data-claim-classification="ILLUSTRATIVE" onClick={() => go("brief")}>
           <span className="severity">CRITICAL</span><small>Due in 2h 14m</small>
           <strong>Divert 8 FCL via Melbourne</strong>
-          <p>Sydney congestion and strike risk threaten critical inventory.</p>
+          <p>Illustrative scenario recommendation · Sydney congestion and strike assumptions threaten critical inventory.</p>
           <div><span>12 FCL exposed</span><b>Protect $5,760 →</b></div>
         </button>
         <button className="attention-item">
@@ -460,9 +460,9 @@ function Overview({ go }: { go: (view: View) => void }) {
         <div className="activity-bars">{[38,52,44,69,55,82,64].map((height, i) => <div key={i}><i style={{height:`${height}%`}} /><span>{["Fri","Sat","Sun","Mon","Tue","Wed","Thu"][i]}</span></div>)}</div>
         <div className="activity-summary"><div><strong>38</strong><span>Signals detected</span></div><div><strong>9</strong><span>Required decisions</span></div><div><strong>4.2h</strong><span>Average response</span></div></div>
       </article>
-      <article className="card value-card">
-        <CardHead title="Value delivered" copy="Modelled benefit from executed decisions" action={<button onClick={() => go("outcomes")}>View outcomes →</button>} />
-        <div className="value-hero"><span>Month to date</span><strong>$128,400</strong><small>estimated cost and loss avoided</small></div>
+      <article className="card value-card" data-claim-id="next-portfolio-value" data-claim-classification="ILLUSTRATIVE">
+        <CardHead title="Illustrative scenario value" copy="Fixed illustrative portfolio · not execution evidence" action={<button onClick={() => go("outcomes")}>View scenarios →</button>} />
+        <div className="value-hero"><span>Illustrative portfolio</span><strong>$128,400</strong><small>modelled cost and loss avoidance</small></div>
         <div className="value-list"><span><i />Storage & demurrage <b>$46.2k</b></span><span><i />Stockout avoidance <b>$61.8k</b></span><span><i />Freight optimisation <b>$20.4k</b></span></div>
       </article>
     </section>
@@ -957,18 +957,18 @@ function LabelReadiness({ contract, state, message, refresh }: {
 }
 
 function DemoOutcomes() {
-  return <div className="page">
-    <PageTitle eyebrow="LEARN" title="Outcomes & value" copy="Track whether decisions worked and quantify the value delivered." action={<button className="outline-button">This month⌄</button>} />
-    <section className="metric-grid"><Metric label="Decisions executed" value="24" note="89% acceptance rate" /><Metric label="Estimated value" value="$128.4k" note="+18% vs last month" tone="green" /><Metric label="Storage avoided" value="$46.2k" note="12 interventions" /><Metric label="Stockouts prevented" value="7" note="Across 18 critical SKUs" /><Metric label="Forecast accuracy" value="84%" note="+6 pts this quarter" /></section>
+  return <div className="page" data-claim-id="next-outcomes-summary" data-claim-classification="ILLUSTRATIVE">
+    <PageTitle eyebrow="LEARN" title="Illustrative outcomes & value" copy="Explore how outcome and value reporting could work. No execution or realised-value evidence is shown." action={<button className="outline-button">Fixed scenario⌄</button>} />
+    <section className="metric-grid"><Metric label="Illustrative decisions" value="24" note="Assumed 89% acceptance" /><Metric label="Modelled scenario value" value="$128.4k" note="Illustrative comparison only" tone="green" /><Metric label="Illustrative storage avoidance" value="$46.2k" note="12 scenario interventions" /><Metric label="Illustrative stockout scenarios" value="7" note="Across 18 synthetic SKUs" /><Metric label="Illustrative forecast score" value="84%" note="Not operational accuracy" /></section>
     <section className="outcome-grid">
-      <article className="card outcome-chart"><CardHead title="Cumulative value delivered" copy="Modelled benefit from accepted recommendations" /><div className="line-chart"><div className="chart-line" /><span className="chart-label l1">$0</span><span className="chart-label l2">$50k</span><span className="chart-label l3">$100k</span><div className="chart-dot" /></div><div className="chart-months"><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span></div></article>
-      <article className="card"><CardHead title="Recent decision outcomes" copy="Expected impact compared with observed result" /><div className="outcome-list">
-        <div><i className="success">✓</i><span><strong>Early container collection · Botany</strong><small>Storage avoided · 18 Jul</small></span><b>$9,240</b></div>
-        <div><i className="success">✓</i><span><strong>Expedited replenishment · Brisbane</strong><small>Stockout prevented · 14 Jul</small></span><b>$21,800</b></div>
+      <article className="card outcome-chart"><CardHead title="Illustrative cumulative scenario value" copy="Fixed modelled examples, not realised benefit" /><div className="line-chart"><div className="chart-line" /><span className="chart-label l1">$0</span><span className="chart-label l2">$50k</span><span className="chart-label l3">$100k</span><div className="chart-dot" /></div><div className="chart-months"><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span></div></article>
+      <article className="card"><CardHead title="Illustrative scenario outcomes" copy="Expected impact compared with assumed scenario result" /><div className="outcome-list">
+        <div><i className="success">✓</i><span><strong>Early container collection · Botany</strong><small>Modelled storage avoidance · 18 Jul</small></span><b>$9,240</b></div>
+        <div><i className="success">✓</i><span><strong>Expedited replenishment · Brisbane</strong><small>Illustrative stockout avoidance · 14 Jul</small></span><b>$21,800</b></div>
         <div><i className="neutral">—</i><span><strong>Held spot-rate booking · Shanghai</strong><small>Rate unchanged · 11 Jul</small></span><b>$0</b></div>
       </div></article>
     </section>
-    <p className="data-disclaimer">All values shown in this demonstration workspace are synthetic and illustrate the intended measurement framework.</p>
+    <p className="data-disclaimer">All values shown in this demonstration workspace are fixed synthetic examples. They are not Action execution, observed Outcome, realised business value, or operational forecast evidence.</p>
   </div>;
 }
 
@@ -978,7 +978,7 @@ function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics
   economics: { noAction: number; avoided: number; reroute: number; net: number; stockout: string };
   go: (view: View) => void;
 }) {
-  return <div className="page brief-page">
+  return <div className="page brief-page" data-claim-id="next-decision-brief" data-claim-classification="ILLUSTRATIVE">
     <button className="back-link" onClick={() => go("decisions")}>← Back to decision queue</button>
     <div className="brief-title">
       <div><span className="critical-label">CRITICAL</span><small>DEC-PORT-0001 · Updated 09:30 AEST</small><h1>Protect critical inventory before Sydney port disruption compounds.</h1><p>Congestion is 2.5× baseline and strike probability has reached 82%. Twelve inbound FCL may exceed free storage before inventory cover runs out.</p></div>
@@ -987,7 +987,7 @@ function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics
     <section className="metric-grid compact brief-metrics"><Metric label="Composite risk" value="HIGH" note="Congestion + strike" tone="red" /><Metric label="FCL exposed" value="12" note="Critical SKU cargo" /><Metric label="Cost exposure" value={money(economics.noAction)} note="Without action" /><Metric label="Inventory cover" value="8 days" note="vs 9-day dwell" /></section>
     <section className="brief-grid">
       <article className="card"><CardHead title="Why the risk escalated" copy="Signals crossed intervention thresholds" /><div className="signal-meter"><span>Port congestion index <b>0.87</b></span><div><i style={{width:"87%"}} /></div><small>Baseline 0.35</small></div><div className="signal-meter amber"><span>Labour-strike probability <b>82%</b></span><div><i style={{width:"82%"}} /></div><small>Escalation threshold 60%</small></div><div className="cover-compare"><div><span>Inventory cover</span><strong>8 days</strong></div><b>1-day gap</b><div><span>Expected dwell</span><strong>9 days</strong></div></div></article>
-      <article className="card"><CardHead title="Recommended action" copy="80% model confidence" /><div className="recommendation"><i>↗</i><div><strong>Divert {diverted} high-priority FCL to Melbourne</strong><p>Move cargo to Sydney DC by rail or truck. Keep {12-diverted} lower-priority FCL on the original route and review daily.</p></div></div><div className="route-flow"><div><i className="red" /><strong>Sydney</strong><span>Disrupted</span></div><b>→ <small>{diverted} FCL</small></b><div><i className="blue" /><strong>Melbourne</strong><span>Alternate</span></div><b>→ <small>Rail</small></b><div><i className="green" /><strong>Sydney DC</strong><span>Protected</span></div></div></article>
+      <article className="card"><CardHead title="Recommended action" copy="Assumed scenario confidence · 80%" /><div className="recommendation"><i>↗</i><div><strong>Divert {diverted} high-priority FCL to Melbourne</strong><p>Move cargo to Sydney DC by rail or truck. Keep {12-diverted} lower-priority FCL on the original route and review daily.</p></div></div><div className="route-flow"><div><i className="red" /><strong>Sydney</strong><span>Disrupted</span></div><b>→ <small>{diverted} FCL</small></b><div><i className="blue" /><strong>Melbourne</strong><span>Alternate</span></div><b>→ <small>Rail</small></b><div><i className="green" /><strong>Sydney DC</strong><span>Protected</span></div></div></article>
       <article className="card"><CardHead title="Decision economics" copy="Scenario changes with diversion volume" /><div className="economics-list"><div><span>No-action exposure</span><strong>{money(economics.noAction)}</strong></div><div><span>Avoided storage</span><strong className="green-text">+{money(economics.avoided)}</strong></div><div><span>Reroute cost</span><strong className="amber-text">−{money(economics.reroute)}</strong></div></div><div className="net-benefit"><span>Net modelled benefit</span><strong>{money(economics.net)}</strong><small>Stockout risk after action · <b>{economics.stockout}</b></small></div></article>
       <article className="card review-card"><CardHead title="Operator review" copy="Human approval required before execution" /><label className="range-label"><span>FCL to divert <strong>{diverted}</strong></span><input aria-label="FCL to divert" type="range" min="0" max="12" value={diverted} onChange={(e) => {setDiverted(Number(e.target.value)); setDecision("pending");}} /><small><span>0</span><span>Recommended · 8</span><span>12</span></small></label><label className="select-label"><span>Decision owner</span><select><option>Mia Chen · Import Operations</option><option>James Wu · Inventory Planning</option><option>Sarah Lim · Control Tower</option></select></label><div className="rationale"><span>Decision rationale</span><p>Expected dwell exceeds inventory cover and free-storage time. Selective diversion protects critical inventory while limiting unnecessary reroute cost.</p></div><div className="decision-buttons"><button onClick={() => setDecision("rejected")}>Reject</button><button onClick={() => setDecision("approved")}>Approve diversion</button></div><small className="demo-note">Demonstration only · no instruction is sent to a carrier or terminal.</small></article>
     </section>

@@ -137,6 +137,19 @@ model readiness or production readiness. The implementation is deployed in
 private staging and passed both explicit Learning runtime gates; the inspected
 state remained blocked at `1/20` eligible Outcomes with no proposal present.
 
+Learning maturity is therefore reported on four independent dimensions rather
+than compressed into one optimistic lifecycle label:
+
+- `implementation_status = IMPLEMENTED_VERIFIED`;
+- `operational_status = DORMANT`;
+- `evidence_status = INSUFFICIENT_ELIGIBLE_OUTCOMES`;
+- `progression_status = EVIDENCE_GATED`.
+
+The contract and staging mechanics are implemented, but Learning is not an
+active evidence-producing product loop under the current synthetic-data pace.
+The already-started due-date canary may be completed once on or after
+`2026-08-28`; advancing mechanically from 2/20 to 20/20 is not the roadmap.
+
 Operational model-readiness inputs must satisfy every condition below:
 
 - `execution_mode = OPERATIONAL`;

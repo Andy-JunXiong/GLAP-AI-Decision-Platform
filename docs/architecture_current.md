@@ -19,6 +19,15 @@ The Action node records an immutable governed audit event; it does not command
 an external carrier, port, or logistics system. Outcome generation is delayed,
 reproducible, and `SIMULATED`, not a measurement of real business performance.
 
+Public decision, execution, Outcome, and value statements now have a separate
+Claim Truth boundary. The compact
+`HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1` manifest maps each
+in-scope public semantic region to exactly one of `RUNTIME_BACKED`,
+`MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`, binds it to a source marker and
+disclosure, and requires a repository backing source for modelled or runtime
+claims. This is a display/evidence contract, not a new operational component;
+it performs no network call, publication, deployment, or mutation.
+
 ## Cross-cutting evaluation boundary
 
 The repository now includes a local, deterministic, read-only Evaluation

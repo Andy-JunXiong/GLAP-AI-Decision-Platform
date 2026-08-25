@@ -36,16 +36,31 @@ Evaluation Harness surrounds the complete chain.
 
 ## Strategic principles
 
-1. Deterministic safety rules remain explainable and cannot be silently
+1. No new intelligence layer is added until the existing decision, execution,
+   and Outcome semantics are truthful and traceable end-to-end.
+2. Deterministic safety rules remain explainable and cannot be silently
    replaced by a learned model.
-2. Human approval remains mandatory for protected operational mutations.
-3. Synthetic logistics evidence, deployed AWS evidence, and measured business
+3. Human approval remains mandatory for protected operational mutations.
+4. Synthetic logistics evidence, deployed AWS evidence, and measured business
    outcomes are always distinguished.
-4. Point-in-time decisions may use only evidence available at their cutoff.
-5. A capability is valuable only when paired evaluation shows an attributable
+5. Point-in-time decisions may use only evidence available at their cutoff.
+6. A capability is valuable only when paired evaluation shows an attributable
    improvement in decision quality or business effect.
-6. Simple baselines remain the benchmark until stronger approaches beat them
+7. Simple baselines remain the benchmark until stronger approaches beat them
    on governed evidence.
+
+The current product sequence is `Repository Truth -> Claim Truth -> Decision
+Truth -> Action Truth -> Execution Truth -> Outcome Truth -> Governed
+Progression`. Operational reliability, security, cost, recovery, maintenance,
+and SLO evidence remain a parallel track rather than a substitute for truthful
+business semantics.
+
+The hypothesized primary user is a Logistics Control Tower Operator whose job
+is to decide what bounded intervention should happen next, why, and under whose
+authority. This is a product hypothesis, not user research:
+`persona_status = HYPOTHESIZED_NOT_USER_VALIDATED`. The current business
+deployment state is one statement, not a new gate framework:
+`business_deployment_readiness = DESIGNED_NOT_VALIDATED`.
 
 ## Delivery order
 
@@ -169,6 +184,15 @@ Durable capabilities:
 
 Progression gate: new investigation or agent experiences must reuse governed
 tools and authority rather than introducing direct operational writes.
+
+The next vertical slice starts with `SLA_BREACH`. Decision Brief v1 must derive
+risk, exposure, and urgency from governed inputs, present bounded alternatives
+including no action, and use `benefit_estimate.status = NOT_ESTIMATED` until a
+versioned intervention-effect assumption set actually exists. It must not
+manufacture an expected-benefit range or treat scenario economics as execution
+or Outcome evidence. The business-process contract is frozen from this schema,
+state transition, UI, and test slice rather than written as a detached
+framework first.
 
 ## P5 — Governance and production readiness
 
