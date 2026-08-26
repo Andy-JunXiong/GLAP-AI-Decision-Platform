@@ -126,30 +126,22 @@ run `32853867334` succeeded without deployment. The lifecycle producer remains
 an explicit dependency because it creates immutable bindings; an API/frontend-
 only release cannot establish end-to-end binding evidence.
 
-The local `plan-stack-only` / `deploy-stack-only` workflow pair is the narrow
-producer release candidate. The plan and deploy actions require separate
-manual dispatches. The corrected plan action creates an unexecuted temporary
-change set, prints only logical resource ID, resource type, action, and
-replacement status, applies the same exact-one-generator gate, and deletes the
-change set without uploading an artifact. Both generator-only actions reuse the
-deployed stack template and previous values for every parameter except the
-generator artifact. Deploy packages only the generator; it refuses
-to execute unless the CloudFormation change set contains exactly one
-non-replacing `LifecycleGeneratorFunction` modification. Both skip schema application, seed,
-replay, integration-date
-invocation, extension, baseline, analytics, schedule, alias, Action mutation,
-and production paths. Commit `59a9eaa` delivered the first path. Plan-only run
-`32901614061` succeeded under the earlier render-only behavior. Human-dispatched
-deploy run `32905914076` then uploaded an inactive generator artifact and
-failed closed before change-set execution because the actual change set was not
-exactly one non-replacing generator modification; its temporary change set was
-deleted and no stack resource changed. Commit `f9bbad2` and CI run `32907780599`
-delivered the diagnostic plan path. Human plan runs `32908262838` and
-`32917959958` both reported the same generator, controller-function, and
-controller-role changes, then failed closed and deleted the temporary change
-set without artifact upload or execution. This source-control delivery includes
-the deployed-template/previous-parameter correction but does not dispatch it.
-Producer deployment,
+The former shared-stack `plan-stack-only` / `deploy-stack-only` path is retired.
+Human plan run `32920083879` from `fd6d532` proved that shared dependency
+propagation still introduced controller-role and controller-function changes;
+the plan uploaded nothing, executed nothing, and changed no resource.
+
+The replacement workflow is
+`.github/workflows/refactor-stateful-lifecycle-generator-staging.yml`. It first
+offers separately dispatched `plan-refactor` and `execute-refactor` actions to
+move only `LifecycleGeneratorFunction` into an independent one-resource stack.
+After exclusive ownership is verified, `plan-release` creates and deletes an
+unexecuted exact-one-Lambda change set without uploading code, and a separately
+authorized `deploy-release` may package and update only that Lambda. The shared
+lifecycle workflow no longer exposes Generator-only actions, and its stack
+deployer blocks until the refactor has completed. The source design is local;
+IAM reconciliation, refactor, deployment, and runtime verification remain
+pending. Producer deployment,
 Operations API deployment, private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.

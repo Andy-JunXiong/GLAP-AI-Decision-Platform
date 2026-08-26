@@ -64,7 +64,8 @@ Alert + deterministic Decision Brief
   binding read-only. They gain no new mutation or approval authority.
 
 Local tests establish persistence, API, cockpit, immutability, legacy-null, and
-generator-release behavior. The staging schema is applied and validated, but
-the generator-only release candidate is not committed, pushed, dispatched, or
-deployed. No Action was created or mutated, and no staging reader, production,
-or public surface was deployed.
+independent one-resource Generator release behavior. The staging schema is
+applied and validated, and the structural Generator split is source-delivered,
+but CI, IAM reconciliation, stack refactor, deployment, and runtime verification
+remain pending. No Action was created or mutated, and no staging reader,
+production, or public surface was deployed.

@@ -113,17 +113,16 @@ The values are deliberately omitted because they identify environment-specific r
   and visible dead-letter queue messages
 - GitHub Actions assumes a repository- and environment-scoped OIDC role for
   manual staging deployments; no long-lived AWS key is stored in GitHub
-- the local Decision Truth `plan-stack-only` / `deploy-stack-only` pair requires
-  separate manual dispatches, packages only the lifecycle generator for deploy,
-  reuses the deployed stack template and previous values for every parameter
-  except the generator artifact, and rejects any change set other than one
-  non-replacing generator Lambda modification. Human deploy run `32905914076`
-  uploaded an inactive generator artifact but failed closed before execution.
-  Commit `f9bbad2` added real plan inspection; runs `32908262838` and
-  `32917959958` then consistently exposed controller function/role drift and
-  also failed closed without artifact upload or execution. The deployed-template
-  baseline correction is included in this source-control delivery and does not
-  dispatch the workflow or change runtime resources
+- the lifecycle Generator is now designed as an independent one-resource
+  CloudFormation stack. Human plan `32920083879` from `fd6d532` proved that the
+  previous deployed-template baseline still changed the controller role and
+  function through shared-stack dependency propagation; it uploaded nothing,
+  executed no change set, and changed no resource. The local replacement splits
+  refactor plan/execute from later code plan/deploy, requires an exact one-resource
+  `MOVE` or non-replacing Lambda change, removes Generator packaging from the
+  shared deployer, and blocks shared updates until exclusive ownership is
+  verified. IAM application, refactor, deployment, and runtime verification are
+  not performed by this source change
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

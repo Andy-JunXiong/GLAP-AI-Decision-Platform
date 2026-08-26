@@ -23,9 +23,12 @@ preserved handoffs.
   `32907780599` delivered it. Human plans `32908262838` and `32917959958`
   consistently exposed generator plus controller function/role drift and
   failed closed without artifact upload or execution. A further
-  correction now reuses the deployed template and every previous parameter
-  except the generator artifact; this source-control delivery includes the
-  locally verified change, while main CI and runtime verification remain pending.
+  correction reused the deployed template and every previous parameter except
+  the generator artifact. Human plan `32920083879` from `fd6d532` later proved
+  that shared-stack dependency propagation still changed the controller role
+  and function. It executed nothing and changed no resource. The shared-stack
+  Generator actions are therefore retired; the independent-stack replacement
+  remains local and is not recorded here as a completed capability.
 
 ## 2026-08-25
 

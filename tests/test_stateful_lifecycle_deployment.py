@@ -408,12 +408,18 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("PIPELINE_ENVIRONMENT: staging", template)
         self.assertNotIn("AWS::Scheduler::Schedule", template)
         self.assertNotIn("pipeline-reliability", template)
+        self.assertNotIn("  LifecycleGeneratorFunction:\n", template)
+        self.assertIn("Value: !Ref FunctionName", template)
+        self.assertIn(
+            "function:${FunctionName}",
+            template,
+        )
 
         package_script = (
-            ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
+            ROOT / "ops" / "deploy_stateful_lifecycle_generator_stack.ps1"
         ).read_text(encoding="utf-8")
         self.assertIn("glap_governed_closed_loop.py", package_script)
-        self.assertIn("ActionMutationArtifactKey", package_script)
+        self.assertIn("exactly one expected Lambda function", package_script)
         self.assertNotIn("glap_action_mutation.py", package_script)
 
     def test_replay_is_plan_only_and_seeds_only_first_day(self):
@@ -465,7 +471,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         for script in (stack, validation):
             self.assertIn("[switch]$Apply", script)
             self.assertIn("[string]$Profile = $env:AWS_PROFILE", script)
-        self.assertIn("if (-not $Apply -and -not $InspectChangeSet)", stack)
+        self.assertIn("if (-not $Apply)", stack)
         self.assertIn("if (-not $Apply)", validation)
         self.assertIn("Athena engine version 3", stack)
         self.assertIn("cloudformation create-change-set", stack)
@@ -556,106 +562,106 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertNotIn("update-alias", workflow)
         self.assertNotIn("scheduler", workflow.lower())
 
-    def test_stack_only_workflow_deploys_only_generator_without_invocation(self):
+    def test_generator_has_an_independent_manual_refactor_and_release_workflow(self):
+        shared_workflow = (
+            ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
+        ).read_text(encoding="utf-8")
+        workflow = (
+            ROOT / ".github" / "workflows" /
+            "refactor-stateful-lifecycle-generator-staging.yml"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("plan-stack-only", shared_workflow)
+        self.assertNotIn("deploy-stack-only", shared_workflow)
+        self.assertIn("Generator managed by independent stack", shared_workflow)
+        self.assertIn("workflow_dispatch:", workflow)
+        for action in (
+            "plan-refactor", "execute-refactor", "plan-release", "deploy-release"
+        ):
+            self.assertIn(f"          - {action}", workflow)
+        self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
+        self.assertIn("group: stateful-lifecycle-staging", workflow)
+        self.assertIn("stack_refactor_id:", workflow)
+        self.assertIn("STACK_REFACTOR_ID: ${{ inputs.stack_refactor_id }}", workflow)
+        self.assertIn("$parameters.StackRefactorId = $env:STACK_REFACTOR_ID", workflow)
+        self.assertNotIn('$parameters.StackRefactorId = "${{ inputs.stack_refactor_id }}"', workflow)
+        self.assertIn("LifecycleGeneratorFunction only", workflow)
+        self.assertIn("Generator stack resource count: \\`1\\`", workflow)
+        self.assertIn("Lifecycle invoked: \\`false\\`", workflow)
+        self.assertIn("Production effect: \\`false\\`", workflow)
+        self.assertNotIn("schedule:", workflow)
+
+    def test_independent_generator_template_and_release_are_exactly_one_resource(self):
+        template = (
+            ROOT / "infrastructure" /
+            "stateful-lifecycle-generator-staging.yaml"
+        ).read_text(encoding="utf-8")
+        shared = (
+            ROOT / "infrastructure" / "stateful-lifecycle-staging.yaml"
+        ).read_text(encoding="utf-8")
+        deployer = (
+            ROOT / "ops" / "deploy_stateful_lifecycle_generator_stack.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertEqual(template.count("    Type: AWS::Lambda::Function"), 1)
+        self.assertIn("  LifecycleGeneratorFunction:", template)
+        for forbidden in (
+            "AWS::IAM::Role", "AWS::CloudWatch::Alarm", "AWS::Lambda::Alias",
+            "AWS::Scheduler::Schedule", "IntegrationControllerFunction",
+        ):
+            self.assertNotIn(forbidden, template)
+        self.assertNotIn("  LifecycleGeneratorFunction:\n", shared)
+        self.assertIn("[switch]$InspectChangeSet", deployer)
+        self.assertIn("[switch]$Apply", deployer)
+        self.assertIn("must own exactly one expected Lambda function", deployer)
+        self.assertIn("$changes.Count -ne 1", deployer)
+        self.assertIn('LogicalResourceId -ne "LifecycleGeneratorFunction"', deployer)
+        self.assertIn('ResourceType -ne "AWS::Lambda::Function"', deployer)
+        self.assertIn('Replacement -ne "False"', deployer)
+        self.assertIn("without upload or execution", deployer)
+        self.assertLess(
+            deployer.index("must contain exactly one non-replacing Lambda modification"),
+            deployer.index("cloudformation execute-change-set"),
+        )
+
+    def test_generator_stack_refactor_is_one_move_and_separate_execution(self):
+        script = (
+            ROOT / "ops" / "refactor_stateful_lifecycle_generator_stack.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"cloudformation", "create-stack-refactor"', script)
+        self.assertIn('"cloudformation", "list-stack-refactor-actions"', script)
+        self.assertIn("Assert-ExactMove", script)
+        self.assertIn('$moves.Count -ne 1', script)
+        self.assertIn('[string]$moves[0].Action -ne "MOVE"', script)
+        self.assertIn('[string]$moves[0].Entity -ne "RESOURCE"', script)
+        self.assertIn("A separate human dispatch must supply this exact ID", script)
+        self.assertIn("execute-stack-refactor", script)
+        self.assertIn("Post-refactor generator ownership verification failed", script)
+        self.assertLess(
+            script.index("if (-not $Apply)"),
+            script.index("execute-stack-refactor"),
+        )
+
+    def test_shared_stack_release_fails_closed_without_exclusive_generator_ownership(self):
         workflow = (
             ROOT / ".github" / "workflows" / "deploy-stateful-lifecycle-staging.yml"
         ).read_text(encoding="utf-8")
-
-        def step(name: str) -> str:
-            match = re.search(
-                rf"^      - name: {re.escape(name)}\n(.*?)(?=^      - name: |\Z)",
-                workflow,
-                re.MULTILINE | re.DOTALL,
-            )
-            self.assertIsNotNone(match, name)
-            return match.group(0)
-
-        self.assertIn("          - plan-stack-only", workflow)
-        self.assertIn("          - deploy-stack-only", workflow)
-        environment_check = step("Verify required private environment variables")
-        self.assertIn('inputs.action }}" == "plan-stack-only"', environment_check)
-        self.assertIn('inputs.action }}" == "deploy-stack-only"', environment_check)
-        self.assertIn('inputs.execution_mode }}" = "OPERATIONAL"', environment_check)
-        self.assertIn('inputs.load_initial_seed }}" = "false"', environment_check)
-
-        render = step("Render deployment plans")
-        self.assertIn('$action -in @("plan-stack-only", "deploy-stack-only")', render)
-        self.assertIn("GeneratorOnly = $true", render)
-        self.assertIn('$action -eq "plan-stack-only"', render)
-        self.assertIn("$stackParameters.InspectChangeSet = $true", render)
-        self.assertLess(render.index("InspectChangeSet"), render.index("return"))
-
-        deployment = step("Deploy unscheduled lifecycle and integration stack")
-        self.assertIn("inputs.action == 'deploy-stack-only'", deployment)
-        self.assertNotIn("plan-stack-only", deployment)
-        self.assertIn('$parameters.GeneratorOnly = $true', deployment)
-        for excluded_step in (
-            "Create lifecycle schema and optional first seed",
-            "Backfill and verify row-level temporal isolation",
-            "Deploy Q4 simulated rate configuration",
-            "Deploy and validate operational as-of baseline",
-            "Deploy read-only analytics contract",
-            "Verify deployed temporal truthfulness guard",
-            "Validate deployed analytics contract",
-            "Replay 28 logical dates",
-            "Reconcile every logical date",
-            "Validate lifecycle pipeline integration",
-            "Extend lifecycle through governed controller",
-            "Recover one failed lifecycle date through governed controller",
-        ):
-            self.assertNotIn("plan-stack-only", step(excluded_step), excluded_step)
-            self.assertNotIn("deploy-stack-only", step(excluded_step), excluded_step)
-
-        summary = step("Write staging evidence summary")
-        self.assertIn("Generator-only stack plan", summary)
-        self.assertIn("Temporary generator change set inspected and deleted", summary)
-        self.assertIn("Generator-only stack release", summary)
-        self.assertIn("Lifecycle date invoked", summary)
-        self.assertIn("Lifecycle schema applied", summary)
-        self.assertIn("Initial seed requested", summary)
-
-    def test_generator_only_stack_change_set_is_exact_and_non_replacing(self):
         script = (
             ROOT / "ops" / "deploy_stateful_lifecycle_stack.ps1"
         ).read_text(encoding="utf-8")
-        self.assertIn("[switch]$GeneratorOnly", script)
-        self.assertIn("[switch]$InspectChangeSet", script)
-        self.assertIn("Apply and InspectChangeSet are mutually exclusive", script)
-        self.assertIn("InspectChangeSet is restricted to the generator-only release path", script)
-        self.assertIn("Generator-only change-set boundary", script)
-        self.assertIn("Temporary change-set inspection", script)
-        self.assertIn("preserve existing stack parameter", script)
-        self.assertIn('foreach ($parameterName in @("ControllerArtifactKey", "QualityGateArtifactKey"))', script)
-        self.assertIn("$ControllerArtifactKey = $preservedArtifactKeys.ControllerArtifactKey", script)
-        self.assertIn("$QualityGateArtifactKey = $preservedArtifactKeys.QualityGateArtifactKey", script)
-        self.assertIn("if (-not $GeneratorOnly)", script)
-        self.assertIn('Where-Object ParameterKey -eq "GeneratorArtifactKey"', script)
-        self.assertIn('Where-Object ParameterKey -eq "ArtifactBucket"', script)
-        self.assertIn("--use-previous-template", script)
-        self.assertNotIn("cloudformation get-template", script)
-        self.assertIn("ParameterKey=$parameterKey,UsePreviousValue=true", script)
-        self.assertIn("previous values except GeneratorArtifactKey", script)
-        self.assertIn("must override exactly one stack parameter", script)
-        self.assertIn("@templateArguments", script)
-        self.assertLess(
-            script.index("Generator-only artifact bucket must match"),
-            script.index("& aws s3 cp $archivePath"),
+        self.assertIn("Generator function managed here: False", script)
+        self.assertIn("blocked until the reviewed generator stack refactor is complete", script)
+        self.assertIn("Generator ownership must be exclusive", script)
+        self.assertIn("ParameterKey=GeneratorArtifactKey,UsePreviousValue=true", script)
+        self.assertNotIn("glap_stateful_lifecycle_generator.py", script)
+        self.assertNotIn("glap_lifecycle_athena_adapter.py", script)
+        self.assertNotIn("GeneratorOnly", script)
+        self.assertNotIn("InspectChangeSet", script)
+        guard_index = workflow.index(
+            "Verify independent generator ownership before lifecycle writes"
         )
-        self.assertIn("$generatorChanges.Count -eq 1", script)
-        self.assertIn('LogicalResourceId -eq "LifecycleGeneratorFunction"', script)
-        self.assertIn('ResourceType -eq "AWS::Lambda::Function"', script)
-        self.assertIn('Replacement -eq "False"', script)
-        self.assertIn("Sanitized lifecycle change-set summary", script)
-        self.assertIn("LogicalResourceId={1}", script)
-        self.assertIn("ResourceType={2}", script)
-        self.assertIn("Replacement={3}", script)
-        guard = "Generator-only deployment change set must contain exactly one non-replacing LifecycleGeneratorFunction modification"
-        self.assertIn(guard, script)
-        self.assertLess(script.index(guard), script.index("cloudformation execute-change-set"))
-        inspection = "Generator-only change set inspected and deleted without execution or artifact upload."
-        self.assertIn(inspection, script)
-        self.assertLess(script.index(inspection), script.index("cloudformation execute-change-set"))
-        self.assertIn("without schema execution, lifecycle invocation", script)
+        schema_index = workflow.index("Create lifecycle schema and optional first seed")
+        self.assertLess(guard_index, schema_index)
+        self.assertIn("test \"$generator_total\" -eq 1", workflow)
+        self.assertIn("test \"$source_generator\" -eq 0", workflow)
 
     def test_forecast_backtest_is_manual_read_only_and_private(self):
         script = (
@@ -711,6 +717,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('glap-stateful-lifecycle-controller-staging-role', script)
         self.assertIn('glap-stateful-lifecycle-quality-gate-staging-role', script)
         self.assertIn('glap-stateful-lifecycle-cloudformation-staging-role', script)
+        self.assertIn('glap-stateful-lifecycle-generator-staging', script)
         self.assertIn('vw_lifecycle_shipment_v2_compat', script)
         self.assertIn('${LifecycleDataBucket}/${dataPrefix}/*', script)
         self.assertIn('stateful-lifecycle-staging/artifacts', script)
@@ -739,6 +746,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Production alias or schedule permission: False", script)
         self.assertIn("GitHub role self-modification permission: False", script)
         self.assertIn('"cloudformation:ContinueUpdateRollback"', script)
+        self.assertIn('"cloudformation:CreateStackRefactor"', script)
+        self.assertIn('"cloudformation:DescribeStackRefactor"', script)
+        self.assertIn('"cloudformation:ExecuteStackRefactor"', script)
+        self.assertIn('"cloudformation:ListStackRefactorActions"', script)
+        self.assertIn('stack/${GeneratorStackName}/*', script)
         self.assertIn("PassLifecycleCloudFormationRole", script)
         self.assertNotIn("lambda:UpdateAlias", script)
         self.assertNotIn("scheduler:", script.lower())

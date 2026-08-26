@@ -10,8 +10,6 @@ on:
         default: plan
         options:
           - plan
-          - plan-stack-only
-          - deploy-stack-only
           - deploy-replay-validate
           - deploy-integration-validate
           - deploy-analytics-contract
@@ -80,6 +78,7 @@ jobs:
       SOURCE_DATABASE: simulated_iceberg_m
       ATHENA_WORKGROUP: primary
       STACK_NAME: glap-stateful-lifecycle-staging
+      GENERATOR_STACK_NAME: glap-stateful-lifecycle-generator-staging
       FUNCTION_NAME: glap-stateful-lifecycle-generator-staging
       CONTROLLER_FUNCTION: glap-stateful-lifecycle-controller-staging
       QUALITY_GATE_FUNCTION: glap-stateful-lifecycle-quality-gate-staging
@@ -141,11 +140,6 @@ jobs:
             test "${{ inputs.execution_mode }}" = "OPERATIONAL"
             test -z "${{ inputs.scenario_id }}"
           fi
-          if [[ "${{ inputs.action }}" == "plan-stack-only" || "${{ inputs.action }}" == "deploy-stack-only" ]]; then
-            test "${{ inputs.execution_mode }}" = "OPERATIONAL"
-            test -z "${{ inputs.scenario_id }}"
-            test "${{ inputs.load_initial_seed }}" = "false"
-          fi
           test "${{ inputs.population_size }}" -ge 1
           test "${{ inputs.population_size }}" -le 5000
 
@@ -168,32 +162,34 @@ jobs:
           aws s3api get-bucket-location --bucket "$ARTIFACT_BUCKET" >/dev/null
           aws s3api get-bucket-location --bucket "$DATA_BUCKET" >/dev/null
 
+      - name: Verify independent generator ownership before lifecycle writes
+        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
+        shell: bash
+        run: |
+          generator_status=$(aws cloudformation describe-stacks \
+            --stack-name "$GENERATOR_STACK_NAME" \
+            --query 'Stacks[0].StackStatus' --output text)
+          [[ "$generator_status" == "CREATE_COMPLETE" || "$generator_status" == "UPDATE_COMPLETE" ]]
+          generator_total=$(aws cloudformation list-stack-resources \
+            --stack-name "$GENERATOR_STACK_NAME" \
+            --query 'length(StackResourceSummaries)' --output text)
+          generator_match=$(aws cloudformation list-stack-resources \
+            --stack-name "$GENERATOR_STACK_NAME" \
+            --query "length(StackResourceSummaries[?LogicalResourceId=='LifecycleGeneratorFunction' && ResourceType=='AWS::Lambda::Function' && PhysicalResourceId=='$FUNCTION_NAME'])" \
+            --output text)
+          source_generator=$(aws cloudformation list-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --query "length(StackResourceSummaries[?LogicalResourceId=='LifecycleGeneratorFunction'])" \
+            --output text)
+          test "$generator_total" -eq 1
+          test "$generator_match" -eq 1
+          test "$source_generator" -eq 0
+
       - name: Render deployment plans
         if: inputs.action != 'recover-stack-rollback'
         shell: pwsh
         run: |
           $action = "${{ inputs.action }}"
-          if ($action -in @("plan-stack-only", "deploy-stack-only")) {
-            $stackParameters = @{
-              Region = $env:AWS_REGION
-              StackName = $env:STACK_NAME
-              FunctionName = $env:FUNCTION_NAME
-              SourceDatabase = $env:SOURCE_DATABASE
-              Workgroup = $env:ATHENA_WORKGROUP
-              ArtifactBucket = $env:ARTIFACT_BUCKET
-              LifecycleDataBucket = $env:DATA_BUCKET
-              LifecycleDataPrefix = $env:LIFECYCLE_DATA_PREFIX
-              AthenaOutputUri = $env:ATHENA_OUTPUT
-              CloudFormationRoleArn = $env:CF_EXECUTION_ROLE_ARN
-              ArtifactKey = "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip"
-              GeneratorOnly = $true
-            }
-            if ($action -eq "plan-stack-only") {
-              $stackParameters.InspectChangeSet = $true
-            }
-            ./ops/deploy_stateful_lifecycle_stack.ps1 @stackParameters
-            return
-          }
           $schemaPlan = @{
             Region = $env:AWS_REGION
             SourceDatabase = $env:SOURCE_DATABASE
@@ -317,7 +313,7 @@ jobs:
             -Apply
 
       - name: Deploy unscheduled lifecycle and integration stack
-        if: inputs.action == 'deploy-stack-only' || inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
+        if: inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller'
         shell: pwsh
         run: |
           $parameters = @{
@@ -331,13 +327,9 @@ jobs:
             LifecycleDataPrefix = $env:LIFECYCLE_DATA_PREFIX
             AthenaOutputUri = $env:ATHENA_OUTPUT
             CloudFormationRoleArn = $env:CF_EXECUTION_ROLE_ARN
-            ArtifactKey = "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip"
             ControllerArtifactKey = "$env:ARTIFACT_PREFIX/controller-${{ github.sha }}.zip"
             QualityGateArtifactKey = "$env:ARTIFACT_PREFIX/quality-${{ github.sha }}.zip"
             Apply = $true
-          }
-          if ("${{ inputs.action }}" -eq "deploy-stack-only") {
-            $parameters.GeneratorOnly = $true
           }
           ./ops/deploy_stateful_lifecycle_stack.ps1 @parameters
 
@@ -559,9 +551,7 @@ jobs:
             echo "- CloudFormation rollback recovered: \`${{ inputs.action == 'recover-stack-rollback' }}\`"
             echo "- Row-level temporal isolation deployed: \`${{ inputs.action == 'deploy-recovery-controller' }}\`"
             echo "- Operational-calendar baseline deployed: \`${{ inputs.action == 'deploy-operational-baseline' }}\`"
-            echo "- Generator-only stack plan: \`${{ inputs.action == 'plan-stack-only' }}\`"
-            echo "- Temporary generator change set inspected and deleted: \`${{ inputs.action == 'plan-stack-only' }}\`"
-            echo "- Generator-only stack release: \`${{ inputs.action == 'deploy-stack-only' }}\`"
+            echo "- Generator managed by independent stack: \`true\`"
             echo "- Lifecycle date invoked: \`${{ inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'extend-integration-validate' || inputs.action == 'recover-failed-integration-date' }}\`"
             echo "- Lifecycle schema applied: \`${{ inputs.action == 'deploy-replay-validate' || inputs.action == 'deploy-integration-validate' || inputs.action == 'deploy-recovery-controller' }}\`"
             echo "- Initial seed requested: \`${{ inputs.action == 'deploy-replay-validate' && inputs.load_initial_seed }}\`"

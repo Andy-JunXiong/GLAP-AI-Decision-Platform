@@ -110,7 +110,11 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "sql/17_decision_action_binding_validation.sql",
             "ops/plan_decision_truth_staging_rollout.ps1",
             ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+            ".github/workflows/refactor-stateful-lifecycle-generator-staging.yml",
             "ops/deploy_stateful_lifecycle_stack.ps1",
+            "ops/deploy_stateful_lifecycle_generator_stack.ps1",
+            "ops/refactor_stateful_lifecycle_generator_stack.ps1",
+            "infrastructure/stateful-lifecycle-generator-staging.yaml",
             "tests/test_decision_truth_staging_rollout.py",
             "tests/test_stateful_lifecycle_deployment.py",
             "docs/decision_truth_staging_rollout.md",
@@ -137,7 +141,11 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "sql/17_decision_action_binding_validation.sql",
             "ops/plan_decision_truth_staging_rollout.ps1",
             ".github/workflows/deploy-stateful-lifecycle-staging.yml",
+            ".github/workflows/refactor-stateful-lifecycle-generator-staging.yml",
             "ops/deploy_stateful_lifecycle_stack.ps1",
+            "ops/deploy_stateful_lifecycle_generator_stack.ps1",
+            "ops/refactor_stateful_lifecycle_generator_stack.ps1",
+            "infrastructure/stateful-lifecycle-generator-staging.yaml",
             "tests/test_decision_truth_staging_rollout.py",
             "tests/test_stateful_lifecycle_deployment.py",
             "docs/decision_truth_staging_rollout.md",
@@ -147,11 +155,13 @@ class ProjectDriftAuditTests(unittest.TestCase):
             self._copy_paths(root, paths)
             current = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
             self.assertEqual(current.status, "PASS")
-            deployer_path = root / "ops/deploy_stateful_lifecycle_stack.ps1"
+            deployer_path = (
+                root / "ops/deploy_stateful_lifecycle_generator_stack.ps1"
+            )
             deployer_path.write_text(
                 deployer_path.read_text(encoding="utf-8").replace(
-                    "$generatorChanges.Count -eq 1",
-                    "$generatorChanges.Count -ge 1",
+                    "$changes.Count -ne 1",
+                    "$changes.Count -lt 1",
                 ),
                 encoding="utf-8",
             )

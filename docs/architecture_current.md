@@ -50,23 +50,23 @@ producer, API, frontend, and runtime binding remain undeployed.
 
 The Decision Truth staging handoff makes the producer dependency explicit:
 after the now-validated additive schema, the isolated lifecycle producer must
-be released before new proposals can carry truthful bindings. The local
-`plan-stack-only` / `deploy-stack-only` pair requires separate manual
-dispatches, reuses the deployed stack template and previous values for every
-parameter except the generator artifact, and accepts only one non-replacing
-`LifecycleGeneratorFunction` change. The corrected plan creates an unexecuted
-temporary change set, emits only a logical-resource-level summary, validates
-the same boundary, and deletes it without an artifact upload. It performs no
-schema execution or lifecycle invocation. Operations API and private-frontend releases are
-downstream readers, not substitutes for that producer step. Every producer,
-API/frontend release, temporary-user role check, and later operational
-continuation remains separately human-owned. Human-dispatched deploy run
-`32905914076` failed closed before execution. Diagnostic plan runs
-`32908262838` and `32917959958` then consistently exposed the intended generator
-plus unintended controller function/role drift and also failed closed without
-artifact upload or execution. No stack resource changed. This source-control
-delivery includes the deployed-template baseline correction but does not deploy
-or runtime-verify it.
+be released before new proposals can carry truthful bindings. Plan run
+`32920083879` from `fd6d532` proved that the former shared-stack release still
+changed the controller role and function through dependency propagation, even
+with the deployed template and previous parameters. It executed no change set.
+
+The local architecture therefore gives `LifecycleGeneratorFunction` to
+`glap-stateful-lifecycle-generator-staging`, a stack with exactly one resource.
+The shared stack retains its execution role, alarm, controller, quality gate,
+and Action mutation boundary, but uses the fixed function name/ARN rather than a
+CloudFormation reference. Stack-refactor planning and execution are separate
+manual actions; later Generator releases also have separate plan and deploy
+actions and accept only one non-replacing Lambda modification. The shared
+deployer packages no Generator and fails closed until exclusive destination
+ownership is verified. Operations API and private frontend remain downstream
+readers. IAM reconciliation, stack refactor, deployment, role checks, and later
+operational continuation remain separately human-owned; none has occurred for
+this local design.
 
 ## Cross-cutting evaluation boundary
 

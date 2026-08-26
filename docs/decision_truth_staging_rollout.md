@@ -1,8 +1,8 @@
 # Decision Truth private staging rollout
 
-**Status:** staging schema applied and aggregate-validated; generator release
-and diagnostic plans failed closed before execution; deployed-template baseline
-correction source-delivered, with CI and runtime plan validation pending
+**Status:** staging schema applied and aggregate-validated; shared-stack
+Generator plans failed closed; independent one-resource stack implemented
+locally but not IAM-applied, refactored, deployed, or runtime-verified
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -35,20 +35,21 @@ not authorize the next.
    `failure_count` values must be zero. Stop on any nonzero or missing result.
    Completed on `2026-08-25`; all six checks returned zero.
 3. A named staging release owner reviews and deploys the current isolated
-   lifecycle producer through the manual stateful-lifecycle workflow. After
-   the new options are committed and pushed, first dispatch only
-   `action=plan-stack-only`; review that completed run, then make a separate
-   decision whether to dispatch `action=deploy-stack-only`.
+   lifecycle producer through the independent Generator workflow. After the
+   source is validated, committed, and pushed, a named IAM administrator first
+   reviews and separately applies the required staging-only refactor
+   permissions. Then dispatch `plan-refactor`, review its exact one-resource
+   move, and make a separate decision whether to run `execute-refactor` with the
+   exact reviewed ID. After exclusive ownership is verified, dispatch
+   `plan-release`; only a later separate decision may run `deploy-release`.
    This producer step is required because the immutable binding is written
    when a new Action proposal is generated; deploying only readers cannot
-   create truthful bindings. The corrected generator-only plan and deploy path
-   reuse the existing deployed stack template and previous values for every
-   parameter except `GeneratorArtifactKey`. They fail closed unless the
-   CloudFormation change set contains exactly one non-replacing
-   `LifecycleGeneratorFunction` modification. Plan creates and deletes an
-   unexecuted temporary change set and reports only logical resource ID, type,
-   action, and replacement status; it uploads no artifact. It does not apply
-   schema or invoke a lifecycle date.
+   create truthful bindings. Refactor planning accepts exactly one
+   `LifecycleGeneratorFunction` `MOVE`. Release planning creates and deletes an
+   unexecuted change set and accepts exactly one non-replacing Lambda
+   modification; it uploads no artifact. Neither path applies schema or invokes
+   a lifecycle date. See the
+   [Generator stack refactor runbook](stateful_lifecycle_generator_stack_refactor.md).
 4. A named staging release owner runs the existing Operations API workflow in
    `plan`, reviews it, and separately dispatches `action=deploy` if approved.
 5. A named staging release owner first runs
@@ -90,9 +91,14 @@ diagnostic plan runs `32908262838` and `32917959958` then consistently reported
 three non-replacing changes: `LifecycleGeneratorFunction`,
 `IntegrationControllerFunction`, and `IntegrationControllerRole`. Both failed
 closed and cleaned up without artifact upload, change-set execution, or stack
-resource change. This source-control delivery includes the locally verified
-deployed-template/previous-parameter correction, but it does not dispatch the
-workflow; main CI, runtime plan validation, and deployment remain pending.
+resource change. Commit `fd6d532` then delivered the deployed-template and
+previous-parameter baseline. Human plan run `32920083879` still returned the
+same three changes, proving the remaining cause was shared-stack dependency
+propagation rather than parameter drift. It also uploaded nothing, executed no
+change set, and changed no resource. The local replacement is an independent
+one-resource Generator stack with four separately dispatched refactor/release
+actions. It is not yet IAM-applied, committed, pushed, refactored, deployed, or
+runtime-verified.
 
 ## Runtime evidence boundary
 

@@ -1,0 +1,126 @@
+name: Refactor stateful lifecycle generator staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Plan/execute the one-resource refactor or plan/deploy generator code
+        required: true
+        type: choice
+        options:
+          - plan-refactor
+          - execute-refactor
+          - plan-release
+          - deploy-release
+      stack_refactor_id:
+        description: Exact reviewed ID; required only for execute-refactor
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: stateful-lifecycle-staging
+  cancel-in-progress: false
+
+jobs:
+  generator-staging:
+    name: Independent lifecycle generator staging
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 60
+    env:
+      AWS_REGION: us-east-1
+      SOURCE_STACK_NAME: glap-stateful-lifecycle-staging
+      GENERATOR_STACK_NAME: glap-stateful-lifecycle-generator-staging
+      FUNCTION_NAME: glap-stateful-lifecycle-generator-staging
+      ARTIFACT_PREFIX: stateful-lifecycle-staging/artifacts
+      ARTIFACT_BUCKET: ${{ vars.AWS_LIFECYCLE_ARTIFACT_BUCKET }}
+      CF_EXECUTION_ROLE_ARN: ${{ vars.AWS_LIFECYCLE_CF_EXECUTION_ROLE_ARN }}
+      STACK_REFACTOR_ID: ${{ inputs.stack_refactor_id }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Test generator refactor contracts
+        run: |
+          python -m compileall -q lambda ops tests
+          python -m unittest discover -s tests -p "test_stateful_lifecycle_deployment.py" -v
+
+      - name: Verify bounded inputs
+        shell: bash
+        run: |
+          if [[ "${{ inputs.action }}" == "plan-release" || "${{ inputs.action }}" == "deploy-release" ]]; then
+            test -n "$ARTIFACT_BUCKET"
+            test -n "$CF_EXECUTION_ROLE_ARN"
+          fi
+          if [[ "${{ inputs.action }}" == "execute-refactor" ]]; then
+            [[ "$STACK_REFACTOR_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+          else
+            test -z "$STACK_REFACTOR_ID"
+          fi
+
+      - name: Configure AWS staging credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Plan or execute one-resource stack refactor
+        if: inputs.action == 'plan-refactor' || inputs.action == 'execute-refactor'
+        shell: pwsh
+        run: |
+          $parameters = @{
+            Region = $env:AWS_REGION
+            SourceStackName = $env:SOURCE_STACK_NAME
+            DestinationStackName = $env:GENERATOR_STACK_NAME
+          }
+          if ("${{ inputs.action }}" -eq "execute-refactor") {
+            $parameters.StackRefactorId = $env:STACK_REFACTOR_ID
+            $parameters.Apply = $true
+          }
+          ./ops/refactor_stateful_lifecycle_generator_stack.ps1 @parameters
+
+      - name: Plan or deploy independent generator code
+        if: inputs.action == 'plan-release' || inputs.action == 'deploy-release'
+        shell: pwsh
+        run: |
+          $parameters = @{
+            Region = $env:AWS_REGION
+            StackName = $env:GENERATOR_STACK_NAME
+            FunctionName = $env:FUNCTION_NAME
+            ArtifactBucket = $env:ARTIFACT_BUCKET
+            ArtifactKey = "$env:ARTIFACT_PREFIX/generator-${{ github.sha }}.zip"
+            CloudFormationRoleArn = $env:CF_EXECUTION_ROLE_ARN
+          }
+          if ("${{ inputs.action }}" -eq "plan-release") {
+            $parameters.InspectChangeSet = $true
+          } else {
+            $parameters.Apply = $true
+          }
+          ./ops/deploy_stateful_lifecycle_generator_stack.ps1 @parameters
+
+      - name: Write bounded summary
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "## Independent lifecycle generator staging"
+            echo "- Requested action: \`${{ inputs.action }}\`"
+            echo "- Refactor moves: \`LifecycleGeneratorFunction only\`"
+            echo "- Generator stack resource count: \`1\`"
+            echo "- Lifecycle invoked: \`false\`"
+            echo "- Schema applied: \`false\`"
+            echo "- Controller changed by code release: \`false\`"
+            echo "- Schedule or alias changed: \`false\`"
+            echo "- Production effect: \`false\`"
+          } >> "$GITHUB_STEP_SUMMARY"

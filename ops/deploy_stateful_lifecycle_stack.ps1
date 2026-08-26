@@ -3,6 +3,7 @@ param(
     [string]$Profile = $env:AWS_PROFILE,
     [string]$Region = "us-east-1",
     [string]$StackName = "glap-stateful-lifecycle-staging",
+    [string]$GeneratorStackName = "glap-stateful-lifecycle-generator-staging",
     [string]$FunctionName = "glap-stateful-lifecycle-generator-staging",
     [string]$ExecutionRoleName = "glap-stateful-lifecycle-generator-staging-role",
     [string]$IntegrationControllerFunctionName = "glap-stateful-lifecycle-controller-staging",
@@ -18,25 +19,16 @@ param(
     [Parameter(Mandatory)] [string]$LifecycleDataBucket,
     [string]$LifecycleDataPrefix = "stateful-lifecycle-staging/data",
     [Parameter(Mandatory)] [string]$AthenaOutputUri,
-    [string]$ArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-generator.zip",
     [string]$ControllerArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-controller.zip",
     [string]$QualityGateArtifactKey = "stateful-lifecycle-staging/artifacts/glap-stateful-lifecycle-quality-gate.zip",
-    [switch]$GeneratorOnly,
-    [switch]$InspectChangeSet,
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
 
-if ($Apply -and $InspectChangeSet) {
-    throw "Apply and InspectChangeSet are mutually exclusive"
-}
-if ($InspectChangeSet -and -not $GeneratorOnly) {
-    throw "InspectChangeSet is restricted to the generator-only release path"
-}
-
 foreach ($identifier in @(
     $StackName,
+    $GeneratorStackName,
     $FunctionName,
     $ExecutionRoleName,
     $IntegrationControllerFunctionName,
@@ -66,7 +58,7 @@ if ($LifecycleDataPrefix -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,511}$' 
     throw "LifecycleDataPrefix is not a safe prefix"
 }
 foreach ($key in @(
-    $ArtifactKey, $ControllerArtifactKey, $QualityGateArtifactKey
+    $ControllerArtifactKey, $QualityGateArtifactKey
 )) {
     if ($key -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,1023}$' -or
         $key.Contains("..")) {
@@ -91,8 +83,6 @@ $statusKey = "$statusPrefix/pipeline-integration-latest.json"
 $root = Split-Path $PSScriptRoot -Parent
 $templatePath = Join-Path $root "infrastructure/stateful-lifecycle-staging.yaml"
 $distDir = Join-Path $root "dist"
-$packageDir = Join-Path $distDir "stateful-lifecycle-package"
-$archivePath = Join-Path $distDir "glap-stateful-lifecycle-generator.zip"
 $controllerPackageDir = Join-Path $distDir "stateful-lifecycle-controller-package"
 $controllerArchivePath = Join-Path $distDir "glap-stateful-lifecycle-controller.zip"
 $qualityPackageDir = Join-Path $distDir "stateful-lifecycle-quality-package"
@@ -100,31 +90,24 @@ $qualityArchivePath = Join-Path $distDir "glap-stateful-lifecycle-quality-gate.z
 
 Write-Host "Stateful lifecycle staging stack plan"
 Write-Host "  Stack: $StackName"
-Write-Host "  Function: $FunctionName"
+Write-Host "  Generator stack: $GeneratorStackName"
+Write-Host "  Generator function managed here: False"
 Write-Host "  Execution role: $ExecutionRoleName"
 Write-Host "  Integration controller: $IntegrationControllerFunctionName"
 Write-Host "  Integration quality gate: $IntegrationQualityGateFunctionName"
 Write-Host "  Region: $Region"
 Write-Host "  Source database: $SourceDatabase"
 Write-Host "  Workgroup: $Workgroup"
-Write-Host "  Artifact: s3://$ArtifactBucket/$ArtifactKey"
-if ($GeneratorOnly) {
-    Write-Host "  Controller artifact: preserve existing stack parameter"
-    Write-Host "  Quality artifact: preserve existing stack parameter"
-} else {
-    Write-Host "  Controller artifact: s3://$ArtifactBucket/$ControllerArtifactKey"
-    Write-Host "  Quality artifact: s3://$ArtifactBucket/$QualityGateArtifactKey"
-}
+Write-Host "  Controller artifact: s3://$ArtifactBucket/$ControllerArtifactKey"
+Write-Host "  Quality artifact: s3://$ArtifactBucket/$QualityGateArtifactKey"
 Write-Host "  Action mutation: $ActionMutationFunctionName"
 Write-Host "  Action mutation artifact preserved from the existing stack: True"
-Write-Host "  Generator-only change-set boundary: $([bool]$GeneratorOnly)"
-Write-Host "  Temporary change-set inspection: $([bool]$InspectChangeSet)"
 Write-Host "  Dedicated CloudFormation service role configured: $([bool]$CloudFormationRoleArn)"
 Write-Host "  Lifecycle data: s3://$LifecycleDataBucket/$dataPrefix/"
 Write-Host "  Athena results prefix configured: True"
 Write-Host "  Schedule created: False"
 
-if (-not $Apply -and -not $InspectChangeSet) {
+if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply after validating buckets and the OIDC role."
     return
 }
@@ -150,6 +133,35 @@ if ([string]$stack.StackStatus -notin $stableStackStates) {
     }
     throw "Lifecycle staging stack is not stable: $($stack.StackStatus)"
 }
+$generatorStackJson = & aws cloudformation describe-stacks `
+    --stack-name $GeneratorStackName @awsScope --output json
+if ($LASTEXITCODE -ne 0 -or -not $generatorStackJson) {
+    throw "Shared lifecycle deployment is blocked until the reviewed generator stack refactor is complete"
+}
+$generatorStack = ($generatorStackJson -join "`n" | ConvertFrom-Json).Stacks[0]
+if ([string]$generatorStack.StackStatus -notin @("CREATE_COMPLETE", "UPDATE_COMPLETE")) {
+    throw "Independent generator stack is not stable"
+}
+$generatorResourcesJson = & aws cloudformation list-stack-resources `
+    --stack-name $GeneratorStackName @awsScope --output json
+$sourceResourcesJson = & aws cloudformation list-stack-resources `
+    --stack-name $StackName @awsScope --output json
+if ($LASTEXITCODE -ne 0 -or -not $generatorResourcesJson -or -not $sourceResourcesJson) {
+    throw "Unable to verify generator stack ownership"
+}
+$generatorResources = @(
+    ($generatorResourcesJson -join "`n" | ConvertFrom-Json).StackResourceSummaries
+)
+$sourceResources = @(
+    ($sourceResourcesJson -join "`n" | ConvertFrom-Json).StackResourceSummaries
+)
+if ($generatorResources.Count -ne 1 -or
+    [string]$generatorResources[0].LogicalResourceId -ne "LifecycleGeneratorFunction" -or
+    [string]$generatorResources[0].ResourceType -ne "AWS::Lambda::Function" -or
+    [string]$generatorResources[0].PhysicalResourceId -ne $FunctionName -or
+    @($sourceResources | Where-Object LogicalResourceId -eq "LifecycleGeneratorFunction").Count -ne 0) {
+    throw "Generator ownership must be exclusive to the one-resource generator stack"
+}
 $actionMutationParameters = @(
     $stack.Parameters |
         Where-Object ParameterKey -eq "ActionMutationArtifactKey"
@@ -162,56 +174,11 @@ if ($actionMutationArtifactKey -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,1
     $actionMutationArtifactKey.Contains("..")) {
     throw "Existing Action mutation artifact identity is unsafe"
 }
-$preservedArtifactKeys = @{}
-foreach ($parameterName in @("ControllerArtifactKey", "QualityGateArtifactKey")) {
-    $matchingParameters = @(
-        $stack.Parameters | Where-Object ParameterKey -eq $parameterName
-    )
-    if ($matchingParameters.Count -ne 1) {
-        throw "Existing $parameterName identity is unavailable"
-    }
-    $parameterValue = [string]$matchingParameters[0].ParameterValue
-    if ($parameterValue -notmatch '^[A-Za-z0-9][A-Za-z0-9!_.*''()/=-]{0,1023}$' -or
-        $parameterValue.Contains("..")) {
-        throw "Existing $parameterName identity is unsafe"
-    }
-    $preservedArtifactKeys[$parameterName] = $parameterValue
-}
-if ($GeneratorOnly) {
-    $ControllerArtifactKey = $preservedArtifactKeys.ControllerArtifactKey
-    $QualityGateArtifactKey = $preservedArtifactKeys.QualityGateArtifactKey
-
-    $generatorArtifactParameters = @(
-        $stack.Parameters | Where-Object ParameterKey -eq "GeneratorArtifactKey"
-    )
-    if ($generatorArtifactParameters.Count -ne 1) {
-        throw "Existing GeneratorArtifactKey identity is unavailable"
-    }
-    $artifactBucketParameters = @(
-        $stack.Parameters | Where-Object ParameterKey -eq "ArtifactBucket"
-    )
-    if ($artifactBucketParameters.Count -ne 1 -or
-        [string]$artifactBucketParameters[0].ParameterValue -ne $ArtifactBucket) {
-        throw "Generator-only artifact bucket must match the existing stack parameter"
-    }
-    $generatorOnlyParameterArguments = @(
-        $stack.Parameters | ForEach-Object {
-            $parameterKey = [string]$_.ParameterKey
-            if ($parameterKey -notmatch '^[A-Za-z][A-Za-z0-9]{0,254}$') {
-                throw "Existing stack parameter key is unsafe"
-            }
-            if ($parameterKey -eq "GeneratorArtifactKey") {
-                "ParameterKey=$parameterKey,ParameterValue=$ArtifactKey"
-            } else {
-                "ParameterKey=$parameterKey,UsePreviousValue=true"
-            }
-        }
-    )
-    if ($generatorOnlyParameterArguments.Count -eq 0 -or @(
-        $generatorOnlyParameterArguments | Where-Object { $_ -match ',ParameterValue=' }
-    ).Count -ne 1) {
-        throw "Generator-only change set must override exactly one stack parameter"
-    }
+$generatorArtifactParameters = @(
+    $stack.Parameters | Where-Object ParameterKey -eq "GeneratorArtifactKey"
+)
+if ($generatorArtifactParameters.Count -ne 1) {
+    throw "Legacy shared-stack GeneratorArtifactKey parameter is unavailable"
 }
 
 $effectiveEngine = & aws athena get-work-group `
@@ -224,114 +191,81 @@ if ($LASTEXITCODE -ne 0 -or $effectiveEngine -notmatch 'Athena engine version 3'
 }
 
 if ($Apply) {
-    New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_lifecycle_athena_adapter.py") `
-        -Destination (Join-Path $packageDir "lambda_function.py") -Force
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_stateful_lifecycle_generator.py") `
-        -Destination (Join-Path $packageDir "glap_stateful_lifecycle_generator.py") -Force
+    New-Item -ItemType Directory -Path $controllerPackageDir -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_pipeline_controller.py") `
+        -Destination (Join-Path $controllerPackageDir "lambda_function.py") -Force
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
+        -Destination (Join-Path $controllerPackageDir "glap_quality_contracts.py") -Force
     Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-        -Destination (Join-Path $packageDir "glap_temporal_boundary.py") -Force
-    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_governed_closed_loop.py") `
-        -Destination (Join-Path $packageDir "glap_governed_closed_loop.py") -Force
+        -Destination (Join-Path $controllerPackageDir "glap_temporal_boundary.py") -Force
     Compress-Archive -LiteralPath `
-        (Join-Path $packageDir "lambda_function.py"), `
-        (Join-Path $packageDir "glap_stateful_lifecycle_generator.py"), `
-        (Join-Path $packageDir "glap_temporal_boundary.py"), `
-        (Join-Path $packageDir "glap_governed_closed_loop.py") `
-        -DestinationPath $archivePath -Force
+        (Join-Path $controllerPackageDir "lambda_function.py"), `
+        (Join-Path $controllerPackageDir "glap_quality_contracts.py"), `
+        (Join-Path $controllerPackageDir "glap_temporal_boundary.py") `
+        -DestinationPath $controllerArchivePath -Force
 
-    if (-not $GeneratorOnly) {
-        New-Item -ItemType Directory -Path $controllerPackageDir -Force | Out-Null
-        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_pipeline_controller.py") `
-            -Destination (Join-Path $controllerPackageDir "lambda_function.py") -Force
-        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
-            -Destination (Join-Path $controllerPackageDir "glap_quality_contracts.py") -Force
-        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-            -Destination (Join-Path $controllerPackageDir "glap_temporal_boundary.py") -Force
-        Compress-Archive -LiteralPath `
-            (Join-Path $controllerPackageDir "lambda_function.py"), `
-            (Join-Path $controllerPackageDir "glap_quality_contracts.py"), `
-            (Join-Path $controllerPackageDir "glap_temporal_boundary.py") `
-            -DestinationPath $controllerArchivePath -Force
-
-        New-Item -ItemType Directory -Path $qualityPackageDir -Force | Out-Null
-        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_data_quality_gate.py") `
-            -Destination (Join-Path $qualityPackageDir "lambda_function.py") -Force
-        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
-            -Destination (Join-Path $qualityPackageDir "glap_quality_contracts.py") -Force
-        Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
-            -Destination (Join-Path $qualityPackageDir "glap_temporal_boundary.py") -Force
-        Copy-Item -LiteralPath (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") `
-            -Destination (Join-Path $qualityPackageDir "lifecycle_validation.sql") -Force
-        Copy-Item -LiteralPath (Join-Path $root "sql/10_multimodal_ops_validation.sql") `
-            -Destination (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") -Force
-        Compress-Archive -LiteralPath `
-            (Join-Path $qualityPackageDir "lambda_function.py"), `
-            (Join-Path $qualityPackageDir "glap_quality_contracts.py"), `
-            (Join-Path $qualityPackageDir "glap_temporal_boundary.py"), `
-            (Join-Path $qualityPackageDir "lifecycle_validation.sql"), `
-            (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
-            -DestinationPath $qualityArchivePath -Force
-    }
-
-    & aws s3 cp $archivePath "s3://$ArtifactBucket/$ArtifactKey" @awsScope --only-show-errors
+    New-Item -ItemType Directory -Path $qualityPackageDir -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_data_quality_gate.py") `
+        -Destination (Join-Path $qualityPackageDir "lambda_function.py") -Force
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_quality_contracts.py") `
+        -Destination (Join-Path $qualityPackageDir "glap_quality_contracts.py") -Force
+    Copy-Item -LiteralPath (Join-Path $root "lambda/glap_temporal_boundary.py") `
+        -Destination (Join-Path $qualityPackageDir "glap_temporal_boundary.py") -Force
+    Copy-Item -LiteralPath (Join-Path $root "sql/06_stateful_lifecycle_validation.sql") `
+        -Destination (Join-Path $qualityPackageDir "lifecycle_validation.sql") -Force
+    Copy-Item -LiteralPath (Join-Path $root "sql/10_multimodal_ops_validation.sql") `
+        -Destination (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") -Force
+    Compress-Archive -LiteralPath `
+        (Join-Path $qualityPackageDir "lambda_function.py"), `
+        (Join-Path $qualityPackageDir "glap_quality_contracts.py"), `
+        (Join-Path $qualityPackageDir "glap_temporal_boundary.py"), `
+        (Join-Path $qualityPackageDir "lifecycle_validation.sql"), `
+        (Join-Path $qualityPackageDir "multimodal_ops_validation.sql") `
+        -DestinationPath $qualityArchivePath -Force
+    & aws s3 cp $controllerArchivePath "s3://$ArtifactBucket/$ControllerArtifactKey" @awsScope --only-show-errors
     if ($LASTEXITCODE -ne 0) {
-        throw "Unable to upload the lifecycle Lambda artifact"
+        throw "Unable to upload the lifecycle integration controller artifact"
     }
-    if (-not $GeneratorOnly) {
-        & aws s3 cp $controllerArchivePath "s3://$ArtifactBucket/$ControllerArtifactKey" @awsScope --only-show-errors
-        if ($LASTEXITCODE -ne 0) {
-            throw "Unable to upload the lifecycle integration controller artifact"
-        }
-        & aws s3 cp $qualityArchivePath "s3://$ArtifactBucket/$QualityGateArtifactKey" @awsScope --only-show-errors
-        if ($LASTEXITCODE -ne 0) {
-            throw "Unable to upload the lifecycle integration quality artifact"
-        }
+    & aws s3 cp $qualityArchivePath "s3://$ArtifactBucket/$QualityGateArtifactKey" @awsScope --only-show-errors
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to upload the lifecycle integration quality artifact"
     }
 }
 $changeSetName = "lifecycle-$([DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
 $changeSetCreated = $false
 try {
-    if ($GeneratorOnly) {
-        $parameterArguments = $generatorOnlyParameterArguments
-        $templateArguments = @("--use-previous-template")
-        Write-Host "  Generator-only template baseline: existing deployed stack template"
-        Write-Host "  Generator-only parameter baseline: previous values except GeneratorArtifactKey"
-    } else {
-        $parameterOverrides = @(
-            "ArtifactBucket=$ArtifactBucket",
-            "GeneratorArtifactKey=$ArtifactKey",
-            "ControllerArtifactKey=$ControllerArtifactKey",
-            "QualityGateArtifactKey=$QualityGateArtifactKey",
-            "ActionMutationArtifactKey=$actionMutationArtifactKey",
-            "AthenaOutputUri=$AthenaOutputUri",
-            "AthenaResultsBucketName=$athenaResultsBucket",
-            "AthenaResultsPrefix=$athenaResultsPrefix",
-            "LifecycleDataBucketArn=arn:aws:s3:::$LifecycleDataBucket",
-            "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
-            "PipelineStatusS3Uri=s3://$LifecycleDataBucket/$statusKey",
-            "PipelineStatusObjectArn=arn:aws:s3:::$LifecycleDataBucket/$statusKey",
-            "PipelineStatusObjectsArn=arn:aws:s3:::$LifecycleDataBucket/$statusPrefix/*",
-            "PipelineStatusPrefix=$statusPrefix",
-            "AthenaWorkgroup=$Workgroup",
-            "SourceDatabase=$SourceDatabase",
-            "FunctionName=$FunctionName",
-            "ExecutionRoleName=$ExecutionRoleName",
-            "IntegrationControllerFunctionName=$IntegrationControllerFunctionName",
-            "IntegrationControllerRoleName=$IntegrationControllerRoleName",
-            "IntegrationQualityGateFunctionName=$IntegrationQualityGateFunctionName",
-            "IntegrationQualityGateRoleName=$IntegrationQualityGateRoleName",
-            "ActionMutationFunctionName=$ActionMutationFunctionName",
-            "ActionMutationRoleName=$ActionMutationRoleName"
-        )
-        $parameterArguments = @(
-            $parameterOverrides | ForEach-Object {
-                $parts = $_ -split '=', 2
-                "ParameterKey=$($parts[0]),ParameterValue=$($parts[1])"
-            }
-        )
-        $templateArguments = @("--template-body", "file://$templatePath")
-    }
+    $parameterOverrides = @(
+        "ArtifactBucket=$ArtifactBucket",
+        "ControllerArtifactKey=$ControllerArtifactKey",
+        "QualityGateArtifactKey=$QualityGateArtifactKey",
+        "ActionMutationArtifactKey=$actionMutationArtifactKey",
+        "AthenaOutputUri=$AthenaOutputUri",
+        "AthenaResultsBucketName=$athenaResultsBucket",
+        "AthenaResultsPrefix=$athenaResultsPrefix",
+        "LifecycleDataBucketArn=arn:aws:s3:::$LifecycleDataBucket",
+        "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
+        "PipelineStatusS3Uri=s3://$LifecycleDataBucket/$statusKey",
+        "PipelineStatusObjectArn=arn:aws:s3:::$LifecycleDataBucket/$statusKey",
+        "PipelineStatusObjectsArn=arn:aws:s3:::$LifecycleDataBucket/$statusPrefix/*",
+        "PipelineStatusPrefix=$statusPrefix",
+        "AthenaWorkgroup=$Workgroup",
+        "SourceDatabase=$SourceDatabase",
+        "FunctionName=$FunctionName",
+        "ExecutionRoleName=$ExecutionRoleName",
+        "IntegrationControllerFunctionName=$IntegrationControllerFunctionName",
+        "IntegrationControllerRoleName=$IntegrationControllerRoleName",
+        "IntegrationQualityGateFunctionName=$IntegrationQualityGateFunctionName",
+        "IntegrationQualityGateRoleName=$IntegrationQualityGateRoleName",
+        "ActionMutationFunctionName=$ActionMutationFunctionName",
+        "ActionMutationRoleName=$ActionMutationRoleName"
+    )
+    $parameterArguments = @(
+        $parameterOverrides | ForEach-Object {
+            $parts = $_ -split '=', 2
+            "ParameterKey=$($parts[0]),ParameterValue=$($parts[1])"
+        }
+    ) + @("ParameterKey=GeneratorArtifactKey,UsePreviousValue=true")
+    $templateArguments = @("--template-body", "file://$templatePath")
     if ($parameterArguments.Count -eq 0) {
         throw "Lifecycle change set requires existing or explicit stack parameters"
     }
@@ -417,29 +351,6 @@ try {
     if ($protectedChanges.Count -ne 0) {
         throw "Lifecycle deployment cannot modify Action mutation resources"
     }
-    if ($GeneratorOnly) {
-        $generatorChanges = @($changeSet.Changes)
-        $generatorChangeIsNarrow = (
-            $generatorChanges.Count -eq 1 -and
-            [string]$generatorChanges[0].ResourceChange.Action -eq "Modify" -and
-            [string]$generatorChanges[0].ResourceChange.LogicalResourceId -eq "LifecycleGeneratorFunction" -and
-            [string]$generatorChanges[0].ResourceChange.ResourceType -eq "AWS::Lambda::Function" -and
-            [string]$generatorChanges[0].ResourceChange.Replacement -eq "False"
-        )
-        if (-not $generatorChangeIsNarrow) {
-            throw "Generator-only deployment change set must contain exactly one non-replacing LifecycleGeneratorFunction modification"
-        }
-    }
-    if ($InspectChangeSet) {
-        & aws cloudformation delete-change-set `
-            --stack-name $StackName --change-set-name $changeSetName @awsScope | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            throw "Unable to delete the inspected lifecycle staging change set"
-        }
-        $changeSetCreated = $false
-        Write-Host "Generator-only change set inspected and deleted without execution or artifact upload."
-        return
-    }
     & aws cloudformation execute-change-set `
         --stack-name $StackName --change-set-name $changeSetName @awsScope
     if ($LASTEXITCODE -ne 0) {
@@ -469,8 +380,4 @@ try {
     throw
 }
 
-if ($GeneratorOnly) {
-    Write-Host "Lifecycle generator deployed without schema execution, lifecycle invocation, controller or quality-gate replacement, schedule, production alias change, or Action mutation release."
-} else {
-    Write-Host "Lifecycle staging stack and isolated integration controller deployed without a schedule, production alias change, or Action mutation release."
-}
+Write-Host "Shared lifecycle stack deployed without owning or packaging the independent generator, without a schedule, production alias change, or Action mutation release."

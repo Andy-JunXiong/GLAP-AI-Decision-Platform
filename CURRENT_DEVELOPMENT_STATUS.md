@@ -43,7 +43,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_APPLIED_VALIDATED_PRODUCER_NOT_DEPLOYED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; a named human applied the additive staging migration and all six aggregate checks returned zero, but no bound runtime proposal has been generated |
-| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_PLAN_DIAGNOSED_TEMPLATE_BASELINE_FIX_SOURCE_DELIVERED_CI_PENDING` | Commit `f9bbad2` and CI run `32907780599` delivered the real change-set diagnostic. Human plan runs `32908262838` and `32917959958` both failed closed after reporting the same three non-replacing changes: the expected generator plus the controller function and role. Neither plan uploaded an artifact or executed its temporary change set. This source-control delivery reuses the deployed template and every previous parameter except `GeneratorArtifactKey`; main CI and a new human-dispatched runtime plan remain pending |
+| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_INDEPENDENT_GENERATOR_STACK_SOURCE_DELIVERED_CI_PENDING_NOT_MIGRATED` | Human plan run `32920083879` from `fd6d532` proved the deployed-template/previous-parameter correction still produced three non-replacing changes because shared-stack controller dependencies propagate the Generator ARN. No artifact was uploaded and no change set was executed. This source-control delivery isolates `LifecycleGeneratorFunction` into a proposed one-resource stack with separate refactor-plan, refactor-execute, release-plan, and release-deploy actions; CI, IAM reconciliation, stack refactor, deployment, and runtime verification remain pending and human-owned |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -160,28 +160,44 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Decision Truth generator-only change-set diagnostics
+## Active slice — Independent lifecycle Generator stack
 
-**Status:** `FAILED_CLOSED_TEMPLATE_AND_PARAMETER_DRIFT_DIAGNOSED_FIX_SOURCE_DELIVERED_CI_PENDING`
+**Status:** `SOURCE_DELIVERED_CI_PENDING_NOT_MIGRATED`
 
-The exact-one-generator gate worked as designed in deploy run `32905914076` and
-in diagnostic plan runs `32908262838` and `32917959958`. The two plans both
-reported the same non-replacing modifications to `LifecycleGeneratorFunction`,
-`IntegrationControllerFunction`, and `IntegrationControllerRole`, proving that
-the full repository template and explicit parameter set carry controller drift
-into the supposed generator-only release. Both temporary plan change sets were
-rejected and cleaned up without artifact upload or execution. No stack resource
-changed. This source-control correction uses CloudFormation's deployed template and
-`UsePreviousValue=true` for every existing parameter except
-`GeneratorArtifactKey`; the exact-one-resource gate remains unchanged. Schema,
-seed, replay, integration, extension, baseline, analytics, Action mutation,
-schedule, alias, and production paths remain excluded. This delivery does not
-dispatch the workflow; main CI, runtime plan validation, and deployment remain
-pending and separately human-owned.
+Human plan run `32920083879` from commit `fd6d532` used the deployed shared
+template and every previous parameter except `GeneratorArtifactKey`, yet still
+reported the same three non-replacing modifications:
+`LifecycleGeneratorFunction`, `IntegrationControllerRole`, and
+`IntegrationControllerFunction`. This disproved template/parameter drift as the
+remaining cause and isolated it to shared-stack dependency propagation. The
+temporary change set was not executed, no artifact was uploaded, and no stack
+resource changed.
+
+The local source now moves only `LifecycleGeneratorFunction` into
+`glap-stateful-lifecycle-generator-staging`. The shared stack keeps the execution
+role, alarm, controller, quality gate, and Action mutation boundary, while fixed
+name/ARN references remove the CloudFormation dependency edge. A separate
+manual workflow splits `plan-refactor`, `execute-refactor`, `plan-release`, and
+`deploy-release`; every plan enforces an exact one-resource boundary and every
+write remains separately human-owned. The old shared-stack generator actions
+are removed, and shared deployment fails closed until exclusive destination
+ownership is verified. Local validation passed all 569 repository tests, the
+30-test lifecycle deployment suite, Python compilation, PowerShell parsing,
+workflow/template parsing, mocked plan/execute boundaries, the 48/48 drift
+audit, JSON validation, and `git diff --check`. This source-control delivery does
+not execute any workflow. Main CI, IAM administrator reconciliation,
+stack-refactor planning/execution, code deployment, and runtime verification
+are still pending. No schema, lifecycle date, Action, alias,
+schedule, production, or Pages authority is implied.
 
 ## Recently completed — Decision Truth generator-only staging release path
 
-**Status:** `DELIVERED_PLAN_DIAGNOSED_TEMPLATE_BASELINE_FIX_SOURCE_DELIVERED_CI_PENDING`
+**Status:** `SUPERSEDED_BY_INDEPENDENT_GENERATOR_STACK`
+
+This section preserves the diagnostic history. Run `32920083879` later proved
+that the deployed-template/previous-parameter variant still changed the
+controller role and function through shared-stack dependency propagation, so
+this path is no longer an executable release design.
 
 **Goal**
 
@@ -1964,17 +1980,14 @@ done.
 
 ## Next Up
 
-1. The additive Action binding migration and six-check read-only validation are
-   complete in isolated staging. Diagnostic plan runs `32908262838` and
-   `32917959958` consistently exposed generator plus controller function/role
-   drift and failed closed. The deployed-template/previous-parameter correction
-   is locally verified and delivered in this source-control change; main CI must
-   pass before another runtime plan.
-   A named human may then separately dispatch only `action=plan-stack-only`.
-   Do not dispatch `deploy-stack-only` until that plan reports exactly one
-   non-replacing `LifecycleGeneratorFunction` modification and a new human
-   decision is made. After a later successful release and read-only
-   stack/function verification,
+1. Complete local validation and source-control review for the independent
+   one-resource Generator stack. A named IAM administrator must then separately
+   review and apply the proposed staging deployer permissions. Only afterward
+   may a named human dispatch `plan-refactor`; `execute-refactor` requires a
+   separate decision and the exact reviewed ID. After verified exclusive
+   ownership, use `plan-release` before any separately authorized
+   `deploy-release`. The old `plan-stack-only` / `deploy-stack-only` path is
+   retired. After a later successful release and read-only stack/function verification,
    the remaining order is Operations API, private frontend, then read-only
    contract verification. Four-role verification separately creates temporary
    users. No source-control request implies any external deployment.

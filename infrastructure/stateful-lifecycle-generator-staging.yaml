@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Isolated GLAP stateful lifecycle generator staging function. This stack owns
+  only the Lambda function; its execution role remains in the shared lifecycle
+  staging stack. It has no schedule, alias, controller, or production path.
+
+Parameters:
+  ArtifactBucket:
+    Type: String
+    Default: "{{ARTIFACT_BUCKET}}"
+  GeneratorArtifactKey:
+    Type: String
+    Default: "{{GENERATOR_ARTIFACT_KEY}}"
+  FunctionName:
+    Type: String
+    Default: "{{FUNCTION_NAME}}"
+  ExecutionRoleArn:
+    Type: String
+    Default: "{{EXECUTION_ROLE_ARN}}"
+  AthenaOutputUri:
+    Type: String
+    Default: "{{ATHENA_OUTPUT_URI}}"
+  AthenaWorkgroup:
+    Type: String
+    Default: "{{ATHENA_WORKGROUP}}"
+  SourceDatabase:
+    Type: String
+    Default: "{{SOURCE_DATABASE}}"
+
+Resources:
+  LifecycleGeneratorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      Role: !Ref ExecutionRoleArn
+      Timeout: 900
+      MemorySize: 512
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Ref GeneratorArtifactKey
+      Environment:
+        Variables:
+          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
+          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
+          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          SHIPMENT_TABLE: fact_shipment_lifecycle_staging_v1
+          SHIPMENT_EVENT_TABLE: fact_shipment_lifecycle_event_staging_v1
+          SHIPMENT_COST_TABLE: fact_shipment_cost_staging_v1
+          SHIPMENT_METRICS_TABLE: fact_shipment_lifecycle_metrics_staging_v1
+          SHIPMENT_SIGNAL_TABLE: fact_shipment_signal_candidate_staging_v1
+          LIFECYCLE_ALERT_TABLE: fact_lifecycle_alert_staging_v1
+          LIFECYCLE_ACTION_TABLE: fact_lifecycle_action_staging_v1
+          LIFECYCLE_OUTCOME_TABLE: fact_lifecycle_outcome_staging_v1
+          POLICY_PROPOSAL_TABLE: fact_policy_proposal_staging_v1
+          LIFECYCLE_ACTION_CURRENT_VIEW: vw_lifecycle_action_current_staging_v1
+          ROUTE_SERVICE_TABLE: dim_route_service_v1
+          LIFECYCLE_TARGET_TABLE: dim_lifecycle_target_v1
+          RATE_CARD_TABLE: dim_rate_card_v1
+          FX_RATE_TABLE: dim_fx_rate_v1
+          DEFAULT_REPORTING_CURRENCY: AUD
+          PIPELINE_ENVIRONMENT: staging
+          ALLOW_FUTURE_SIMULATION: "true"
+
+Outputs:
+  LifecycleGeneratorFunctionName:
+    Value: !Ref LifecycleGeneratorFunction

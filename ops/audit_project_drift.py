@@ -1737,6 +1737,10 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
         "plan": "ops/plan_decision_truth_staging_rollout.ps1",
         "workflow": ".github/workflows/deploy-stateful-lifecycle-staging.yml",
         "stack_deployer": "ops/deploy_stateful_lifecycle_stack.ps1",
+        "generator_workflow": ".github/workflows/refactor-stateful-lifecycle-generator-staging.yml",
+        "generator_template": "infrastructure/stateful-lifecycle-generator-staging.yaml",
+        "generator_deployer": "ops/deploy_stateful_lifecycle_generator_stack.ps1",
+        "generator_refactor": "ops/refactor_stateful_lifecycle_generator_stack.ps1",
         "tests": "tests/test_decision_truth_staging_rollout.py",
         "deployment_tests": "tests/test_stateful_lifecycle_deployment.py",
         "runbook": "docs/decision_truth_staging_rollout.md",
@@ -1829,41 +1833,60 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
     )
     generator_release_bounded = (
         all(
-            marker in text["workflow"]
+            marker not in text["workflow"]
             for marker in (
-                "- plan-stack-only",
-                "- deploy-stack-only",
-                "$stackParameters.InspectChangeSet = $true",
-                '$parameters.GeneratorOnly = $true',
-                "Generator-only stack release",
-                "Lifecycle date invoked",
-                "Lifecycle schema applied",
-                "Initial seed requested",
+                "plan-stack-only",
+                "deploy-stack-only",
+                "GeneratorOnly",
             )
         )
         and all(
             marker in text["stack_deployer"]
             for marker in (
-                "[switch]$GeneratorOnly",
-                "[switch]$InspectChangeSet",
-                "preserve existing stack parameter",
-                "--use-previous-template",
-                "ParameterKey=$parameterKey,UsePreviousValue=true",
-                "previous values except GeneratorArtifactKey",
-                "Sanitized lifecycle change-set summary",
-                "$generatorChanges.Count -eq 1",
-                'LogicalResourceId -eq "LifecycleGeneratorFunction"',
-                'ResourceType -eq "AWS::Lambda::Function"',
-                'Replacement -eq "False"',
-                "without execution or artifact upload",
-                "without schema execution, lifecycle invocation",
+                "Generator function managed here: False",
+                "blocked until the reviewed generator stack refactor is complete",
+                "Generator ownership must be exclusive",
+                "ParameterKey=GeneratorArtifactKey,UsePreviousValue=true",
+            )
+        )
+        and all(
+            marker in text["generator_workflow"]
+            for marker in (
+                "- plan-refactor",
+                "- execute-refactor",
+                "- plan-release",
+                "- deploy-release",
+                "LifecycleGeneratorFunction only",
+                "Production effect:",
+            )
+        )
+        and text["generator_template"].count("Type: AWS::Lambda::Function") == 1
+        and "AWS::IAM::Role" not in text["generator_template"]
+        and all(
+            marker in text["generator_deployer"]
+            for marker in (
+                "must own exactly one expected Lambda function",
+                "$changes.Count -ne 1",
+                'Replacement -ne "False"',
+                "without upload or execution",
+            )
+        )
+        and all(
+            marker in text["generator_refactor"]
+            for marker in (
+                "Assert-ExactMove",
+                '$moves.Count -ne 1',
+                "A separate human dispatch must supply this exact ID",
+                "Post-refactor generator ownership verification failed",
             )
         )
         and all(
             marker in text["deployment_tests"]
             for marker in (
-                "test_stack_only_workflow_deploys_only_generator_without_invocation",
-                "test_generator_only_stack_change_set_is_exact_and_non_replacing",
+                "test_generator_has_an_independent_manual_refactor_and_release_workflow",
+                "test_independent_generator_template_and_release_are_exactly_one_resource",
+                "test_generator_stack_refactor_is_one_move_and_separate_execution",
+                "test_shared_stack_release_fails_closed_without_exclusive_generator_ownership",
             )
         )
     )
@@ -1875,8 +1898,8 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             "Do not create, backfill, or mutate an Action merely to satisfy the test",
             "every `COST_ANOMALY` Action remains unbound",
             "all six checks returned zero",
-            "`deploy-stack-only`",
-            "exactly one non-replacing `LifecycleGeneratorFunction` modification",
+            "`deploy-release`",
+            "independent one-resource stack",
             "The additive columns are retained",
             "Rollback never changes production",
         )
@@ -1891,8 +1914,8 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             and tests_bounded
             and generator_release_bounded
             and runbook_bounded,
-            "Decision Truth staging rollout preserves its validated additive schema plus a generator-only, exact-change-set, no-invocation release path with producer-before-reader order and separate human authority for every external write.",
-            "Decision Truth rollout lost additive/read-only validation, exact generator-only release scope, producer ordering, legacy-null compatibility, or the human-owned execution boundary.",
+            "Decision Truth staging rollout preserves its validated additive schema plus an independent one-resource generator stack, exact change-set release, producer-before-reader order, and separate human authority for every external write.",
+            "Decision Truth rollout lost additive/read-only validation, independent one-resource generator ownership, exact release scope, producer ordering, legacy-null compatibility, or the human-owned execution boundary.",
             tuple(paths.values()),
         )
     ]

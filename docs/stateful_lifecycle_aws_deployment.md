@@ -37,10 +37,18 @@ Air uses airport receipt/cargo-availability events and chargeable-weight cost.
   `lambda/glap_pipeline_controller.py` enforce the named lifecycle and
   compatibility contracts in the isolated manual chain.
 - `ops/deploy_stateful_lifecycle.ps1` renders and optionally executes the schema.
-- `ops/deploy_stateful_lifecycle_stack.ps1` packages the two-module Lambda and
-  deploys the isolated IAM/Lambda/alarm CloudFormation stack.
+- `ops/deploy_stateful_lifecycle_stack.ps1` packages the controller and quality
+  gate, deploys shared support resources, and fails closed until the independent
+  Generator stack owns its one expected Lambda.
 - `infrastructure/stateful-lifecycle-staging.yaml` creates unscheduled,
-  prefix-scoped generator, controller, quality-gate, roles, and alarm resources.
+  prefix-scoped controller, quality-gate, roles, and alarm resources; it does
+  not own the Generator function.
+- `infrastructure/stateful-lifecycle-generator-staging.yaml` owns exactly one
+  `AWS::Lambda::Function` and no role, alarm, controller, alias, or schedule.
+- `ops/refactor_stateful_lifecycle_generator_stack.ps1` plans or separately
+  executes the exact one-resource ownership move.
+- `ops/deploy_stateful_lifecycle_generator_stack.ps1` plans or separately
+  releases Generator code through the independent stack.
 - `ops/replay_stateful_lifecycle_staging.ps1` performs a plan-only-by-default
   sequence of governed logical-date invocations.
 - `ops/validate_stateful_lifecycle_staging.ps1` runs both reconciliation query
@@ -48,27 +56,23 @@ Air uses airport receipt/cargo-availability events and chargeable-weight cost.
 - `.github/workflows/deploy-stateful-lifecycle-staging.yml` provides the manual
   GitHub OIDC plan/deploy/replay/validate path.
 
-The local `plan-stack-only` / `deploy-stack-only` pair adds a plan-first
-Decision Truth producer release path without lifecycle execution. Both require
-separate manual dispatches. The corrected plan action creates an unexecuted
-temporary change set, prints only logical resource ID, type, action, and
-replacement status, enforces the exact-one-generator boundary, and deletes the
-change set without uploading an artifact. Both generator-only actions use the
-existing deployed stack template and previous values for every parameter except
-`GeneratorArtifactKey`. The deploy action uploads only the commit-addressed
-generator artifact and fails unless the inspected change set
-contains exactly one non-replacing `LifecycleGeneratorFunction` modification. Neither
-action applies schema, seeds data, replays dates, invokes an integration date,
-extends the controller, changes an alias, or creates a schedule. The options
-were delivered in commit `59a9eaa`. Human run `32905914076` failed closed at
-the exact change-set gate before execution; the temporary change set was
-deleted, the uploaded generator artifact remained inactive, and no stack
-resource changed. Commit `f9bbad2` delivered the diagnostic plan and CI run
-`32907780599` passed. Human plan runs `32908262838` and `32917959958` both
-reported the same additional controller function/role drift, failed closed,
-and deleted their unexecuted change sets without artifact upload. This
-source-control delivery includes the deployed-template/previous-parameter
-correction but does not dispatch it.
+The former shared-stack `plan-stack-only` / `deploy-stack-only` path is retired.
+Human plan run `32920083879` from commit `fd6d532` proved that the deployed
+template and previous parameters still produced three non-replacing changes:
+the Generator, controller role, and controller function. It uploaded no artifact,
+executed no change set, and changed no resource.
+
+The local replacement gives `LifecycleGeneratorFunction` to
+`glap-stateful-lifecycle-generator-staging`, an independent one-resource stack.
+The new manual workflow separates `plan-refactor`, `execute-refactor`,
+`plan-release`, and `deploy-release`. Refactor planning accepts exactly one
+Generator `MOVE`; later release planning accepts exactly one non-replacing Lambda
+modification and deletes the unexecuted change set without packaging or upload.
+The shared deployer packages no Generator and refuses to update until exclusive
+ownership is verified. See
+[`stateful_lifecycle_generator_stack_refactor.md`](stateful_lifecycle_generator_stack_refactor.md).
+This is repository-local source only: IAM reconciliation, refactor execution,
+deployment, and runtime verification remain pending.
 
 All PowerShell deployment commands are plan-only unless `-Apply` is explicit.
 They use `AWS_PROFILE` when it exists and otherwise use the temporary AWS
@@ -112,12 +116,12 @@ Run `action=plan` first. The first `deploy-replay-validate` execution must set
 not create a schedule, modify a production alias, or connect the function to
 the production controller.
 
-After successful Decision Truth schema validation, first use only
-`action=plan-stack-only`, `execution_mode=OPERATIONAL`, an empty scenario ID,
-and `load_initial_seed=false`. Review that completed run, then separately decide
-whether to dispatch `action=deploy-stack-only` with the same bounded inputs.
-Neither option consumes the replay or integration date fields or can establish
-a bound-Action runtime canary.
+After successful Decision Truth schema validation, use the separate Generator
+workflow. First obtain named-human approval for the IAM reconciliation, then
+dispatch `plan-refactor`. Review its exact one-resource move before any separate
+`execute-refactor` decision. After ownership verification, use `plan-release`
+before a separately authorized `deploy-release`. None of these actions consumes
+replay or integration dates or establishes a bound-Action runtime canary.
 
 ### One-time deployer permission bootstrap
 
@@ -154,7 +158,11 @@ The script splits the lifecycle permission set into three customer-managed
 policies: Catalog covers the exact Athena workgroup, Glue database/table/view
 inventory, and Lake Formation data access; Storage covers only the reviewed S3
 prefixes; Deployment covers the isolated CloudFormation stack, staging Lambda
-functions, exact execution roles, and staging alarms. It stages and verifies
+functions, exact execution roles, and staging alarms. The proposed local update
+also covers `CreateStackRefactor`, `DescribeStackRefactor`,
+`ListStackRefactorActions`, and `ExecuteStackRefactor` for only the shared and
+independent Generator staging stack ARN patterns. A named IAM administrator
+must review and apply that expansion before refactor planning. It stages and verifies
 all managed policies before removing the superseded
 `GLAPStatefulLifecycleStagingDeploy` inline policy. If migration fails before
 that final removal, the legacy inline policy remains and newly activated
@@ -337,7 +345,8 @@ After reviewing the seed SQL, load its first version once:
 `IncludeSeed` is deliberately not advertised as idempotent. Do not run the same
 seed version twice. The validation query fails on duplicate active configuration.
 
-Deploy the unscheduled staging writer after the tables and seed exist:
+After the one-time Generator stack refactor is complete, deploy shared
+controller/quality resources after the tables and seed exist:
 
 ```powershell
 .\ops\deploy_stateful_lifecycle_stack.ps1 `
@@ -348,11 +357,11 @@ Deploy the unscheduled staging writer after the tables and seed exist:
   -Apply
 ```
 
-This checks Athena engine version 3, preserves the existing Action mutation
-artifact, packages the lifecycle generator, controller, and quality gate,
-inspects the proposed change set for protected-resource changes, and deploys
-the staging roles, Lambdas, and alarm through the dedicated CloudFormation
-service role. It creates no event source.
+This checks Athena engine version 3, verifies exclusive Generator ownership,
+preserves the existing Action mutation and legacy Generator-artifact parameters,
+packages only the controller and quality gate, inspects the proposed change set
+for protected-resource changes, and deploys shared staging support resources
+through the dedicated CloudFormation service role. It creates no event source.
 
 ## Staging Lambda configuration
 

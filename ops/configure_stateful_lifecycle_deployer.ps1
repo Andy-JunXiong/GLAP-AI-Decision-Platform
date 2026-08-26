@@ -10,6 +10,7 @@ param(
     [string]$SourceDatabase = "simulated_iceberg_m",
     [string]$Workgroup = "primary",
     [string]$StackName = "glap-stateful-lifecycle-staging",
+    [string]$GeneratorStackName = "glap-stateful-lifecycle-generator-staging",
     [string]$FunctionName = "glap-stateful-lifecycle-generator-staging",
     [string]$ExecutionRoleName = "glap-stateful-lifecycle-generator-staging-role",
     [string]$IntegrationControllerFunctionName = "glap-stateful-lifecycle-controller-staging",
@@ -34,6 +35,7 @@ foreach ($name in @(
     $StoragePolicyName,
     $DeploymentPolicyName,
     $StackName,
+    $GeneratorStackName,
     $FunctionName,
     $ExecutionRoleName,
     $IntegrationControllerFunctionName,
@@ -256,9 +258,16 @@ $statements = @(
                 "cloudformation:ContinueUpdateRollback",
                 "cloudformation:DescribeStacks",
                 "cloudformation:DescribeStackEvents",
-                "cloudformation:ListStackResources"
+                "cloudformation:ListStackResources",
+                "cloudformation:CreateStackRefactor",
+                "cloudformation:DescribeStackRefactor",
+                "cloudformation:ExecuteStackRefactor",
+                "cloudformation:ListStackRefactorActions"
             )
-            Resource = "arn:${partition}:cloudformation:${Region}:${accountId}:stack/${StackName}/*"
+            Resource = @(
+                "arn:${partition}:cloudformation:${Region}:${accountId}:stack/${StackName}/*",
+                "arn:${partition}:cloudformation:${Region}:${accountId}:stack/${GeneratorStackName}/*"
+            )
         },
         @{
             Sid = "InspectLifecycleTemplate"
@@ -431,6 +440,7 @@ foreach ($managedPolicy in $managedPolicies) {
 }
 Write-Host "  Managed policy attachments after migration: $(@($attachedPolicyArns).Count + $newAttachmentCount)/$managedPolicyAttachmentLimit"
 Write-Host "  Stack: $StackName"
+Write-Host "  Independent generator stack: $GeneratorStackName"
 Write-Host "  Function: $FunctionName"
 Write-Host "  Execution role: $ExecutionRoleName"
 Write-Host "  Integration controller: $IntegrationControllerFunctionName"
@@ -445,6 +455,7 @@ Write-Host "  Database-wide Glue table wildcard: False"
 Write-Host "  Production alias or schedule permission: False"
 Write-Host "  GitHub role self-modification permission: False"
 Write-Host "  CloudFormation rollback continuation permission: True"
+Write-Host "  One-resource stack refactor permission: True"
 
 if (-not $Apply) {
     Write-Host "Plan only. Re-run with -Apply using an IAM administrator profile."
