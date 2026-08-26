@@ -53,17 +53,22 @@ Decision Truth producer release path without lifecycle execution. Both require
 separate manual dispatches. The corrected plan action creates an unexecuted
 temporary change set, prints only logical resource ID, type, action, and
 replacement status, enforces the exact-one-generator boundary, and deletes the
-change set without uploading an artifact. The deploy action uploads only the
-commit-addressed generator artifact, preserves the existing controller and
-quality-gate artifact parameters, and fails unless the inspected change set
+change set without uploading an artifact. Both generator-only actions use the
+existing deployed stack template and previous values for every parameter except
+`GeneratorArtifactKey`. The deploy action uploads only the commit-addressed
+generator artifact and fails unless the inspected change set
 contains exactly one non-replacing `LifecycleGeneratorFunction` modification. Neither
 action applies schema, seeds data, replays dates, invokes an integration date,
 extends the controller, changes an alias, or creates a schedule. The options
 were delivered in commit `59a9eaa`. Human run `32905914076` failed closed at
 the exact change-set gate before execution; the temporary change set was
 deleted, the uploaded generator artifact remained inactive, and no stack
-resource changed. This source-control correction delivers the diagnostic plan
-path but does not dispatch it.
+resource changed. Commit `f9bbad2` delivered the diagnostic plan and CI run
+`32907780599` passed. Human plan runs `32908262838` and `32917959958` both
+reported the same additional controller function/role drift, failed closed,
+and deleted their unexecuted change sets without artifact upload. This
+source-control delivery includes the deployed-template/previous-parameter
+correction but does not dispatch it.
 
 All PowerShell deployment commands are plan-only unless `-Apply` is explicit.
 They use `AWS_PROFILE` when it exists and otherwise use the temporary AWS

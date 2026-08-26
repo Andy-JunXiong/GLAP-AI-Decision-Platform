@@ -629,6 +629,18 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("$ControllerArtifactKey = $preservedArtifactKeys.ControllerArtifactKey", script)
         self.assertIn("$QualityGateArtifactKey = $preservedArtifactKeys.QualityGateArtifactKey", script)
         self.assertIn("if (-not $GeneratorOnly)", script)
+        self.assertIn('Where-Object ParameterKey -eq "GeneratorArtifactKey"', script)
+        self.assertIn('Where-Object ParameterKey -eq "ArtifactBucket"', script)
+        self.assertIn("--use-previous-template", script)
+        self.assertNotIn("cloudformation get-template", script)
+        self.assertIn("ParameterKey=$parameterKey,UsePreviousValue=true", script)
+        self.assertIn("previous values except GeneratorArtifactKey", script)
+        self.assertIn("must override exactly one stack parameter", script)
+        self.assertIn("@templateArguments", script)
+        self.assertLess(
+            script.index("Generator-only artifact bucket must match"),
+            script.index("& aws s3 cp $archivePath"),
+        )
         self.assertIn("$generatorChanges.Count -eq 1", script)
         self.assertIn('LogicalResourceId -eq "LifecycleGeneratorFunction"', script)
         self.assertIn('ResourceType -eq "AWS::Lambda::Function"', script)

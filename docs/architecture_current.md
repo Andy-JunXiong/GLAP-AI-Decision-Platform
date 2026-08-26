@@ -52,8 +52,8 @@ The Decision Truth staging handoff makes the producer dependency explicit:
 after the now-validated additive schema, the isolated lifecycle producer must
 be released before new proposals can carry truthful bindings. The local
 `plan-stack-only` / `deploy-stack-only` pair requires separate manual
-dispatches, preserves the deployed controller and quality-gate artifact
-identities, and accepts only one non-replacing
+dispatches, reuses the deployed stack template and previous values for every
+parameter except the generator artifact, and accepts only one non-replacing
 `LifecycleGeneratorFunction` change. The corrected plan creates an unexecuted
 temporary change set, emits only a logical-resource-level summary, validates
 the same boundary, and deletes it without an artifact upload. It performs no
@@ -61,9 +61,12 @@ schema execution or lifecycle invocation. Operations API and private-frontend re
 downstream readers, not substitutes for that producer step. Every producer,
 API/frontend release, temporary-user role check, and later operational
 continuation remains separately human-owned. Human-dispatched deploy run
-`32905914076` failed closed before change-set execution when the actual diff
-exceeded the one-generator boundary; no stack resource changed and the local
-diagnostic correction is not deployed.
+`32905914076` failed closed before execution. Diagnostic plan runs
+`32908262838` and `32917959958` then consistently exposed the intended generator
+plus unintended controller function/role drift and also failed closed without
+artifact upload or execution. No stack resource changed. This source-control
+delivery includes the deployed-template baseline correction but does not deploy
+or runtime-verify it.
 
 ## Cross-cutting evaluation boundary
 

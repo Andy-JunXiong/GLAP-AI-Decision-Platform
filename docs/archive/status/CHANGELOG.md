@@ -19,8 +19,13 @@ preserved handoffs.
   change-set execution because the actual diff exceeded the exact-one-generator
   gate; no stack resource changed. The follow-up diagnostic correction makes
   `plan-stack-only` create, sanitize, validate, and delete an unexecuted
-  temporary change set without artifact upload. It is included in this
-  source-control delivery and remains undispatched and runtime-unverified.
+  temporary change set without artifact upload. Commit `f9bbad2` and CI run
+  `32907780599` delivered it. Human plans `32908262838` and `32917959958`
+  consistently exposed generator plus controller function/role drift and
+  failed closed without artifact upload or execution. A further
+  correction now reuses the deployed template and every previous parameter
+  except the generator artifact; this source-control delivery includes the
+  locally verified change, while main CI and runtime verification remain pending.
 
 ## 2026-08-25
 

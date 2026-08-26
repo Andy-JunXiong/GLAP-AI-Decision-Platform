@@ -1,8 +1,8 @@
 # Decision Truth private staging rollout
 
 **Status:** staging schema applied and aggregate-validated; generator release
-attempt failed closed before execution; diagnostic plan correction implemented
-locally and not deployed
+and diagnostic plans failed closed before execution; deployed-template baseline
+correction source-delivered, with CI and runtime plan validation pending
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -41,13 +41,14 @@ not authorize the next.
    decision whether to dispatch `action=deploy-stack-only`.
    This producer step is required because the immutable binding is written
    when a new Action proposal is generated; deploying only readers cannot
-   create truthful bindings. The deployer preserves the existing controller
-   and quality-gate artifacts and fails closed unless the CloudFormation change
-   set contains exactly one non-replacing `LifecycleGeneratorFunction`
-   modification. The corrected plan creates and deletes an unexecuted temporary
-   change set and reports only logical resource ID, type, action, and replacement
-   status; it uploads no artifact. It does not apply schema or invoke a lifecycle
-   date.
+   create truthful bindings. The corrected generator-only plan and deploy path
+   reuse the existing deployed stack template and previous values for every
+   parameter except `GeneratorArtifactKey`. They fail closed unless the
+   CloudFormation change set contains exactly one non-replacing
+   `LifecycleGeneratorFunction` modification. Plan creates and deletes an
+   unexecuted temporary change set and reports only logical resource ID, type,
+   action, and replacement status; it uploads no artifact. It does not apply
+   schema or invoke a lifecycle date.
 4. A named staging release owner runs the existing Operations API workflow in
    `plan`, reviews it, and separately dispatches `action=deploy` if approved.
 5. A named staging release owner first runs
@@ -83,9 +84,15 @@ was not exactly one non-replacing generator modification. The change set was
 deleted before execution; no stack resource, schema, lifecycle date, alias,
 schedule, Action, or production path changed. The locally corrected plan now
 creates, sanitizes, validates, and deletes an unexecuted temporary change set so
-the mismatch can be diagnosed before any later deployment decision. That
-correction is included in this source-control delivery but remains undispatched
-and runtime-unverified.
+the mismatch can be diagnosed before any later deployment decision. Commit
+`f9bbad2` delivered that correction and CI run `32907780599` passed. Human
+diagnostic plan runs `32908262838` and `32917959958` then consistently reported
+three non-replacing changes: `LifecycleGeneratorFunction`,
+`IntegrationControllerFunction`, and `IntegrationControllerRole`. Both failed
+closed and cleaned up without artifact upload, change-set execution, or stack
+resource change. This source-control delivery includes the locally verified
+deployed-template/previous-parameter correction, but it does not dispatch the
+workflow; main CI, runtime plan validation, and deployment remain pending.
 
 ## Runtime evidence boundary
 

@@ -180,6 +180,38 @@ foreach ($parameterName in @("ControllerArtifactKey", "QualityGateArtifactKey"))
 if ($GeneratorOnly) {
     $ControllerArtifactKey = $preservedArtifactKeys.ControllerArtifactKey
     $QualityGateArtifactKey = $preservedArtifactKeys.QualityGateArtifactKey
+
+    $generatorArtifactParameters = @(
+        $stack.Parameters | Where-Object ParameterKey -eq "GeneratorArtifactKey"
+    )
+    if ($generatorArtifactParameters.Count -ne 1) {
+        throw "Existing GeneratorArtifactKey identity is unavailable"
+    }
+    $artifactBucketParameters = @(
+        $stack.Parameters | Where-Object ParameterKey -eq "ArtifactBucket"
+    )
+    if ($artifactBucketParameters.Count -ne 1 -or
+        [string]$artifactBucketParameters[0].ParameterValue -ne $ArtifactBucket) {
+        throw "Generator-only artifact bucket must match the existing stack parameter"
+    }
+    $generatorOnlyParameterArguments = @(
+        $stack.Parameters | ForEach-Object {
+            $parameterKey = [string]$_.ParameterKey
+            if ($parameterKey -notmatch '^[A-Za-z][A-Za-z0-9]{0,254}$') {
+                throw "Existing stack parameter key is unsafe"
+            }
+            if ($parameterKey -eq "GeneratorArtifactKey") {
+                "ParameterKey=$parameterKey,ParameterValue=$ArtifactKey"
+            } else {
+                "ParameterKey=$parameterKey,UsePreviousValue=true"
+            }
+        }
+    )
+    if ($generatorOnlyParameterArguments.Count -eq 0 -or @(
+        $generatorOnlyParameterArguments | Where-Object { $_ -match ',ParameterValue=' }
+    ).Count -ne 1) {
+        throw "Generator-only change set must override exactly one stack parameter"
+    }
 }
 
 $effectiveEngine = & aws athena get-work-group `
@@ -257,46 +289,57 @@ if ($Apply) {
         }
     }
 }
-$parameterOverrides = @(
-    "ArtifactBucket=$ArtifactBucket",
-    "GeneratorArtifactKey=$ArtifactKey",
-    "ControllerArtifactKey=$ControllerArtifactKey",
-    "QualityGateArtifactKey=$QualityGateArtifactKey",
-    "ActionMutationArtifactKey=$actionMutationArtifactKey",
-    "AthenaOutputUri=$AthenaOutputUri",
-    "AthenaResultsBucketName=$athenaResultsBucket",
-    "AthenaResultsPrefix=$athenaResultsPrefix",
-    "LifecycleDataBucketArn=arn:aws:s3:::$LifecycleDataBucket",
-    "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
-    "PipelineStatusS3Uri=s3://$LifecycleDataBucket/$statusKey",
-    "PipelineStatusObjectArn=arn:aws:s3:::$LifecycleDataBucket/$statusKey",
-    "PipelineStatusObjectsArn=arn:aws:s3:::$LifecycleDataBucket/$statusPrefix/*",
-    "PipelineStatusPrefix=$statusPrefix",
-    "AthenaWorkgroup=$Workgroup",
-    "SourceDatabase=$SourceDatabase",
-    "FunctionName=$FunctionName",
-    "ExecutionRoleName=$ExecutionRoleName",
-    "IntegrationControllerFunctionName=$IntegrationControllerFunctionName",
-    "IntegrationControllerRoleName=$IntegrationControllerRoleName",
-    "IntegrationQualityGateFunctionName=$IntegrationQualityGateFunctionName",
-    "IntegrationQualityGateRoleName=$IntegrationQualityGateRoleName",
-    "ActionMutationFunctionName=$ActionMutationFunctionName",
-    "ActionMutationRoleName=$ActionMutationRoleName"
-)
 $changeSetName = "lifecycle-$([DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
 $changeSetCreated = $false
 try {
-    $parameterArguments = @(
-        $parameterOverrides | ForEach-Object {
-            $parts = $_ -split '=', 2
-            "ParameterKey=$($parts[0]),ParameterValue=$($parts[1])"
-        }
-    )
+    if ($GeneratorOnly) {
+        $parameterArguments = $generatorOnlyParameterArguments
+        $templateArguments = @("--use-previous-template")
+        Write-Host "  Generator-only template baseline: existing deployed stack template"
+        Write-Host "  Generator-only parameter baseline: previous values except GeneratorArtifactKey"
+    } else {
+        $parameterOverrides = @(
+            "ArtifactBucket=$ArtifactBucket",
+            "GeneratorArtifactKey=$ArtifactKey",
+            "ControllerArtifactKey=$ControllerArtifactKey",
+            "QualityGateArtifactKey=$QualityGateArtifactKey",
+            "ActionMutationArtifactKey=$actionMutationArtifactKey",
+            "AthenaOutputUri=$AthenaOutputUri",
+            "AthenaResultsBucketName=$athenaResultsBucket",
+            "AthenaResultsPrefix=$athenaResultsPrefix",
+            "LifecycleDataBucketArn=arn:aws:s3:::$LifecycleDataBucket",
+            "LifecycleDataObjectArn=arn:aws:s3:::$LifecycleDataBucket/$dataPrefix/*",
+            "PipelineStatusS3Uri=s3://$LifecycleDataBucket/$statusKey",
+            "PipelineStatusObjectArn=arn:aws:s3:::$LifecycleDataBucket/$statusKey",
+            "PipelineStatusObjectsArn=arn:aws:s3:::$LifecycleDataBucket/$statusPrefix/*",
+            "PipelineStatusPrefix=$statusPrefix",
+            "AthenaWorkgroup=$Workgroup",
+            "SourceDatabase=$SourceDatabase",
+            "FunctionName=$FunctionName",
+            "ExecutionRoleName=$ExecutionRoleName",
+            "IntegrationControllerFunctionName=$IntegrationControllerFunctionName",
+            "IntegrationControllerRoleName=$IntegrationControllerRoleName",
+            "IntegrationQualityGateFunctionName=$IntegrationQualityGateFunctionName",
+            "IntegrationQualityGateRoleName=$IntegrationQualityGateRoleName",
+            "ActionMutationFunctionName=$ActionMutationFunctionName",
+            "ActionMutationRoleName=$ActionMutationRoleName"
+        )
+        $parameterArguments = @(
+            $parameterOverrides | ForEach-Object {
+                $parts = $_ -split '=', 2
+                "ParameterKey=$($parts[0]),ParameterValue=$($parts[1])"
+            }
+        )
+        $templateArguments = @("--template-body", "file://$templatePath")
+    }
+    if ($parameterArguments.Count -eq 0) {
+        throw "Lifecycle change set requires existing or explicit stack parameters"
+    }
     & aws cloudformation create-change-set `
         --stack-name $StackName `
         --change-set-name $changeSetName `
         --change-set-type UPDATE `
-        --template-body "file://$templatePath" `
+        @templateArguments `
         --role-arn $CloudFormationRoleArn `
         --capabilities CAPABILITY_NAMED_IAM `
         --parameters @parameterArguments `

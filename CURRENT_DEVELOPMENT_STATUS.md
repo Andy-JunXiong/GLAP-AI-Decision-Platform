@@ -43,7 +43,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_APPLIED_VALIDATED_PRODUCER_NOT_DEPLOYED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; a named human applied the additive staging migration and all six aggregate checks returned zero, but no bound runtime proposal has been generated |
-| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_DEPLOY_FAILED_CLOSED_DIAGNOSTIC_FIX_SOURCE_DELIVERED_CI_PENDING` | Commit `59a9eaa` delivered the initial generator-only path; render-only `plan-stack-only` run `32901614061` succeeded, but human deploy run `32905914076` found that the actual change set exceeded the exact-one non-replacing generator gate and failed before execution. Its inactive artifact upload changed no runtime resource. This source-control correction makes plan create, safely summarize, validate, and delete an unexecuted temporary change set without artifact upload; main CI and runtime plan validation remain pending |
+| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_PLAN_DIAGNOSED_TEMPLATE_BASELINE_FIX_SOURCE_DELIVERED_CI_PENDING` | Commit `f9bbad2` and CI run `32907780599` delivered the real change-set diagnostic. Human plan runs `32908262838` and `32917959958` both failed closed after reporting the same three non-replacing changes: the expected generator plus the controller function and role. Neither plan uploaded an artifact or executed its temporary change set. This source-control delivery reuses the deployed template and every previous parameter except `GeneratorArtifactKey`; main CI and a new human-dispatched runtime plan remain pending |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -162,24 +162,26 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Decision Truth generator-only change-set diagnostics
 
-**Status:** `FAILED_CLOSED_DIAGNOSTIC_FIX_SOURCE_DELIVERED_CI_PENDING`
+**Status:** `FAILED_CLOSED_TEMPLATE_AND_PARAMETER_DRIFT_DIAGNOSED_FIX_SOURCE_DELIVERED_CI_PENDING`
 
-The exact-one-generator deploy gate worked as designed in human run
-`32905914076`: it rejected the real CloudFormation diff before execution and
-deleted the temporary change set. No stack resource changed; the uploaded
-commit-addressed generator artifact remains inactive. The failure exposed that
-the earlier `plan-stack-only` path rendered parameters but did not inspect the
-real diff. The local correction now makes plan create an unexecuted temporary
-change set, emit only logical resource ID, type, action, and replacement status,
-apply the same gate, and delete it without artifact upload. Schema, seed,
-replay, integration, extension, baseline, analytics, Action mutation, schedule,
-alias, and production paths remain excluded. Source-control delivery and any
-new human dispatch remain pending. This source-control delivery does not itself
-dispatch the workflow or authorize another deployment.
+The exact-one-generator gate worked as designed in deploy run `32905914076` and
+in diagnostic plan runs `32908262838` and `32917959958`. The two plans both
+reported the same non-replacing modifications to `LifecycleGeneratorFunction`,
+`IntegrationControllerFunction`, and `IntegrationControllerRole`, proving that
+the full repository template and explicit parameter set carry controller drift
+into the supposed generator-only release. Both temporary plan change sets were
+rejected and cleaned up without artifact upload or execution. No stack resource
+changed. This source-control correction uses CloudFormation's deployed template and
+`UsePreviousValue=true` for every existing parameter except
+`GeneratorArtifactKey`; the exact-one-resource gate remains unchanged. Schema,
+seed, replay, integration, extension, baseline, analytics, Action mutation,
+schedule, alias, and production paths remain excluded. This delivery does not
+dispatch the workflow; main CI, runtime plan validation, and deployment remain
+pending and separately human-owned.
 
 ## Recently completed — Decision Truth generator-only staging release path
 
-**Status:** `DELIVERED_DEPLOY_FAILED_CLOSED_DIAGNOSTIC_FIX_LOCAL`
+**Status:** `DELIVERED_PLAN_DIAGNOSED_TEMPLATE_BASELINE_FIX_SOURCE_DELIVERED_CI_PENDING`
 
 **Goal**
 
@@ -193,6 +195,9 @@ replacement.
   `OPERATIONAL`, empty-scenario, and no-seed preconditions.
 - Corrected its plan path to create, safely summarize, validate, and delete an
   unexecuted temporary change set without uploading an artifact.
+- Diagnosed repeatable controller function/role drift in runs `32908262838` and
+  `32917959958`, then locally isolated generator-only changes onto the deployed
+  stack template and previous parameters.
 - Preserved the currently deployed controller and quality-gate artifact keys
   instead of uploading or replacing those packages.
 - Required exactly one non-replacing `LifecycleGeneratorFunction` change before
@@ -209,9 +214,12 @@ Commit `59a9eaa` delivered the initial release path. Render-only
 `plan-stack-only` run `32901614061` succeeded, and an accidental later general
 plan run `32901984260` also changed nothing. Human `deploy-stack-only` run
 `32905914076` uploaded an inactive artifact, created a change set, and failed
-closed at the exact-one-generator gate before execution. The temporary change
-set was deleted and no stack resource changed. The diagnostic correction is
-local only and grants no standing AWS or operational authority.
+closed at the exact-one-generator gate before execution. Commit `f9bbad2` and
+CI run `32907780599` then delivered the diagnostic plan. Human plan runs
+`32908262838` and `32917959958` each found the same generator, controller, and
+controller-role diff and failed closed without artifact upload or execution.
+No stack resource changed. The deployed-template/previous-parameter correction
+is local only and grants no standing AWS or operational authority.
 
 ## Recently completed — Decision Truth private-staging rollout handoff
 
@@ -1957,12 +1965,13 @@ done.
 ## Next Up
 
 1. The additive Action binding migration and six-check read-only validation are
-   complete in isolated staging. Human deploy run `32905914076` failed closed
-   before execution because the actual change set exceeded the exact-one-
-   generator gate. This source-control diagnostic correction must first pass
-   main CI. A named human may then separately dispatch only
-   `action=plan-stack-only` to obtain the sanitized logical-resource diff. Do
-   not dispatch `deploy-stack-only` until that plan reports exactly one
+   complete in isolated staging. Diagnostic plan runs `32908262838` and
+   `32917959958` consistently exposed generator plus controller function/role
+   drift and failed closed. The deployed-template/previous-parameter correction
+   is locally verified and delivered in this source-control change; main CI must
+   pass before another runtime plan.
+   A named human may then separately dispatch only `action=plan-stack-only`.
+   Do not dispatch `deploy-stack-only` until that plan reports exactly one
    non-replacing `LifecycleGeneratorFunction` modification and a new human
    decision is made. After a later successful release and read-only
    stack/function verification,

@@ -131,8 +131,9 @@ producer release candidate. The plan and deploy actions require separate
 manual dispatches. The corrected plan action creates an unexecuted temporary
 change set, prints only logical resource ID, resource type, action, and
 replacement status, applies the same exact-one-generator gate, and deletes the
-change set without uploading an artifact. Deploy packages only the generator
-and retains the deployed controller and quality-gate artifact keys; it refuses
+change set without uploading an artifact. Both generator-only actions reuse the
+deployed stack template and previous values for every parameter except the
+generator artifact. Deploy packages only the generator; it refuses
 to execute unless the CloudFormation change set contains exactly one
 non-replacing `LifecycleGeneratorFunction` modification. Both skip schema application, seed,
 replay, integration-date
@@ -142,8 +143,13 @@ and production paths. Commit `59a9eaa` delivered the first path. Plan-only run
 deploy run `32905914076` then uploaded an inactive generator artifact and
 failed closed before change-set execution because the actual change set was not
 exactly one non-replacing generator modification; its temporary change set was
-deleted and no stack resource changed. This source-control correction delivers
-the diagnostic plan path but does not dispatch it. Producer deployment,
+deleted and no stack resource changed. Commit `f9bbad2` and CI run `32907780599`
+delivered the diagnostic plan path. Human plan runs `32908262838` and
+`32917959958` both reported the same generator, controller-function, and
+controller-role changes, then failed closed and deleted the temporary change
+set without artifact upload or execution. This source-control delivery includes
+the deployed-template/previous-parameter correction but does not dispatch it.
+Producer deployment,
 Operations API deployment, private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.
