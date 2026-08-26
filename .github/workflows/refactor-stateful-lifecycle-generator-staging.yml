@@ -1,4 +1,5 @@
 name: Refactor stateful lifecycle generator staging
+run-name: Generator ${{ inputs.action }}
 
 on:
   workflow_dispatch:
@@ -6,10 +7,11 @@ on:
       action:
         description: Plan/inspect/execute the one-resource refactor or plan/deploy generator code
         required: true
+        default: inspect-refactor
         type: choice
         options:
-          - plan-refactor
           - inspect-refactor
+          - plan-refactor
           - execute-refactor
           - plan-release
           - deploy-release
@@ -64,10 +66,20 @@ jobs:
             test -n "$ARTIFACT_BUCKET"
             test -n "$CF_EXECUTION_ROLE_ARN"
           fi
+          normalized_refactor_id="$STACK_REFACTOR_ID"
+          normalized_refactor_id="${normalized_refactor_id#"${normalized_refactor_id%%[![:space:]]*}"}"
+          normalized_refactor_id="${normalized_refactor_id%"${normalized_refactor_id##*[![:space:]]}"}"
           if [[ "${{ inputs.action }}" == "inspect-refactor" || "${{ inputs.action }}" == "execute-refactor" ]]; then
-            [[ "$STACK_REFACTOR_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
+            if [[ ! "$normalized_refactor_id" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+              echo "::error title=Invalid refactor input::Action '${{ inputs.action }}' requires one UUID; received character count ${#normalized_refactor_id}."
+              exit 1
+            fi
+            echo "STACK_REFACTOR_ID=$normalized_refactor_id" >> "$GITHUB_ENV"
           else
-            test -z "$STACK_REFACTOR_ID"
+            if [[ -n "$normalized_refactor_id" ]]; then
+              echo "::error title=Unexpected refactor input::Action '${{ inputs.action }}' requires an empty stack_refactor_id."
+              exit 1
+            fi
           fi
 
       - name: Configure AWS staging credentials

@@ -163,6 +163,13 @@ expected `MOVE` / `RESOURCE`, rejecting all extras. `inspect-refactor` accepts
 the existing exact ID, performs only describe/list validation, and returns
 without creating or executing a refactor.
 
+Human inspection attempts `32946252849` and `32946695185` both stopped in the
+bounded-input step before AWS credential configuration, so all AWS steps were
+skipped. The form now defaults to the read-only `inspect-refactor` action,
+trims surrounding ID whitespace, retains the exact UUID requirement, and emits
+only the selected action and received character count when validation fails.
+It never logs the supplied identifier in an error annotation.
+
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The
 named human configured distinct GitHub OIDC orchestration identities and a

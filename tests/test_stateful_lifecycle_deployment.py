@@ -574,6 +574,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertNotIn("deploy-stack-only", shared_workflow)
         self.assertIn("Generator managed by independent stack", shared_workflow)
         self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("run-name: Generator ${{ inputs.action }}", workflow)
+        self.assertIn("default: inspect-refactor", workflow)
         for action in (
             "plan-refactor", "inspect-refactor", "execute-refactor",
             "plan-release", "deploy-release",
@@ -585,6 +587,10 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("STACK_REFACTOR_ID: ${{ inputs.stack_refactor_id }}", workflow)
         self.assertIn("$parameters.StackRefactorId = $env:STACK_REFACTOR_ID", workflow)
         self.assertIn("$parameters.Inspect = $true", workflow)
+        self.assertIn('normalized_refactor_id="$STACK_REFACTOR_ID"', workflow)
+        self.assertIn("Invalid refactor input", workflow)
+        self.assertIn("Unexpected refactor input", workflow)
+        self.assertIn('echo "STACK_REFACTOR_ID=$normalized_refactor_id" >> "$GITHUB_ENV"', workflow)
         self.assertNotIn('$parameters.StackRefactorId = "${{ inputs.stack_refactor_id }}"', workflow)
         self.assertIn("LifecycleGeneratorFunction only", workflow)
         self.assertIn("Generator stack resource count: \\`1\\`", workflow)

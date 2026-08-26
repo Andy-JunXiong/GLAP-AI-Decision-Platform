@@ -26,6 +26,13 @@ existing preview. A local read-only invocation against the retained AWS preview
 passed the corrected exact-action gate and executed nothing. Execution remains
 pending and separately human-owned.
 
+Human workflow attempts `32946252849` and `32946695185` then failed only at
+bounded form-input validation before AWS credentials; all AWS steps were
+skipped. The form now defaults to read-only inspection, trims surrounding ID
+whitespace, and emits only the selected action plus received character count on
+failure. The successful local read-only inspection is retained; another plan or
+inspection retry is not required before a separate human execution decision.
+
 ## Why the split is required
 
 Human-dispatched plan run `32920083879` from commit `fd6d532` proved that using

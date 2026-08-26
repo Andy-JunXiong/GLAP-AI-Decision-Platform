@@ -155,6 +155,21 @@ class ProjectDriftAuditTests(unittest.TestCase):
             self._copy_paths(root, paths)
             current = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
             self.assertEqual(current.status, "PASS")
+            workflow_path = (
+                root / ".github/workflows/"
+                "refactor-stateful-lifecycle-generator-staging.yml"
+            )
+            original_workflow = workflow_path.read_text(encoding="utf-8")
+            workflow_path.write_text(
+                original_workflow.replace(
+                    "default: inspect-refactor",
+                    "default: execute-refactor",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            workflow_path.write_text(original_workflow, encoding="utf-8")
             template_path = (
                 root / "infrastructure/stateful-lifecycle-generator-staging.yaml"
             )

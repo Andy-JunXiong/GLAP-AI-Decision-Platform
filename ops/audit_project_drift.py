@@ -1853,9 +1853,13 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             marker in text["generator_workflow"]
             for marker in (
                 "- plan-refactor",
+                "default: inspect-refactor",
                 "- execute-refactor",
                 "- plan-release",
                 "- deploy-release",
+                'normalized_refactor_id="$STACK_REFACTOR_ID"',
+                "Invalid refactor input",
+                "Unexpected refactor input",
                 "LifecycleGeneratorFunction only",
                 "Production effect:",
             )

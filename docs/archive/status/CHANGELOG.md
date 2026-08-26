@@ -48,6 +48,11 @@ preserved handoffs.
   accepts only that exact pair, and `inspect-refactor` can validate the existing
   preview without creating or executing another one. A local read-only
   invocation against the retained AWS preview passed and executed nothing.
+- Hardened manual refactor form recovery after human inspection attempts
+  `32946252849` and `32946695185` stopped before AWS credential configuration.
+  Read-only inspection is now the safe default, surrounding ID whitespace is
+  normalized before the exact UUID gate, and failures emit only action and
+  character-count diagnostics. Both failed attempts skipped every AWS step.
 
 ## 2026-08-25
 
