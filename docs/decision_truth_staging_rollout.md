@@ -1,8 +1,8 @@
 # Decision Truth private staging rollout
 
-**Status:** staging schema, independent one-resource stack, and authenticated
-Operations API deployed; Generator not invoked; private frontend fix locally
-verified and not republished
+**Status:** staging schema, independent one-resource stack, authenticated
+Operations API, and private cockpit deployed; read-only and four-role checks
+passed; Generator not invoked
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -108,9 +108,21 @@ deployed the authenticated staging API successfully. The first matching private
 frontend attempt failed during local Next.js type checking before archive
 creation or any Amplify deployment. The verification-result type now binds
 `VERIFIED` to `MATCH` and `MISMATCH` to non-match diagnostic codes; frontend
-lint, the internal production build, and all five frontend tests pass locally.
-The corrected private frontend has not been published, and post-publication
-read-only and four-role checks have not run.
+lint, the internal production build, and all five frontend tests passed locally.
+Fix commit `2627da6` then passed ordinary CI run `32975380386`, and the named
+human published the corrected private cockpit without printing its protected
+origin or deployment identifiers.
+
+The read-only staging verifier passed every configured frontend, API, CORS,
+alarm, logging, and redaction check. The separately human-run four-role verifier
+passed its reader, role-bound mutation, response-contract, temporal,
+governance, and redaction checks, then removed all four temporary users. It did
+not mutate a real Action. Runtime reads remained bounded: Action evidence was
+`ACTION_OPEN` with zero audit events and no Outcome; Learning remained
+`INSUFFICIENT_ELIGIBLE_OUTCOMES` at 1/20 with no proposal; label readiness had
+one insufficient provider group, no ready group, and zero of three eligible
+targets. The Generator was not invoked, so no bound runtime Action, eligible
+Decision comparison cohort, or browser fingerprint exercise is claimed.
 
 ## Runtime evidence boundary
 

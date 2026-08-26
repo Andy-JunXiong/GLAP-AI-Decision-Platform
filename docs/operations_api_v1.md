@@ -628,12 +628,25 @@ users. No real Action was mutated.
 On `2026-08-26`, plan run `32972934184` validated the current Decision Truth
 reader package from commit `a3fe692` and explicitly skipped deployment.
 Separately authorized run `32973297196` then deployed the authenticated staging
-API. The matching private frontend was not published: its first local release
-attempt stopped at Next.js type checking before archive creation or any Amplify
-deployment. A discriminated verification-result type fixes that build error and
-passes frontend lint, the internal production build, and all five frontend
-tests locally. Post-publication staging and four-role verification remain
-pending and separately human-owned.
+API. The first matching private-frontend release attempt stopped at Next.js type
+checking before archive creation or any Amplify deployment. The discriminated
+verification-result fix in commit `2627da6` passed frontend lint, the internal
+production build, all five frontend tests, and CI run `32975380386`; the named
+human then published the corrected private cockpit without printing protected
+origin or deployment identifiers.
+
+The post-publication read-only verifier passed every configured frontend, API,
+CORS, alarm, logging, and redaction check. The separately human-run four-role
+verifier passed reader, mutation-boundary, response-contract, temporal,
+governance, and redaction checks and removed all four temporary users. All four
+roles could read Action, Learning, and label-readiness evidence; the viewer
+remained denied shipment-entity access and Action mutation, while the other
+role boundaries matched the contract. No real Action was mutated. Runtime
+reads reported an `ACTION_OPEN` chain with zero events and no Outcome, Learning
+at `INSUFFICIENT_ELIGIBLE_OUTCOMES` with 1/20 eligible Outcomes and no proposal,
+and no ready provider group or eligible label-readiness target. The Generator
+was not invoked, so this verifies the private reader and RBAC boundary, not a
+bound Decision proposal or eligible comparison cohort.
 
 The Outcome-to-Learning evidence endpoint and private Learning Review were
 released in the same staging-only change and passed explicit

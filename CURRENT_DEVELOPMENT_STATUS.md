@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-26`
+**Sydney as-of date:** `2026-08-27`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -41,21 +41,21 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
-| `SLA_BREACH` Decision Brief v1 | `PRODUCER_AND_API_DEPLOYED_NOT_RUNTIME_OBSERVED_PRIVATE_UI_PENDING` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. The Generator and authenticated reader API are deployed, but the Generator has not been invoked, the private cockpit update is pending, and no bound runtime proposal has been observed. |
-| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_API_DEPLOYED_NOT_RUNTIME_OBSERVED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row. The additive staging migration passed all six checks and both the independent Generator and authenticated reader API are deployed, but the Generator has not been invoked and no bound runtime proposal has been observed. |
-| Decision Truth private-staging rollout handoff | `API_DEPLOYED_FRONTEND_FIX_LOCALLY_VERIFIED_NOT_PUBLISHED` | The one-resource Generator ownership move and release are complete. Operations API plan run `32972934184` skipped deployment and separately authorized run `32973297196` deployed commit `a3fe692` to staging. The first private-frontend attempt failed during local Next.js type checking before any Amplify deployment was created; the discriminated verification-result fix passes lint, the internal production build, and all five frontend tests locally. No lifecycle invocation, runtime binding, frontend publication, role test, schedule, alias, Pages, or production change is claimed. |
-| Outcome Review decision provenance v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | The authenticated API can expose each cutoff-eligible Outcome's nullable immutable Decision binding; legacy bindings remain null and effects remain synthetic and non-causal. The matching private cockpit update is not published. |
-| Decision-contract Outcome cohort summary v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | The authenticated Outcome response separately aggregates observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed and remain descriptive only. The matching private cockpit update is not published. |
-| Outcome cohort evidence-sufficiency gate v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | The approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only. The matching private cockpit update is not published. |
-| Outcome cohort threshold contract v1 | `HUMAN_APPROVED_API_DEPLOYED_PRIVATE_UI_PENDING` | The explicit `2026-08-25` approval is preserved in a schema-validated contract and deployed API constants; it grants no causal, value, Learning, model, policy, or production authority. The matching private cockpit update is not published. |
-| Outcome cohort evidence-gap explainer v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | The API reports exact non-negative sample and result-state gaps to the approved 20/2 targets; it cannot recommend collection, create Outcomes, advance lifecycle dates, or expand comparison authority. The matching private cockpit update is not published. |
-| Eligible Outcome cohort comparison view v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | At least two independently eligible cohorts are required before the API returns side-by-side status percentages and effect ranges; no ranking, preference, causal/statistical superiority, or Action recommendation is produced. The matching private cockpit update is not published. |
-| Outcome cohort comparison provenance drill-down v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | Returned comparison aggregates trace to their immutable Decision binding, Sydney cutoff, evidence class, aggregation schema, and threshold contract without exposing entity identifiers. The matching private cockpit update is not published. |
-| Outcome cohort comparison fingerprint v1 | `API_DEPLOYED_PRIVATE_UI_PENDING` | Returned comparison aggregates carry a deterministic SHA-256 digest; it is unsigned and proves neither source authenticity nor business validity. The matching browser verifier is not published. |
-| Private cockpit comparison fingerprint verifier v1 | `FIX_IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED` | Browser Web Crypto recomputes each digest and withholds covered metrics until verification succeeds. The result type now binds `VERIFIED` to `MATCH` and `MISMATCH` to non-match reasons; lint, internal production build, and all five frontend tests pass, but the corrected cockpit is not published. |
-| Comparison fingerprint verification diagnostics v1 | `FIX_IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED` | Every browser result carries one bounded local reason code; mismatch codes expose no raw error or covered evidence and create no telemetry or persistence. The corrected cockpit is not published. |
-| Bounded local comparison re-verification v1 | `FIX_IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED` | Only transient browser failures receive one same-response local retry; structural failures cannot retry, content stays hidden, and no network or storage is used. The corrected cockpit is not published. |
-| Outcome comparison envelope runtime validator v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED` | The client validates a present comparison envelope before React or per-cohort verification can use it; malformed envelopes fail the Outcome load closed. The corrected cockpit is not published. |
+| `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_VERIFIED_NOT_RUNTIME_OBSERVED` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. The Generator, authenticated reader API, and private cockpit are deployed and the read/RBAC boundaries passed verification, but the Generator has not been invoked and no bound runtime proposal has been observed. |
+| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_VERIFIED_NOT_RUNTIME_OBSERVED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row. The additive staging migration passed all six checks; the independent Generator and both private readers are deployed and verified, but the Generator has not been invoked and no bound runtime proposal has been observed. |
+| Decision Truth private-staging rollout handoff | `PRIVATE_COCKPIT_DEPLOYED_RUNTIME_AND_RBAC_VERIFIED_GENERATOR_NOT_INVOKED` | Operations API run `32973297196` deployed commit `a3fe692`; fix commit `2627da6` passed CI run `32975380386`, and the named human published the corrected private cockpit. The read-only staging verifier and four-role matrix passed, and all four temporary users were removed. No lifecycle invocation, runtime binding, operational Action mutation, schedule, alias, Pages, or production change is claimed. |
+| Outcome Review decision provenance v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The authenticated API and private cockpit expose each cutoff-eligible Outcome's nullable immutable Decision binding; legacy bindings remain null and effects remain synthetic and non-causal. Reader and four-role contracts passed, but no eligible bound Decision cohort was observed. |
+| Decision-contract Outcome cohort summary v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed private readers separately aggregate observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed and remain descriptive only. No eligible bound cohort was returned. |
+| Outcome cohort evidence-sufficiency gate v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only. Verification found no eligible comparison cohort. |
+| Outcome cohort threshold contract v1 | `HUMAN_APPROVED_DEPLOYED_STAGING_CONTRACT_VERIFIED` | The explicit `2026-08-25` approval is preserved in a schema-validated contract and deployed private readers; it grants no causal, value, Learning, model, policy, or production authority. |
+| Outcome cohort evidence-gap explainer v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed private readers report exact non-negative sample and result-state gaps to the approved 20/2 targets; they cannot recommend collection, create Outcomes, advance lifecycle dates, or expand comparison authority. |
+| Eligible Outcome cohort comparison view v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | At least two independently eligible cohorts are required before the deployed private readers return side-by-side status percentages and effect ranges. No eligible comparison was observed and no ranking, preference, causal/statistical superiority, or Action recommendation is produced. |
+| Outcome cohort comparison provenance drill-down v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | Any returned comparison traces to its immutable Decision binding, Sydney cutoff, evidence class, aggregation schema, and threshold contract without exposing entity identifiers. The contract passed, but no eligible comparison was exercised. |
+| Outcome cohort comparison fingerprint v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | Any returned comparison carries a deterministic SHA-256 digest; it is unsigned and proves neither source authenticity nor business validity. The deployed contract passed, but no eligible comparison digest was exercised. |
+| Private cockpit comparison fingerprint verifier v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | Browser Web Crypto recomputes each digest and withholds covered metrics until verification succeeds. Fix commit `2627da6` binds `VERIFIED` to `MATCH` and `MISMATCH` to non-match reasons; local tests, CI, private publication, and staging contract verification passed, but no eligible comparison was available to exercise a digest. |
+| Comparison fingerprint verification diagnostics v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | Every browser result carries one bounded local reason code; mismatch codes expose no raw error or covered evidence and create no telemetry or persistence. The corrected cockpit is deployed, but no eligible comparison exercised this path. |
+| Bounded local comparison re-verification v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | Only transient browser failures receive one same-response local retry; structural failures cannot retry, content stays hidden, and no network or storage is used. The corrected cockpit is deployed, but no eligible comparison exercised this path. |
+| Outcome comparison envelope runtime validator v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | The deployed client validates a present comparison envelope before React or per-cohort verification can use it; malformed envelopes fail the Outcome load closed. No eligible comparison envelope was available for runtime exercise. |
 | Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
 | Learning operation | `DORMANT_EVIDENCE_GATED` | `implementation_status=IMPLEMENTED_VERIFIED`, `operational_status=DORMANT`, `evidence_status=INSUFFICIENT_ELIGIBLE_OUTCOMES`, and `progression_status=EVIDENCE_GATED`; current inspected state remains 1/20 |
 
@@ -160,25 +160,27 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Decision Truth private cockpit staging release
+## Active slice — Decision Truth private staging reader closeout
 
-**Status:** `API_DEPLOYED_FRONTEND_FIX_LOCALLY_VERIFIED_NOT_PUBLISHED`
+**Status:** `PRIVATE_COCKPIT_DEPLOYED_RUNTIME_AND_RBAC_VERIFIED_GENERATOR_NOT_INVOKED`
 
 The Decision Brief producer remains deployed and uninvoked. Named-human plan
-run `32972934184` completed from commit `a3fe692` with the deploy step skipped;
-separately authorized run `32973297196` then deployed the authenticated
-Operations API successfully. The first private-cockpit release attempt failed
-during local Next.js type checking before archive creation or any Amplify
-deployment. The verification result is now a discriminated union, so a
-`MISMATCH` can only index a non-`MATCH` diagnostic. Frontend lint, the internal
-Next.js production build, and all five rendered-contract tests pass locally.
+run `32972934184` completed from commit `a3fe692` with deployment skipped;
+separately authorized run `32973297196` deployed the authenticated Operations
+API. Fix commit `2627da6` passed ordinary CI run `32975380386`, after which the
+named human published the matching private cockpit. Its protected origin and
+deployment identifiers were not printed.
 
-The next executable step is source delivery of the fix followed by a separately
-human-owned rerun of the private Amplify release. Read-only contract verification
-comes after successful publication; four-role verification remains a separate
-write-capable action because it creates and removes temporary identities. No
-bound runtime Action has been observed, and this slice grants no lifecycle
-invocation, Action mutation, alias, schedule, Pages, or production authority.
+The read-only staging verifier passed every configured API, frontend, CORS,
+alarm, logging, and redaction check. The separately human-run four-role matrix
+then passed its reader, mutation-denial, response-contract, temporal,
+governance, and redaction checks; all four temporary users were removed. The
+observed Action evidence remained `ACTION_OPEN` with zero audit events and no
+Outcome, Learning remained `INSUFFICIENT_ELIGIBLE_OUTCOMES` at 1/20 with no
+proposal, and label readiness had no ready provider group or eligible target.
+No bound runtime Action or eligible Decision comparison cohort was observed.
+This closeout grants no lifecycle invocation, operational Action mutation,
+alias, schedule, Pages, policy, model, or production authority.
 
 ## Recently completed — Independent lifecycle Generator stack
 
@@ -676,7 +678,8 @@ the bounded Outcome card list or synthetic averages for causal evidence.
 At this feature-implementation checkpoint, the Action schema migration was
 applied and six-check validated while both readers were still undeployed. The
 later Operations API release is recorded in the current summary and Active
-Slice above; the matching private frontend remains unpublished. No table,
+Slice above; the matching private frontend is deployed and its reader/RBAC
+boundaries passed verification, but no eligible bound cohort was observed. No table,
 Action, Outcome, Learning-threshold, model, policy, Pages, production, causal,
 or financial-value authority followed from the reader release.
 
@@ -708,7 +711,8 @@ synthetic result instead of grouping evidence only by broad Action type.
 At this feature-implementation checkpoint, the Action schema migration was
 applied and six-check validated while both readers were still undeployed. The
 later Operations API release is recorded in the current summary and Active
-Slice above; the matching private frontend remains unpublished. No Action or
+Slice above; the matching private frontend is deployed and its reader/RBAC
+boundaries passed verification, but no eligible bound cohort was observed. No Action or
 Outcome mutation, Learning-threshold change, Pages publication, production
 change, or causal or financial-value claim followed from the reader release.
 
@@ -2060,14 +2064,12 @@ done.
 
 ## Next Up
 
-1. The independent Generator and authenticated Operations API staging releases
-   are complete; the Generator has not been invoked. Deliver the locally
-   verified frontend type fix, then make a separate human decision whether to
-   rerun the private Amplify publication. After a successful publication, run
-   the read-only staging contract verifier. Four-role verification remains
-   separate because it creates temporary users. Source-control delivery grants
-   no frontend publication, lifecycle invocation, or runtime Action authority.
-2. Recommended next product feature after that staging evidence:
+1. The independent Generator, authenticated Operations API, and private
+   cockpit releases are complete. Read-only staging and four-role verification
+   passed, and all four temporary users were removed. The Generator remains
+   deliberately uninvoked; no automatic lifecycle continuation or runtime
+   Action creation follows from this reader closeout.
+2. Recommended next product feature after this staging evidence:
    `COST_ANOMALY` Decision Brief v1. It should reuse the existing immutable
    binding and Outcome provenance chain, expose exact rate-card/source version
    provenance, and keep expected benefit `NOT_ESTIMATED` unless a separately
