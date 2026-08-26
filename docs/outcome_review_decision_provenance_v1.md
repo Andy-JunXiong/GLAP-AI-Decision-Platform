@@ -1,6 +1,7 @@
 # Outcome Review decision provenance v1
 
-**Status:** implemented and locally verified; not deployed
+**Status:** deployed and reader/RBAC verified in private staging; no eligible
+bound cohort observed; COST_ANOMALY extension source-delivered but not deployed
 
 This contract lets an authenticated reviewer see which immutable Decision
 Brief proposal produced the Action connected to each cutoff-eligible Outcome.
@@ -26,9 +27,11 @@ The API does not copy Decision provenance into the Outcome table. This keeps
 the immutable Action proposal as the single source and avoids creating a
 second history that could drift.
 
-Legacy Actions and `COST_ANOMALY` Actions return null provenance because they
-have no implemented Decision Brief binding. The cockpit labels them as legacy
-or unbound rather than inferring or backfilling a source.
+Legacy and pre-release `COST_ANOMALY` Actions return null provenance and are
+never backfilled. A future newly generated eligible Cost Action may expose the
+exact `decision-brief.v1` / `REVIEW_COST` pair only after separately authorized
+producer and reader releases. The cockpit labels all null rows as legacy or
+unbound rather than inferring a source.
 
 ## Evaluation and governance boundary
 
@@ -44,9 +47,11 @@ type. They establish traceability, not causality. In particular, this contract:
 
 The Action-side fields depend on the additive staging migration in
 `sql/16_decision_action_binding_v1.sql`. A named human applied it and all six
-aggregate checks returned zero on `2026-08-25`. The producer, API, and cockpit
-remain undeployed; local tests establish query, API-type, cockpit-disclosure,
-legacy-null, and drift behavior only.
+aggregate checks returned zero on `2026-08-25`. The deployed private readers
+passed read-only and four-role verification, while the Generator remained
+uninvoked and no eligible bound cohort was observed. Cost producer/API/cockpit
+revisions are source-delivered but not deployed. Tests establish query, API-type, cockpit-disclosure,
+legacy-null, and drift behavior without creating runtime evidence.
 
 The next repository-local consumer is the versioned Decision-contract Outcome
 cohort summary. It uses these two nullable provenance fields as governed group

@@ -17,6 +17,8 @@ from typing import Any, Iterable
 UTC = timezone.utc
 OUTCOME_STATES = {"SUCCESSFUL", "PARTIALLY_SUCCESSFUL", "FAILED", "INCONCLUSIVE"}
 DECISION_BRIEF_VERSION = "decision-brief.v1"
+COST_SOURCE_CONTRACT_VERSION = "stateful-cost-variance.v1"
+COST_METRIC_NAME = "cost_variance_pct"
 SLA_DELAY_METRICS = {
     "ORIGIN_GATE_IN": "gate_in_delay_hours",
     "ORIGIN_HANDOVER": "origin_delay_hours",
@@ -85,14 +87,20 @@ def propose_actions(alerts: Iterable[dict[str, Any]], policy_version: str) -> li
     for alert in alerts:
         if alert.get("status") != "OPEN":
             continue
-        action_type = "EXPEDITE_MILESTONE" if alert["alert_type"] == "SLA_BREACH" else "REVIEW_COST"
+        alert_type = str(alert.get("alert_type") or "")
+        if alert_type == "SLA_BREACH":
+            action_type = "EXPEDITE_MILESTONE"
+        elif alert_type == "COST_ANOMALY":
+            action_type = "REVIEW_COST"
+        else:
+            raise ValueError("Unsupported Decision Brief alert type")
         action_id = _fingerprint("ACTION", alert["alert_fingerprint"], policy_version)
         decision_binding = {
             "decision_brief_version": None,
             "selected_alternative": None,
             "selection_rationale": None,
         }
-        if alert["alert_type"] == "SLA_BREACH":
+        if alert_type == "SLA_BREACH":
             dimension = str(alert.get("alert_dimension") or "")
             metric_name = str(alert.get("metric_name") or "")
             if (
@@ -122,6 +130,37 @@ def propose_actions(alerts: Iterable[dict[str, Any]], policy_version: str) -> li
                 "selection_rationale": (
                     f"Review an expedite intervention for {dimension}; the governed "
                     f"delay is {breach_margin:g} hours above threshold."
+                ),
+            }
+        elif alert_type == "COST_ANOMALY":
+            if (
+                alert.get("alert_grain") != "SHIPMENT_COST"
+                or alert.get("alert_dimension") != "TOTAL_COST"
+                or alert.get("metric_name") != COST_METRIC_NAME
+            ):
+                raise ValueError("COST_ANOMALY grain, dimension, and metric do not match")
+            if alert.get("severity") not in SLA_SEVERITIES:
+                raise ValueError("Unsupported COST_ANOMALY severity")
+            try:
+                metric_value = float(alert["metric_value"])
+                threshold_value = float(alert["threshold_value"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError("COST_ANOMALY values must be numeric") from exc
+            if (
+                not math.isfinite(metric_value)
+                or not math.isfinite(threshold_value)
+                or metric_value < 0
+                or threshold_value < 0
+                or metric_value <= threshold_value
+            ):
+                raise ValueError("COST_ANOMALY must exceed a non-negative threshold")
+            breach_margin = round(metric_value - threshold_value, 2)
+            decision_binding = {
+                "decision_brief_version": DECISION_BRIEF_VERSION,
+                "selected_alternative": action_type,
+                "selection_rationale": (
+                    f"Review the governed cost basis under {COST_SOURCE_CONTRACT_VERSION}; "
+                    f"total cost variance is {breach_margin:g} percentage points above threshold."
                 ),
             }
         actions.append({

@@ -1,8 +1,8 @@
 # Decision Truth private staging rollout
 
-**Status:** staging schema, independent one-resource stack, authenticated
-Operations API, and private cockpit deployed; read-only and four-role checks
-passed; Generator not invoked
+**Status:** existing SLA schema, independent one-resource stack, authenticated
+Operations API, and private cockpit deployed and verified; COST_ANOMALY v1
+source-delivered but not released; Generator not invoked
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -68,9 +68,12 @@ steps 1, 3, 4, 5, or the write-capable role-verification step.
 The named human applied the two additive statements and ran the aggregate-only
 validator on `2026-08-25`. The Athena result completed with exactly six rows;
 all six checks returned zero. This establishes the three Action-table columns,
-the three current-view columns, no partial or invalid v1 binding, no unexpected
-Cost binding, and table/view agreement at that query time. It does not prove a
-new bound Action exists.
+the three current-view columns, no partial or invalid v1 binding, no Cost
+binding under the then-deployed SLA-only producer, and table/view agreement at
+that query time. It does not prove a new bound Action exists. The repository
+validator now accepts only the exact `SLA_BREACH` / `EXPEDITE_MILESTONE` and
+`COST_ANOMALY` / `REVIEW_COST` v1 pairs; that validator revision has not run in
+staging.
 
 Manual workflow run `32853867334` from commit `978beb8` then completed with
 `action=plan`, `execution_mode=OPERATIONAL`, an empty scenario ID, and
@@ -127,17 +130,20 @@ Decision comparison cohort, or browser fingerprint exercise is claimed.
 ## Runtime evidence boundary
 
 Schema and reader checks do not prove that a bound Action exists. Existing
-Actions intentionally remain legacy-null. End-to-end runtime proof requires a
-later, separately authorized `OPERATIONAL` / `ACTUAL_CALENDAR` lifecycle
-continuation that naturally generates an eligible new `SLA_BREACH` proposal.
+Actions intentionally remain legacy-null. Existing `COST_ANOMALY` Actions remain unbound
+and are never backfilled. End-to-end runtime proof requires separately
+authorized producer/API/cockpit releases followed by an `OPERATIONAL` /
+`ACTUAL_CALENDAR` lifecycle continuation that naturally generates an eligible
+new `SLA_BREACH` or `COST_ANOMALY` proposal.
 Do not create, backfill, or mutate an Action merely to satisfy the test.
 
 The runtime verifier may then report only aggregate counts showing that:
 
 - the new Action has either all three binding fields or none;
-- any `decision-brief.v1` binding is `SLA_BREACH` /
+- any SLA `decision-brief.v1` binding is `SLA_BREACH` /
   `EXPEDITE_MILESTONE`;
-- every `COST_ANOMALY` Action remains unbound;
+- every newly bound `COST_ANOMALY` Action is `decision-brief.v1` /
+  `REVIEW_COST`, while pre-release Cost Actions may remain legacy-null;
 - the current view matches the immutable proposal row.
 
 This remains synthetic staging engineering evidence. It proves no execution,

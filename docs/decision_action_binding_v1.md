@@ -1,6 +1,7 @@
 # Decision-to-Action binding v1
 
-**Status:** staging schema and producer deployed; producer not invoked; readers not deployed
+**Status:** staging schema, SLA producer, and private readers deployed and
+verified; producer not invoked; COST_ANOMALY extension source-delivered but not deployed
 
 This contract makes a newly generated governed Action prove which implemented
 Decision Brief recommendation produced its immutable proposal. It does not add
@@ -30,6 +31,21 @@ shipment-milestone grain, an exact milestone/delay-metric pair, a supported
 severity, finite non-negative values, and an actual threshold breach. It will
 not stamp a `decision-brief.v1` binding onto an invalid SLA proposal.
 
+For a valid open `COST_ANOMALY`, the source-delivered extension reuses the same immutable
+fields:
+
+```json
+{
+  "decision_brief_version": "decision-brief.v1",
+  "selected_alternative": "REVIEW_COST",
+  "selection_rationale": "Review the governed cost basis under stateful-cost-variance.v1; total cost variance is <margin> percentage points above threshold."
+}
+```
+
+The Cost boundary requires exact shipment-cost grain, total-cost dimension,
+`cost_variance_pct` metric, supported severity, finite non-negative values, and
+a strict threshold breach. It does not infer the unavailable rate-card version.
+
 ## Human review binding
 
 A human decision cannot truthfully exist when the system first creates a
@@ -51,8 +67,9 @@ Alert + deterministic Decision Brief
 
 - Existing Actions are not backfilled. Missing binding fields mean `legacy
   proposal — binding unavailable`, not an inferred Decision Brief.
-- `COST_ANOMALY` remains unbound because no Cost Decision Brief contract has
-  been implemented; its three binding fields remain null.
+- Existing and pre-release `COST_ANOMALY` Actions remain unbound and are never
+  backfilled. Only a future newly generated eligible Cost proposal may receive
+  the exact `decision-brief.v1` / `REVIEW_COST` binding.
 - `sql/16_decision_action_binding_v1.sql` is an additive migration for isolated
   staging. A named human applied it on `2026-08-25`; the following aggregate
   validator returned all six checks with zero failures.
@@ -65,12 +82,16 @@ Alert + deterministic Decision Brief
 
 Local tests establish persistence, API, cockpit, immutability, legacy-null, and
 independent one-resource Generator release behavior. The staging schema is
-applied and validated. Named-human refactor run `32948002162` moved only the
+applied and the earlier SLA-only validator passed. The revised source-delivered validator
+allows only the exact SLA and Cost pairs and has not run in staging.
+Named-human refactor run `32948002162` moved only the
 Generator into its independent stack; plan run `32951563950` validated the
 exact-one non-replacing release without upload; separately authorized deploy
 run `32956001803` deployed the Generator from commit `9eb031f`. Read-only
 acceptance verified the one-resource parameter-free template, matching
 artifact/Lambda SHA-256, preserved execution role, zero aliases, and no
 shared-stack deployment-window event. The Generator was not invoked, so no
-bound runtime Action was observed. No Action was created or mutated, and no
-staging reader, production, or public surface was deployed.
+bound runtime Action was observed. The SLA readers and private cockpit are
+deployed and verified; the Cost producer/API/UI revision is source-delivered
+but not deployed. No Action was created or mutated, and no production or public
+surface changed.

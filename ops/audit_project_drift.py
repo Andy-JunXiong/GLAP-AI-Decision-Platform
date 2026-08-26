@@ -1730,6 +1730,102 @@ def check_action_outcome_evidence_chain_boundary(root: Path) -> list[CheckResult
     ]
 
 
+def check_cost_anomaly_decision_brief_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "engine": "lambda/glap_governed_closed_loop.py",
+        "api": "lambda/glap_operations_api.py",
+        "client": "decision-brief-demo/app/operations-api.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "contract": "docs/cost_anomaly_decision_brief_v1.md",
+        "engine_tests": "tests/test_governed_closed_loop.py",
+        "adapter_tests": "tests/test_lifecycle_athena_adapter.py",
+        "api_tests": "tests/test_operations_api.py",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    engine_bounded = all(
+        marker in text["engine"]
+        for marker in (
+            'COST_SOURCE_CONTRACT_VERSION = "stateful-cost-variance.v1"',
+            'COST_METRIC_NAME = "cost_variance_pct"',
+            'action_type = "REVIEW_COST"',
+            '"selected_alternative": action_type',
+            "COST_ANOMALY must exceed a non-negative threshold",
+        )
+    )
+    api_bounded = all(
+        marker in text["api"]
+        for marker in (
+            "def build_cost_anomaly_decision_brief",
+            '"decision_type": "COST_ANOMALY"',
+            '"source_contract_version": COST_SOURCE_CONTRACT_VERSION',
+            '"rate_card_version": None',
+            '"rate_card_version_status": "UNAVAILABLE_IN_ALERT_CONTRACT"',
+            '"action_type": "REVIEW_COST"',
+            '"status": "NOT_ESTIMATED"',
+            '"execution_authorized": False',
+            "def build_decision_brief_v1",
+        )
+    )
+    client_bounded = all(
+        marker in text["client"]
+        for marker in (
+            'decision_type: "COST_ANOMALY"',
+            'source_contract_version: "stateful-cost-variance.v1"',
+            'rate_card_version: null',
+            'rate_card_version_status: "UNAVAILABLE_IN_ALERT_CONTRACT"',
+            'action_type: "REVIEW_COST" | "MONITOR_COST" | "NO_ACTION"',
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "Review the governed response to a cost anomaly.",
+            "Rate-card version unavailable in Alert contract",
+            "No rate-card identifier is inferred.",
+            "This brief itself performs no mutation.",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "Existing Cost Actions remain legacy-null and are never backfilled",
+            "rate_card_version_status",
+            "UNAVAILABLE_IN_ALERT_CONTRACT",
+            "monetary_value` stays `null`",
+            "No AWS call, Generator invocation, Action mutation, deployment",
+        )
+    )
+    tests_bounded = (
+        "test_cost_action_preserves_decision_brief_binding_and_source_contract"
+        in text["engine_tests"]
+        and "test_cost_action_binding_flows_through_adapter"
+        in text["adapter_tests"]
+        and "test_cost_anomaly_decision_brief_is_deterministic_and_not_estimated"
+        in text["api_tests"]
+        and "test_viewer_risk_response_includes_governed_cost_decision_brief"
+        in text["api_tests"]
+    )
+    return [
+        _result(
+            "cost_anomaly_decision_brief_boundary",
+            "governance",
+            engine_bounded
+            and api_bounded
+            and client_bounded
+            and page_bounded
+            and contract_bounded
+            and tests_bounded,
+            "COST_ANOMALY Decision Brief remains deterministic, source-versioned, rate-card-honest, NOT_ESTIMATED, human-reviewed, and locally authority-bounded.",
+            "COST_ANOMALY Decision Brief lost its exact input, source-version, unavailable-rate-card, no-value, fail-closed, test, or authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "migration": "sql/16_decision_action_binding_v1.sql",
@@ -1785,7 +1881,7 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
                 "missing_action_current_binding_columns",
                 "partial_action_binding",
                 "invalid_decision_brief_v1_binding",
-                "unexpected_cost_action_binding",
+                "invalid_cost_decision_brief_v1_binding",
                 "current_view_binding_mismatch",
                 "SELECT check_name, failure_count",
             )
@@ -1802,7 +1898,8 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             "Aggregate validation checks: 6",
             "Release order: schema, validation, lifecycle producer, Operations API, private frontend, read-only verification",
             "Existing Actions backfilled: False",
-            "COST_ANOMALY binding enabled: False",
+            "COST_ANOMALY binding implemented locally: True",
+            "COST_ANOMALY staging producer released: False",
             "AWS session inspected: False",
             "Athena query started: False",
             "Schema migration applied: False",
@@ -1924,7 +2021,8 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             "Each numbered write is a separate human authority decision",
             "deploying only readers cannot create truthful bindings",
             "Do not create, backfill, or mutate an Action merely to satisfy the test",
-            "every `COST_ANOMALY` Action remains unbound",
+            "Existing `COST_ANOMALY` Actions remain unbound",
+            "every newly bound `COST_ANOMALY` Action",
             "all six checks returned zero",
             "`deploy-release`",
             "independent one-resource stack",
@@ -1996,7 +2094,8 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "establish traceability, not causality",
             "does not add an Outcome, Action, approval, completion, or activation write",
             "applied it and all six aggregate checks returned zero",
-            "producer, API, and cockpit remain undeployed",
+            "deployed private readers passed read-only and four-role verification",
+            "Cost producer/API/cockpit revisions are source-delivered but not deployed",
         )
     )
     return [
@@ -3489,6 +3588,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_public_private_boundary(root))
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
+    checks.extend(check_cost_anomaly_decision_brief_boundary(root))
     checks.extend(check_decision_truth_staging_rollout_boundary(root))
     checks.extend(check_outcome_decision_provenance_boundary(root))
     checks.extend(check_decision_contract_outcome_cohort_boundary(root))

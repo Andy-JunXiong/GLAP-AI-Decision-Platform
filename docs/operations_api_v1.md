@@ -35,30 +35,37 @@ basis, and excludes later-dated rows. `status` may be `OPEN` or `RESOLVED`.
 The `alert_fingerprint` in each item is the same governed key carried into a
 downstream Action.
 
-For each current `OPEN` `SLA_BREACH` at `SHIPMENT_MILESTONE` grain, the same
-response now includes a `decision_brief` using the versioned
-`decision-brief.v1` contract. It validates the exact milestone/delay-metric
-pair, derives delay exposure and urgency, preserves the existing deterministic
-`EXPEDITE_MILESTONE` recommendation, and presents expedite, monitor, and no
-action as bounded alternatives. Resolved Alerts and `COST_ANOMALY` receive
+For each current valid `OPEN` `SLA_BREACH` or `COST_ANOMALY`, the same response
+includes a `decision_brief` using the versioned `decision-brief.v1` contract.
+SLA validates the exact shipment-milestone/delay-metric pair and selects
+`EXPEDITE_MILESTONE`. Cost validates `SHIPMENT_COST` / `TOTAL_COST` /
+`cost_variance_pct` and selects `REVIEW_COST`. Both derive a bounded breach
+margin, expose monitor and no-action alternatives, and fail closed on invalid
+or mismatched inputs. Resolved and unsupported Alerts receive
 `decision_brief: null`.
 
-The brief reports no-action exposure in delay hours. Its expected benefit is
-`NOT_ESTIMATED`, its `assumption_set_version` is `null`, and every execution,
-Outcome, and financial-value authority flag is false. The authenticated
-cockpit can display the brief and navigate to the existing governed Action
-Board, but reading the brief creates no Action or mutation. See
-[`decision_brief_v1.md`](decision_brief_v1.md).
+SLA reports no-action exposure in delay hours; Cost reports variance and
+percentage-point margin without inventing currency. Cost binds the exact
+`stateful-cost-variance.v1` calculation source and explicitly reports the
+rate-card version as unavailable in the current Alert contract. Both keep
+expected benefit `NOT_ESTIMATED`, `assumption_set_version = null`, and all
+execution, Outcome, and financial-value authority false. The authenticated
+cockpit can display either brief and navigate to the existing governed Action
+Board, but reading a brief creates no Action or mutation. See
+[`decision_brief_v1.md`](decision_brief_v1.md) and
+[`cost_anomaly_decision_brief_v1.md`](cost_anomaly_decision_brief_v1.md).
 
 `GET /v1/actions?status=PROPOSED&limit=50` returns at most 100 operational,
 actual-calendar Action records. The v1 response is
 `{"schema_version":"operations-api.v1","items":[],"next_token":null}`.
 Supported states include `PROPOSED`, `EDITED`, `APPROVED`, `REJECTED`, and
 `COMPLETED`; assignment fields are `action_owner` and `action_due_date`.
-New eligible SLA proposals also expose immutable `decision_brief_version`,
-`selected_alternative`, and `selection_rationale`. These values describe the
-deterministic proposal, not human approval. Existing and `COST_ANOMALY`
-Actions may return null binding fields and are never backfilled by inference.
+New eligible SLA proposals expose immutable `decision_brief_version`,
+`selected_alternative`, and `selection_rationale`. The source-delivered Cost extension
+uses the same fields with `REVIEW_COST` and includes the exact calculation
+source version in its rationale. These values describe the deterministic
+proposal, not human approval. Existing Actions, including pre-release Cost
+Actions, may return null binding fields and are never backfilled by inference.
 
 `GET /v1/actions/{action_id}/evidence` returns one authenticated, read-only
 Action–Outcome evidence chain. It joins the immutable Action table to its
@@ -82,8 +89,10 @@ audit events. The later named-human reason comes only from an append-only
 `EDIT`, `APPROVE`, or `REJECT` event; the API does not pretend that a human
 decision existed at proposal-generation time. The additive schema and view
 change is defined in `sql/16_decision_action_binding_v1.sql`; a named human
-applied it and all six aggregate checks returned zero on `2026-08-25`. This API
-projection is still undeployed. See
+applied it and all six aggregate checks returned zero on `2026-08-25`. The SLA
+projection and private cockpit are deployed and reader/RBAC verified; the Cost
+extension is source-delivered but not deployed, and the revised aggregate validator
+has not run in staging. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
@@ -98,8 +107,10 @@ Each row now also reads nullable `decision_brief_version` and
 `selected_alternative` from the immutable Action proposal joined by the
 existing `action_id`. Both sides of the read-time join must remain operational,
 actual-calendar, and cutoff-eligible. The fields are not copied into the
-Outcome table. Legacy and `COST_ANOMALY` Actions remain null rather than being
-backfilled by inference. This enables private grouping by proposal contract but
+Outcome table. Legacy and pre-release `COST_ANOMALY` Actions remain null rather
+than being backfilled by inference; a future eligible Cost proposal may carry
+the exact new binding only after separately authorized source release and
+Generator invocation. This enables private grouping by proposal contract but
 does not establish human approval, execution, causality, real logistics
 performance, or financial value. See
 [`outcome_review_decision_provenance_v1.md`](outcome_review_decision_provenance_v1.md).

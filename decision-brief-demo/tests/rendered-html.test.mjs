@@ -259,6 +259,14 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /risk\.decision_brief \? openBrief\(risk\.decision_brief\)/);
   assert.match(page, /function OperationalDecisionBrief/);
   assert.match(page, /Expected benefit" value="NOT ESTIMATED"/);
+  assert.match(client, /decision_type: "COST_ANOMALY"/);
+  assert.match(client, /source_contract_version: "stateful-cost-variance\.v1"/);
+  assert.match(client, /rate_card_version_status: "UNAVAILABLE_IN_ALERT_CONTRACT"/);
+  assert.match(client, /action_type: "REVIEW_COST" \| "MONITOR_COST" \| "NO_ACTION"/);
+  assert.match(page, /Review the governed response to a cost anomaly/);
+  assert.match(page, /Rate-card version unavailable in Alert contract/);
+  assert.match(page, /No rate-card identifier is inferred/);
+  assert.match(page, /Deterministic \$\{contract\.decision_type\} rule/);
   assert.match(page, /This brief itself performs no mutation/);
   assert.match(page, /Bound to \$\{item\.decision_brief_version\}/);
   assert.match(page, /selected deterministic alternative/);

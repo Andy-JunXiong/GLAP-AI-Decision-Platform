@@ -25,15 +25,35 @@ export type OperationsAction = {
 
 export type RiskStatus = "OPEN" | "RESOLVED";
 
-export type DecisionBriefV1 = {
+type DecisionBriefBaseV1 = {
   schema_version: "decision-brief.v1";
-  decision_type: "SLA_BREACH";
   as_of_date: string;
   source: {
     execution_mode: "OPERATIONAL";
     time_basis: "ACTUAL_CALENDAR";
     evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_ALERT";
   };
+  urgency: {
+    status: "IMMEDIATE_REVIEW" | "REVIEW_WITHIN_4_HOURS" | "REVIEW_SAME_DAY" | "MONITOR";
+    basis: string;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  benefit_estimate: {
+    status: "NOT_ESTIMATED";
+    estimate_evidence_class: "NOT_ESTIMATED";
+    assumption_set_version: null;
+  };
+  governance: {
+    human_review_required: true;
+    execution_authorized: false;
+    outcome_observed: false;
+    financial_value_estimated: false;
+    deterministic_rule: true;
+  };
+};
+
+export type SlaDecisionBriefV1 = DecisionBriefBaseV1 & {
+  decision_type: "SLA_BREACH";
   risk: {
     severity: string;
     milestone: string;
@@ -46,11 +66,6 @@ export type DecisionBriefV1 = {
     breach_margin_hours: number;
     affected_shipments: 1;
     monetary_value: null;
-    evidence_class: "DERIVED_EXPOSURE";
-  };
-  urgency: {
-    status: "IMMEDIATE_REVIEW" | "REVIEW_WITHIN_4_HOURS" | "REVIEW_SAME_DAY" | "MONITOR";
-    basis: string;
     evidence_class: "DERIVED_EXPOSURE";
   };
   recommendation: {
@@ -70,19 +85,49 @@ export type DecisionBriefV1 = {
     monetary_value: null;
     evidence_class: "DERIVED_EXPOSURE";
   };
-  benefit_estimate: {
-    status: "NOT_ESTIMATED";
-    estimate_evidence_class: "NOT_ESTIMATED";
-    assumption_set_version: null;
+};
+
+export type CostDecisionBriefV1 = Omit<DecisionBriefBaseV1, "source"> & {
+  decision_type: "COST_ANOMALY";
+  source: DecisionBriefBaseV1["source"] & {
+    source_contract_version: "stateful-cost-variance.v1";
+    rate_card_version: null;
+    rate_card_version_status: "UNAVAILABLE_IN_ALERT_CONTRACT";
   };
-  governance: {
-    human_review_required: true;
-    execution_authorized: false;
-    outcome_observed: false;
-    financial_value_estimated: false;
-    deterministic_rule: true;
+  risk: {
+    severity: string;
+    cost_scope: "TOTAL_COST";
+    evidence_class: "OBSERVED_INPUT";
+  };
+  exposure: {
+    metric_name: "cost_variance_pct";
+    variance_pct: number;
+    threshold_pct: number;
+    breach_margin_pct: number;
+    affected_shipments: 1;
+    monetary_value: null;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  recommendation: {
+    action_type: "REVIEW_COST";
+    rationale: string;
+    evidence_class: "DERIVED_EXPOSURE";
+  };
+  alternatives: {
+    action_type: "REVIEW_COST" | "MONITOR_COST" | "NO_ACTION";
+    label: string;
+    recommended: boolean;
+  }[];
+  no_action_exposure: {
+    status: "DERIVED";
+    variance_pct_at_risk: number;
+    breach_margin_pct: number;
+    monetary_value: null;
+    evidence_class: "DERIVED_EXPOSURE";
   };
 };
+
+export type DecisionBriefV1 = SlaDecisionBriefV1 | CostDecisionBriefV1;
 
 export type OperationsRisk = {
   alert_fingerprint: string;

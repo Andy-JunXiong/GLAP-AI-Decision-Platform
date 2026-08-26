@@ -132,6 +132,25 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertIn("action.decision_brief_version", migration)
         self.assertNotIn("DROP TABLE", migration.upper())
 
+    def test_cost_action_binding_flows_through_adapter(self):
+        logical_date = date(2026, 8, 27)
+        signals = [{
+            "signal_fingerprint": "alert-cost", "shipment_id": "SHP-COST",
+            "signal_type": "COST_ANOMALY", "signal_grain": "SHIPMENT_COST",
+            "signal_dimension": "TOTAL_COST", "severity": "HIGH",
+            "metric_name": "cost_variance_pct", "metric_value": 28.0,
+            "threshold_value": 15.0,
+        }]
+        rows = adapter.build_closed_loop_rows(
+            logical_date, signals, [], [], [], [], set()
+        )
+        self.assertEqual(len(rows["actions"]), 1)
+        action = rows["actions"][0]
+        self.assertEqual(action["action_type"], "REVIEW_COST")
+        self.assertEqual(action["decision_brief_version"], "decision-brief.v1")
+        self.assertEqual(action["selected_alternative"], "REVIEW_COST")
+        self.assertIn("stateful-cost-variance.v1", action["selection_rationale"])
+
     def test_closed_loop_tables_use_temporal_scope_in_merge_keys(self):
         cases = (
             (adapter.ALERT_TABLE, adapter.ALERT_COLUMNS, ("temporal_scope_id", "alert_fingerprint", "dt")),

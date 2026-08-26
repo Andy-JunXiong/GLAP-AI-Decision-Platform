@@ -28,26 +28,32 @@ disclosure, and requires a repository backing source for modelled or runtime
 claims. This is a display/evidence contract, not a new operational component;
 it performs no network call, publication, deployment, or mutation.
 
-Decision Truth now has one narrow repository implementation. The authenticated
-Risk response derives `decision-brief.v1` only for current open
-`SLA_BREACH` shipment-milestone Alerts. It uses the Alert's governed delay,
-threshold, milestone, and severity to produce delay exposure, urgency, the
-existing deterministic `EXPEDITE_MILESTONE` recommendation, and bounded
-expedite/monitor/no-action alternatives. Expected benefit is
-`NOT_ESTIMATED`; no monetary exposure, intervention effect, execution, or
-Outcome is inferred. The private UI reads this contract and links onward to the
-existing Action Board without performing a mutation. The implementation is
-local and has not been deployed.
+Decision Truth has two deterministic `decision-brief.v1` contracts. The
+authenticated Risk response derives the deployed SLA contract for valid
+current open `SLA_BREACH` shipment-milestone Alerts and a source-delivered Cost extension
+for valid `COST_ANOMALY` shipment-total-cost Alerts. SLA selects
+`EXPEDITE_MILESTONE`; Cost selects `REVIEW_COST` from the exact governed
+variance/threshold inputs and binds calculation source
+`stateful-cost-variance.v1`. Because the persisted Alert does not carry a
+rate-card version, the Cost contract exposes that value as unavailable and
+never infers an identifier. Both include monitor/no-action alternatives and
+keep expected benefit `NOT_ESTIMATED`; no monetary exposure, intervention
+effect, execution, or Outcome is inferred. The private UI links onward to the
+Action Board without mutation. SLA is deployed and reader/RBAC verified; Cost
+is source-delivered but not deployed.
 
-Decision-to-Action binding now extends that local slice without introducing a
+Decision-to-Action binding now extends that source-delivered slice without introducing a
 new write surface. The lifecycle generator stamps the brief version,
 deterministic alternative, and rationale onto each newly eligible immutable
-SLA Action proposal. The authenticated queue and evidence chain read those
-fields beside append-only named-human review reasons. Legacy and cost Actions
-remain explicitly unbound. A named human applied the additive isolated-staging
+SLA Action proposal. The source-delivered Cost extension reuses the fields with
+`REVIEW_COST` and a source-versioned rationale. The authenticated queue and
+evidence chain read those fields beside append-only named-human review reasons.
+Legacy and pre-release Cost Actions remain explicitly unbound. A named human
+applied the additive isolated-staging
 migration on `2026-08-25`; all six aggregate checks returned zero. The
 independent producer is deployed and artifact/configuration verified but has
-not been invoked; the API, frontend, and runtime binding remain undeployed or
+not been invoked; the deployed SLA readers are verified, while the Cost
+producer/API/frontend revisions and every runtime binding remain undeployed or
 unobserved.
 
 The Decision Truth staging handoff makes the producer dependency explicit:

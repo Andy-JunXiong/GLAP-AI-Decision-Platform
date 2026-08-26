@@ -4,6 +4,20 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-27
+
+- Source-delivered `COST_ANOMALY` Decision Brief v1 as a deterministic
+  capability. Valid open shipment-cost Alerts now produce a bounded
+  `REVIEW_COST` proposal, monitor/no-action alternatives, exact
+  `stateful-cost-variance.v1` calculation provenance, and an immutable Action
+  binding. The private API/client contract explicitly marks the unavailable
+  rate-card version instead of inferring it, and both monetary exposure and
+  intervention benefit remain `NOT_ESTIMATED`. Existing Actions are never
+  backfilled; the exact-pair validator fails invalid SLA or Cost bindings
+  closed. This completion is repository-local only: it adds no deployment,
+  Generator invocation, Action mutation, policy/model authority, or production
+  claim.
+
 ## 2026-08-26
 
 - Implemented the Decision Truth generator-only staging release path. The new

@@ -269,11 +269,40 @@ class OperationsApiTests(unittest.TestCase):
         self.assertFalse(brief["governance"]["execution_authorized"])
         self.assertFalse(brief["governance"]["financial_value_estimated"])
 
-    def test_decision_brief_supports_only_valid_sla_breach_inputs(self):
-        cost_alert = {"alert_type": "COST_ANOMALY"}
-        self.assertIsNone(
-            api.build_sla_breach_decision_brief(cost_alert, "2026-08-25")
+    def test_cost_anomaly_decision_brief_is_deterministic_and_not_estimated(self):
+        alert = {
+            "alert_type": "COST_ANOMALY",
+            "alert_grain": "SHIPMENT_COST",
+            "status": "OPEN",
+            "alert_dimension": "TOTAL_COST",
+            "metric_name": "cost_variance_pct",
+            "metric_value": "28",
+            "threshold_value": "15",
+            "severity": "HIGH",
+        }
+        brief = api.build_cost_anomaly_decision_brief(alert, "2026-08-27")
+        self.assertEqual(brief["schema_version"], "decision-brief.v1")
+        self.assertEqual(brief["decision_type"], "COST_ANOMALY")
+        self.assertEqual(brief["exposure"]["breach_margin_pct"], 13.0)
+        self.assertEqual(
+            brief["source"]["source_contract_version"],
+            "stateful-cost-variance.v1",
         )
+        self.assertIsNone(brief["source"]["rate_card_version"])
+        self.assertEqual(
+            brief["source"]["rate_card_version_status"],
+            "UNAVAILABLE_IN_ALERT_CONTRACT",
+        )
+        self.assertEqual(brief["recommendation"]["action_type"], "REVIEW_COST")
+        self.assertIn("stateful-cost-variance.v1", brief["recommendation"]["rationale"])
+        self.assertEqual(
+            [alternative["action_type"] for alternative in brief["alternatives"]],
+            ["REVIEW_COST", "MONITOR_COST", "NO_ACTION"],
+        )
+        self.assertEqual(brief["benefit_estimate"]["status"], "NOT_ESTIMATED")
+        self.assertFalse(brief["governance"]["execution_authorized"])
+
+    def test_decision_brief_supports_only_valid_governed_inputs(self):
         invalid = {
             "alert_type": "SLA_BREACH",
             "alert_grain": "SHIPMENT_MILESTONE",
@@ -289,7 +318,25 @@ class OperationsApiTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cutoff"):
             api.build_sla_breach_decision_brief(invalid, "tomorrow")
 
-    def test_risk_response_attaches_brief_only_to_sla_breach(self):
+        invalid_cost = {
+            "alert_type": "COST_ANOMALY",
+            "alert_grain": "SHIPMENT_COST",
+            "status": "OPEN",
+            "alert_dimension": "TOTAL_COST",
+            "metric_name": "cost_variance_pct",
+            "metric_value": "15",
+            "threshold_value": "15",
+            "severity": "HIGH",
+        }
+        with self.assertRaisesRegex(ValueError, "must exceed"):
+            api.build_cost_anomaly_decision_brief(invalid_cost, "2026-08-27")
+        self.assertIsNone(
+            api.build_decision_brief_v1(
+                {"alert_type": "UNSUPPORTED"}, "2026-08-27"
+            )
+        )
+
+    def test_risk_response_attaches_both_governed_decision_briefs(self):
         rows = [
             {
                 "alert_type": "SLA_BREACH",
@@ -301,14 +348,26 @@ class OperationsApiTests(unittest.TestCase):
                 "threshold_value": "0",
                 "severity": "CRITICAL",
             },
-            {"alert_type": "COST_ANOMALY"},
+            {
+                "alert_type": "COST_ANOMALY",
+                "alert_grain": "SHIPMENT_COST",
+                "status": "OPEN",
+                "alert_dimension": "TOTAL_COST",
+                "metric_name": "cost_variance_pct",
+                "metric_value": "28",
+                "threshold_value": "15",
+                "severity": "HIGH",
+            },
         ]
         response = api.build_risk_response(rows, "2026-08-25")
         self.assertEqual(response["as_of_date"], "2026-08-25")
         self.assertEqual(
             response["items"][0]["decision_brief"]["decision_type"], "SLA_BREACH"
         )
-        self.assertIsNone(response["items"][1]["decision_brief"])
+        self.assertEqual(
+            response["items"][1]["decision_brief"]["decision_type"],
+            "COST_ANOMALY",
+        )
 
     def test_resolved_sla_breach_cannot_recommend_intervention(self):
         resolved = {
@@ -1045,6 +1104,33 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(
             body["items"][0]["decision_brief"]["benefit_estimate"]["status"],
             "NOT_ESTIMATED",
+        )
+
+    def test_viewer_risk_response_includes_governed_cost_decision_brief(self):
+        rows = [{
+            "alert_fingerprint": "alert-cost",
+            "alert_type": "COST_ANOMALY",
+            "alert_grain": "SHIPMENT_COST",
+            "alert_dimension": "TOTAL_COST",
+            "severity": "HIGH",
+            "status": "OPEN",
+            "metric_name": "cost_variance_pct",
+            "metric_value": "28",
+            "threshold_value": "15",
+        }]
+        fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+        with patch.dict(sys.modules, {"boto3": fake_boto3}), \
+             patch.object(api, "_query_rows", return_value=rows), \
+             patch.object(api, "_sydney_date", return_value="2026-08-27"):
+            response = api.lambda_handler(request(path="/v1/risks"), None)
+        body = json.loads(response["body"])
+        brief = body["items"][0]["decision_brief"]
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(brief["decision_type"], "COST_ANOMALY")
+        self.assertEqual(brief["recommendation"]["action_type"], "REVIEW_COST")
+        self.assertEqual(
+            brief["source"]["source_contract_version"],
+            "stateful-cost-variance.v1",
         )
 
     def test_viewer_can_read_outcomes(self):

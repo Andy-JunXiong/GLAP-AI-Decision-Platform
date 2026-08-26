@@ -66,6 +66,8 @@ PIPELINE_QUALITY_CHECKS = {
     "abnormal_volume_change",
     "stale_stage_outputs",
 }
+COST_SOURCE_CONTRACT_VERSION = "stateful-cost-variance.v1"
+COST_METRIC_NAME = "cost_variance_pct"
 SAFE_FAILURE_CATEGORIES = {
     "dependency_failure",
     "invalid_response",
@@ -587,6 +589,132 @@ def build_sla_breach_decision_brief(
     }
 
 
+def build_cost_anomaly_decision_brief(
+    alert: dict[str, str | None], as_of_date: str
+) -> dict[str, Any] | None:
+    """Build one deterministic cost-review brief without inventing value."""
+
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid Decision Brief cutoff date")
+    if alert.get("alert_type") != "COST_ANOMALY":
+        return None
+    if (
+        alert.get("status") != "OPEN"
+        or alert.get("alert_grain") != "SHIPMENT_COST"
+        or alert.get("alert_dimension") != "TOTAL_COST"
+        or alert.get("metric_name") != COST_METRIC_NAME
+    ):
+        return None
+    severity = str(alert.get("severity") or "")
+    if severity not in SLA_URGENCY:
+        raise ValueError("Unsupported COST_ANOMALY severity")
+    try:
+        metric_value = float(str(alert.get("metric_value")))
+        threshold_value = float(str(alert.get("threshold_value")))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("COST_ANOMALY values must be numeric") from exc
+    if (
+        not math.isfinite(metric_value)
+        or not math.isfinite(threshold_value)
+        or metric_value < 0
+        or threshold_value < 0
+        or metric_value <= threshold_value
+    ):
+        raise ValueError("COST_ANOMALY must exceed a non-negative threshold")
+    breach_margin = round(metric_value - threshold_value, 2)
+    rationale = (
+        f"Review the governed cost basis under {COST_SOURCE_CONTRACT_VERSION}; "
+        f"total cost variance is {breach_margin:g} percentage points above threshold."
+    )
+    return {
+        "schema_version": "decision-brief.v1",
+        "decision_type": "COST_ANOMALY",
+        "as_of_date": as_of_date,
+        "source": {
+            "execution_mode": "OPERATIONAL",
+            "time_basis": "ACTUAL_CALENDAR",
+            "evidence_class": "SYNTHETIC_OPERATIONAL_CALENDAR_ALERT",
+            "source_contract_version": COST_SOURCE_CONTRACT_VERSION,
+            "rate_card_version": None,
+            "rate_card_version_status": "UNAVAILABLE_IN_ALERT_CONTRACT",
+        },
+        "risk": {
+            "severity": severity,
+            "cost_scope": "TOTAL_COST",
+            "evidence_class": "OBSERVED_INPUT",
+        },
+        "exposure": {
+            "metric_name": COST_METRIC_NAME,
+            "variance_pct": metric_value,
+            "threshold_pct": threshold_value,
+            "breach_margin_pct": breach_margin,
+            "affected_shipments": 1,
+            "monetary_value": None,
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "urgency": {
+            "status": SLA_URGENCY[severity],
+            "basis": f"{severity} total-cost variance anomaly",
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "recommendation": {
+            "action_type": "REVIEW_COST",
+            "rationale": rationale,
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "alternatives": [
+            {
+                "action_type": "REVIEW_COST",
+                "label": "Review the governed cost basis and charge lines",
+                "recommended": True,
+            },
+            {
+                "action_type": "MONITOR_COST",
+                "label": "Monitor the next cost snapshot before reviewing",
+                "recommended": False,
+            },
+            {
+                "action_type": "NO_ACTION",
+                "label": "Take no action and retain the current variance exposure",
+                "recommended": False,
+            },
+        ],
+        "no_action_exposure": {
+            "status": "DERIVED",
+            "variance_pct_at_risk": metric_value,
+            "breach_margin_pct": breach_margin,
+            "monetary_value": None,
+            "evidence_class": "DERIVED_EXPOSURE",
+        },
+        "benefit_estimate": {
+            "status": "NOT_ESTIMATED",
+            "estimate_evidence_class": "NOT_ESTIMATED",
+            "assumption_set_version": None,
+        },
+        "governance": {
+            "human_review_required": True,
+            "execution_authorized": False,
+            "outcome_observed": False,
+            "financial_value_estimated": False,
+            "deterministic_rule": True,
+        },
+    }
+
+
+def build_decision_brief_v1(
+    alert: dict[str, str | None], as_of_date: str
+) -> dict[str, Any] | None:
+    """Dispatch only the two implemented deterministic v1 contracts."""
+
+    if alert.get("alert_type") == "SLA_BREACH":
+        return build_sla_breach_decision_brief(alert, as_of_date)
+    if alert.get("alert_type") == "COST_ANOMALY":
+        return build_cost_anomaly_decision_brief(alert, as_of_date)
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date):
+        raise ValueError("Invalid Decision Brief cutoff date")
+    return None
+
+
 def build_risk_response(
     rows: list[dict[str, str | None]], as_of_date: str
 ) -> dict[str, Any]:
@@ -595,7 +723,7 @@ def build_risk_response(
     items = []
     for row in rows:
         item: dict[str, Any] = dict(row)
-        item["decision_brief"] = build_sla_breach_decision_brief(row, as_of_date)
+        item["decision_brief"] = build_decision_brief_v1(row, as_of_date)
         items.append(item)
     return {
         "schema_version": "operations-api.v1",

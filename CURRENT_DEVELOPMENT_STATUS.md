@@ -42,7 +42,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_VERIFIED_NOT_RUNTIME_OBSERVED` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. The Generator, authenticated reader API, and private cockpit are deployed and the read/RBAC boundaries passed verification, but the Generator has not been invoked and no bound runtime proposal has been observed. |
-| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_VERIFIED_NOT_RUNTIME_OBSERVED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row. The additive staging migration passed all six checks; the independent Generator and both private readers are deployed and verified, but the Generator has not been invoked and no bound runtime proposal has been observed. |
+| `COST_ANOMALY` Decision Brief v1 | `SOURCE_DELIVERED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Valid current open shipment-cost Alerts now receive a deterministic `REVIEW_COST` brief and immutable binding. It exposes `stateful-cost-variance.v1`, explicitly marks the unavailable rate-card version instead of inferring it, and keeps monetary exposure and benefit `NOT_ESTIMATED`. Source is delivered, but no deployment, Generator invocation, Action, or runtime evidence exists yet. |
+| Decision-to-Action binding v1 | `STAGING_SCHEMA_SLA_PRODUCER_AND_READERS_DEPLOYED_COST_EXTENSION_SOURCE_DELIVERED_NOT_RUNTIME_OBSERVED` | New valid SLA proposals preserve the brief version, deterministic alternative, and rationale on the immutable Action row; the source-delivered Cost extension reuses the fields with `REVIEW_COST` and a source-versioned rationale. Existing Actions remain untouched. The deployed Generator has not been invoked, and the Cost revision is not deployed. |
 | Decision Truth private-staging rollout handoff | `PRIVATE_COCKPIT_DEPLOYED_RUNTIME_AND_RBAC_VERIFIED_GENERATOR_NOT_INVOKED` | Operations API run `32973297196` deployed commit `a3fe692`; fix commit `2627da6` passed CI run `32975380386`, and the named human published the corrected private cockpit. The read-only staging verifier and four-role matrix passed, and all four temporary users were removed. No lifecycle invocation, runtime binding, operational Action mutation, schedule, alias, Pages, or production change is claimed. |
 | Outcome Review decision provenance v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The authenticated API and private cockpit expose each cutoff-eligible Outcome's nullable immutable Decision binding; legacy bindings remain null and effects remain synthetic and non-causal. Reader and four-role contracts passed, but no eligible bound Decision cohort was observed. |
 | Decision-contract Outcome cohort summary v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed private readers separately aggregate observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed and remain descriptive only. No eligible bound cohort was returned. |
@@ -160,27 +161,27 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Decision Truth private staging reader closeout
+## Active slice — `COST_ANOMALY` Decision Brief v1
 
-**Status:** `PRIVATE_COCKPIT_DEPLOYED_RUNTIME_AND_RBAC_VERIFIED_GENERATOR_NOT_INVOKED`
+**Status:** `SOURCE_DELIVERED_LOCALLY_VERIFIED_NOT_DEPLOYED`
 
-The Decision Brief producer remains deployed and uninvoked. Named-human plan
-run `32972934184` completed from commit `a3fe692` with deployment skipped;
-separately authorized run `32973297196` deployed the authenticated Operations
-API. Fix commit `2627da6` passed ordinary CI run `32975380386`, after which the
-named human published the matching private cockpit. Its protected origin and
-deployment identifiers were not printed.
+The deterministic decision engine now accepts only valid current open
+`SHIPMENT_COST` / `TOTAL_COST` / `cost_variance_pct` Alerts whose finite
+non-negative variance strictly exceeds the governed threshold. It selects
+`REVIEW_COST`, preserves the calculation source contract
+`stateful-cost-variance.v1` in the immutable rationale, and exposes monitor and
+no-action alternatives. The API and private cockpit render variance,
+percentage-point margin, source status, and `NOT_ESTIMATED` benefit without
+inventing currency or a rate-card identifier.
 
-The read-only staging verifier passed every configured API, frontend, CORS,
-alarm, logging, and redaction check. The separately human-run four-role matrix
-then passed its reader, mutation-denial, response-contract, temporal,
-governance, and redaction checks; all four temporary users were removed. The
-observed Action evidence remained `ACTION_OPEN` with zero audit events and no
-Outcome, Learning remained `INSUFFICIENT_ELIGIBLE_OUTCOMES` at 1/20 with no
-proposal, and label readiness had no ready provider group or eligible target.
-No bound runtime Action or eligible Decision comparison cohort was observed.
-This closeout grants no lifecycle invocation, operational Action mutation,
-alias, schedule, Pages, policy, model, or production authority.
+The existing Action columns need no migration. The source-delivered aggregate validator
+now permits only the exact SLA/expedite and Cost/review pairs while preserving
+legacy-null rows. Frontend lint, all five rendered-contract tests, both Vinext
+and private Next.js production builds, all 574 repository tests, Python
+compilation, the render-only rollout plan, and the 49/49 drift audit pass. This
+slice is source-delivered but has not been deployed or runtime-observed and grants
+no Generator invocation, Action mutation, alias, schedule, Pages, policy,
+model, or production authority.
 
 ## Recently completed — Independent lifecycle Generator stack
 
@@ -700,7 +701,8 @@ synthetic result instead of grouping evidence only by broad Action type.
   remain operational, actual-calendar, and cutoff-eligible.
 - Exposed nullable `decision_brief_version` and `selected_alternative` in the
   API client and private cockpit.
-- Kept legacy and `COST_ANOMALY` Actions unbound rather than inferring history.
+- Kept legacy and then-unimplemented `COST_ANOMALY` Actions unbound rather than
+  inferring history; the later Cost extension still never backfills them.
 - Added an explicit UI disclosure that provenance is traceability only and
   simulated effects are neither causal estimates nor real logistics
   performance.
@@ -735,8 +737,8 @@ Decision Brief recommendation produced its immutable proposal.
 - Applied the same fail-closed milestone, delay-metric, severity, numeric, and
   threshold boundary used by Decision Brief v1. Invalid SLA proposals cannot
   claim a brief binding.
-- Kept legacy and `COST_ANOMALY` Actions explicitly unbound rather than
-  inferring history or inventing an unimplemented Cost Decision Brief.
+- Kept legacy and then-unimplemented `COST_ANOMALY` Actions explicitly unbound;
+  the later Cost contract applies only to newly generated eligible proposals.
 - Preserved human truth separately: the system proposal remains
   `approval_required`; named-human judgments and reasons remain append-only
   `EDIT`, `APPROVE`, or `REJECT` events.
@@ -2064,17 +2066,14 @@ done.
 
 ## Next Up
 
-1. The independent Generator, authenticated Operations API, and private
-   cockpit releases are complete. Read-only staging and four-role verification
-   passed, and all four temporary users were removed. The Generator remains
-   deliberately uninvoked; no automatic lifecycle continuation or runtime
-   Action creation follows from this reader closeout.
-2. Recommended next product feature after this staging evidence:
-   `COST_ANOMALY` Decision Brief v1. It should reuse the existing immutable
-   binding and Outcome provenance chain, expose exact rate-card/source version
-   provenance, and keep expected benefit `NOT_ESTIMATED` unless a separately
-   governed intervention-effect assumption contract exists. This is a
-   recommendation, not approved work.
+1. Observe the source-delivery CI and Operations API render-only staging plan,
+   then keep every later staging release plan-first and separately
+   human-authorized for the Generator, Operations API, and private cockpit.
+   Source delivery alone grants no deployment or lifecycle authority.
+2. After a separately verified Cost reader release, decide whether one bounded
+   actual-calendar lifecycle continuation is justified to observe a naturally
+   eligible Cost proposal. Never create or backfill an Action merely to obtain
+   runtime evidence.
 3. On or after Sydney date `2026-08-28`, separately authorize only the one
    already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
    reconcile its due Outcome/Learning delta. Stop after that canary; do not

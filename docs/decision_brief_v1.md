@@ -1,11 +1,14 @@
 # SLA_BREACH Decision Brief v1
 
-**Status:** implemented and locally verified; not deployed
+**Status:** deployed private staging readers and producer artifact verified;
+Generator not invoked and no bound runtime proposal observed
 
 Decision Brief v1 turns one current governed `SLA_BREACH` Alert into a bounded,
-human-reviewable decision explanation. It is intentionally narrow: it does not
-support `COST_ANOMALY`, does not add an AI layer, and does not estimate an
-intervention effect that the available data cannot support.
+human-reviewable decision explanation. It is intentionally narrow, adds no AI
+layer, and estimates no intervention effect that the available data cannot
+support. `COST_ANOMALY` now has a separate source-delivered companion contract under the
+same schema version; see
+[`cost_anomaly_decision_brief_v1.md`](cost_anomaly_decision_brief_v1.md).
 
 ## Entry contract
 
@@ -19,9 +22,10 @@ A brief is created only when all of these conditions hold:
 - the numeric delay exceeds a non-negative threshold;
 - the API cutoff is a valid Australia/Sydney operational date.
 
-`COST_ANOMALY`, resolved Alerts, mismatched milestone/metric pairs, non-finite
-values, and non-breaches do not receive a Decision Brief. Invalid SLA inputs
-fail closed rather than falling back to a plausible-looking recommendation.
+Resolved Alerts, mismatched milestone/metric pairs, non-finite values, and
+non-breaches do not receive an SLA Decision Brief. Invalid SLA inputs fail
+closed rather than falling back to a plausible-looking recommendation. Cost
+Alerts are dispatched only to their separately validated Cost contract.
 
 ## Output contract
 
@@ -67,7 +71,8 @@ version, deterministic selected alternative, and proposal rationale on the
 immutable Action row. Named-human review reasons remain append-only audit
 events because they do not exist when the system creates the proposal. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md). The binding
-is locally verified and has not been migrated or deployed.
+is schema-deployed and reader/RBAC verified, but the Generator has not been
+invoked and no bound runtime proposal has been observed.
 
 ## Evidence boundary
 
@@ -76,7 +81,7 @@ The input is `SYNTHETIC_OPERATIONAL_CALENDAR_ALERT`. Within the brief,
 not mean real-world logistics evidence. Derived delay exposure is
 `DERIVED_EXPOSURE`. Expected benefit is `NOT_ESTIMATED`.
 
-Local implementation and tests establish deterministic contract mechanics
-only. No API deployment, private-frontend deployment, AWS call, Action
-mutation, Outcome observation, production change, or Pages publication has
-occurred.
+Local tests plus private reader/RBAC verification establish deterministic
+contract and access mechanics. No lifecycle invocation, bound runtime Action,
+Outcome observation attributable to this contract, production change, or
+Pages publication has occurred.

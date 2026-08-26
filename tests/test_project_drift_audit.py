@@ -135,6 +135,33 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_cost_anomaly_decision_brief_rate_card_honesty_drift_is_detected(self):
+        paths = (
+            "lambda/glap_governed_closed_loop.py",
+            "lambda/glap_operations_api.py",
+            "decision-brief-demo/app/operations-api.ts",
+            "decision-brief-demo/app/page.tsx",
+            "docs/cost_anomaly_decision_brief_v1.md",
+            "tests/test_governed_closed_loop.py",
+            "tests/test_lifecycle_athena_adapter.py",
+            "tests/test_operations_api.py",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_cost_anomaly_decision_brief_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    '"rate_card_version": None',
+                    '"rate_card_version": "invented-rate-card"',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_cost_anomaly_decision_brief_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_decision_truth_generator_release_scope_drift_is_detected(self):
         paths = (
             "sql/16_decision_action_binding_v1.sql",

@@ -41,11 +41,14 @@ class DecisionTruthStagingRolloutTests(unittest.TestCase):
             "missing_action_current_binding_columns",
             "partial_action_binding",
             "invalid_decision_brief_v1_binding",
-            "unexpected_cost_action_binding",
+            "invalid_cost_decision_brief_v1_binding",
             "current_view_binding_mismatch",
         ):
             self.assertIn(check_name, sql)
         self.assertRegex(sql, r"SELECT check_name, failure_count\s+FROM checks")
+        self.assertIn("alert_type = 'COST_ANOMALY'", sql)
+        self.assertIn("action_type = 'REVIEW_COST'", sql)
+        self.assertIn("selected_alternative = 'REVIEW_COST'", sql)
         for operation in ("ALTER", "CREATE", "DROP", "DELETE", "INSERT", "UPDATE", "MERGE", "TRUNCATE"):
             self.assertNotRegex(upper, rf"\b{operation}\b")
 
@@ -54,6 +57,8 @@ class DecisionTruthStagingRolloutTests(unittest.TestCase):
         lower = script.lower()
         self.assertIn("Mode: local render only", script)
         self.assertIn("Aggregate validation checks: 6", script)
+        self.assertIn("COST_ANOMALY binding implemented locally: True", script)
+        self.assertIn("COST_ANOMALY staging producer released: False", script)
         self.assertIn("lifecycle producer", lower)
         self.assertIn("Operational continuation authorized: False", script)
         self.assertNotIn("[switch]$Apply", script)
@@ -82,7 +87,8 @@ class DecisionTruthStagingRolloutTests(unittest.TestCase):
         normalized = " ".join(document.split())
         self.assertIn("Existing Actions intentionally remain legacy-null", normalized)
         self.assertIn("Do not create, backfill, or mutate an Action merely to satisfy the test", normalized)
-        self.assertIn("every `COST_ANOMALY` Action remains unbound", normalized)
+        self.assertIn("Existing `COST_ANOMALY` Actions remain unbound", normalized)
+        self.assertIn("every newly bound `COST_ANOMALY` Action", normalized)
         self.assertIn("This remains synthetic staging engineering evidence", normalized)
         self.assertIn("The additive columns are retained", normalized)
 

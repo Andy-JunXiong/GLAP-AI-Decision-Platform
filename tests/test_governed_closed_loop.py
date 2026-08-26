@@ -19,7 +19,7 @@ def candidate(kind="SLA_BREACH", fingerprint="alert-1"):
         "signal_grain": "SHIPMENT_MILESTONE" if kind == "SLA_BREACH" else "SHIPMENT_COST",
         "signal_dimension": "P2P_ARRIVAL" if kind == "SLA_BREACH" else "TOTAL_COST",
         "severity": "HIGH",
-        "metric_name": "arrival_delay_hours" if kind == "SLA_BREACH" else "total_cost_variance_pct",
+        "metric_name": "arrival_delay_hours" if kind == "SLA_BREACH" else "cost_variance_pct",
         "metric_value": 48.0,
         "threshold_value": 0.0,
     }
@@ -55,14 +55,26 @@ class GovernedClosedLoopTests(unittest.TestCase):
         self.assertEqual(action["status"], "PROPOSED")
         self.assertTrue(action["approval_required"])
 
-    def test_unimplemented_or_invalid_decision_brief_binding_is_not_invented(self):
+    def test_cost_action_preserves_decision_brief_binding_and_source_contract(self):
         alerts = closed_loop.reconcile_alerts(
             [candidate("COST_ANOMALY", "alert-cost")], [], date(2026, 8, 6)
         )
         cost_action = closed_loop.propose_actions(alerts, "policy-v1")[0]
-        self.assertIsNone(cost_action["decision_brief_version"])
-        self.assertIsNone(cost_action["selected_alternative"])
-        self.assertIsNone(cost_action["selection_rationale"])
+        self.assertEqual(cost_action["decision_brief_version"], "decision-brief.v1")
+        self.assertEqual(cost_action["selected_alternative"], "REVIEW_COST")
+        self.assertEqual(
+            cost_action["selection_rationale"],
+            "Review the governed cost basis under stateful-cost-variance.v1; "
+            "total cost variance is 48 percentage points above threshold.",
+        )
+
+    def test_invalid_decision_brief_binding_is_not_invented(self):
+        invalid_cost = closed_loop.reconcile_alerts(
+            [candidate("COST_ANOMALY", "alert-cost-invalid")], [], date(2026, 8, 6)
+        )[0]
+        invalid_cost["metric_name"] = "arrival_delay_hours"
+        with self.assertRaisesRegex(ValueError, "grain, dimension, and metric"):
+            closed_loop.propose_actions([invalid_cost], "policy-v1")
 
         invalid_alert = closed_loop.reconcile_alerts([candidate()], [], date(2026, 8, 6))[0]
         invalid_alert["metric_name"] = "delivery_delay_hours"

@@ -1167,25 +1167,35 @@ function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics
 
 function OperationalDecisionBrief({ contract, go }: { contract: DecisionBriefV1; go: (view: View) => void }) {
   const readable = (value: string) => value.replaceAll("_", " ");
+  const isCost = contract.decision_type === "COST_ANOMALY";
+  const riskScope = isCost ? contract.risk.cost_scope : contract.risk.milestone;
+  const exposureValue = isCost ? contract.exposure.variance_pct : contract.exposure.delay_hours;
+  const thresholdValue = isCost ? contract.exposure.threshold_pct : contract.exposure.threshold_hours;
+  const breachMargin = isCost ? contract.exposure.breach_margin_pct : contract.exposure.breach_margin_hours;
+  const exposureUnit = isCost ? "%" : "h";
+  const exposureLabel = isCost ? "Cost variance" : "Delay exposure";
+  const sourceDetail = isCost
+    ? `${contract.source.source_contract_version} · Rate-card version unavailable in Alert contract`
+    : contract.source.evidence_class;
   return <div className="page brief-page">
     <button className="back-link" onClick={() => go("signals")}>← Back to risk hotspots</button>
     <div className="brief-title">
-      <div><span className="critical-label">{contract.decision_type}</span><small>DECISION BRIEF V1 · Sydney cutoff {contract.as_of_date}</small><h1>Review the governed response to an SLA breach.</h1><p>This brief is derived from one operational-calendar synthetic Alert. It recommends a bounded review action; it does not claim execution, an observed Outcome, or financial value.</p></div>
+      <div><span className="critical-label">{contract.decision_type}</span><small>DECISION BRIEF V1 · Sydney cutoff {contract.as_of_date}</small><h1>{isCost ? "Review the governed response to a cost anomaly." : "Review the governed response to an SLA breach."}</h1><p>This brief is derived from one operational-calendar synthetic Alert. It recommends a bounded review action; it does not claim execution, an observed Outcome, or financial value.</p></div>
       <div className="decision-status pending"><span>Review status</span><strong>Human review required</strong><small>{readable(contract.urgency.status)}</small></div>
     </div>
     <section className="metric-grid compact brief-metrics">
-      <Metric label="Risk" value={contract.risk.severity} note={readable(contract.risk.milestone)} tone="red" />
-      <Metric label="Delay exposure" value={`${contract.exposure.delay_hours} h`} note={readable(contract.exposure.metric_name)} />
-      <Metric label="Above threshold" value={`${contract.exposure.breach_margin_hours} h`} note="Derived exposure" />
+      <Metric label="Risk" value={contract.risk.severity} note={readable(riskScope)} tone="red" />
+      <Metric label={exposureLabel} value={`${exposureValue} ${exposureUnit}`} note={readable(contract.exposure.metric_name)} />
+      <Metric label="Above threshold" value={`${breachMargin} ${exposureUnit}`} note="Derived exposure" />
       <Metric label="Expected benefit" value="NOT ESTIMATED" note="No intervention-effect model" />
     </section>
     <section className="brief-grid">
-      <article className="card"><CardHead title="Why review is required" copy="Observed input and derived exposure stay separate" /><div className="economics-list"><div><span>Observed delay input</span><strong>{contract.exposure.delay_hours} hours</strong></div><div><span>Governed threshold</span><strong>{contract.exposure.threshold_hours} hours</strong></div><div><span>Derived breach margin</span><strong>{contract.exposure.breach_margin_hours} hours</strong></div></div><p className="data-disclaimer">Risk evidence: {contract.risk.evidence_class} · exposure evidence: {contract.exposure.evidence_class}</p></article>
-      <article className="card"><CardHead title="Recommended action" copy="Deterministic SLA_BREACH rule" /><div className="recommendation"><i>↗</i><div><strong>{readable(contract.recommendation.action_type)}</strong><p>{contract.recommendation.rationale}</p></div></div><p className="data-disclaimer">This recommendation requires human review and does not authorize execution.</p></article>
+      <article className="card"><CardHead title="Why review is required" copy="Observed input and derived exposure stay separate" /><div className="economics-list"><div><span>{isCost ? "Observed variance input" : "Observed delay input"}</span><strong>{exposureValue} {isCost ? "percent" : "hours"}</strong></div><div><span>Governed threshold</span><strong>{thresholdValue} {isCost ? "percent" : "hours"}</strong></div><div><span>Derived breach margin</span><strong>{breachMargin} {isCost ? "percentage points" : "hours"}</strong></div></div><p className="data-disclaimer">Risk evidence: {contract.risk.evidence_class} · exposure evidence: {contract.exposure.evidence_class}</p>{isCost && <p className="data-disclaimer">Cost source: {sourceDetail}. No rate-card identifier is inferred.</p>}</article>
+      <article className="card"><CardHead title="Recommended action" copy={`Deterministic ${contract.decision_type} rule`} /><div className="recommendation"><i>↗</i><div><strong>{readable(contract.recommendation.action_type)}</strong><p>{contract.recommendation.rationale}</p></div></div><p className="data-disclaimer">This recommendation requires human review and does not authorize execution.</p></article>
       <article className="card"><CardHead title="Bounded alternatives" copy="Including an explicit no-action path" /><div className="economics-list">{contract.alternatives.map((alternative) => <div key={alternative.action_type}><span>{alternative.label}</span><strong>{alternative.recommended ? "RECOMMENDED" : "AVAILABLE"}</strong></div>)}</div></article>
       <article className="card review-card"><CardHead title="Benefit and authority" copy="No pseudo-precision" /><div className="economics-list"><div><span>Benefit estimate</span><strong>{readable(contract.benefit_estimate.status)}</strong></div><div><span>Assumption set</span><strong>{contract.benefit_estimate.assumption_set_version ?? "NONE"}</strong></div><div><span>Monetary exposure</span><strong>NOT ESTIMATED</strong></div></div><button className="primary-button" onClick={() => go("actions")}>Open governed Action Board</button><p className="data-disclaimer">The Action Board retains signed-human role checks and append-only audit semantics. This brief itself performs no mutation.</p></article>
     </section>
-    <p className="data-disclaimer">Source: {contract.source.evidence_class} · execution authorized: no · Outcome observed: no · financial value estimated: no.</p>
+    <p className="data-disclaimer">Source: {sourceDetail} · execution authorized: no · Outcome observed: no · financial value estimated: no.</p>
   </div>;
 }
 

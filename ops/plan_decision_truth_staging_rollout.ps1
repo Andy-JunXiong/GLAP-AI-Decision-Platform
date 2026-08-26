@@ -70,7 +70,7 @@ foreach ($checkName in @(
     "missing_action_current_binding_columns",
     "partial_action_binding",
     "invalid_decision_brief_v1_binding",
-    "unexpected_cost_action_binding",
+    "invalid_cost_decision_brief_v1_binding",
     "current_view_binding_mismatch"
 )) {
     if (-not $validationSql.Contains($checkName)) {
@@ -88,7 +88,8 @@ Write-Host "  Additive-only guard: passed"
 Write-Host "  Read-only validation guard: passed"
 Write-Host "  Release order: schema, validation, lifecycle producer, Operations API, private frontend, read-only verification"
 Write-Host "  Existing Actions backfilled: False"
-Write-Host "  COST_ANOMALY binding enabled: False"
+Write-Host "  COST_ANOMALY binding implemented locally: True"
+Write-Host "  COST_ANOMALY staging producer released: False"
 Write-Host "  AWS session inspected: False"
 Write-Host "  Athena query started: False"
 Write-Host "  Schema migration applied: False"

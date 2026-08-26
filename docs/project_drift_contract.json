@@ -544,9 +544,33 @@
       ]
     },
     {
+      "id": "cost_anomaly_decision_brief_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the source-delivered authenticated Risk response derives decision-brief.v1 only for current open COST_ANOMALY shipment-cost Alerts with TOTAL_COST / cost_variance_pct and a strict finite non-negative threshold breach; REVIEW_COST is deterministic, MONITOR_COST and NO_ACTION remain bounded alternatives, the exact calculation source is stateful-cost-variance.v1, the unavailable rate-card version is explicitly null rather than inferred, monetary exposure and benefit remain NOT_ESTIMATED, and no execution, mutation, deployment, runtime, model, policy, or production authority is added",
+      "evidence_files": [
+        "lambda/glap_governed_closed_loop.py",
+        "lambda/glap_operations_api.py",
+        "sql/17_decision_action_binding_validation.sql",
+        "tests/test_governed_closed_loop.py",
+        "tests/test_lifecycle_athena_adapter.py",
+        "tests/test_operations_api.py",
+        "tests/test_decision_truth_staging_rollout.py",
+        "decision-brief-demo/app/operations-api.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/cost_anomaly_decision_brief_v1.md",
+        "docs/decision_action_binding_v1.md",
+        "docs/decision_truth_staging_rollout.md",
+        "docs/operations_api_v1.md",
+        "docs/governed_closed_loop.md",
+        "docs/architecture_current.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "decision_action_binding_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "new valid SLA_BREACH proposals persist decision-brief.v1, the deterministic EXPEDITE_MILESTONE alternative, and its rationale on the immutable Action row; legacy and COST_ANOMALY Actions remain explicitly unbound, named-human judgments remain append-only audit events; a named human applied the additive isolated-staging schema and all six aggregate checks returned zero; human plan 32920083879 proved the retired shared-stack generator path still propagated controller role/function changes and executed nothing; the replacement gives LifecycleGeneratorFunction to an independent one-resource stack with separately dispatched plan-refactor, inspect-refactor, execute-refactor, plan-release, and deploy-release actions, exact one-resource gates, no lifecycle invocation, and shared-deployer fail-closed ownership verification; the bounded IAM update is applied and directly verified; failed plans and input attempts remained fail-closed; human run 32948002162 completed only the reviewed Generator ownership move; plan 32951563950 validated and deleted an exact-one non-replacing release change set without upload; separately authorized deploy run 32956001803 updated only the independent Generator from commit 9eb031f; read-only acceptance verified zero source Generator resources, one healthy alias-free destination Lambda, a parameter-free one-resource template bound to the commit artifact, matching S3/Lambda SHA-256, preserved execution role, zero active change sets, and zero shared-stack deployment-window events; Operations API plan 32972934184 skipped deployment and separately authorized run 32973297196 deployed the reader API from commit a3fe692; fix commit 2627da6 passed CI 32975380386, the named human published the corrected private frontend, read-only and four-role verification passed, and all four temporary users were removed; the Generator has not been invoked and no eligible bound Decision cohort was observed, so no bound runtime proposal, end-to-end Decision evidence, production, schedule, alias, policy, or model claim is established",
+      "boundary": "new valid SLA_BREACH proposals persist decision-brief.v1, EXPEDITE_MILESTONE, and its rationale on the immutable Action row; the source-delivered COST_ANOMALY extension reuses the fields with REVIEW_COST and a stateful-cost-variance.v1 rationale, while every existing or pre-release Cost Action remains legacy-null and unmodified; invalid or partial pairs fail closed and named-human judgments remain append-only audit events; a named human applied the additive isolated-staging schema and the earlier SLA-only six-check validator returned zero; the revised exact-pair validator is source-delivered and has not run in staging; the independent one-resource Generator, authenticated API, and private cockpit are deployed and verified for the prior SLA revision, but the Cost producer/API/UI revision is not deployed and the Generator has not been invoked; no bound runtime proposal, eligible Decision cohort, production, schedule, alias, policy, or model claim is established",
       "evidence_files": [
         "lambda/glap_governed_closed_loop.py",
         "lambda/glap_lifecycle_athena_adapter.py",
@@ -571,6 +595,7 @@
         "decision-brief-demo/app/page.tsx",
         "decision-brief-demo/tests/rendered-html.test.mjs",
         "docs/decision_action_binding_v1.md",
+        "docs/cost_anomaly_decision_brief_v1.md",
         "docs/decision_truth_staging_rollout.md",
         "docs/stateful_lifecycle_generator_stack_refactor.md",
         "docs/decision_brief_v1.md",
@@ -584,7 +609,7 @@
     {
       "id": "outcome_review_decision_provenance_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "the authenticated Outcome Review joins each cutoff-eligible Outcome to its immutable Action by action_id and exposes nullable decision-brief.v1 and selected alternative fields read-only; legacy and COST_ANOMALY Actions remain unbound, synthetic effects establish no causality or real performance; the prerequisite isolated-staging migration is applied and six-check validated, the independent producer is deployed and artifact/configuration verified but not invoked, Operations API run 32973297196 deployed the authenticated reader, fix commit 2627da6 passed CI 32975380386, and the named human published the matching private frontend; read-only and four-role verification passed and all four temporary users were removed, but no eligible bound Decision cohort was observed; no write route, operational Action mutation, Learning change, or production authority was added",
+      "boundary": "the authenticated Outcome Review joins each cutoff-eligible Outcome to its immutable Action by action_id and exposes nullable decision-brief.v1 and selected alternative fields read-only; legacy and pre-release COST_ANOMALY Actions remain unbound while a future newly generated eligible Cost proposal may carry only the exact REVIEW_COST binding; synthetic effects establish no causality or real performance; the prerequisite isolated-staging migration is applied and the deployed SLA readers passed read-only and four-role verification, but the Cost producer/API/UI revision is source-delivered and not deployed and no eligible bound Decision cohort was observed; no write route, operational Action mutation, Learning change, or production authority was added",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "tests/test_operations_api.py",

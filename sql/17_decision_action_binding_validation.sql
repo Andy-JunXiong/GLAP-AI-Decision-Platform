@@ -46,19 +46,30 @@ checks AS (
     WHERE decision_brief_version IS NOT NULL
       AND (
           decision_brief_version <> 'decision-brief.v1'
-          OR alert_type <> 'SLA_BREACH'
-          OR action_type <> 'EXPEDITE_MILESTONE'
-          OR selected_alternative <> 'EXPEDITE_MILESTONE'
           OR trim(selection_rationale) = ''
+          OR NOT (
+              (
+                  alert_type = 'SLA_BREACH'
+                  AND action_type = 'EXPEDITE_MILESTONE'
+                  AND selected_alternative = 'EXPEDITE_MILESTONE'
+              )
+              OR (
+                  alert_type = 'COST_ANOMALY'
+                  AND action_type = 'REVIEW_COST'
+                  AND selected_alternative = 'REVIEW_COST'
+              )
+          )
       )
     UNION ALL
-    SELECT 'unexpected_cost_action_binding', count(*)
+    SELECT 'invalid_cost_decision_brief_v1_binding', count(*)
     FROM {{SOURCE_DATABASE}}.fact_lifecycle_action_staging_v1
     WHERE alert_type = 'COST_ANOMALY'
+      AND decision_brief_version IS NOT NULL
       AND (
-          decision_brief_version IS NOT NULL
-          OR selected_alternative IS NOT NULL
-          OR selection_rationale IS NOT NULL
+          decision_brief_version <> 'decision-brief.v1'
+          OR action_type <> 'REVIEW_COST'
+          OR selected_alternative <> 'REVIEW_COST'
+          OR trim(selection_rationale) = ''
       )
     UNION ALL
     SELECT 'current_view_binding_mismatch', count(*)
