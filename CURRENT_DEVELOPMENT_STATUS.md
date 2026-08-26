@@ -160,7 +160,23 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — Independent lifecycle Generator stack
+## Active slice — Decision Truth Operations API staging release
+
+**Status:** `READY_FOR_SEPARATE_HUMAN_PLAN_NOT_DISPATCHED`
+
+The Decision Brief and Decision-to-Action producer is now isolated, deployed,
+and artifact/configuration verified, but it has not been invoked. The existing
+Operations API and private cockpit implementation can read the immutable
+binding, yet those reader changes remain undeployed and no bound runtime Action
+has been observed.
+
+The next executable step is a separately human-authorized Operations API
+staging plan. It must remain plan-first and stop for review before any distinct
+deploy decision. A later private-frontend publication and four-role verification
+remain separate actions. This active slice grants no lifecycle invocation,
+Action mutation, alias, schedule, Pages, or production authority.
+
+## Recently completed — Independent lifecycle Generator stack
 
 **Status:** `GENERATOR_INDEPENDENT_STACK_DEPLOYED_ARTIFACT_VERIFIED_NOT_INVOKED`
 
@@ -246,6 +262,10 @@ equal to Lambda `CodeSha256`, the execution role preserved, zero shared-stack
 events during the deployment window, zero active change sets, and zero aliases.
 The Lambda remains `Active` / `Successful`. The Generator was not invoked, so no
 bound runtime Action or functional Decision Truth claim is established yet.
+
+Documentation/fact synchronization commit `c4c1a48` is on `main`; ordinary CI
+run `32957338031` passed. That documentation-only push triggered no Operations
+API deployment, Generator workflow, or Pages publication.
 
 ## Recently completed — Decision Truth generator-only staging release path
 
