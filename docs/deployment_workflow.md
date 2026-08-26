@@ -148,8 +148,8 @@ creates a destination stack. No move executed. This repository revision renders
 the current deployed configuration into a parameter-free one-resource template
 for both refactor and later release planning; source-control and CI maturity are
 recorded by Git history. Commit `21d0e3a` passed CI run `32944908271`. Refactor
-execution, deployment, and runtime verification remain pending. Producer deployment,
-Operations API deployment, private frontend publication,
+execution and deployment were pending at that checkpoint. Operations API deployment,
+private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.
 
@@ -169,6 +169,17 @@ skipped. The form now defaults to the read-only `inspect-refactor` action,
 trims surrounding ID whitespace, retains the exact UUID requirement, and emits
 only the selected action and received character count when validation fails.
 It never logs the supplied identifier in an error annotation.
+
+Named-human run `32948002162` completed the one-resource refactor. Read-only
+acceptance verified zero source Generator resources and exactly one healthy,
+alias-free destination Lambda. `plan-release` run `32951563950` then validated
+and deleted the exact-one non-replacing change set without uploading an artifact.
+Separately authorized `deploy-release` run `32956001803` uploaded and deployed
+only the Generator package from commit `9eb031f`. The destination template is
+parameter-free and bound to that artifact; its ZIP SHA-256 matches Lambda
+`CodeSha256`, the execution role is unchanged, no active change set remains,
+and the shared stack recorded no deployment-window event. No lifecycle date,
+schema, Controller, Action, schedule, alias, Pages, or production path ran.
 
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The

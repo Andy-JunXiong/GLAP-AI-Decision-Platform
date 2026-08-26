@@ -95,10 +95,12 @@ resource change. Commit `fd6d532` then delivered the deployed-template and
 previous-parameter baseline. Human plan run `32920083879` still returned the
 same three changes, proving the remaining cause was shared-stack dependency
 propagation rather than parameter drift. It also uploaded nothing, executed no
-change set, and changed no resource. The local replacement is an independent
-one-resource Generator stack with four separately dispatched refactor/release
-actions. It is not yet IAM-applied, committed, pushed, refactored, deployed, or
-runtime-verified.
+change set, and changed no resource. The replacement is an independent
+one-resource Generator stack with five separately dispatched refactor/release
+actions. The bounded IAM update, refactor, plan-first release, deployment, and
+read-only artifact/runtime-config verification are complete through runs
+`32948002162`, `32951563950`, and `32956001803`. The Generator has not been
+invoked, so no bound runtime Action has been observed.
 
 ## Runtime evidence boundary
 

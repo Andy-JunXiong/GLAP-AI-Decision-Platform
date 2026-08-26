@@ -134,8 +134,14 @@ The values are deliberately omitted because they identify environment-specific r
   This repository revision accepts exactly that two-action shape, rejects extras,
   and adds a non-executing `inspect-refactor` recovery action. A local read-only
   invocation against the retained AWS preview passed that exact boundary and
-  executed nothing. Execution,
-  deployment, and runtime verification remain pending
+  executed nothing. Human run `32948002162` later completed the one-resource
+  move. Run `32951563950` validated and deleted the exact-one non-replacing
+  release change set without upload; run `32956001803` then deployed only the
+  independent Generator. Read-only acceptance verified one destination Lambda,
+  zero source Generator resources, a parameter-free template bound to commit
+  `9eb031f`, matching S3/Lambda SHA-256, preserved execution role, zero aliases,
+  zero active change sets, and no shared-stack deployment-window event. No
+  lifecycle invocation, Controller, schema, schedule, or production change ran
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

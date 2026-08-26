@@ -53,6 +53,16 @@ preserved handoffs.
   Read-only inspection is now the safe default, surrounding ID whitespace is
   normalized before the exact UUID gate, and failures emit only action and
   character-count diagnostics. Both failed attempts skipped every AWS step.
+- Completed the independent staging Generator ownership move and bounded code
+  release. Human run `32948002162` moved only `LifecycleGeneratorFunction`;
+  read-only acceptance found zero source Generator resources and one healthy,
+  alias-free destination Lambda. Plan run `32951563950` validated and deleted
+  an exact-one non-replacing change set without upload. Separately authorized
+  deploy run `32956001803` updated only that Lambda from commit `9eb031f`.
+  Parameter-free template, artifact existence, artifact/Lambda SHA-256, role
+  preservation, stack scope, and no-residual-change-set checks passed. No
+  lifecycle invocation, schema, Controller, schedule, alias, or production
+  change occurred.
 
 ## 2026-08-25
 

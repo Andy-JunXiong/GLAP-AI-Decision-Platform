@@ -46,7 +46,9 @@ proposal rationale on its immutable row. Invalid SLA inputs fail closed;
 legacy and `COST_ANOMALY` Actions receive no invented binding. Human review
 reasons remain chronological append-only audit events. A named human applied
 the additive staging migration and all six aggregate checks returned zero on
-`2026-08-25`; the producer and readers remain undeployed. See
+`2026-08-25`. The independent producer is deployed and artifact/configuration
+verified but has not been invoked; the readers remain undeployed, so no bound
+runtime proposal has been observed. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 ## Action and outcome contract

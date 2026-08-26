@@ -41,9 +41,9 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
-| `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
-| Decision-to-Action binding v1 | `STAGING_SCHEMA_APPLIED_VALIDATED_PRODUCER_NOT_DEPLOYED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; a named human applied the additive staging migration and all six aggregate checks returned zero, but no bound runtime proposal has been generated |
-| Decision Truth private-staging rollout handoff | `IAM_RECONCILED_PLAN_AVAILABLE_LOCAL_INSPECTION_PASSED_INPUT_RECOVERY_SOURCE_DELIVERED_EXECUTION_PENDING` | The bounded IAM update is applied and directly verified. Human plan run `32945123509` created an available preview containing only CloudFormation's destination-stack `CREATE` metadata action and the intended `LifecycleGeneratorFunction` `MOVE`; the workflow then failed because its guard incorrectly counted both as resource moves. Read-only ownership checks confirm the source stack still owns the Lambda and the review-state destination stack owns zero resources, and the corrected local inspection passed without execution. Human inspection attempts `32946252849` and `32946695185` stopped at bounded form-input validation before AWS credentials, so neither touched AWS. This repository revision makes read-only inspection the safe default, trims surrounding ID whitespace, and emits non-sensitive action/length diagnostics; refactor execution, deployment, and runtime verification remain pending. |
+| `SLA_BREACH` Decision Brief v1 | `PRODUCER_DEPLOYED_NOT_RUNTIME_OBSERVED_READERS_NOT_DEPLOYED` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. Deployment is artifact/runtime-config verified, but the Generator has not been invoked and the Operations API/private cockpit readers remain undeployed. |
+| Decision-to-Action binding v1 | `STAGING_SCHEMA_AND_PRODUCER_DEPLOYED_NOT_RUNTIME_OBSERVED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row. The additive staging migration passed all six checks and the independent Generator is deployed, but it has not been invoked and no bound runtime proposal has been observed. |
+| Decision Truth private-staging rollout handoff | `GENERATOR_INDEPENDENT_STACK_DEPLOYED_ARTIFACT_VERIFIED_NOT_INVOKED` | Human execution run `32948002162` completed the one-resource ownership move; the source stack now owns zero Generator resources and the independent stack owns exactly one healthy Lambda with no alias. Human plan run `32951563950` validated and deleted an exact-one non-replacing change set without upload. Separately authorized deploy run `32956001803` updated only the independent Generator from commit `9eb031f`; the deployed parameter-free one-resource template, S3 artifact, and Lambda SHA-256 match, the execution role is preserved, the shared stack had no deployment-window event, and no active change set remains. No lifecycle invocation, schema, Controller, Action, schedule, alias, Pages, or production change occurred. |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -162,7 +162,7 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Independent lifecycle Generator stack
 
-**Status:** `IAM_RECONCILED_PLAN_AVAILABLE_LOCAL_INSPECTION_PASSED_INPUT_RECOVERY_SOURCE_DELIVERED_EXECUTION_PENDING`
+**Status:** `GENERATOR_INDEPENDENT_STACK_DEPLOYED_ARTIFACT_VERIFIED_NOT_INVOKED`
 
 Human plan run `32920083879` from commit `fd6d532` used the deployed shared
 template and every previous parameter except `GeneratorArtifactKey`, yet still
@@ -218,8 +218,8 @@ Generator, with no extras. It also adds `inspect-refactor`, which validates an
 existing preview without creating or executing another one. Source-control and
 CI maturity are recorded by Git history. A local read-only invocation of the
 corrected inspect path against the retained AWS preview passed the exact-action
-gate and explicitly executed nothing. Stack-refactor execution, code
-deployment, and runtime verification are still pending. No schema, lifecycle
+gate and explicitly executed nothing. At that checkpoint, stack-refactor
+execution and code deployment were still pending. No schema, lifecycle
 date, Action, alias, schedule, production, or Pages authority is implied.
 
 Human `inspect-refactor` attempts `32946252849` and `32946695185` both stopped
@@ -229,6 +229,23 @@ default, trims only surrounding whitespace from the supplied ID, preserves the
 exact UUID gate, and emits a bounded annotation containing the selected action
 and character count rather than the identifier. These attempts changed no AWS
 state and do not weaken the separate execution boundary.
+
+Named-human execution run `32948002162` then completed the refactor. Read-only
+acceptance found `EXECUTE_COMPLETE`, zero Generator resources in the source
+stack, exactly one `LifecycleGeneratorFunction` in the independent stack, an
+`Active` / `Successful` Lambda, and zero aliases. No code release ran in that
+workflow.
+
+Named-human `plan-release` run `32951563950` next passed the exact-one,
+non-replacing Lambda gate, uploaded no ZIP, and deleted its temporary change
+set. Separately authorized `deploy-release` run `32956001803` then updated only
+the independent staging Generator from commit `9eb031f`. Read-only acceptance
+found the destination stack `UPDATE_COMPLETE` with one resource, the deployed
+template parameter-free and bound to that commit's artifact, the S3 ZIP SHA-256
+equal to Lambda `CodeSha256`, the execution role preserved, zero shared-stack
+events during the deployment window, zero active change sets, and zero aliases.
+The Lambda remains `Active` / `Successful`. The Generator was not invoked, so no
+bound runtime Action or functional Decision Truth claim is established yet.
 
 ## Recently completed — Decision Truth generator-only staging release path
 
@@ -2020,18 +2037,13 @@ done.
 
 ## Next Up
 
-1. After the form-input recovery correction's source-delivery CI passes, do not
-   create another plan or repeat the already completed local read-only inspection.
-   A named human must review the retained preview evidence: one destination-stack
-   `CREATE` metadata action, one Generator `MOVE`, unchanged source ownership,
-   and zero destination resources. `execute-refactor` requires a new, separate
-   decision and the exact reviewed ID. After
-   verified exclusive ownership, use `plan-release` before any separately authorized
-   `deploy-release`. The old `plan-stack-only` / `deploy-stack-only` path is
-   retired. After a later successful release and read-only stack/function verification,
-   the remaining order is Operations API, private frontend, then read-only
-   contract verification. Four-role verification separately creates temporary
-   users. No source-control request implies any external deployment.
+1. The independent Generator refactor, plan-first release, deployment, and
+   read-only artifact/runtime-config verification are complete. The Generator
+   has not been invoked. The next rollout feature is the existing Operations API
+   staging plan and a separately authorized deploy, followed by private frontend
+   publication and read-only contract verification. Four-role verification
+   separately creates temporary users. No source-control request implies any
+   external deployment, lifecycle invocation, or runtime Action creation.
 2. Recommended next product feature after that staging evidence:
    `COST_ANOMALY` Decision Brief v1. It should reuse the existing immutable
    binding and Outcome provenance chain, expose exact rate-card/source version

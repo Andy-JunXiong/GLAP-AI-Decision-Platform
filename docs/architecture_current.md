@@ -46,7 +46,9 @@ SLA Action proposal. The authenticated queue and evidence chain read those
 fields beside append-only named-human review reasons. Legacy and cost Actions
 remain explicitly unbound. A named human applied the additive isolated-staging
 migration on `2026-08-25`; all six aggregate checks returned zero. The
-producer, API, frontend, and runtime binding remain undeployed.
+independent producer is deployed and artifact/configuration verified but has
+not been invoked; the API, frontend, and runtime binding remain undeployed or
+unobserved.
 
 The Decision Truth staging handoff makes the producer dependency explicit:
 after the now-validated additive schema, the isolated lifecycle producer must
@@ -81,7 +83,15 @@ still in the source stack and zero destination resources. The repository guard
 now requires exactly that metadata-plus-resource pair, rejects every extra
 action, and exposes a non-executing `inspect-refactor` path for the existing
 preview. A local read-only invocation against that retained preview passed the
-corrected gate and executed nothing. Execution remains separately human-owned.
+corrected gate and executed nothing. Named-human run `32948002162` later moved
+the Generator into the independent stack; read-only acceptance found exactly
+one destination Lambda and zero source Generator resources. Plan run
+`32951563950` validated the exact-one release without upload, and separately
+authorized run `32956001803` deployed the Generator from commit `9eb031f`.
+Artifact/template/Lambda digest checks passed, the execution role was preserved,
+the shared stack had no deployment-window event, and no alias exists. The
+Generator was not invoked; Operations API and private frontend remain downstream
+undeployed readers.
 
 ## Cross-cutting evaluation boundary
 

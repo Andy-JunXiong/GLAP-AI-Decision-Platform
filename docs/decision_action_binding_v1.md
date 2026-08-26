@@ -1,6 +1,6 @@
 # Decision-to-Action binding v1
 
-**Status:** implemented and locally verified; not deployed or migrated
+**Status:** staging schema and producer deployed; producer not invoked; readers not deployed
 
 This contract makes a newly generated governed Action prove which implemented
 Decision Brief recommendation produced its immutable proposal. It does not add
@@ -65,8 +65,12 @@ Alert + deterministic Decision Brief
 
 Local tests establish persistence, API, cockpit, immutability, legacy-null, and
 independent one-resource Generator release behavior. The staging schema is
-applied and validated, and commit `961b32f` delivered the structural Generator
-split with CI run `32929610077` passing on Python 3.13 and 3.14. IAM
-reconciliation, stack refactor, deployment, and runtime verification remain
-pending. No Action was created or mutated, and no staging reader, production,
-or public surface was deployed.
+applied and validated. Named-human refactor run `32948002162` moved only the
+Generator into its independent stack; plan run `32951563950` validated the
+exact-one non-replacing release without upload; separately authorized deploy
+run `32956001803` deployed the Generator from commit `9eb031f`. Read-only
+acceptance verified the one-resource parameter-free template, matching
+artifact/Lambda SHA-256, preserved execution role, zero aliases, and no
+shared-stack deployment-window event. The Generator was not invoked, so no
+bound runtime Action was observed. No Action was created or mutated, and no
+staging reader, production, or public surface was deployed.

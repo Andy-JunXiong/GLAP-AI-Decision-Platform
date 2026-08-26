@@ -13,8 +13,8 @@ plan run `32938938361` failed closed because CloudFormation does not allow a
 execution remained unavailable and no resource moved. This repository revision
 contains the parameter-free correction; source-control and CI maturity are
 recorded by Git history. Commit `21d0e3a` passed CI run `32944908271`. Stack
-refactor, deployment, and runtime verification remain pending. Every AWS write
-below remains a separate named-human decision.
+refactor and deployment were pending at that checkpoint. Every AWS write below
+remains a separate named-human decision.
 
 Human run `32945123509` then created an available preview with exactly one
 destination-stack `CREATE` metadata action and one `LifecycleGeneratorFunction`
@@ -32,6 +32,16 @@ skipped. The form now defaults to read-only inspection, trims surrounding ID
 whitespace, and emits only the selected action plus received character count on
 failure. The successful local read-only inspection is retained; another plan or
 inspection retry is not required before a separate human execution decision.
+
+Named-human run `32948002162` completed the refactor. Read-only acceptance found
+`EXECUTE_COMPLETE`, zero source Generator resources, exactly one destination
+Lambda, and zero aliases. Plan run `32951563950` then passed without upload and
+deleted its temporary change set. Separately authorized deploy run `32956001803`
+updated only the Generator from commit `9eb031f`; the parameter-free deployed
+template and S3 artifact match that commit, the artifact SHA-256 equals Lambda
+`CodeSha256`, the execution role is preserved, and no active change set remains.
+The Generator is deployed but has not been invoked, so runtime Decision Truth
+output is not yet observed.
 
 ## Why the split is required
 
