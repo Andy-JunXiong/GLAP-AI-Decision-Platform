@@ -6,7 +6,8 @@ preserved handoffs.
 
 ## 2026-08-27
 
-- Source-delivered `COST_ANOMALY` Decision Brief v1 as a deterministic
+- Released and reader/RBAC-verified `COST_ANOMALY` Decision Brief v1 in private
+  staging as a deterministic
   capability. Valid open shipment-cost Alerts now produce a bounded
   `REVIEW_COST` proposal, monitor/no-action alternatives, exact
   `stateful-cost-variance.v1` calculation provenance, and an immutable Action
@@ -14,9 +15,11 @@ preserved handoffs.
   rate-card version instead of inferring it, and both monetary exposure and
   intervention benefit remain `NOT_ESTIMATED`. Existing Actions are never
   backfilled; the exact-pair validator fails invalid SLA or Cost bindings
-  closed. This completion is repository-local only: it adds no deployment,
-  Generator invocation, Action mutation, policy/model authority, or production
-  claim.
+  closed. Generator, authenticated API, and private cockpit releases completed
+  from commit `0e5b740`; read-only and four-role verification passed and all
+  four temporary users were removed. The Generator was not invoked and no
+  bound Cost proposal was observed, so this adds no Action mutation,
+  policy/model authority, realised-value evidence, or production claim.
 
 ## 2026-08-26
 

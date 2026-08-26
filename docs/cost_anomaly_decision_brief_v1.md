@@ -1,7 +1,7 @@
 # COST_ANOMALY Decision Brief v1
 
-**Status:** source-delivered and locally verified; not deployed or
-runtime-observed
+**Status:** producer, authenticated API, and private cockpit deployed and
+reader/RBAC verified in staging; no bound runtime Cost proposal observed
 
 This contract turns one current governed `COST_ANOMALY` Alert into a bounded,
 human-reviewable explanation. It reuses `decision-brief.v1`, the existing
@@ -70,9 +70,24 @@ contract, never real logistics evidence. Variance exposure is
 `NOT_ESTIMATED` with no assumption set. Execution, Outcome, and financial-value
 authority remain false.
 
-Existing Cost Actions remain legacy-null and are never backfilled. The source-delivered
-validator permits a future new Cost binding only when the exact
+Existing Cost Actions remain legacy-null and are never backfilled. The repository
+validator revision permits a future new Cost binding only when the exact
 `decision-brief.v1` / `REVIEW_COST` pair and a non-empty rationale are present.
-No AWS call, Generator invocation, Action mutation, deployment, schedule,
-alias, Pages publication, policy activation, model promotion, or production
-change is part of this implementation.
+The exact-pair validator revision has not run in staging.
+
+## Staging release evidence
+
+Commit `0e5b740` passed CI run `32982375432`. Generator plan run `32982600783`
+accepted one non-replacing `LifecycleGeneratorFunction` modification, then
+deleted the change set without upload or execution. Separately authorized
+deploy run `32982946620` released only that independent Generator resource.
+Operations API plan run `32982375374` and deploy run `32983721998` succeeded,
+and the named human published the matching private cockpit without printing
+protected deployment identifiers. The read-only verifier and the separately
+authorized four-role matrix passed; all four temporary users were removed.
+
+These runs establish staging delivery and reader/RBAC behavior only. The
+Generator was not invoked, no new Action was created or mutated, and no bound
+Cost Decision Brief was observed. No lifecycle continuation, schedule, alias,
+Pages publication, policy activation, model promotion, or production change
+occurred.

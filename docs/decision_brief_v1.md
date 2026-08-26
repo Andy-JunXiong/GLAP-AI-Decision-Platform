@@ -6,7 +6,7 @@ Generator not invoked and no bound runtime proposal observed
 Decision Brief v1 turns one current governed `SLA_BREACH` Alert into a bounded,
 human-reviewable decision explanation. It is intentionally narrow, adds no AI
 layer, and estimates no intervention effect that the available data cannot
-support. `COST_ANOMALY` now has a separate source-delivered companion contract under the
+support. `COST_ANOMALY` now has a deployed staging companion contract under the
 same schema version; see
 [`cost_anomaly_decision_brief_v1.md`](cost_anomaly_decision_brief_v1.md).
 

@@ -1796,7 +1796,10 @@ def check_cost_anomaly_decision_brief_boundary(root: Path) -> list[CheckResult]:
             "rate_card_version_status",
             "UNAVAILABLE_IN_ALERT_CONTRACT",
             "monetary_value` stays `null`",
-            "No AWS call, Generator invocation, Action mutation, deployment",
+            "Generator was not invoked",
+            "no new Action was created or mutated",
+            "no bound Cost Decision Brief was observed",
+            "32982946620",
         )
     )
     tests_bounded = (
@@ -1819,7 +1822,7 @@ def check_cost_anomaly_decision_brief_boundary(root: Path) -> list[CheckResult]:
             and page_bounded
             and contract_bounded
             and tests_bounded,
-            "COST_ANOMALY Decision Brief remains deterministic, source-versioned, rate-card-honest, NOT_ESTIMATED, human-reviewed, and locally authority-bounded.",
+            "COST_ANOMALY Decision Brief remains deterministic, staging-deployed, source-versioned, rate-card-honest, NOT_ESTIMATED, human-reviewed, and runtime-evidence bounded.",
             "COST_ANOMALY Decision Brief lost its exact input, source-version, unavailable-rate-card, no-value, fail-closed, test, or authority boundary.",
             tuple(paths.values()),
         )
@@ -1898,8 +1901,10 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
             "Aggregate validation checks: 6",
             "Release order: schema, validation, lifecycle producer, Operations API, private frontend, read-only verification",
             "Existing Actions backfilled: False",
-            "COST_ANOMALY binding implemented locally: True",
-            "COST_ANOMALY staging producer released: False",
+            "COST_ANOMALY binding source present: True",
+            "COST_ANOMALY staging producer released: True",
+            "COST_ANOMALY staging readers released: True",
+            "COST_ANOMALY runtime binding observed: False",
             "AWS session inspected: False",
             "Athena query started: False",
             "Schema migration applied: False",
@@ -2095,7 +2100,7 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "does not add an Outcome, Action, approval, completion, or activation write",
             "applied it and all six aggregate checks returned zero",
             "deployed private readers passed read-only and four-role verification",
-            "Cost producer/API/cockpit revisions are source-delivered but not deployed",
+            "Cost producer/API/cockpit revisions are deployed and reader/RBAC verified",
         )
     )
     return [

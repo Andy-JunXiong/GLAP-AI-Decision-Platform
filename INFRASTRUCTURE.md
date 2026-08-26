@@ -142,6 +142,16 @@ The values are deliberately omitted because they identify environment-specific r
   `9eb031f`, matching S3/Lambda SHA-256, preserved execution role, zero aliases,
   zero active change sets, and no shared-stack deployment-window event. No
   lifecycle invocation, Controller, schema, schedule, or production change ran
+- commit `0e5b740` later released the `COST_ANOMALY` Decision Brief through the
+  same isolated path. CI `32982375432` passed; Generator plan `32982600783`
+  validated one non-replacing Lambda modification and deleted the change set
+  without upload or execution; Generator deploy `32982946620` updated only the
+  independent Lambda. Operations API plan `32982375374` and deploy
+  `32983721998` succeeded, the matching private cockpit was published, and the
+  read-only plus four-role verifiers passed with all four temporary users
+  removed. The Generator was not invoked, the revised exact-pair Athena
+  validator was not run, and no bound Cost Action, lifecycle continuation,
+  schedule, alias, Pages, or production change occurred
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

@@ -1,7 +1,7 @@
 # Decision-to-Action binding v1
 
 **Status:** staging schema, SLA producer, and private readers deployed and
-verified; producer not invoked; COST_ANOMALY extension source-delivered but not deployed
+verified; producer not invoked; COST_ANOMALY extension deployed but no bound runtime proposal observed
 
 This contract makes a newly generated governed Action prove which implemented
 Decision Brief recommendation produced its immutable proposal. It does not add
@@ -31,7 +31,7 @@ shipment-milestone grain, an exact milestone/delay-metric pair, a supported
 severity, finite non-negative values, and an actual threshold breach. It will
 not stamp a `decision-brief.v1` binding onto an invalid SLA proposal.
 
-For a valid open `COST_ANOMALY`, the source-delivered extension reuses the same immutable
+For a valid open `COST_ANOMALY`, the deployed extension reuses the same immutable
 fields:
 
 ```json
@@ -84,14 +84,13 @@ Local tests establish persistence, API, cockpit, immutability, legacy-null, and
 independent one-resource Generator release behavior. The staging schema is
 applied and the earlier SLA-only validator passed. The revised source-delivered validator
 allows only the exact SLA and Cost pairs and has not run in staging.
-Named-human refactor run `32948002162` moved only the
-Generator into its independent stack; plan run `32951563950` validated the
-exact-one non-replacing release without upload; separately authorized deploy
-run `32956001803` deployed the Generator from commit `9eb031f`. Read-only
-acceptance verified the one-resource parameter-free template, matching
-artifact/Lambda SHA-256, preserved execution role, zero aliases, and no
-shared-stack deployment-window event. The Generator was not invoked, so no
-bound runtime Action was observed. The SLA readers and private cockpit are
-deployed and verified; the Cost producer/API/UI revision is source-delivered
-but not deployed. No Action was created or mutated, and no production or public
-surface changed.
+Named-human refactor run `32948002162` moved only the Generator into its
+independent stack. For the Cost extension, commit `0e5b740` passed CI
+`32982375432`; plan run `32982600783` validated one non-replacing Generator
+change without upload or execution; deploy run `32982946620` released only
+that resource. Operations API plan/deploy runs `32982375374` and `32983721998`
+succeeded, the named human published the matching private cockpit, and the
+read-only and four-role verifiers passed with all four temporary users removed.
+The exact-pair validator revision has not run in staging and the Generator was
+not invoked, so no bound runtime Action was observed. No Action was created or
+mutated, and no production or public surface changed.

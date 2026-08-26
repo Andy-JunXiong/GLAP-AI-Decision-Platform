@@ -32,28 +32,29 @@ shipment total-cost comparison. Public use is aggregate-only and every row is
 labelled simulated.
 
 Before Action review, the authenticated Risk surface derives
-`decision-brief.v1` for a valid current open `SLA_BREACH`; the source-delivered extension
+`decision-brief.v1` for a valid current open `SLA_BREACH`; the deployed extension
 now does the same for `COST_ANOMALY`. SLA preserves the deterministic
 `EXPEDITE_MILESTONE` rule. Cost deterministically selects `REVIEW_COST`, binds
 the exact `stateful-cost-variance.v1` calculation source, and explicitly marks
 the rate-card version unavailable rather than inferring it. Both distinguish
 observed Alert inputs from derived exposure, include monitor and no-action
 alternatives, and keep expected benefit `NOT_ESTIMATED`. Reading either brief
-creates no mutation. The SLA surface is deployed and reader/RBAC verified; the
-Cost extension is not deployed. See [`decision_brief_v1.md`](decision_brief_v1.md)
+creates no mutation. The SLA and Cost surfaces are deployed and reader/RBAC
+verified, but no newly bound Cost proposal has been observed. See [`decision_brief_v1.md`](decision_brief_v1.md)
 and [`cost_anomaly_decision_brief_v1.md`](cost_anomaly_decision_brief_v1.md).
 
 Every newly generated eligible SLA Action preserves `decision_brief_version`,
 the deterministically selected `EXPEDITE_MILESTONE` alternative, and the exact
-proposal rationale on its immutable row. The source-delivered Cost extension reuses that
+proposal rationale on its immutable row. The deployed Cost extension reuses that
 binding with `REVIEW_COST` and a source-versioned rationale. Invalid inputs
 fail closed; legacy and pre-release Cost Actions receive no invented binding.
 Human review reasons remain chronological append-only audit events. A named human applied
 the additive staging migration and all six aggregate checks returned zero on
 `2026-08-25`. The independent producer is deployed and artifact/configuration
 verified but has not been invoked. SLA readers are deployed and verified; the
-Cost producer and reader revisions are not deployed, so no Cost binding or
-bound runtime proposal has been observed. See
+Cost producer and reader revisions are deployed and reader/RBAC verified, but
+the Generator remains uninvoked, so no Cost binding or bound runtime proposal
+has been observed. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 ## Action and outcome contract

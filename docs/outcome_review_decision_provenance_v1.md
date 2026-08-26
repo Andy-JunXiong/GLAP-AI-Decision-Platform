@@ -1,7 +1,7 @@
 # Outcome Review decision provenance v1
 
 **Status:** deployed and reader/RBAC verified in private staging; no eligible
-bound cohort observed; COST_ANOMALY extension source-delivered but not deployed
+bound cohort observed; COST_ANOMALY producer/readers deployed and RBAC verified
 
 This contract lets an authenticated reviewer see which immutable Decision
 Brief proposal produced the Action connected to each cutoff-eligible Outcome.
@@ -29,8 +29,8 @@ second history that could drift.
 
 Legacy and pre-release `COST_ANOMALY` Actions return null provenance and are
 never backfilled. A future newly generated eligible Cost Action may expose the
-exact `decision-brief.v1` / `REVIEW_COST` pair only after separately authorized
-producer and reader releases. The cockpit labels all null rows as legacy or
+exact `decision-brief.v1` / `REVIEW_COST` pair only after a separately authorized
+lifecycle continuation. The cockpit labels all null rows as legacy or
 unbound rather than inferring a source.
 
 ## Evaluation and governance boundary
@@ -50,7 +50,7 @@ The Action-side fields depend on the additive staging migration in
 aggregate checks returned zero on `2026-08-25`. The deployed private readers
 passed read-only and four-role verification, while the Generator remained
 uninvoked and no eligible bound cohort was observed. Cost producer/API/cockpit
-revisions are source-delivered but not deployed. Tests establish query, API-type, cockpit-disclosure,
+revisions are deployed and reader/RBAC verified. Tests establish query, API-type, cockpit-disclosure,
 legacy-null, and drift behavior without creating runtime evidence.
 
 The next repository-local consumer is the versioned Decision-contract Outcome

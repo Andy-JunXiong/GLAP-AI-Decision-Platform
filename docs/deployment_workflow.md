@@ -181,6 +181,19 @@ parameter-free and bound to that artifact; its ZIP SHA-256 matches Lambda
 and the shared stack recorded no deployment-window event. No lifecycle date,
 schema, Controller, Action, schedule, alias, Pages, or production path ran.
 
+The later `COST_ANOMALY` Decision Brief release followed the same separated
+authority boundary from commit `0e5b740`. CI run `32982375432` and the
+push-triggered Operations API plan `32982375374` passed. Generator plan
+`32982600783` accepted one non-replacing Lambda modification and deleted its
+change set without upload or execution; separately authorized Generator deploy
+`32982946620` released only that resource. Separately authorized Operations API
+deploy `32983721998` completed its staging stack update. The named human then
+ran the private frontend plan and apply steps, followed by the read-only staging
+verifier and the four-role matrix; all checks passed and all four temporary
+users were removed. No protected deployment identifiers were recorded. The
+Generator was not invoked, the revised exact-pair Athena validator was not run,
+and no Action, lifecycle date, schedule, alias, Pages, or production path ran.
+
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The
 named human configured distinct GitHub OIDC orchestration identities and a

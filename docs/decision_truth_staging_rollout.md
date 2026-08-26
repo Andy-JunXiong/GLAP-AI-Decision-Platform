@@ -2,7 +2,7 @@
 
 **Status:** existing SLA schema, independent one-resource stack, authenticated
 Operations API, and private cockpit deployed and verified; COST_ANOMALY v1
-source-delivered but not released; Generator not invoked
+producer/readers released and RBAC verified; Generator not invoked
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -127,14 +127,30 @@ one insufficient provider group, no ready group, and zero of three eligible
 targets. The Generator was not invoked, so no bound runtime Action, eligible
 Decision comparison cohort, or browser fingerprint exercise is claimed.
 
+Commit `0e5b740` then delivered the Cost extension and passed CI run
+`32982375432`. Push-triggered Operations API plan `32982375374` succeeded with
+the deploy step skipped. Generator plan `32982600783` accepted one
+non-replacing `LifecycleGeneratorFunction` modification and deleted the change
+set without upload or execution; separately authorized deploy `32982946620`
+released only that independent Generator. Separately authorized Operations API
+deploy `32983721998` completed its staging stack update. The named human then
+ran the private frontend plan and apply steps; the production build and private
+Amplify release succeeded without printing protected origin or deployment
+identifiers. The read-only verifier passed again for all configured surfaces,
+and the separately authorized four-role matrix passed all reader, denial,
+contract, temporal, governance, and redaction checks before removing all four
+temporary users. The revised exact-pair Athena validator has not run in
+staging. No lifecycle continuation, bound Cost proposal, real Action mutation,
+schedule, alias, Pages, or production change occurred.
+
 ## Runtime evidence boundary
 
 Schema and reader checks do not prove that a bound Action exists. Existing
-Actions intentionally remain legacy-null. Existing `COST_ANOMALY` Actions remain unbound
-and are never backfilled. End-to-end runtime proof requires separately
-authorized producer/API/cockpit releases followed by an `OPERATIONAL` /
-`ACTUAL_CALENDAR` lifecycle continuation that naturally generates an eligible
-new `SLA_BREACH` or `COST_ANOMALY` proposal.
+Actions intentionally remain legacy-null. Existing `COST_ANOMALY` Actions
+remain unbound and are never backfilled. The producer/API/cockpit releases are
+complete, but end-to-end runtime proof still requires a separately authorized
+`OPERATIONAL` / `ACTUAL_CALENDAR` lifecycle continuation that naturally
+generates an eligible new `SLA_BREACH` or `COST_ANOMALY` proposal.
 Do not create, backfill, or mutate an Action merely to satisfy the test.
 
 The runtime verifier may then report only aggregate counts showing that:

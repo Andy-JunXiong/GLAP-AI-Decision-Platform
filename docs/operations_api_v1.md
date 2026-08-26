@@ -61,7 +61,7 @@ actual-calendar Action records. The v1 response is
 Supported states include `PROPOSED`, `EDITED`, `APPROVED`, `REJECTED`, and
 `COMPLETED`; assignment fields are `action_owner` and `action_due_date`.
 New eligible SLA proposals expose immutable `decision_brief_version`,
-`selected_alternative`, and `selection_rationale`. The source-delivered Cost extension
+`selected_alternative`, and `selection_rationale`. The deployed Cost extension
 uses the same fields with `REVIEW_COST` and includes the exact calculation
 source version in its rationale. These values describe the deterministic
 proposal, not human approval. Existing Actions, including pre-release Cost
@@ -90,10 +90,19 @@ audit events. The later named-human reason comes only from an append-only
 decision existed at proposal-generation time. The additive schema and view
 change is defined in `sql/16_decision_action_binding_v1.sql`; a named human
 applied it and all six aggregate checks returned zero on `2026-08-25`. The SLA
-projection and private cockpit are deployed and reader/RBAC verified; the Cost
-extension is source-delivered but not deployed, and the revised aggregate validator
-has not run in staging. See
+projection and private cockpit are deployed and reader/RBAC verified for both
+SLA and Cost. The revised exact-pair aggregate validator has not run in staging,
+the Generator has not been invoked, and no bound Cost proposal was observed. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
+
+The Cost reader release is runtime-deployed from commit `0e5b740`. CI
+`32982375432` and plan `32982375374` passed; separately authorized Operations
+API deploy `32983721998` completed the staging stack update. The named human
+published the matching private cockpit, the read-only verifier passed all
+configured identity/API/frontend/CORS/alarm/logging/redaction checks, and the
+four-role matrix passed before removing all four temporary users. This proves
+reader and RBAC behavior, not that a Cost Brief row exists; no lifecycle
+continuation or bound Cost proposal was observed.
 
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
 Outcome version for each completed Action, bounded by the current Sydney date.

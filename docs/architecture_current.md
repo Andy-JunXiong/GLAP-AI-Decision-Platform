@@ -30,7 +30,7 @@ it performs no network call, publication, deployment, or mutation.
 
 Decision Truth has two deterministic `decision-brief.v1` contracts. The
 authenticated Risk response derives the deployed SLA contract for valid
-current open `SLA_BREACH` shipment-milestone Alerts and a source-delivered Cost extension
+current open `SLA_BREACH` shipment-milestone Alerts and the deployed Cost extension
 for valid `COST_ANOMALY` shipment-total-cost Alerts. SLA selects
 `EXPEDITE_MILESTONE`; Cost selects `REVIEW_COST` from the exact governed
 variance/threshold inputs and binds calculation source
@@ -39,26 +39,26 @@ rate-card version, the Cost contract exposes that value as unavailable and
 never infers an identifier. Both include monitor/no-action alternatives and
 keep expected benefit `NOT_ESTIMATED`; no monetary exposure, intervention
 effect, execution, or Outcome is inferred. The private UI links onward to the
-Action Board without mutation. SLA is deployed and reader/RBAC verified; Cost
-is source-delivered but not deployed.
+Action Board without mutation. Both contracts are deployed and reader/RBAC
+verified; neither has a newly generated bound runtime proposal.
 
-Decision-to-Action binding now extends that source-delivered slice without introducing a
+Decision-to-Action binding extends the deployed slice without introducing a
 new write surface. The lifecycle generator stamps the brief version,
 deterministic alternative, and rationale onto each newly eligible immutable
-SLA Action proposal. The source-delivered Cost extension reuses the fields with
+SLA Action proposal. The deployed Cost extension reuses the fields with
 `REVIEW_COST` and a source-versioned rationale. The authenticated queue and
 evidence chain read those fields beside append-only named-human review reasons.
 Legacy and pre-release Cost Actions remain explicitly unbound. A named human
 applied the additive isolated-staging
 migration on `2026-08-25`; all six aggregate checks returned zero. The
 independent producer is deployed and artifact/configuration verified but has
-not been invoked; the deployed SLA readers are verified, while the Cost
-producer/API/frontend revisions and every runtime binding remain undeployed or
-unobserved.
+not been invoked. The SLA and Cost readers are deployed and reader/RBAC
+verified; the revised exact-pair validator has not run in staging and every new
+runtime Cost binding remains unobserved.
 
 The Decision Truth staging handoff makes the producer dependency explicit:
-after the now-validated additive schema, the isolated lifecycle producer must
-be released before new proposals can carry truthful bindings. Plan run
+after the now-validated additive schema, the isolated lifecycle producer had
+to be released before new proposals could carry truthful bindings. Plan run
 `32920083879` from `fd6d532` proved that the former shared-stack release still
 changed the controller role and function through dependency propagation, even
 with the deployed template and previous parameters. It executed no change set.
