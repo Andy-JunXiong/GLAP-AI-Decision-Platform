@@ -43,7 +43,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_APPLIED_VALIDATED_PRODUCER_NOT_DEPLOYED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; a named human applied the additive staging migration and all six aggregate checks returned zero, but no bound runtime proposal has been generated |
-| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_INDEPENDENT_GENERATOR_STACK_SOURCE_DELIVERED_CI_PASSED_NOT_MIGRATED` | Human plan run `32920083879` from `fd6d532` proved the deployed-template/previous-parameter correction still produced three non-replacing changes because shared-stack controller dependencies propagate the Generator ARN. No artifact was uploaded and no change set was executed. Commit `961b32f` isolates `LifecycleGeneratorFunction` into a proposed one-resource stack with separate refactor-plan, refactor-execute, release-plan, and release-deploy actions; CI run `32929610077` passed on Python 3.13 and 3.14, while IAM reconciliation, stack refactor, deployment, and runtime verification remain pending and human-owned |
+| Decision Truth private-staging rollout handoff | `SCHEMA_VALIDATED_INDEPENDENT_GENERATOR_STACK_SOURCE_DELIVERED_CI_PASSED_NOT_MIGRATED` | Human plan run `32920083879` from `fd6d532` proved the deployed-template/previous-parameter correction still produced three non-replacing changes because shared-stack controller dependencies propagate the Generator ARN. No artifact was uploaded and no change set was executed. Commit `961b32f` isolates `LifecycleGeneratorFunction` into a proposed one-resource stack with separate refactor-plan, refactor-execute, release-plan, and release-deploy actions; implementation CI run `32929610077` and documentation-sync CI run `32929755239` passed on Python 3.13 and 3.14, while IAM reconciliation, stack refactor, deployment, and runtime verification remain pending and human-owned |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -184,9 +184,10 @@ are removed, and shared deployment fails closed until exclusive destination
 ownership is verified. Local validation passed all 569 repository tests, the
 30-test lifecycle deployment suite, Python compilation, PowerShell parsing,
 workflow/template parsing, mocked plan/execute boundaries, the 48/48 drift
-audit, JSON validation, and `git diff --check`. Commit `961b32f` is on `main`,
-and CI run `32929610077` passed on Python 3.13 and 3.14. No deployment workflow
-was dispatched. IAM administrator reconciliation, stack-refactor
+audit, JSON validation, and `git diff --check`. Commit `961b32f` is on `main`;
+implementation CI run `32929610077` and documentation-sync commit `05477e5`
+CI run `32929755239` both passed on Python 3.13 and 3.14. No deployment
+workflow was dispatched. IAM administrator reconciliation, stack-refactor
 planning/execution, code deployment, and runtime verification are still
 pending. No schema, lifecycle date, Action, alias,
 schedule, production, or Pages authority is implied.
@@ -1981,11 +1982,13 @@ done.
 
 ## Next Up
 
-1. Complete local validation and source-control review for the independent
-   one-resource Generator stack. A named IAM administrator must then separately
-   review and apply the proposed staging deployer permissions. Only afterward
-   may a named human dispatch `plan-refactor`; `execute-refactor` requires a
-   separate decision and the exact reviewed ID. After verified exclusive
+1. The independent one-resource Generator source, documentation, and CI are
+   complete. A named IAM administrator must next run and review the proposed
+   staging deployer permission plan, then separately apply it if approved.
+   Only afterward may a named human dispatch `plan-refactor` with an empty
+   `stack_refactor_id`; stop after reviewing its exact one-resource `MOVE` and
+   safe refactor ID. `execute-refactor` requires a separate decision and that
+   exact reviewed ID. After verified exclusive
    ownership, use `plan-release` before any separately authorized
    `deploy-release`. The old `plan-stack-only` / `deploy-stack-only` path is
    retired. After a later successful release and read-only stack/function verification,

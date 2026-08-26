@@ -27,8 +27,11 @@ preserved handoffs.
   the generator artifact. Human plan `32920083879` from `fd6d532` later proved
   that shared-stack dependency propagation still changed the controller role
   and function. It executed nothing and changed no resource. The shared-stack
-  Generator actions are therefore retired; the independent-stack replacement
-  remains local and is not recorded here as a completed capability.
+  Generator actions are therefore retired. Commit `961b32f` source-delivered
+  the independent one-resource replacement, and CI run `32929610077` passed on
+  Python 3.13 and 3.14. This completes the repository capability only; IAM
+  reconciliation, stack refactor, deployment, and runtime verification remain
+  pending and separately human-owned.
 
 ## 2026-08-25
 
