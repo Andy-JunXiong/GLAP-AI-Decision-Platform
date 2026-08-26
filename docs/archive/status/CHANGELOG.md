@@ -39,7 +39,15 @@ preserved handoffs.
   Execution remained unavailable and no resource moved. This repository
   revision renders the same one-resource template without parameters for both
   refactor and later release planning; source-control and CI maturity are
-  recorded by Git history, while a corrected plan has not been rerun.
+  recorded by Git history. At that checkpoint, no corrected plan had been rerun.
+- Added fail-closed recovery for corrected human plan run `32945123509`. The
+  CloudFormation preview was available with one destination-stack `CREATE`
+  metadata action and one Generator `MOVE`, but the workflow guard miscounted
+  both as resource changes and failed after preview creation. Read-only checks
+  confirmed source ownership and zero destination resources. The guard now
+  accepts only that exact pair, and `inspect-refactor` can validate the existing
+  preview without creating or executing another one. A local read-only
+  invocation against the retained AWS preview passed and executed nothing.
 
 ## 2026-08-25
 

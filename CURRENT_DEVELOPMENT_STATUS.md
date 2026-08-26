@@ -43,7 +43,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The authenticated Risk response and private cockpit derive a bounded brief from current open shipment-milestone SLA Alerts; expected benefit is `NOT_ESTIMATED`, and no deployment has occurred |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_APPLIED_VALIDATED_PRODUCER_NOT_DEPLOYED` | New valid SLA proposals preserve the brief version, deterministic selected alternative, and rationale on the immutable Action row; a named human applied the additive staging migration and all six aggregate checks returned zero, but no bound runtime proposal has been generated |
-| Decision Truth private-staging rollout handoff | `IAM_RECONCILED_PLAN_FAILED_CLOSED_CORRECTION_SOURCE_DELIVERED_RERUN_PENDING` | The named IAM administrator applied the bounded deployer update and direct read-only inspection verified all four refactor actions, both exact staging stack patterns, and no Scheduler, alias, deployer-self-modification, or production scope. Human plan run `32938938361` then created no available preview: CloudFormation rejected the new destination stack because its template retained a `Parameters` section. Execution stayed unavailable and no stack resource changed. This repository revision renders the same one-resource template without parameters for both refactor and later release planning; a corrected plan, migration, deployment, and runtime verification remain pending. |
+| Decision Truth private-staging rollout handoff | `IAM_RECONCILED_PLAN_AVAILABLE_INSPECTION_GATE_SOURCE_DELIVERED_EXECUTION_PENDING` | The bounded IAM update is applied and directly verified. After the parameter-free correction passed CI, human plan run `32945123509` created an available preview containing only CloudFormation's destination-stack `CREATE` metadata action and the intended `LifecycleGeneratorFunction` `MOVE`; the workflow then failed because its guard incorrectly counted both as resource moves. Read-only ownership checks confirm the source stack still owns the Lambda and the review-state destination stack owns zero resources. This repository revision corrects the exact-action guard and adds a non-executing `inspect-refactor` recovery action; a local read-only invocation against the retained AWS preview passed without execution. Refactor execution, deployment, and runtime verification remain pending. |
 | Outcome Review decision provenance v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Each cutoff-eligible Outcome can expose its immutable Action's nullable Decision Brief version and selected alternative through a read-time join; legacy bindings remain null, effects remain synthetic and non-causal, and no deployment has occurred |
 | Decision-contract Outcome cohort summary v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | The existing authenticated Outcome response separately aggregates all observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed, remain descriptive only, and are not deployed |
 | Outcome cohort evidence-sufficiency gate v1 | `IMPLEMENTED_LOCALLY_VERIFIED_CONFIGURED_NOT_DEPLOYED` | The project-owner-approved v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only and no deployment occurred |
@@ -162,7 +162,7 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Independent lifecycle Generator stack
 
-**Status:** `IAM_RECONCILED_PLAN_FAILED_CLOSED_CORRECTION_SOURCE_DELIVERED_RERUN_PENDING`
+**Status:** `IAM_RECONCILED_PLAN_AVAILABLE_INSPECTION_GATE_SOURCE_DELIVERED_EXECUTION_PENDING`
 
 Human plan run `32920083879` from commit `fd6d532` used the deployed shared
 template and every previous parameter except `GeneratorArtifactKey`, yet still
@@ -177,8 +177,9 @@ The source-delivered design moves only `LifecycleGeneratorFunction` into
 `glap-stateful-lifecycle-generator-staging`. The shared stack keeps the execution
 role, alarm, controller, quality gate, and Action mutation boundary, while fixed
 name/ARN references remove the CloudFormation dependency edge. A separate
-manual workflow splits `plan-refactor`, `execute-refactor`, `plan-release`, and
-`deploy-release`; every plan enforces an exact one-resource boundary and every
+manual workflow splits `plan-refactor`, `inspect-refactor`, `execute-refactor`,
+`plan-release`, and `deploy-release`; every plan enforces an exact one-resource
+boundary and every
 write remains separately human-owned. The old shared-stack generator actions
 are removed, and shared deployment fails closed until exclusive destination
 ownership is verified. Local validation passed all 569 repository tests, the
@@ -202,7 +203,22 @@ destination template, renders the deployed immutable configuration directly,
 and makes later Generator releases render that same template from the current
 Lambda configuration while changing only the artifact key. Focused static and
 mocked no-AWS validation passes. Source-control and CI maturity are recorded by
-Git history; no corrected plan has been rerun. Stack-refactor execution, code
+Git history. Commit `21d0e3a` passed CI run `32944908271` on Python 3.13 and
+3.14. Human `plan-refactor` run `32945123509` then created a `CREATE_COMPLETE` /
+`AVAILABLE` preview, but the workflow failed after creation because the guard
+treated CloudFormation's required destination-stack `CREATE` metadata action
+and the single `LifecycleGeneratorFunction` `MOVE` as two resource changes.
+Read-only ownership checks confirm the source stack still owns the Generator;
+the destination remains `REVIEW_IN_PROGRESS` with zero resources, so no move
+executed.
+
+This repository revision requires exactly those two bounded actions: one
+`CREATE` / `STACK` metadata action and one `MOVE` / `RESOURCE` action for the
+Generator, with no extras. It also adds `inspect-refactor`, which validates an
+existing preview without creating or executing another one. Source-control and
+CI maturity are recorded by Git history. A local read-only invocation of the
+corrected inspect path against the retained AWS preview passed the exact-action
+gate and explicitly executed nothing. Stack-refactor execution, code
 deployment, and runtime verification are still pending. No schema, lifecycle
 date, Action, alias, schedule, production, or Pages authority is implied.
 
@@ -1996,12 +2012,13 @@ done.
 
 ## Next Up
 
-1. After the parameter-free Generator refactor correction's source-delivery CI
-   passes, a named human may separately rerun `plan-refactor` with an empty
-   `stack_refactor_id`; stop after reviewing its exact one-resource `MOVE` and
-   safe refactor ID. The failed run `32938938361` is not executable and must
-   not be supplied to `execute-refactor`. `execute-refactor` requires a separate
-   decision and the exact ID from a later successful reviewed plan. After
+1. After the exact-action inspection correction's source-delivery CI passes, a
+   named human may dispatch `inspect-refactor` with the existing available
+   preview's exact ID. This read-only recovery path must stop after confirming
+   one destination-stack `CREATE` metadata action and one Generator `MOVE`, with
+   no extras. Do not create another plan while the destination stack is already
+   in review. `execute-refactor` requires a separate decision and that exact
+   successfully inspected ID. After
    verified exclusive ownership, use `plan-release` before any separately authorized
    `deploy-release`. The old `plan-stack-only` / `deploy-stack-only` path is
    retired. After a later successful release and read-only stack/function verification,

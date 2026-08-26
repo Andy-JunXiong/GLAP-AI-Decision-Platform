@@ -5,6 +5,7 @@ param(
     [string]$SourceStackName = "glap-stateful-lifecycle-staging",
     [string]$DestinationStackName = "glap-stateful-lifecycle-generator-staging",
     [string]$StackRefactorId = "",
+    [switch]$Inspect,
     [switch]$Apply
 )
 
@@ -19,13 +20,16 @@ if ($SourceStackName -ne "glap-stateful-lifecycle-staging" -or
     $DestinationStackName -ne "glap-stateful-lifecycle-generator-staging") {
     throw "Generator refactor source and destination stacks are fixed"
 }
-if ($Apply -and $StackRefactorId -notmatch (
+if ($Apply -and $Inspect) {
+    throw "Inspect and Apply are mutually exclusive"
+}
+if (($Apply -or $Inspect) -and $StackRefactorId -notmatch (
     '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-' +
     '[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
 )) {
-    throw "Execute requires the exact reviewed stack refactor ID"
+    throw "Inspect or execute requires the exact reviewed stack refactor ID"
 }
-if (-not $Apply -and $StackRefactorId) {
+if (-not $Apply -and -not $Inspect -and $StackRefactorId) {
     throw "Plan creates a new refactor and does not accept a prior ID"
 }
 
@@ -49,18 +53,24 @@ function Test-StackIdentity {
 
 function Assert-ExactMove {
     param([object[]]$Actions)
-    $moves = @($Actions)
-    if ($moves.Count -ne 1 -or [string]$moves[0].Action -ne "MOVE" -or
-        [string]$moves[0].Entity -ne "RESOURCE" -or
+    $allActions = @($Actions)
+    $stackCreates = @($allActions | Where-Object {
+        [string]$_.Action -eq "CREATE" -and [string]$_.Entity -eq "STACK"
+    })
+    $moves = @($allActions | Where-Object {
+        [string]$_.Action -eq "MOVE" -and [string]$_.Entity -eq "RESOURCE"
+    })
+    if ($allActions.Count -ne 2 -or $stackCreates.Count -ne 1 -or
+        $moves.Count -ne 1 -or
         [string]$moves[0].ResourceMapping.Source.LogicalResourceId -ne "LifecycleGeneratorFunction" -or
         [string]$moves[0].ResourceMapping.Destination.LogicalResourceId -ne "LifecycleGeneratorFunction" -or
         -not (Test-StackIdentity ([string]$moves[0].ResourceMapping.Source.StackName) $SourceStackName) -or
         -not (Test-StackIdentity ([string]$moves[0].ResourceMapping.Destination.StackName) $DestinationStackName)) {
-        throw "Stack refactor must contain exactly one lifecycle generator function MOVE"
+        throw "Stack refactor must contain one destination stack CREATE and one lifecycle generator function MOVE"
     }
 }
 
-if (-not $Apply) {
+if (-not $Apply -and -not $Inspect) {
     $source = Invoke-AwsJson @(
         "cloudformation", "describe-stacks", "--stack-name", $SourceStackName
     ) "Unable to inspect the source lifecycle stack"
@@ -191,8 +201,13 @@ $actions = Invoke-AwsJson @(
 Assert-ExactMove @($actions.StackRefactorActions)
 
 if (-not $Apply) {
-    Write-Host "Generator stack refactor plan is available."
+    if ($Inspect) {
+        Write-Host "Existing generator stack refactor plan is available and matches the exact action boundary."
+    } else {
+        Write-Host "Generator stack refactor plan is available."
+    }
     Write-Host "  Stack refactor ID: $StackRefactorId"
+    Write-Host "  Stack metadata action: CREATE"
     Write-Host "  Action: MOVE"
     Write-Host "  Logical resource: LifecycleGeneratorFunction"
     Write-Host "  Resource count: 1"

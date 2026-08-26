@@ -4,16 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Plan/execute the one-resource refactor or plan/deploy generator code
+        description: Plan/inspect/execute the one-resource refactor or plan/deploy generator code
         required: true
         type: choice
         options:
           - plan-refactor
+          - inspect-refactor
           - execute-refactor
           - plan-release
           - deploy-release
       stack_refactor_id:
-        description: Exact reviewed ID; required only for execute-refactor
+        description: Exact reviewed ID; required for inspect-refactor or execute-refactor
         required: false
         type: string
         default: ""
@@ -63,7 +64,7 @@ jobs:
             test -n "$ARTIFACT_BUCKET"
             test -n "$CF_EXECUTION_ROLE_ARN"
           fi
-          if [[ "${{ inputs.action }}" == "execute-refactor" ]]; then
+          if [[ "${{ inputs.action }}" == "inspect-refactor" || "${{ inputs.action }}" == "execute-refactor" ]]; then
             [[ "$STACK_REFACTOR_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]
           else
             test -z "$STACK_REFACTOR_ID"
@@ -76,7 +77,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Plan or execute one-resource stack refactor
-        if: inputs.action == 'plan-refactor' || inputs.action == 'execute-refactor'
+        if: inputs.action == 'plan-refactor' || inputs.action == 'inspect-refactor' || inputs.action == 'execute-refactor'
         shell: pwsh
         run: |
           $parameters = @{
@@ -84,7 +85,10 @@ jobs:
             SourceStackName = $env:SOURCE_STACK_NAME
             DestinationStackName = $env:GENERATOR_STACK_NAME
           }
-          if ("${{ inputs.action }}" -eq "execute-refactor") {
+          if ("${{ inputs.action }}" -eq "inspect-refactor") {
+            $parameters.StackRefactorId = $env:STACK_REFACTOR_ID
+            $parameters.Inspect = $true
+          } elseif ("${{ inputs.action }}" -eq "execute-refactor") {
             $parameters.StackRefactorId = $env:STACK_REFACTOR_ID
             $parameters.Apply = $true
           }

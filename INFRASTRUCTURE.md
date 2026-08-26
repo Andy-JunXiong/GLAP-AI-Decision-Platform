@@ -127,7 +127,15 @@ The values are deliberately omitted because they identify environment-specific r
   execution remained unavailable and no resource moved. This repository
   revision renders the same one-resource template without parameters for
   refactor and later release plans; source-control and CI maturity are recorded
-  by Git history, while rerun, deployment, and runtime verification remain pending
+  by Git history. Human run `32945123509` created an available preview with one
+  destination-stack `CREATE` metadata action and one Generator `MOVE`, then the
+  workflow guard miscounted both as resource moves and failed. Read-only checks
+  found the Generator still in the source stack and zero destination resources.
+  This repository revision accepts exactly that two-action shape, rejects extras,
+  and adds a non-executing `inspect-refactor` recovery action. A local read-only
+  invocation against the retained AWS preview passed that exact boundary and
+  executed nothing. Execution,
+  deployment, and runtime verification remain pending
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

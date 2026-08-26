@@ -1895,7 +1895,11 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
                 "Assert-ExactMove",
                 'forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")',
                 "destination template must inline deployed configuration",
+                "[switch]$Inspect",
+                '$allActions.Count -ne 2',
+                '$stackCreates.Count -ne 1',
                 '$moves.Count -ne 1',
+                "Existing generator stack refactor plan is available",
                 "A separate human dispatch must supply this exact ID",
                 "Post-refactor generator ownership verification failed",
             )

@@ -2,8 +2,8 @@
 
 ## Current maturity
 
-The repository contains a source-delivered design plus a locally corrected
-parameter-free destination template and fail-closed tooling for this refactor.
+The repository contains a source-delivered design, a parameter-free destination
+template, and fail-closed tooling for this refactor.
 Commit `961b32f` is on `main`;
 implementation CI run `32929610077` and documentation-sync commit `05477e5` CI
 run `32929755239` passed on Python 3.13 and 3.14. The named IAM administrator
@@ -12,9 +12,19 @@ plan run `32938938361` failed closed because CloudFormation does not allow a
 `Parameters` section when the refactor creates the destination stack. Its
 execution remained unavailable and no resource moved. This repository revision
 contains the parameter-free correction; source-control and CI maturity are
-recorded by Git history, while a corrected plan has not been rerun. Stack
+recorded by Git history. Commit `21d0e3a` passed CI run `32944908271`. Stack
 refactor, deployment, and runtime verification remain pending. Every AWS write
 below remains a separate named-human decision.
+
+Human run `32945123509` then created an available preview with exactly one
+destination-stack `CREATE` metadata action and one `LifecycleGeneratorFunction`
+`MOVE`. The workflow failed after creation because the original guard counted
+both actions as resource moves. Read-only checks found the Generator still in
+the source stack and zero destination resources. This repository revision fixes
+that guard and adds a non-executing `inspect-refactor` recovery path for the
+existing preview. A local read-only invocation against the retained AWS preview
+passed the corrected exact-action gate and executed nothing. Execution remains
+pending and separately human-owned.
 
 ## Why the split is required
 
@@ -55,24 +65,28 @@ cannot overlap.
 1. A named IAM administrator reviews and, if approved, applies the updated
    `ops/configure_stateful_lifecycle_deployer.ps1` policy. The new permissions
    are limited to the shared and generator staging stack ARN patterns and the
-   CloudFormation stack-refactor actions. This repository change does not apply
-   that policy.
+   CloudFormation stack-refactor actions. This remains a human-owned operation;
+   the bounded policy is currently applied and read-only verified.
 2. A named human dispatches `plan-refactor`. This calls
    `CreateStackRefactor`, which is an external AWS write that creates only a
    reviewable refactor preview. It does not execute the move. The script accepts
-   only one `MOVE` / `RESOURCE` action for `LifecycleGeneratorFunction` and
-   prints the safe refactor ID.
-3. The human reviews the completed plan and its exact one-resource action. A
+   exactly one `CREATE` / `STACK` metadata action plus one `MOVE` / `RESOURCE`
+   action for `LifecycleGeneratorFunction`, rejects all extras, and prints the
+   safe refactor ID.
+3. If planning created a valid preview but the workflow stopped afterward,
+   dispatch `inspect-refactor` with that exact ID. It performs only read-only
+   describe/list validation and does not create or execute another preview.
+4. The human reviews the completed plan and its exact one-resource action. A
    separate dispatch of `execute-refactor` must supply that exact ID. Do not
    execute if the preview contains any other logical resource.
-4. Execution verifies that the destination stack owns exactly one Lambda with
+5. Execution verifies that the destination stack owns exactly one Lambda with
    the expected physical name and that the shared stack no longer owns
    `LifecycleGeneratorFunction`. No lifecycle date, schema, seed, controller,
    Action, schedule, alias, or production path is invoked.
-5. For later code releases, dispatch `plan-release`. It creates, validates, and
+6. For later code releases, dispatch `plan-release`. It creates, validates, and
    deletes an unexecuted change set without packaging or uploading a new ZIP.
    The plan must contain exactly one non-replacing Lambda modification.
-6. Only after reviewing that plan may a named human separately dispatch
+7. Only after reviewing that plan may a named human separately dispatch
    `deploy-release`. That path packages and uploads only the Generator code and
    executes only the exact one-resource change set.
 

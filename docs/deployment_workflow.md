@@ -133,24 +133,35 @@ the plan uploaded nothing, executed nothing, and changed no resource.
 
 The replacement workflow is
 `.github/workflows/refactor-stateful-lifecycle-generator-staging.yml`. It first
-offers separately dispatched `plan-refactor` and `execute-refactor` actions to
-move only `LifecycleGeneratorFunction` into an independent one-resource stack.
+offers separately dispatched `plan-refactor`, `inspect-refactor`, and
+`execute-refactor` actions to move only `LifecycleGeneratorFunction` into an
+independent one-resource stack.
 After exclusive ownership is verified, `plan-release` creates and deletes an
 unexecuted exact-one-Lambda change set without uploading code, and a separately
 authorized `deploy-release` may package and update only that Lambda. The shared
 lifecycle workflow no longer exposes Generator-only actions, and its stack
-deployer blocks until the refactor has completed. The source design is local;
+deployer blocks until the refactor has completed. The source design is delivered;
 the IAM reconciliation is applied and read-only verified. Human plan run
 `32938938361` failed closed because the destination template still contained a
 CloudFormation `Parameters` section, which is forbidden while stack refactor
 creates a destination stack. No move executed. This repository revision renders
 the current deployed configuration into a parameter-free one-resource template
 for both refactor and later release planning; source-control and CI maturity are
-recorded by Git history, and a corrected plan has not been rerun. Refactor
+recorded by Git history. Commit `21d0e3a` passed CI run `32944908271`. Refactor
 execution, deployment, and runtime verification remain pending. Producer deployment,
 Operations API deployment, private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.
+
+Human run `32945123509` later created a `CREATE_COMPLETE` / `AVAILABLE` preview
+containing CloudFormation's destination-stack `CREATE` metadata action and the
+single Generator `MOVE`. The workflow failed after creation because the original
+guard counted both as resource moves. Read-only inspection confirmed that the
+source stack still owns the Generator and the review-state destination stack has
+zero resources. The guard now requires exactly one `CREATE` / `STACK` plus one
+expected `MOVE` / `RESOURCE`, rejecting all extras. `inspect-refactor` accepts
+the existing exact ID, performs only describe/list validation, and returns
+without creating or executing a refactor.
 
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The

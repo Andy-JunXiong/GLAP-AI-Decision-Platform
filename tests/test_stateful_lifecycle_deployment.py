@@ -575,7 +575,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Generator managed by independent stack", shared_workflow)
         self.assertIn("workflow_dispatch:", workflow)
         for action in (
-            "plan-refactor", "execute-refactor", "plan-release", "deploy-release"
+            "plan-refactor", "inspect-refactor", "execute-refactor",
+            "plan-release", "deploy-release",
         ):
             self.assertIn(f"          - {action}", workflow)
         self.assertIn("AWS_STAGING_ROLE_ARN", workflow)
@@ -583,6 +584,7 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("stack_refactor_id:", workflow)
         self.assertIn("STACK_REFACTOR_ID: ${{ inputs.stack_refactor_id }}", workflow)
         self.assertIn("$parameters.StackRefactorId = $env:STACK_REFACTOR_ID", workflow)
+        self.assertIn("$parameters.Inspect = $true", workflow)
         self.assertNotIn('$parameters.StackRefactorId = "${{ inputs.stack_refactor_id }}"', workflow)
         self.assertIn("LifecycleGeneratorFunction only", workflow)
         self.assertIn("Generator stack resource count: \\`1\\`", workflow)
@@ -644,9 +646,15 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("Assert-ExactMove", script)
         self.assertIn('forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")', script)
         self.assertIn("destination template must inline deployed configuration", script)
+        self.assertIn("[switch]$Inspect", script)
+        self.assertIn('$allActions.Count -ne 2', script)
+        self.assertIn('$stackCreates.Count -ne 1', script)
         self.assertIn('$moves.Count -ne 1', script)
-        self.assertIn('[string]$moves[0].Action -ne "MOVE"', script)
-        self.assertIn('[string]$moves[0].Entity -ne "RESOURCE"', script)
+        self.assertIn('[string]$_.Action -eq "CREATE"', script)
+        self.assertIn('[string]$_.Entity -eq "STACK"', script)
+        self.assertIn('[string]$_.Action -eq "MOVE"', script)
+        self.assertIn('[string]$_.Entity -eq "RESOURCE"', script)
+        self.assertIn("Existing generator stack refactor plan is available", script)
         self.assertIn("A separate human dispatch must supply this exact ID", script)
         self.assertIn("execute-stack-refactor", script)
         self.assertIn("Post-refactor generator ownership verification failed", script)

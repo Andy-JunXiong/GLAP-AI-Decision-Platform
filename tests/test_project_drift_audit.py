@@ -166,6 +166,20 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
             self.assertEqual(detected.status, "DRIFT")
             template_path.write_text(original_template, encoding="utf-8")
+            refactor_path = (
+                root / "ops/refactor_stateful_lifecycle_generator_stack.ps1"
+            )
+            original_refactor = refactor_path.read_text(encoding="utf-8")
+            refactor_path.write_text(
+                original_refactor.replace(
+                    "$stackCreates.Count -ne 1",
+                    "$stackCreates.Count -lt 1",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            refactor_path.write_text(original_refactor, encoding="utf-8")
             deployer_path = (
                 root / "ops/deploy_stateful_lifecycle_generator_stack.ps1"
             )

@@ -69,9 +69,19 @@ Human plan run `32938938361` failed closed before an executable preview because
 CloudFormation rejected parameters on the new destination stack; no resource
 moved. This repository revision contains a locally verified parameter-free
 template correction; source-control and CI maturity are recorded by Git
-history, and no corrected plan has been rerun. Stack-refactor execution,
+history. Commit `21d0e3a` passed CI run `32944908271`. Stack-refactor execution,
 deployment, role checks, and later operational continuation remain separately
 human-owned.
+
+The corrected plan run `32945123509` subsequently created an available preview.
+CloudFormation reports one destination-stack `CREATE` metadata action plus one
+`LifecycleGeneratorFunction` `MOVE`; the workflow failed only because its guard
+counted both as resource actions. Read-only ownership checks show the Generator
+still in the source stack and zero destination resources. The repository guard
+now requires exactly that metadata-plus-resource pair, rejects every extra
+action, and exposes a non-executing `inspect-refactor` path for the existing
+preview. A local read-only invocation against that retained preview passed the
+corrected gate and executed nothing. Execution remains separately human-owned.
 
 ## Cross-cutting evaluation boundary
 
