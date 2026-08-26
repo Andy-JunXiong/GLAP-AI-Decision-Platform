@@ -1,7 +1,7 @@
 # SLA_BREACH Decision Brief v1
 
-**Status:** deployed private staging readers and producer artifact verified;
-Generator not invoked and no bound runtime proposal observed
+**Status:** deployed private staging readers and producer verified; Generator
+invoked on `2026-08-27`; bound runtime proposal evidence not reconciled
 
 Decision Brief v1 turns one current governed `SLA_BREACH` Alert into a bounded,
 human-reviewable decision explanation. It is intentionally narrow, adds no AI

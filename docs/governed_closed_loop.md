@@ -43,6 +43,19 @@ creates no mutation. The SLA and Cost surfaces are deployed and reader/RBAC
 verified, but no newly bound Cost proposal has been observed. See [`decision_brief_v1.md`](decision_brief_v1.md)
 and [`cost_anomaly_decision_brief_v1.md`](cost_anomaly_decision_brief_v1.md).
 
+The local Cost runtime-evidence reconciler prepares the remaining producer
+proof without manufacturing it. Its aggregate-only query requires a naturally
+generated operational actual-calendar proposal, the exact eligible Alert and
+`decision-brief.v1` / `REVIEW_COST` / `stateful-cost-variance.v1` binding, an
+immutable unreviewed proposal state, a matching current-view projection, and
+unchanged legacy-null pre-release Cost Actions. Its separately authorized
+`2026-08-27` staging query found zero natural Cost proposals: the candidate gate
+failed while the other six aggregate checks passed. No runtime binding evidence
+was established. Any future Athena rerun remains a separately authorized
+external AWS operation; the reconciler invokes no lifecycle date and performs
+no Action mutation. See
+[`cost_anomaly_runtime_evidence_v1.md`](cost_anomaly_runtime_evidence_v1.md).
+
 Every newly generated eligible SLA Action preserves `decision_brief_version`,
 the deterministically selected `EXPEDITE_MILESTONE` alternative, and the exact
 proposal rationale on its immutable row. The deployed Cost extension reuses that
@@ -50,11 +63,11 @@ binding with `REVIEW_COST` and a source-versioned rationale. Invalid inputs
 fail closed; legacy and pre-release Cost Actions receive no invented binding.
 Human review reasons remain chronological append-only audit events. A named human applied
 the additive staging migration and all six aggregate checks returned zero on
-`2026-08-25`. The independent producer is deployed and artifact/configuration
-verified but has not been invoked. SLA readers are deployed and verified; the
-Cost producer and reader revisions are deployed and reader/RBAC verified, but
-the Generator remains uninvoked, so no Cost binding or bound runtime proposal
-has been observed. See
+`2026-08-25`. The independent producer, SLA readers, and Cost readers are
+deployed and reader/RBAC verified. Bounded actual-calendar continuation run
+`33020683956` invoked the Generator on `2026-08-27` and passed all 41 checks,
+and the subsequent aggregate Cost query found zero natural proposals. The gate
+failed closed, so no runtime Cost binding is established. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 ## Action and outcome contract

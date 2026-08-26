@@ -40,8 +40,10 @@ deleted its temporary change set. Separately authorized deploy run `32956001803`
 updated only the Generator from commit `9eb031f`; the parameter-free deployed
 template and S3 artifact match that commit, the artifact SHA-256 equals Lambda
 `CodeSha256`, the execution role is preserved, and no active change set remains.
-The Generator is deployed but has not been invoked, so runtime Decision Truth
-output is not yet observed.
+At that deployment checkpoint the Generator had not been invoked. Bounded
+actual-calendar continuation run `33020683956` later invoked it successfully;
+the workflow did not expose aggregate proposal counts. The later Cost query
+found zero natural proposals and established no runtime Cost binding.
 
 ## Why the split is required
 

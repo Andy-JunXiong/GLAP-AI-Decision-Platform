@@ -91,8 +91,10 @@ decision existed at proposal-generation time. The additive schema and view
 change is defined in `sql/16_decision_action_binding_v1.sql`; a named human
 applied it and all six aggregate checks returned zero on `2026-08-25`. The SLA
 projection and private cockpit are deployed and reader/RBAC verified for both
-SLA and Cost. The revised exact-pair aggregate validator has not run in staging,
-the Generator has not been invoked, and no bound Cost proposal was observed. See
+SLA and Cost. The revised exact-pair aggregate validator has not run in staging.
+Bounded actual-calendar continuation run `33020683956` invoked the Generator on
+`2026-08-27`. The subsequent aggregate Cost query found zero natural proposals
+and failed closed, so no exact runtime binding is established. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md).
 
 The Cost reader release is runtime-deployed from commit `0e5b740`. CI
@@ -101,8 +103,21 @@ API deploy `32983721998` completed the staging stack update. The named human
 published the matching private cockpit, the read-only verifier passed all
 configured identity/API/frontend/CORS/alarm/logging/redaction checks, and the
 four-role matrix passed before removing all four temporary users. This proves
-reader and RBAC behavior, not that a Cost Brief row exists; no lifecycle
-continuation or bound Cost proposal was observed.
+reader and RBAC behavior, not that a Cost Brief row exists. The later lifecycle
+continuation proves Generator invocation only; Cost proposal and binding
+evidence required a separate query. That query later found zero natural Cost
+proposals and failed closed.
+
+The local aggregate-only Cost runtime reconciler uses the deployed API stack
+only to discover the protected Athena configuration; it does not call an API
+route or change the API contract. Against the separately authorized completed
+lifecycle continuation, it can verify a naturally generated proposal's exact Alert and
+Decision binding plus the legacy-null boundary. The separately authorized
+`2026-08-27` query found zero natural proposals; the candidate gate failed and
+the other six checks passed. Any future read-only Athena query remains a
+separately authorized external operation because Athena stores a protected
+result object. See
+[`cost_anomaly_runtime_evidence_v1.md`](cost_anomaly_runtime_evidence_v1.md).
 
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
 Outcome version for each completed Action, bounded by the current Sydney date.
@@ -664,9 +679,12 @@ remained denied shipment-entity access and Action mutation, while the other
 role boundaries matched the contract. No real Action was mutated. Runtime
 reads reported an `ACTION_OPEN` chain with zero events and no Outcome, Learning
 at `INSUFFICIENT_ELIGIBLE_OUTCOMES` with 1/20 eligible Outcomes and no proposal,
-and no ready provider group or eligible label-readiness target. The Generator
-was not invoked, so this verifies the private reader and RBAC boundary, not a
-bound Decision proposal or eligible comparison cohort.
+and no ready provider group or eligible label-readiness target. At that
+verification checkpoint the Generator had not been invoked, so the evidence
+verified the private reader and RBAC boundary, not a bound Decision proposal or
+eligible comparison cohort. Actual-calendar run `33020683956` later invoked the
+Generator. The subsequent Cost reconciliation found zero natural proposals and
+did not establish a bound proposal or eligible comparison cohort.
 
 The Outcome-to-Learning evidence endpoint and private Learning Review were
 released in the same staging-only change and passed explicit

@@ -86,8 +86,25 @@ and the named human published the matching private cockpit without printing
 protected deployment identifiers. The read-only verifier and the separately
 authorized four-role matrix passed; all four temporary users were removed.
 
-These runs establish staging delivery and reader/RBAC behavior only. The
-Generator was not invoked, no new Action was created or mutated, and no bound
-Cost Decision Brief was observed. No lifecycle continuation, schedule, alias,
-Pages publication, policy activation, model promotion, or production change
-occurred.
+These runs establish staging delivery and reader/RBAC behavior only. A later
+bounded plan (`33020601008`) and separately authorized actual-calendar
+continuation (`33020683956`) advanced only `2026-08-27`; the Generator ran and
+all 41 checks passed. The workflow exposed no aggregate proposal or binding
+count. The subsequent separately authorized aggregate query found zero natural
+Cost proposals, so the gate failed closed and established no runtime binding
+evidence. No schedule, alias, Pages publication, policy activation, model
+promotion, or production change occurred.
+
+## Runtime evidence preparation
+
+The repository now includes an aggregate-only, fail-closed runtime reconciler.
+Against the separately authorized completed actual-calendar continuation, it can verify that
+every naturally generated Cost proposal traces to the exact eligible Alert,
+preserves `decision-brief.v1` / `REVIEW_COST` and
+`stateful-cost-variance.v1`, remains an unreviewed immutable proposal, and
+leaves every pre-release Cost Action legacy-null. Its `2026-08-27` staging query
+found zero natural proposals; the candidate check failed while the remaining
+six checks passed, including zero invalid bindings and an intact legacy-null
+boundary. Any future Athena `SELECT` remains a separately authorized external
+operation because Athena stores a protected query-result object. See
+[`cost_anomaly_runtime_evidence_v1.md`](cost_anomaly_runtime_evidence_v1.md).

@@ -16,7 +16,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
 | Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
-| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation through `2026-08-24` passed 41 checks per date, baseline run `32729202007` replaced one aggregate view at the 24 August cutoff and passed the deployed 10 checks, and the later Pages exporter exercised the stricter cutoff/source equality gate successfully; the SQL correction remains repository-delivered rather than separately redeployed by Pages |
+| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-27`. Plan run `33020601008` and separately authorized continuation run `33020683956` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
 | `COMPLETE`-to-Outcome canary | `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE` | One pending simulated Outcome passed 6/6 reconciliation; the local due-date gate blocked as expected on 2026-08-25, and the latest-version Outcome/Learning reconciler is ready but cannot run before 2026-08-28 |
@@ -41,10 +41,10 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
-| `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_VERIFIED_NOT_RUNTIME_OBSERVED` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. The Generator, authenticated reader API, and private cockpit are deployed and the read/RBAC boundaries passed verification, but the Generator has not been invoked and no bound runtime proposal has been observed. |
-| `COST_ANOMALY` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RBAC_VERIFIED_NOT_RUNTIME_OBSERVED` | Commit `0e5b740` delivered the deterministic `REVIEW_COST` brief and immutable binding. Generator release run `32982946620`, Operations API run `32983721998`, and the named-human private frontend release succeeded; read-only and four-role verification passed and all four temporary users were removed. The source remains `stateful-cost-variance.v1`, the unavailable rate-card version is not inferred, and value remains `NOT_ESTIMATED`. The Generator was not invoked and no bound Cost proposal was observed. |
-| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_COST_NOT_RUNTIME_OBSERVED` | New valid SLA or Cost proposals can preserve the exact brief version, deterministic alternative, and rationale on the immutable Action row. Existing and pre-release Cost Actions remain untouched. The exact-pair validator revision has not run in staging, the Generator has not been invoked, and no new bound proposal has been observed. |
-| Decision Truth private-staging rollout handoff | `COST_PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_RBAC_VERIFIED_GENERATOR_NOT_INVOKED` | Commit `0e5b740` passed CI run `32982375432`; Generator plan/deploy runs `32982600783` and `32982946620` preserved the one-resource boundary; API plan/deploy runs `32982375374` and `32983721998` succeeded; the named human published the matching private cockpit. Read-only and four-role verification passed, and all four temporary users were removed. No lifecycle invocation, runtime binding, operational Action mutation, schedule, alias, Pages, or production change is claimed. |
+| `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_GENERATOR_INVOKED_RUNTIME_PROPOSAL_NOT_RECONCILED` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. The Generator, authenticated reader API, and private cockpit are deployed and the read/RBAC boundaries passed verification. Continuation run `33020683956` invoked the Generator successfully, but aggregate proposal evidence has not been queried or reconciled. |
+| `COST_ANOMALY` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL` | Commit `0e5b740` delivered the deterministic `REVIEW_COST` brief and immutable binding. Actual-calendar continuation run `33020683956` invoked the Generator successfully. The separately authorized aggregate reconciler then found zero natural Cost proposals and failed closed; the remaining six checks passed, including zero invalid bindings and an intact pre-release legacy-null boundary. No runtime Cost binding is established. |
+| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_NO_COST_RUNTIME_CANDIDATE` | New valid SLA or Cost proposals can preserve the exact brief version, deterministic alternative, and rationale on the immutable Action row. The `2026-08-27` aggregate query found no Cost proposal to validate, while zero invalid or pre-release backfilled bindings were observed. The exact-pair validator revision remains separately unrun. |
+| Decision Truth private-staging rollout handoff | `COST_PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_RUNTIME_GATE_FAILED_CLOSED_NO_CANDIDATE` | Producer, authenticated API, and private cockpit releases are deployed and reader/RBAC verified. Continuation run `33020683956` passed all 41 checks; the subsequent aggregate Cost gate found zero natural candidates and correctly failed closed. No runtime binding, human Action judgment, schedule, alias, Pages, or production change is claimed. |
 | Outcome Review decision provenance v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The authenticated API and private cockpit expose each cutoff-eligible Outcome's nullable immutable Decision binding; legacy bindings remain null and effects remain synthetic and non-causal. Reader and four-role contracts passed, but no eligible bound Decision cohort was observed. |
 | Decision-contract Outcome cohort summary v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed private readers separately aggregate observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed and remain descriptive only. No eligible bound cohort was returned. |
 | Outcome cohort evidence-sufficiency gate v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only. Verification found no eligible comparison cohort. |
@@ -144,6 +144,14 @@ Pages run `32731582185` succeeded; a live read confirmed both cutoff and source
 coverage at `2026-08-24` with synthetic, engineering-only provenance. Pages
 did not redeploy the SQL validator or mutate lifecycle data.
 
+On `2026-08-27`, plan run `33020601008` passed without writing lifecycle data.
+The separately authorized `extend-integration-validate` run `33020683956` then
+advanced only that date in `OPERATIONAL` / `ACTUAL_CALENDAR` mode, with no seed
+or scenario, and passed four stages plus all 41 checks in 246165 ms. It did not
+deploy infrastructure, refresh the baseline, replay history, create a schedule,
+move an alias, publish Pages, or touch production. The run proves Generator
+invocation, not the existence or correctness of a Cost proposal or binding.
+
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
 Inspected runtime screenshots confirmed the health response and, after raising
@@ -163,7 +171,7 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — `COST_ANOMALY` runtime evidence gate
 
-**Status:** `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RBAC_VERIFIED_NOT_RUNTIME_OBSERVED`
+**Status:** `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL`
 
 The deterministic decision engine now accepts only valid current open
 `SHIPMENT_COST` / `TOTAL_COST` / `cost_variance_pct` Alerts whose finite
@@ -185,10 +193,26 @@ upload or execution; deploy run `32982946620` then released only the independent
 Generator. Operations API plan `32982375374` and deploy `32983721998` succeeded,
 and the named human published the matching private cockpit. The read-only
 verifier and four-role matrix passed, with all four temporary users removed.
-The exact-pair aggregate validator revision has not run in staging, the
-Generator was not invoked, and no bound Cost proposal was observed. This grants
-no Action mutation, alias, schedule, Pages, policy, model, or production
+The exact-pair aggregate validator revision has not run in staging. Plan run
+`33020601008` passed, and separately authorized continuation run `33020683956`
+invoked the deployed Generator while advancing only `2026-08-27`; four stages
+and all 41 checks passed. The workflow summary exposed no aggregate Cost
+proposal or binding count, so existence and correctness remain unobserved. This
+grants no Action judgment, alias, schedule, Pages, policy, model, or production
 authority.
+
+The repository now has a dedicated aggregate-only runtime reconciler. It fails
+closed unless one or more naturally generated actual-calendar Cost proposals
+trace to eligible same-date Alerts, preserve the exact
+`decision-brief.v1` / `REVIEW_COST` / `stateful-cost-variance.v1` binding,
+remain immutable unreviewed proposals, match the current view, and leave all
+pre-release Cost Actions legacy-null. The PowerShell parser and five focused
+contract tests pass. The separately authorized `2026-08-27` staging query found
+zero natural Cost proposals. The required candidate check returned false while
+the remaining six checks returned true, including zero invalid bindings and an
+intact pre-release legacy-null boundary. The gate therefore failed closed and
+established no runtime Decision-binding evidence. Any future Athena rerun is a
+new external AWS operation requiring separate authorization.
 
 ## Recently completed — Independent lifecycle Generator stack
 
@@ -274,8 +298,9 @@ found the destination stack `UPDATE_COMPLETE` with one resource, the deployed
 template parameter-free and bound to that commit's artifact, the S3 ZIP SHA-256
 equal to Lambda `CodeSha256`, the execution role preserved, zero shared-stack
 events during the deployment window, zero active change sets, and zero aliases.
-The Lambda remains `Active` / `Successful`. The Generator was not invoked, so no
-bound runtime Action or functional Decision Truth claim is established yet.
+The Lambda remains `Active` / `Successful`. It was later invoked by bounded
+actual-calendar continuation run `33020683956`; that workflow did not expose
+aggregate proposal counts, so no bound runtime Action claim is established.
 
 Documentation/fact synchronization commit `c4c1a48` is on `main`; ordinary CI
 run `32957338031` passed. That documentation-only push triggered no Operations
@@ -1660,6 +1685,21 @@ done.
 
 ### Codex-run validation
 
+- `COST_ANOMALY` runtime evidence reconciler v1 passes all five focused
+  aggregate-only, source-contract, temporal, human-governance, and maturity
+  scenarios plus its dedicated mutation-drift test. The PowerShell parser,
+  Python compilation, all 580 repository tests, JSON contract parsing, the
+  expanded 50/50 project drift audit, and `git diff --check` pass. That
+  implementation checkpoint was local only; the later authorized continuation
+  and empty-cohort Athena observation are recorded separately below. No Action
+  judgment, deployment, identity change, schedule, alias, Pages, policy, model,
+  or production action occurred in the local validation.
+- Bounded plan run `33020601008` and separately authorized continuation run
+  `33020683956` advanced isolated staging through `2026-08-27` in
+  `OPERATIONAL` / `ACTUAL_CALENDAR` mode. No seed or scenario was used; four
+  stages and all 41 checks passed. The later separately authorized Cost
+  reconciler found zero natural proposals and correctly failed closed; no Cost
+  binding evidence was established.
 - Decision Truth generator-only release and its failed-closed diagnostic
   correction pass the 28-test lifecycle deployment suite, Python compilation,
   all 567 repository tests, the 48/48 project drift audit, JSON contract
@@ -2073,11 +2113,10 @@ done.
 
 ## Next Up
 
-1. Decide whether one bounded
-   actual-calendar lifecycle continuation is justified to observe a naturally
-   eligible Cost proposal. Never create or backfill an Action merely to obtain
-   runtime evidence. The completed producer/reader release grants no lifecycle
-   invocation authority.
+1. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
+   The `2026-08-27` reconciler found zero natural proposals and failed closed.
+   Re-run it only after a future independently justified operational
+   continuation and a new explicit authorization.
 2. On or after Sydney date `2026-08-28`, separately authorize only the one
    already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
    reconcile its due Outcome/Learning delta. Stop after that canary; do not

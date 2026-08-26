@@ -6,6 +6,24 @@ preserved handoffs.
 
 ## 2026-08-27
 
+- Advanced the isolated staging lifecycle through `2026-08-27` under a bounded
+  actual-calendar authorization. Plan run `33020601008` passed; continuation
+  run `33020683956` used no seed or scenario and passed four stages plus all 41
+  checks. This proves Generator invocation only. The aggregate Cost reconciler
+  has not run, so proposal existence and binding correctness remain unobserved;
+  no human Action judgment, schedule, alias, Pages, or production change was
+  made.
+- Implemented the aggregate-only `COST_ANOMALY` runtime evidence reconciler.
+  It fails closed unless a naturally generated actual-calendar Cost proposal
+  traces to an exact eligible Alert, preserves the
+  `decision-brief.v1` / `REVIEW_COST` / `stateful-cost-variance.v1` binding,
+  remains an immutable unreviewed proposal, matches the current view, and
+  leaves pre-release Cost Actions legacy-null. Future simulations cannot pass
+  the gate and no protected identifier is printed. Its separately authorized
+  `2026-08-27` staging query found zero natural Cost proposals and correctly
+  failed closed; the other six checks passed, including zero invalid bindings
+  and zero pre-release backfilled bindings. No runtime binding evidence was
+  established, and any future Athena query remains separately authorized.
 - Released and reader/RBAC-verified `COST_ANOMALY` Decision Brief v1 in private
   staging as a deterministic
   capability. Valid open shipment-cost Alerts now produce a bounded
@@ -17,8 +35,9 @@ preserved handoffs.
   backfilled; the exact-pair validator fails invalid SLA or Cost bindings
   closed. Generator, authenticated API, and private cockpit releases completed
   from commit `0e5b740`; read-only and four-role verification passed and all
-  four temporary users were removed. The Generator was not invoked and no
-  bound Cost proposal was observed, so this adds no Action mutation,
+  four temporary users were removed. At that release checkpoint the Generator
+  had not been invoked and no bound Cost proposal was observed, so the release
+  itself added no Action mutation,
   policy/model authority, realised-value evidence, or production claim.
 
 ## 2026-08-26

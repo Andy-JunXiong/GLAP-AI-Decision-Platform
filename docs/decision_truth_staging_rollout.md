@@ -2,7 +2,8 @@
 
 **Status:** existing SLA schema, independent one-resource stack, authenticated
 Operations API, and private cockpit deployed and verified; COST_ANOMALY v1
-producer/readers released and RBAC verified; Generator not invoked
+producer/readers released and RBAC verified; Generator invoked on `2026-08-27`;
+aggregate Cost gate executed and failed closed with zero natural candidates
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -124,8 +125,11 @@ not mutate a real Action. Runtime reads remained bounded: Action evidence was
 `ACTION_OPEN` with zero audit events and no Outcome; Learning remained
 `INSUFFICIENT_ELIGIBLE_OUTCOMES` at 1/20 with no proposal; label readiness had
 one insufficient provider group, no ready group, and zero of three eligible
-targets. The Generator was not invoked, so no bound runtime Action, eligible
-Decision comparison cohort, or browser fingerprint exercise is claimed.
+targets. At that verification checkpoint the Generator had not been invoked, so
+no bound runtime Action, eligible Decision comparison cohort, or browser
+fingerprint exercise was claimed. It was later invoked by actual-calendar run
+`33020683956`; the subsequent aggregate Cost gate found zero natural proposals
+and established no runtime binding evidence.
 
 Commit `0e5b740` then delivered the Cost extension and passed CI run
 `32982375432`. Push-triggered Operations API plan `32982375374` succeeded with

@@ -48,9 +48,10 @@ type. They establish traceability, not causality. In particular, this contract:
 The Action-side fields depend on the additive staging migration in
 `sql/16_decision_action_binding_v1.sql`. A named human applied it and all six
 aggregate checks returned zero on `2026-08-25`. The deployed private readers
-passed read-only and four-role verification, while the Generator remained
-uninvoked and no eligible bound cohort was observed. Cost producer/API/cockpit
-revisions are deployed and reader/RBAC verified. Tests establish query, API-type, cockpit-disclosure,
+passed read-only and four-role verification. Actual-calendar run `33020683956`
+later invoked the Generator. The subsequent Cost query found zero natural
+proposals and therefore no eligible bound cohort. Cost producer/API/cockpit revisions are deployed and reader/RBAC
+verified. Tests establish query, API-type, cockpit-disclosure,
 legacy-null, and drift behavior without creating runtime evidence.
 
 The next repository-local consumer is the versioned Decision-contract Outcome

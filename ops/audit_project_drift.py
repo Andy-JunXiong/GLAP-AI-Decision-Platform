@@ -1796,9 +1796,11 @@ def check_cost_anomaly_decision_brief_boundary(root: Path) -> list[CheckResult]:
             "rate_card_version_status",
             "UNAVAILABLE_IN_ALERT_CONTRACT",
             "monetary_value` stays `null`",
-            "Generator was not invoked",
-            "no new Action was created or mutated",
-            "no bound Cost Decision Brief was observed",
+            "33020601008",
+            "33020683956",
+            "the Generator ran",
+            "zero natural Cost proposals",
+            "established no runtime binding evidence",
             "32982946620",
         )
     )
@@ -1824,6 +1826,82 @@ def check_cost_anomaly_decision_brief_boundary(root: Path) -> list[CheckResult]:
             and tests_bounded,
             "COST_ANOMALY Decision Brief remains deterministic, staging-deployed, source-versioned, rate-card-honest, NOT_ESTIMATED, human-reviewed, and runtime-evidence bounded.",
             "COST_ANOMALY Decision Brief lost its exact input, source-version, unavailable-rate-card, no-value, fail-closed, test, or authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_cost_anomaly_runtime_evidence_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "reconciler": "ops/reconcile_cost_anomaly_runtime_staging.ps1",
+        "tests": "tests/test_cost_anomaly_runtime_evidence.py",
+        "contract": "docs/cost_anomaly_runtime_evidence_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    reconciler_lower = text["reconciler"].lower()
+    normalized_contract = " ".join(text["contract"].split())
+    reconciler_bounded = all(
+        marker in text["reconciler"]
+        for marker in (
+            "Get-SydneyBusinessDate",
+            "Minimum created date is in the future; no AWS call was made",
+            "alert_grain = 'SHIPMENT_COST'",
+            "alert_dimension = 'TOTAL_COST'",
+            "metric_name = 'cost_variance_pct'",
+            "decision_brief_version = 'decision-brief.v1'",
+            "action_type = 'REVIEW_COST'",
+            "selected_alternative = 'REVIEW_COST'",
+            "stateful-cost-variance.v1",
+            "At least one naturally generated Cost proposal exists",
+            "Pre-release Cost Actions remain legacy-null",
+            "Protected identifiers were not printed",
+        )
+    ) and not any(
+        marker in reconciler_lower
+        for marker in (
+            "insert into",
+            "merge into",
+            "update ",
+            "delete from",
+            "invoke-restmethod",
+            "invoke-webrequest",
+            "write-host $query",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "executed against staging on `2026-08-27`; failed closed",
+            "bounded actual-calendar cohort contained zero Cost proposals",
+            "established no runtime Decision-binding evidence",
+            "does not invoke the Generator",
+            "does not create, backfill, edit, approve, reject, or complete an Action",
+            "Future simulation cannot satisfy the gate",
+            "Athena writes its query-result object",
+            "any future rerun requires separate human authorization",
+            "does not establish human approval, execution, realised value, causal effect",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "test_reconciler_is_aggregate_only_and_read_only",
+            "test_reconciler_enforces_cost_source_and_exact_binding",
+            "test_reconciler_is_actual_calendar_and_future_fail_closed",
+            "test_reconciler_requires_natural_proposal_and_preserves_human_gate",
+            "test_contract_preserves_authority_and_maturity",
+        )
+    )
+    return [
+        _result(
+            "cost_anomaly_runtime_evidence_boundary",
+            "governance",
+            reconciler_bounded and contract_bounded and tests_bounded,
+            "The Cost runtime reconciler remains aggregate-only, actual-calendar bounded, fail-closed, and unable to manufacture a proposal or human judgment.",
+            "The Cost runtime reconciler lost its read-only, temporal, exact-binding, legacy-null, test, or authority boundary.",
             tuple(paths.values()),
         )
     ]
@@ -3594,6 +3672,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
     checks.extend(check_cost_anomaly_decision_brief_boundary(root))
+    checks.extend(check_cost_anomaly_runtime_evidence_boundary(root))
     checks.extend(check_decision_truth_staging_rollout_boundary(root))
     checks.extend(check_outcome_decision_provenance_boundary(root))
     checks.extend(check_decision_contract_outcome_cohort_boundary(root))

@@ -1,7 +1,7 @@
 # Decision-to-Action binding v1
 
-**Status:** staging schema, SLA producer, and private readers deployed and
-verified; producer not invoked; COST_ANOMALY extension deployed but no bound runtime proposal observed
+**Status:** staging schema, producer, and private readers deployed and verified;
+`2026-08-27` COST_ANOMALY reconciliation failed closed with zero natural candidates
 
 This contract makes a newly generated governed Action prove which implemented
 Decision Brief recommendation produced its immutable proposal. It does not add
@@ -91,6 +91,19 @@ change without upload or execution; deploy run `32982946620` released only
 that resource. Operations API plan/deploy runs `32982375374` and `32983721998`
 succeeded, the named human published the matching private cockpit, and the
 read-only and four-role verifiers passed with all four temporary users removed.
-The exact-pair validator revision has not run in staging and the Generator was
-not invoked, so no bound runtime Action was observed. No Action was created or
-mutated, and no production or public surface changed.
+The exact-pair validator revision has not run in staging. Bounded plan run
+`33020601008` and separately authorized continuation run `33020683956` advanced
+only `2026-08-27`; the Generator ran and all 41 checks passed. The workflow did
+not expose aggregate proposal or binding counts. The subsequent aggregate query
+found zero natural Cost proposals, zero invalid bindings, and zero pre-release
+backfilled Cost bindings. With no candidate, exact runtime binding correctness
+is not established. No human Action judgment, production surface, or public
+surface changed.
+
+The local runtime-evidence reconciler now prepares the next read-only gate. It
+requires one or more naturally generated actual-calendar Cost proposals,
+validates their exact source Alert and immutable binding, compares the binding
+with the current view, and fails if any pre-release Cost Action was backfilled.
+Its separately authorized `2026-08-27` run found zero natural candidates and
+failed closed; it cannot invoke the Generator or mutate an Action. See
+[`cost_anomaly_runtime_evidence_v1.md`](cost_anomaly_runtime_evidence_v1.md).

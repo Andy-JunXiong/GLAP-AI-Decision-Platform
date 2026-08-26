@@ -42,6 +42,15 @@ effect, execution, or Outcome is inferred. The private UI links onward to the
 Action Board without mutation. Both contracts are deployed and reader/RBAC
 verified; neither has a newly generated bound runtime proposal.
 
+The source tree now contains a fail-closed, aggregate-only Cost runtime
+reconciler. It is designed to inspect a naturally generated actual-calendar
+proposal and validate the exact source Alert, immutable binding, current-view
+projection, and legacy-null boundary without exposing identifiers or invoking
+the Generator. The separately authorized `2026-08-27` staging query found zero
+natural Cost proposals, so the gate failed closed and established no runtime
+binding evidence. Any future Athena rerun requires separate human authorization
+because the service persists a protected query-result object.
+
 Decision-to-Action binding extends the deployed slice without introducing a
 new write surface. The lifecycle generator stamps the brief version,
 deterministic alternative, and rationale onto each newly eligible immutable
@@ -96,8 +105,12 @@ one destination Lambda and zero source Generator resources. Plan run
 authorized run `32956001803` deployed the Generator from commit `9eb031f`.
 Artifact/template/Lambda digest checks passed, the execution role was preserved,
 the shared stack had no deployment-window event, and no alias exists. The
-Generator was not invoked; Operations API and private frontend remain downstream
-undeployed readers.
+Operations API and private frontend were later deployed and reader/RBAC
+verified. Bounded actual-calendar run `33020683956` invoked the Generator while
+advancing `2026-08-27` and passed four stages plus all 41 checks. Its workflow
+summary did not expose proposal counts, so Cost proposal existence and binding
+correctness required aggregate reconciliation. The subsequent query found zero
+natural Cost proposals and failed closed, establishing no runtime binding.
 
 ## Cross-cutting evaluation boundary
 
@@ -518,6 +531,12 @@ older start date could not overwrite the newer status. Baseline run
 passed the deployed 10-check contract. The stricter equality gate is
 repository-implemented and locally verified; none of these runs moved a
 production alias, created a schedule, published Pages, or mutated an Action.
+
+Plan run `33020601008` and separately authorized continuation run `33020683956`
+later advanced isolated actual-calendar state through `2026-08-27`. No seed or
+scenario was used; four stages and all 41 checks passed. The baseline remains at
+the earlier `2026-08-24` cutoff. The subsequent aggregate Cost query found zero
+natural proposals and correctly failed closed.
 
 Commit `28e3edf` later delivered the public display and strict exporter gate.
 CI run `32731582106` and separately authorized aggregate-only Pages run

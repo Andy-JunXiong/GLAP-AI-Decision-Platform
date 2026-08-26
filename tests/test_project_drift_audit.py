@@ -162,6 +162,26 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_cost_anomaly_decision_brief_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_cost_anomaly_runtime_reconciler_mutation_drift_is_detected(self):
+        paths = (
+            "ops/reconcile_cost_anomaly_runtime_staging.ps1",
+            "tests/test_cost_anomaly_runtime_evidence.py",
+            "docs/cost_anomaly_runtime_evidence_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_cost_anomaly_runtime_evidence_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            reconciler_path = root / "ops/reconcile_cost_anomaly_runtime_staging.ps1"
+            reconciler_path.write_text(
+                reconciler_path.read_text(encoding="utf-8")
+                + "\n# INSERT INTO protected_table\n",
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_cost_anomaly_runtime_evidence_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_decision_truth_generator_release_scope_drift_is_detected(self):
         paths = (
             "sql/16_decision_action_binding_v1.sql",
