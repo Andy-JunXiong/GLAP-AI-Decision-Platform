@@ -155,6 +155,17 @@ class ProjectDriftAuditTests(unittest.TestCase):
             self._copy_paths(root, paths)
             current = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
             self.assertEqual(current.status, "PASS")
+            template_path = (
+                root / "infrastructure/stateful-lifecycle-generator-staging.yaml"
+            )
+            original_template = template_path.read_text(encoding="utf-8")
+            template_path.write_text(
+                original_template + "\nParameters:\n  Unsafe:\n    Type: String\n",
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_truth_staging_rollout_boundary(root)[0]
+            self.assertEqual(detected.status, "DRIFT")
+            template_path.write_text(original_template, encoding="utf-8")
             deployer_path = (
                 root / "ops/deploy_stateful_lifecycle_generator_stack.ps1"
             )

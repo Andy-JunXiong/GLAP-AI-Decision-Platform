@@ -2,10 +2,17 @@
 
 ## Current maturity
 
-The repository contains locally verified, source-delivered design and
-fail-closed tooling for this refactor. Commit `961b32f` is on `main`;
+The repository contains a source-delivered design plus a locally corrected
+parameter-free destination template and fail-closed tooling for this refactor.
+Commit `961b32f` is on `main`;
 implementation CI run `32929610077` and documentation-sync commit `05477e5` CI
-run `32929755239` passed on Python 3.13 and 3.14. IAM application, stack
+run `32929755239` passed on Python 3.13 and 3.14. The named IAM administrator
+later applied and directly verified the bounded refactor permissions. Human
+plan run `32938938361` failed closed because CloudFormation does not allow a
+`Parameters` section when the refactor creates the destination stack. Its
+execution remained unavailable and no resource moved. This repository revision
+contains the parameter-free correction; source-control and CI maturity are
+recorded by Git history, while a corrected plan has not been rerun. Stack
 refactor, deployment, and runtime verification remain pending. Every AWS write
 below remains a separate named-human decision.
 
@@ -30,6 +37,14 @@ The shared alarm and controller policy refer to the fixed generator function
 name/ARN instead of a CloudFormation resource reference. The function keeps its
 existing physical name and execution-role ARN; the refactor changes
 CloudFormation ownership, not runtime configuration.
+
+The destination template is parameter-free because CloudFormation stack
+refactor cannot add parameters while creating a destination stack. Planning
+renders the current deployed function name, role, artifact, Athena output,
+workgroup, and source database directly into that one-resource template. Later
+code plans render the same template from the current Lambda configuration and
+change only the new artifact key; they do not depend on destination-stack
+parameters.
 
 ## Human-owned migration sequence
 

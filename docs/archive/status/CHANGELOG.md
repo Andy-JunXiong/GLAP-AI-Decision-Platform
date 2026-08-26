@@ -32,6 +32,14 @@ preserved handoffs.
   Python 3.13 and 3.14. This completes the repository capability only; IAM
   reconciliation, stack refactor, deployment, and runtime verification remain
   pending and separately human-owned.
+- Applied and directly verified the bounded staging deployer permissions for
+  the independent Generator refactor. Human plan run `32938938361` passed local
+  tests, input guards, and OIDC, then failed closed because CloudFormation
+  forbids a `Parameters` section when refactor creates the destination stack.
+  Execution remained unavailable and no resource moved. This repository
+  revision renders the same one-resource template without parameters for both
+  refactor and later release planning; source-control and CI maturity are
+  recorded by Git history, while a corrected plan has not been rerun.
 
 ## 2026-08-25
 

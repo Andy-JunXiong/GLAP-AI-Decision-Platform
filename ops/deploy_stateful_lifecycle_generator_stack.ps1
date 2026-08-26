@@ -50,29 +50,55 @@ if ($resources.Count -ne 1 -or
     [string]$resources[0].PhysicalResourceId -ne $FunctionName) {
     throw "Independent generator stack must own exactly one expected Lambda function"
 }
-$artifactBucketParameter = @($stack.Parameters | Where-Object ParameterKey -eq "ArtifactBucket")
-$generatorArtifactParameter = @($stack.Parameters | Where-Object ParameterKey -eq "GeneratorArtifactKey")
-if ($artifactBucketParameter.Count -ne 1 -or
-    [string]$artifactBucketParameter[0].ParameterValue -ne $ArtifactBucket -or
-    $generatorArtifactParameter.Count -ne 1) {
-    throw "Independent generator stack artifact parameters are unavailable or mismatched"
+$functionJson = & aws lambda get-function-configuration --function-name $FunctionName @awsScope --output json
+if ($LASTEXITCODE -ne 0 -or -not $functionJson) {
+    throw "Unable to inspect the deployed independent generator"
 }
-$parameterArguments = @(
-    $stack.Parameters | ForEach-Object {
-        $key = [string]$_.ParameterKey
-        if ($key -notmatch '^[A-Za-z][A-Za-z0-9]{0,254}$') { throw "Unsafe stack parameter key" }
-        if ($key -eq "GeneratorArtifactKey") {
-            "ParameterKey=$key,ParameterValue=$ArtifactKey"
-        } else {
-            "ParameterKey=$key,UsePreviousValue=true"
-        }
+$function = ($functionJson -join "`n" | ConvertFrom-Json)
+$environment = $function.Environment.Variables
+if ([string]$function.FunctionName -ne $FunctionName -or
+    [string]$function.State -ne "Active" -or
+    [string]$function.LastUpdateStatus -ne "Successful" -or
+    [string]$function.Role -notmatch (
+        '^arn:aws(-[a-z]+)?:iam::\d{12}:role/(?:[A-Za-z0-9+=,.@_-]+/)*' +
+        'glap-stateful-lifecycle-generator-staging-role$'
+    ) -or
+    [string]$environment.ATHENA_OUTPUT -notmatch '^s3://[^/]+/.+$' -or
+    [string]$environment.ATHENA_WORKGROUP -notmatch '^[A-Za-z0-9._-]{1,128}$' -or
+    [string]$environment.ATHENA_SOURCE_DATABASE -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    throw "Deployed independent generator configuration is outside the release contract"
+}
+
+$safeValues = @{
+    ARTIFACT_BUCKET = $ArtifactBucket
+    GENERATOR_ARTIFACT_KEY = $ArtifactKey
+    FUNCTION_NAME = $FunctionName
+    EXECUTION_ROLE_ARN = [string]$function.Role
+    ATHENA_OUTPUT_URI = [string]$environment.ATHENA_OUTPUT
+    ATHENA_WORKGROUP = [string]$environment.ATHENA_WORKGROUP
+    SOURCE_DATABASE = [string]$environment.ATHENA_SOURCE_DATABASE
+}
+foreach ($value in $safeValues.Values) {
+    if ($value -match '["\r\n]' -or -not $value) {
+        throw "Generator release template values must be non-empty single-line safe strings"
     }
-)
-if (@($parameterArguments | Where-Object { $_ -match ',ParameterValue=' }).Count -ne 1) {
-    throw "Generator release must override exactly one stack parameter"
 }
 
 $root = Split-Path $PSScriptRoot -Parent
+$templatePath = Join-Path $root "infrastructure/stateful-lifecycle-generator-staging.yaml"
+$renderedTemplate = [IO.File]::ReadAllText($templatePath)
+foreach ($entry in $safeValues.GetEnumerator()) {
+    $renderedTemplate = $renderedTemplate.Replace("{{$($entry.Key)}}", $entry.Value)
+}
+if ($renderedTemplate -match '{{[A-Z_]+}}') {
+    throw "Generator release template contains unresolved placeholders"
+}
+foreach ($forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")) {
+    if ($renderedTemplate -match "(?m)^$forbiddenSection\s*:") {
+        throw "Generator release template cannot contain $forbiddenSection"
+    }
+}
+
 $distDir = Join-Path $root "dist"
 $packageDir = Join-Path $distDir "stateful-lifecycle-generator-package"
 $archivePath = Join-Path $distDir "glap-stateful-lifecycle-generator.zip"
@@ -94,11 +120,15 @@ if ($Apply) {
 
 $changeSetName = "generator-$([DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
 $created = $false
+$temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) ("glap-generator-release-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path $temporaryDirectory | Out-Null
+$renderedTemplatePath = Join-Path $temporaryDirectory "generator.yaml"
+[IO.File]::WriteAllText($renderedTemplatePath, $renderedTemplate, [Text.UTF8Encoding]::new($false))
 try {
     & aws cloudformation create-change-set `
         --stack-name $StackName --change-set-name $changeSetName --change-set-type UPDATE `
-        --use-previous-template --role-arn $CloudFormationRoleArn `
-        --capabilities CAPABILITY_NAMED_IAM --parameters @parameterArguments @awsScope --output json | Out-Null
+        --template-body "file://$renderedTemplatePath" --role-arn $CloudFormationRoleArn `
+        --capabilities CAPABILITY_NAMED_IAM @awsScope --output json | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Unable to create the independent generator change set" }
     $created = $true
     & aws cloudformation wait change-set-create-complete --stack-name $StackName --change-set-name $changeSetName @awsScope
@@ -131,5 +161,9 @@ try {
         & aws cloudformation delete-change-set --stack-name $StackName --change-set-name $changeSetName @awsScope 2>$null | Out-Null
     }
     throw
+} finally {
+    if (Test-Path -LiteralPath $temporaryDirectory) {
+        Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force
+    }
 }
 Write-Host "Independent lifecycle generator released without controller, role, alarm, schema, date, schedule, alias, Action, or production change."

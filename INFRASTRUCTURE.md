@@ -121,8 +121,13 @@ The values are deliberately omitted because they identify environment-specific r
   refactor plan/execute from later code plan/deploy, requires an exact one-resource
   `MOVE` or non-replacing Lambda change, removes Generator packaging from the
   shared deployer, and blocks shared updates until exclusive ownership is
-  verified. IAM application, refactor, deployment, and runtime verification are
-  not performed by this source change
+  verified. The bounded IAM update is now applied and directly verified. Human
+  plan run `32938938361` then failed closed because CloudFormation forbids a
+  `Parameters` section when creating the destination stack during refactor;
+  execution remained unavailable and no resource moved. This repository
+  revision renders the same one-resource template without parameters for
+  refactor and later release plans; source-control and CI maturity are recorded
+  by Git history, while rerun, deployment, and runtime verification remain pending
 - a dedicated promoter Lambda owns alias mutation and is hard-locked in code and
   environment to `staging`, so the GitHub deployment role has no `UpdateAlias`
   permission and cannot move `prod`

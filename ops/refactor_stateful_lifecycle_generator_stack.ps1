@@ -128,6 +128,14 @@ if (-not $Apply) {
     if ($renderedDestination -match '{{[A-Z_]+}}') {
         throw "Generator refactor template contains unresolved placeholders"
     }
+    foreach ($forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")) {
+        if ($renderedDestination -match "(?m)^$forbiddenSection\s*:") {
+            throw "Generator refactor destination template cannot contain $forbiddenSection"
+        }
+    }
+    if ($renderedDestination -match '!Ref\s+(ArtifactBucket|GeneratorArtifactKey|FunctionName|ExecutionRoleArn|AthenaOutputUri|AthenaWorkgroup|SourceDatabase)') {
+        throw "Generator refactor destination template must inline deployed configuration"
+    }
 
     $temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) ("glap-generator-refactor-" + [guid]::NewGuid().ToString("N"))
     New-Item -ItemType Directory -Path $temporaryDirectory | Out-Null

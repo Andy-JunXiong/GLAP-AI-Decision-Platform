@@ -1862,19 +1862,39 @@ def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResul
         )
         and text["generator_template"].count("Type: AWS::Lambda::Function") == 1
         and "AWS::IAM::Role" not in text["generator_template"]
+        and "Parameters:" not in text["generator_template"]
+        and all(
+            marker in text["generator_template"]
+            for marker in (
+                "{{ARTIFACT_BUCKET}}",
+                "{{GENERATOR_ARTIFACT_KEY}}",
+                "{{FUNCTION_NAME}}",
+                "{{EXECUTION_ROLE_ARN}}",
+                "{{ATHENA_OUTPUT_URI}}",
+                "{{ATHENA_WORKGROUP}}",
+                "{{SOURCE_DATABASE}}",
+            )
+        )
         and all(
             marker in text["generator_deployer"]
             for marker in (
                 "must own exactly one expected Lambda function",
+                "lambda get-function-configuration",
+                '--template-body "file://$renderedTemplatePath"',
+                'forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")',
                 "$changes.Count -ne 1",
                 'Replacement -ne "False"',
                 "without upload or execution",
             )
         )
+        and "--use-previous-template" not in text["generator_deployer"]
+        and "--parameters @parameterArguments" not in text["generator_deployer"]
         and all(
             marker in text["generator_refactor"]
             for marker in (
                 "Assert-ExactMove",
+                'forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")',
+                "destination template must inline deployed configuration",
                 '$moves.Count -ne 1',
                 "A separate human dispatch must supply this exact ID",
                 "Post-refactor generator ownership verification failed",

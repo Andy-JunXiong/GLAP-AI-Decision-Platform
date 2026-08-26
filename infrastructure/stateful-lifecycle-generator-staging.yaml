@@ -4,47 +4,24 @@ Description: >-
   only the Lambda function; its execution role remains in the shared lifecycle
   staging stack. It has no schedule, alias, controller, or production path.
 
-Parameters:
-  ArtifactBucket:
-    Type: String
-    Default: "{{ARTIFACT_BUCKET}}"
-  GeneratorArtifactKey:
-    Type: String
-    Default: "{{GENERATOR_ARTIFACT_KEY}}"
-  FunctionName:
-    Type: String
-    Default: "{{FUNCTION_NAME}}"
-  ExecutionRoleArn:
-    Type: String
-    Default: "{{EXECUTION_ROLE_ARN}}"
-  AthenaOutputUri:
-    Type: String
-    Default: "{{ATHENA_OUTPUT_URI}}"
-  AthenaWorkgroup:
-    Type: String
-    Default: "{{ATHENA_WORKGROUP}}"
-  SourceDatabase:
-    Type: String
-    Default: "{{SOURCE_DATABASE}}"
-
 Resources:
   LifecycleGeneratorFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Ref FunctionName
+      FunctionName: "{{FUNCTION_NAME}}"
       Runtime: python3.14
       Handler: lambda_function.lambda_handler
-      Role: !Ref ExecutionRoleArn
+      Role: "{{EXECUTION_ROLE_ARN}}"
       Timeout: 900
       MemorySize: 512
       Code:
-        S3Bucket: !Ref ArtifactBucket
-        S3Key: !Ref GeneratorArtifactKey
+        S3Bucket: "{{ARTIFACT_BUCKET}}"
+        S3Key: "{{GENERATOR_ARTIFACT_KEY}}"
       Environment:
         Variables:
-          ATHENA_SOURCE_DATABASE: !Ref SourceDatabase
-          ATHENA_WORKGROUP: !Ref AthenaWorkgroup
-          ATHENA_OUTPUT: !Ref AthenaOutputUri
+          ATHENA_SOURCE_DATABASE: "{{SOURCE_DATABASE}}"
+          ATHENA_WORKGROUP: "{{ATHENA_WORKGROUP}}"
+          ATHENA_OUTPUT: "{{ATHENA_OUTPUT_URI}}"
           SHIPMENT_TABLE: fact_shipment_lifecycle_staging_v1
           SHIPMENT_EVENT_TABLE: fact_shipment_lifecycle_event_staging_v1
           SHIPMENT_COST_TABLE: fact_shipment_cost_staging_v1

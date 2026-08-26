@@ -64,9 +64,14 @@ manual actions; later Generator releases also have separate plan and deploy
 actions and accept only one non-replacing Lambda modification. The shared
 deployer packages no Generator and fails closed until exclusive destination
 ownership is verified. Operations API and private frontend remain downstream
-readers. IAM reconciliation, stack refactor, deployment, role checks, and later
-operational continuation remain separately human-owned; none has occurred for
-this local design.
+readers. The bounded IAM reconciliation is applied and directly verified.
+Human plan run `32938938361` failed closed before an executable preview because
+CloudFormation rejected parameters on the new destination stack; no resource
+moved. This repository revision contains a locally verified parameter-free
+template correction; source-control and CI maturity are recorded by Git
+history, and no corrected plan has been rerun. Stack-refactor execution,
+deployment, role checks, and later operational continuation remain separately
+human-owned.
 
 ## Cross-cutting evaluation boundary
 

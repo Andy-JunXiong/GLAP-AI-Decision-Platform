@@ -603,6 +603,14 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertEqual(template.count("    Type: AWS::Lambda::Function"), 1)
         self.assertIn("  LifecycleGeneratorFunction:", template)
+        self.assertNotIn("Parameters:", template)
+        for placeholder in (
+            "{{ARTIFACT_BUCKET}}", "{{GENERATOR_ARTIFACT_KEY}}",
+            "{{FUNCTION_NAME}}", "{{EXECUTION_ROLE_ARN}}",
+            "{{ATHENA_OUTPUT_URI}}", "{{ATHENA_WORKGROUP}}",
+            "{{SOURCE_DATABASE}}",
+        ):
+            self.assertIn(placeholder, template)
         for forbidden in (
             "AWS::IAM::Role", "AWS::CloudWatch::Alarm", "AWS::Lambda::Alias",
             "AWS::Scheduler::Schedule", "IntegrationControllerFunction",
@@ -612,6 +620,11 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn("[switch]$InspectChangeSet", deployer)
         self.assertIn("[switch]$Apply", deployer)
         self.assertIn("must own exactly one expected Lambda function", deployer)
+        self.assertIn("lambda get-function-configuration", deployer)
+        self.assertIn('--template-body "file://$renderedTemplatePath"', deployer)
+        self.assertNotIn("--use-previous-template", deployer)
+        self.assertNotIn("--parameters @parameterArguments", deployer)
+        self.assertIn('forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")', deployer)
         self.assertIn("$changes.Count -ne 1", deployer)
         self.assertIn('LogicalResourceId -ne "LifecycleGeneratorFunction"', deployer)
         self.assertIn('ResourceType -ne "AWS::Lambda::Function"', deployer)
@@ -629,6 +642,8 @@ class StatefulLifecycleDeploymentTests(unittest.TestCase):
         self.assertIn('"cloudformation", "create-stack-refactor"', script)
         self.assertIn('"cloudformation", "list-stack-refactor-actions"', script)
         self.assertIn("Assert-ExactMove", script)
+        self.assertIn('forbiddenSection in @("Parameters", "Mappings", "Conditions", "Rules", "Transform")', script)
+        self.assertIn("destination template must inline deployed configuration", script)
         self.assertIn('$moves.Count -ne 1', script)
         self.assertIn('[string]$moves[0].Action -ne "MOVE"', script)
         self.assertIn('[string]$moves[0].Entity -ne "RESOURCE"', script)

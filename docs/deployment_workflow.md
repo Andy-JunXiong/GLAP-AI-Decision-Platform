@@ -140,8 +140,14 @@ unexecuted exact-one-Lambda change set without uploading code, and a separately
 authorized `deploy-release` may package and update only that Lambda. The shared
 lifecycle workflow no longer exposes Generator-only actions, and its stack
 deployer blocks until the refactor has completed. The source design is local;
-IAM reconciliation, refactor, deployment, and runtime verification remain
-pending. Producer deployment,
+the IAM reconciliation is applied and read-only verified. Human plan run
+`32938938361` failed closed because the destination template still contained a
+CloudFormation `Parameters` section, which is forbidden while stack refactor
+creates a destination stack. No move executed. This repository revision renders
+the current deployed configuration into a parameter-free one-resource template
+for both refactor and later release planning; source-control and CI maturity are
+recorded by Git history, and a corrected plan has not been rerun. Refactor
+execution, deployment, and runtime verification remain pending. Producer deployment,
 Operations API deployment, private frontend publication,
 temporary-user role verification, and any operational continuation remain
 separate human-owned actions.
