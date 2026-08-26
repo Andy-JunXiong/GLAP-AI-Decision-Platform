@@ -1,8 +1,8 @@
 # Decision Truth private staging rollout
 
-**Status:** staging schema applied and aggregate-validated; shared-stack
-Generator plans failed closed; independent one-resource stack implemented
-locally but not IAM-applied, refactored, deployed, or runtime-verified
+**Status:** staging schema, independent one-resource stack, and authenticated
+Operations API deployed; Generator not invoked; private frontend fix locally
+verified and not republished
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -101,6 +101,16 @@ actions. The bounded IAM update, refactor, plan-first release, deployment, and
 read-only artifact/runtime-config verification are complete through runs
 `32948002162`, `32951563950`, and `32956001803`. The Generator has not been
 invoked, so no bound runtime Action has been observed.
+
+Operations API plan run `32972934184` then completed from commit `a3fe692` with
+the deploy step explicitly skipped. Separately authorized run `32973297196`
+deployed the authenticated staging API successfully. The first matching private
+frontend attempt failed during local Next.js type checking before archive
+creation or any Amplify deployment. The verification-result type now binds
+`VERIFIED` to `MATCH` and `MISMATCH` to non-match diagnostic codes; frontend
+lint, the internal production build, and all five frontend tests pass locally.
+The corrected private frontend has not been published, and post-publication
+read-only and four-role checks have not run.
 
 ## Runtime evidence boundary
 

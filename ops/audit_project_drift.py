@@ -2655,8 +2655,9 @@ def check_outcome_cohort_comparison_diagnostics_boundary(
     ) and all(
         marker in text["verifier"]
         for marker in (
-            'status: "VERIFIED" | "MISMATCH"',
-            "reason_code: OutcomeComparisonFingerprintReason",
+            'status: "VERIFIED"; reason_code: "MATCH"',
+            'status: "MISMATCH";',
+            'Exclude<OutcomeComparisonFingerprintReason, "MATCH">',
             'return { status: "MISMATCH", reason_code: "MISSING_INTEGRITY" }',
             'return { status: "MISMATCH", reason_code: "CONTRACT_METADATA_MISMATCH" }',
             'return { status: "MISMATCH", reason_code: "CRYPTO_UNAVAILABLE" }',

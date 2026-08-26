@@ -625,6 +625,16 @@ returned the expected read access, retained viewer shipment-entity denial,
 returned `404` for an unguessable missing Action, and removed all four temporary
 users. No real Action was mutated.
 
+On `2026-08-26`, plan run `32972934184` validated the current Decision Truth
+reader package from commit `a3fe692` and explicitly skipped deployment.
+Separately authorized run `32973297196` then deployed the authenticated staging
+API. The matching private frontend was not published: its first local release
+attempt stopped at Next.js type checking before archive creation or any Amplify
+deployment. A discriminated verification-result type fixes that build error and
+passes frontend lint, the internal production build, and all five frontend
+tests locally. Post-publication staging and four-role verification remain
+pending and separately human-owned.
+
 The Outcome-to-Learning evidence endpoint and private Learning Review were
 released in the same staging-only change and passed explicit
 `-RequireLearningEvidence` checks in both verifiers. Runtime evidence reported

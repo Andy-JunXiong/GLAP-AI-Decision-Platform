@@ -320,6 +320,8 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(fingerprintVerifier, /globalThis\.crypto\.subtle\.digest/);
   assert.match(fingerprintVerifier, /reason_code: "CRYPTO_UNAVAILABLE"/);
   assert.match(fingerprintVerifier, /reason_code: "VERIFICATION_ERROR"/);
+  assert.match(fingerprintVerifier, /status: "VERIFIED"; reason_code: "MATCH"/);
+  assert.match(fingerprintVerifier, /status: "MISMATCH";[\s\S]*Exclude<OutcomeComparisonFingerprintReason, "MATCH">/);
   assert.match(page, /Fingerprint verified/);
   assert.match(page, /Comparison metrics and provenance remain hidden until browser verification completes/);
   assert.match(page, /comparisonFingerprintDiagnostic/);

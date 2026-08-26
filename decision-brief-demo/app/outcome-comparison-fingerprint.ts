@@ -9,10 +9,12 @@ export type OutcomeComparisonFingerprintReason =
   | "DIGEST_MISMATCH"
   | "VERIFICATION_ERROR";
 
-export type OutcomeComparisonFingerprintVerification = {
-  status: "VERIFIED" | "MISMATCH";
-  reason_code: OutcomeComparisonFingerprintReason;
-};
+export type OutcomeComparisonFingerprintVerification =
+  | { status: "VERIFIED"; reason_code: "MATCH" }
+  | {
+      status: "MISMATCH";
+      reason_code: Exclude<OutcomeComparisonFingerprintReason, "MATCH">;
+    };
 
 const RETRYABLE_REASON_CODES = new Set<OutcomeComparisonFingerprintReason>([
   "CRYPTO_UNAVAILABLE",
