@@ -3,7 +3,8 @@
 ## Current maturity
 
 The repository contains locally verified, source-delivered design and
-fail-closed tooling for this refactor. Main CI, IAM application, stack refactor,
+fail-closed tooling for this refactor. Commit `961b32f` is on `main`, and CI run
+`32929610077` passed on Python 3.13 and 3.14. IAM application, stack refactor,
 deployment, and runtime verification remain pending. Every AWS write below
 remains a separate named-human decision.
 

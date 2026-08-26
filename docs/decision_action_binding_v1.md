@@ -65,7 +65,8 @@ Alert + deterministic Decision Brief
 
 Local tests establish persistence, API, cockpit, immutability, legacy-null, and
 independent one-resource Generator release behavior. The staging schema is
-applied and validated, and the structural Generator split is source-delivered,
-but CI, IAM reconciliation, stack refactor, deployment, and runtime verification
-remain pending. No Action was created or mutated, and no staging reader,
-production, or public surface was deployed.
+applied and validated, and commit `961b32f` delivered the structural Generator
+split with CI run `32929610077` passing on Python 3.13 and 3.14. IAM
+reconciliation, stack refactor, deployment, and runtime verification remain
+pending. No Action was created or mutated, and no staging reader, production,
+or public surface was deployed.
