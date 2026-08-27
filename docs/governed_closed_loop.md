@@ -139,8 +139,21 @@ provenance beside every cutoff-eligible Outcome. It follows the existing
 history. Legacy and unimplemented Decision types remain explicitly unbound.
 This makes synthetic evaluation groupable by proposal contract without
 claiming approval, execution, causality, realised value, or real logistics
-performance. The extension is locally verified and not deployed; see
+performance. The extension is deployed, reader/RBAC verified, and returned no
+eligible bound cohort at its runtime checkpoint; see
 [`outcome_review_decision_provenance_v1.md`](outcome_review_decision_provenance_v1.md).
+
+A repository-local aggregate readiness audit now connects the runtime-verified
+natural SLA Decision binding to that deployed provenance reader. It validates
+the exact Decision pair, named-human completion chain, latest Outcome
+cardinality, and cutoff-valid pending or closed evidence, then returns one of
+seven bounded workflow states. Expected absence remains a waiting state;
+contract drift fails closed. The separately authorized `2026-08-27` audit
+returned `WAITING_HUMAN_REVIEW`: the exact-bound proposal exists, but no named-
+human completion or Outcome exists, and every drift check remained valid. It
+exposed no counts or identifiers, performed no mutation, and cannot replace
+human Action judgment.
+See [`sla_outcome_provenance_readiness_v1.md`](sla_outcome_provenance_readiness_v1.md).
 
 Outcome Review now also consumes that provenance through a versioned cohort
 summary. A separate read-only aggregate groups only latest-version observed,

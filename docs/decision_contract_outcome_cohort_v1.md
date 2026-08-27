@@ -1,6 +1,7 @@
 # Decision-contract Outcome cohort summary v1
 
-**Status:** implemented and locally verified; not deployed
+**Status:** deployed and reader/RBAC verified in private staging; no eligible
+bound cohort observed
 
 This contract adds a versioned, descriptive cohort summary to the existing
 authenticated `GET /v1/outcomes` response. It groups eligible synthetic

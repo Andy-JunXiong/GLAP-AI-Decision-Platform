@@ -42,6 +42,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
+| `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
 | `COST_ANOMALY` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL` | Commit `0e5b740` delivered the deterministic `REVIEW_COST` brief and immutable binding. Actual-calendar continuation run `33020683956` invoked the Generator successfully. The separately authorized aggregate reconciler then found zero natural Cost proposals and failed closed; the remaining six checks passed, including zero invalid bindings and an intact pre-release legacy-null boundary. No runtime Cost binding is established. |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_SLA_RUNTIME_BINDING_VERIFIED` | The corrected full SLA reconciler returned every exact-source, exact-binding, immutable-state, current-view, and legacy-null check true. This establishes synthetic staging runtime evidence for the natural SLA Decision binding only; no Action was reviewed, repaired, or mutated. |
 | Decision Truth private-staging rollout handoff | `PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_SLA_GATE_PASSED_COST_GATE_NO_CANDIDATE` | Producer, authenticated API, and private cockpit releases are deployed and reader/RBAC verified. Continuation run `33020683956` passed all 41 checks. The corrected SLA runtime gate passed all seven checks; the Cost gate still has zero natural candidates and remains failed closed. No human Action judgment, schedule, alias, Pages, or production change is claimed. |
@@ -169,7 +170,37 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — `SLA_BREACH` runtime evidence gate
+## Active slice — `SLA_BREACH` Outcome provenance readiness audit
+
+**Status:** `EXECUTED_WAITING_HUMAN_REVIEW`
+
+The repository now contains a separate aggregate-only readiness audit that
+connects the runtime-verified natural SLA Decision binding to the existing
+Outcome provenance contract. It admits only cutoff-eligible `OPERATIONAL` /
+`ACTUAL_CALENDAR` rows with no scenario ID, requires the exact
+`decision-brief.v1` / `EXPEDITE_MILESTONE` pair, validates the named-human
+`APPROVE` / zero-`REJECT` / `COMPLETE` audit chain, rejects any Outcome without
+a valid completion or duplicate latest Outcome, and admits a closed Outcome
+only with valid observation timing and a finite effect.
+
+Expected absence produces a bounded readiness state rather than invented
+evidence: no bound proposal, waiting human review, waiting Outcome, waiting due
+date, ready for observation, or ready for provenance verification. Invalid
+binding, human audit, Outcome cardinality, or closed evidence fails closed as
+`BLOCKED_CONTRACT_DRIFT`. Output contains only named booleans and one state; no
+counts, actor values, effects, or identifiers are printed.
+
+The seven focused contract tests, PowerShell parser, and pre-AWS future-date
+guard pass locally. The separately authorized `2026-08-27` audit returned
+`WAITING_HUMAN_REVIEW`: a natural exact-bound proposal exists, but no named-
+human completed SLA Action, pending Outcome, due pending Outcome, or closed
+observed Outcome exists. Every human-chain, no-Outcome-without-completion,
+latest-Outcome, temporal-shape, closed-provenance, and cutoff check remained
+valid. No counts, actors, effects, or identifiers were printed and no mutation
+occurred. Every future run remains separately authorized because Athena stores
+a protected result object.
+
+## Recently completed — `SLA_BREACH` runtime evidence gate
 
 **Status:** `RUNTIME_RECONCILIATION_PASSED`
 
@@ -1745,6 +1776,17 @@ done.
 
 ### Codex-run validation
 
+- `SLA_BREACH` Outcome provenance readiness audit v1 passes seven focused
+  temporal, Decision-pair, named-human-chain, latest-Outcome, bounded-state,
+  no-manufactured-evidence, and authority scenarios plus its dedicated
+  mutation-drift test. All 60 focused readiness-plus-drift tests, all 597
+  repository tests, Python compilation, PowerShell parsing, the pre-AWS
+  future-date guard, JSON parsing, the expanded 52/52 project drift audit, and
+  `git diff --check` pass. The separately authorized `2026-08-27` staging run
+  returned `WAITING_HUMAN_REVIEW`: the natural exact-bound proposal exists,
+  but no named-human completion or Outcome exists and every drift check
+  remained valid. No lifecycle, Action, Outcome, API, workflow, deployment,
+  policy/model, Pages, or production mutation occurred.
 - `SLA_BREACH` runtime evidence reconciler v1 passes all eight focused
   aggregate-only, seven-pair source-contract, exact-rationale, five-component
   binding diagnostic, regex-independent rationale diagnostic, temporal, human-
@@ -2205,10 +2247,10 @@ done.
 
 ## Next Up
 
-1. Preserve the verified SLA proposal for the named-human governed Action
-   workflow. Do not have an agent approve, reject, complete, backfill, or mutate
-   it. After a naturally completed Action produces a cutoff-eligible observed
-   Outcome, separately verify Decision provenance and cohort eligibility.
+1. Preserve `WAITING_HUMAN_REVIEW`. Only a named human may inspect and judge the
+   natural SLA proposal through the authenticated Action Board. An agent must
+   not approve, reject, complete, backfill, or mutate it. Re-run readiness only
+   after an independently justified human workflow event and new authorization.
 2. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
    The `2026-08-27` reconciler found zero natural proposals and failed closed.
    Re-run it only after a future independently justified operational

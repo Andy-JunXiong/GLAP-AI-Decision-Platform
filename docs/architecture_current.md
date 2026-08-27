@@ -40,7 +40,8 @@ never infers an identifier. Both include monitor/no-action alternatives and
 keep expected benefit `NOT_ESTIMATED`; no monetary exposure, intervention
 effect, execution, or Outcome is inferred. The private UI links onward to the
 Action Board without mutation. Both contracts are deployed and reader/RBAC
-verified; neither has a newly generated bound runtime proposal.
+verified. A natural SLA proposal now has aggregate runtime binding evidence;
+the Cost cohort still has no natural runtime proposal.
 
 The source tree also contains a fail-closed, aggregate-only SLA runtime
 reconciler. It requires exactly one eligible same-date source Alert, one of the
@@ -74,6 +75,15 @@ rationale checks and contains no rationale regex. The separately authorized
 corrected full reconciliation returned all seven aggregate booleans true,
 establishing synthetic staging runtime evidence for the natural SLA Decision
 binding. It cannot repair a row and performed no mutation.
+
+The source tree also contains a read-only aggregate SLA Outcome provenance
+readiness audit. It joins only the exact bound operational actual-calendar SLA
+cohort, named-human audit summaries, and latest cutoff-eligible Outcomes. Seven
+bounded states distinguish expected workflow absence from contract drift; only
+drift fails closed. The separately authorized `2026-08-27` audit returned
+`WAITING_HUMAN_REVIEW`: the exact-bound proposal exists, but no named-human
+completion or Outcome exists, and every drift check remained valid. It printed
+no counts, actors, effects, or identifiers and advanced no workflow.
 
 The source tree now contains a fail-closed, aggregate-only Cost runtime
 reconciler. It is designed to inspect a naturally generated actual-calendar

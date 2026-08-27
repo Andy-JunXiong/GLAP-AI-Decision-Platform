@@ -39,6 +39,15 @@ preserved handoffs.
   returned all seven aggregate booleans true, establishing synthetic staging
   runtime evidence for the natural SLA Decision binding. No proposal was
   repaired or mutated.
+- Implemented the read-only aggregate `SLA_BREACH` Outcome provenance readiness
+  audit. It classifies the verified natural Decision-bound cohort into seven
+  bounded states from waiting for named-human review through ready for
+  provenance verification, while invalid binding, audit-chain, Outcome
+  cardinality, or closed-observation evidence fails closed. It exposes no
+  counts, actors, effects, or identifiers and cannot advance the workflow. The
+  separately authorized `2026-08-27` audit returned `WAITING_HUMAN_REVIEW`: the
+  exact-bound proposal exists, but no named-human completion or Outcome exists,
+  and every drift check remained valid.
 - Advanced the isolated staging lifecycle through `2026-08-27` under a bounded
   actual-calendar authorization. Plan run `33020601008` passed; continuation
   run `33020683956` used no seed or scenario and passed four stages plus all 41

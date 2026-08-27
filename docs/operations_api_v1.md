@@ -173,6 +173,16 @@ does not establish human approval, execution, causality, real logistics
 performance, or financial value. See
 [`outcome_review_decision_provenance_v1.md`](outcome_review_decision_provenance_v1.md).
 
+The repository-local SLA Outcome provenance readiness audit consumes the same
+immutable pair and latest-Outcome admission rules without adding an API route.
+It reports only a bounded workflow state and named booleans after checking the
+named-human completion chain, latest Outcome cardinality, Sydney cutoff, and
+closed observation validity. It prints no counts, actor values, effects, or
+identifiers and performs no mutation. The separately authorized `2026-08-27`
+run returned `WAITING_HUMAN_REVIEW` with an exact-bound proposal, no named-human
+completion or Outcome, and no contract drift. See
+[`sla_outcome_provenance_readiness_v1.md`](sla_outcome_provenance_readiness_v1.md).
+
 The same response now includes `cohort_summary` using
 `outcome-cohort-summary.v1`. A separate unbounded aggregate query groups only
 latest-version observed Outcomes with numeric effects and complete immutable

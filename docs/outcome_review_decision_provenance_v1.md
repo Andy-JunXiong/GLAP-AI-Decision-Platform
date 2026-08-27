@@ -59,3 +59,12 @@ cohort summary. It uses these two nullable provenance fields as governed group
 keys, admits only observed bound Outcomes, and reports descriptive synthetic
 statistics without inferring causality or value. See
 [`decision_contract_outcome_cohort_v1.md`](decision_contract_outcome_cohort_v1.md).
+
+The SLA Outcome provenance readiness audit is a second repository-local
+consumer. It does not change the response contract; it checks whether the
+runtime-verified natural SLA proposal is still waiting for named-human review,
+an Outcome, or its due date, or whether a latest closed Outcome is ready for
+provenance verification. The separately authorized `2026-08-27` run returned
+`WAITING_HUMAN_REVIEW`: the exact-bound proposal exists, but no named-human
+completion or Outcome exists, and every drift check remained valid.
+See [`sla_outcome_provenance_readiness_v1.md`](sla_outcome_provenance_readiness_v1.md).

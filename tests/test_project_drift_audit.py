@@ -202,6 +202,26 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_sla_breach_runtime_evidence_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_sla_outcome_provenance_readiness_mutation_drift_is_detected(self):
+        paths = (
+            "ops/audit_sla_outcome_provenance_readiness_staging.ps1",
+            "tests/test_sla_outcome_provenance_readiness.py",
+            "docs/sla_outcome_provenance_readiness_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_sla_outcome_provenance_readiness_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            audit_path = root / paths[0]
+            audit_path.write_text(
+                audit_path.read_text(encoding="utf-8")
+                + "\n# INSERT INTO protected_table\n",
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_sla_outcome_provenance_readiness_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_decision_truth_generator_release_scope_drift_is_detected(self):
         paths = (
             "sql/16_decision_action_binding_v1.sql",

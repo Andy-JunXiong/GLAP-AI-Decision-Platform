@@ -2023,6 +2023,102 @@ def check_sla_breach_runtime_evidence_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_sla_outcome_provenance_readiness_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "audit": "ops/audit_sla_outcome_provenance_readiness_staging.ps1",
+        "tests": "tests/test_sla_outcome_provenance_readiness.py",
+        "contract": "docs/sla_outcome_provenance_readiness_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    audit_lower = text["audit"].lower()
+    normalized_contract = " ".join(text["contract"].split())
+    audit_bounded = all(
+        marker in text["audit"]
+        for marker in (
+            "Get-SydneyBusinessDate",
+            "Minimum created date is in the future; no AWS call was made",
+            "action.alert_type = 'SLA_BREACH'",
+            "action.execution_scenario_id IS NULL",
+            "action.decision_brief_version = 'decision-brief.v1'",
+            "action.selected_alternative = 'EXPEDITE_MILESTONE'",
+            "events.approve_event_count = 1",
+            "events.reject_event_count = 0",
+            "events.complete_event_count = 1",
+            "events.invalid_human_audit_event_count = 0",
+            "outcome.row_rank = 1",
+            "outcome_without_valid_completion_count",
+            "invalid_pending_outcome_count",
+            "invalid_closed_outcome_count",
+            "invalid_outcome_status_count",
+            "valid_provenance_outcome_count",
+            "WAITING_HUMAN_REVIEW",
+            "WAITING_OBSERVATION_DUE_DATE",
+            "READY_FOR_OUTCOME_OBSERVATION",
+            "READY_FOR_PROVENANCE_VERIFICATION",
+            "BLOCKED_CONTRACT_DRIFT",
+            "Protected counts, identifiers, actor values, and Outcome values were not printed",
+            "mutations executed: False",
+        )
+    ) and not any(
+        marker in audit_lower
+        for marker in (
+            "insert into",
+            "merge into",
+            "update ",
+            "delete from",
+            "invoke-restmethod",
+            "invoke-webrequest",
+            "write-host $query",
+            "workflow run",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "executed against `2026-08-27` staging; `WAITING_HUMAN_REVIEW`",
+            "A natural SLA Decision-bound proposal exists",
+            "no named-human completed SLA Action",
+            "expected human governance wait state",
+            "Expected absence is a readiness state, not invented evidence",
+            "Only contract drift causes a non-zero audit exit",
+            "Outcome without a valid completion",
+            "exactly one named-human `APPROVE`",
+            "exactly one named-human `COMPLETE`",
+            "latest cutoff-eligible Outcome version",
+            "never prints counts",
+            "Every runtime audit therefore requires separate explicit human authorization",
+            "does not establish human approval, execution, realised value, causality",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "test_audit_is_read_only_aggregate_only_and_identifier_free",
+            "test_audit_is_actual_calendar_cutoff_bounded_before_aws",
+            "test_audit_requires_exact_decision_pair_and_named_human_chain",
+            "test_audit_requires_latest_valid_outcome_provenance",
+            "test_audit_exposes_only_bounded_readiness_states",
+            "test_audit_cannot_manufacture_human_or_outcome_evidence",
+            "test_contract_preserves_readiness_and_authority_boundaries",
+        )
+    )
+    return [
+        _result(
+            "sla_outcome_provenance_readiness_boundary",
+            "governance",
+            audit_bounded and contract_bounded and tests_bounded,
+            "The SLA Outcome provenance readiness audit remains aggregate-only, cutoff-bounded, named-human-gated, identifier-free, and unable to manufacture workflow evidence.",
+            "The SLA Outcome provenance readiness audit lost its temporal, human-governance, provenance, privacy, read-only, test, or authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "migration": "sql/16_decision_action_binding_v1.sql",
@@ -3789,6 +3885,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
     checks.extend(check_cost_anomaly_decision_brief_boundary(root))
     checks.extend(check_sla_breach_runtime_evidence_boundary(root))
+    checks.extend(check_sla_outcome_provenance_readiness_boundary(root))
     checks.extend(check_cost_anomaly_runtime_evidence_boundary(root))
     checks.extend(check_decision_truth_staging_rollout_boundary(root))
     checks.extend(check_outcome_decision_provenance_boundary(root))
