@@ -580,6 +580,18 @@ The browser obtains its short-lived access token through Cognito and keeps it on
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
 
+The deployed cockpit currently labels the Risk Hotspots navigation item
+`Signals`; `Risk hotspots` appears only as the destination page title. A
+named-human staging inspection on `2026-08-27` also confirmed that Decision
+Queue's `Review now` control opens the unscoped Action Board. It neither carries
+the selected Action into the Board nor opens the selected bound Decision Brief.
+The Board can display each immutable binding summary and evidence chain, but
+this observed journey did not give the reviewer a reliable selected-Brief
+handoff. No mutation button was submitted. Until the handoff is corrected, the
+natural SLA proposal remains `WAITING_HUMAN_REVIEW`; this is a private-staging
+usability gap and grants no authority to infer, approve, reject, or complete a
+business decision.
+
 As of the Australia/Sydney business date `2026-08-07`, the dedicated identity,
 internal hosting, Operations API, alarms, and DLQ staging resources are deployed.
 The internal frontend is manually deployed to Amplify and the API plan reads

@@ -200,6 +200,17 @@ valid. No counts, actors, effects, or identifiers were printed and no mutation
 occurred. Every future run remains separately authorized because Athena stores
 a protected result object.
 
+A named-human staging inspection then exposed a review-navigation gap without
+submitting a mutation. Decision Queue displayed the natural SLA proposals, but
+`Review now` opened the unscoped Action Board rather than the selected
+Decision Brief or selected Action. The Action Board exposed the immutable
+binding summary and evidence chain, while the risk entry is labelled `Signals`
+in navigation and `Risk hotspots` only inside the page. The reviewer could not
+reliably reach the selected full brief from the observed journey and therefore
+made no `EDIT`, `APPROVE`, `REJECT`, or `COMPLETE` event. This preserves
+`WAITING_HUMAN_REVIEW`; it is a staging usability blocker, not evidence of a
+Decision-contract or provenance failure.
+
 ## Recently completed — `SLA_BREACH` runtime evidence gate
 
 **Status:** `RUNTIME_RECONCILIATION_PASSED`
@@ -2247,10 +2258,13 @@ done.
 
 ## Next Up
 
-1. Preserve `WAITING_HUMAN_REVIEW`. Only a named human may inspect and judge the
-   natural SLA proposal through the authenticated Action Board. An agent must
-   not approve, reject, complete, backfill, or mutate it. Re-run readiness only
-   after an independently justified human workflow event and new authorization.
+1. Fix the private-cockpit review handoff before asking a named human to judge
+   the natural SLA proposal: `Review now` must retain the selected Action and
+   expose its complete bound Decision Brief, with a clear return to that Action
+   Board card. Preserve `WAITING_HUMAN_REVIEW` meanwhile. An agent must not
+   approve, reject, complete, backfill, or mutate the proposal, and readiness
+   may be rerun only after an independently justified human workflow event and
+   new authorization.
 2. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
    The `2026-08-27` reconciler found zero natural proposals and failed closed.
    Re-run it only after a future independently justified operational

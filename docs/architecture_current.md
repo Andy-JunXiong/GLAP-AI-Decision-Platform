@@ -38,10 +38,14 @@ variance/threshold inputs and binds calculation source
 rate-card version, the Cost contract exposes that value as unavailable and
 never infers an identifier. Both include monitor/no-action alternatives and
 keep expected benefit `NOT_ESTIMATED`; no monetary exposure, intervention
-effect, execution, or Outcome is inferred. The private UI links onward to the
-Action Board without mutation. Both contracts are deployed and reader/RBAC
-verified. A natural SLA proposal now has aggregate runtime binding evidence;
-the Cost cohort still has no natural runtime proposal.
+effect, execution, or Outcome is inferred. The private UI can render a full
+brief from an authenticated `Signals` row, but Decision Queue's deployed
+`Review now` handoff currently opens the unscoped Action Board without carrying
+the selected Action or opening its bound brief. The `2026-08-27` named-human
+inspection submitted no mutation and records this as a staging usability gap.
+Both contracts are deployed and reader/RBAC verified. A natural SLA proposal
+now has aggregate runtime binding evidence; the Cost cohort still has no
+natural runtime proposal.
 
 The source tree also contains a fail-closed, aggregate-only SLA runtime
 reconciler. It requires exactly one eligible same-date source Alert, one of the

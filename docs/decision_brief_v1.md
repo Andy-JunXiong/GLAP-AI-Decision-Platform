@@ -1,8 +1,10 @@
 # SLA_BREACH Decision Brief v1
 
 **Status:** deployed private staging readers and producer verified; Generator
-invoked on `2026-08-27`; aggregate-only SLA runtime reconciliation found natural
-proposals but failed closed on exact Decision binding
+invoked on `2026-08-27`; corrected aggregate-only SLA runtime reconciliation
+found natural proposals and passed all seven exact-source, exact-binding,
+immutable-state, current-view, and legacy-null checks; named-human review is
+still pending behind a private-cockpit navigation gap
 
 Decision Brief v1 turns one current governed `SLA_BREACH` Alert into a bounded,
 human-reviewable decision explanation. It is intentionally narrow, adds no AI
@@ -113,7 +115,18 @@ contract and access mechanics. The later lifecycle continuation establishes
 Generator invocation only. The local aggregate-only reconciler validates an
 exactly-one same-date source Alert, one of seven governed milestone/metric
 pairs, the exact immutable rationale, current-view agreement, and the legacy-
-null boundary. Its `2026-08-27` staging run passed the source, immutable-state,
-current-view, and legacy-null checks but failed the two exact-binding checks.
-No bound SLA runtime Action, root cause, Outcome observation attributable to
-this contract, production change, or Pages publication has been established.
+null boundary. Its original `2026-08-27` staging run passed the source,
+immutable-state, current-view, and legacy-null checks but failed the two
+regex-based exact-binding checks. The later diagnostics validated the persisted
+rationale, isolated digit-excluding verifier drift, and the corrected full
+reconciliation returned all seven booleans true. This establishes synthetic
+staging runtime binding evidence only. No named-human judgment, Action
+execution, Outcome observation attributable to this contract, production
+change, or Pages publication has been established.
+
+The subsequent named-human staging inspection found that Decision Queue's
+`Review now` control opens the unscoped Action Board rather than the selected
+full brief. Navigation labels the risk entry `Signals` while the destination
+page title is `Risk hotspots`. The reviewer submitted no mutation. The next
+frontend slice must preserve selected-Action context and expose its complete
+bound brief before the human review journey is treated as usable.
