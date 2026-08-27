@@ -4,6 +4,22 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-28
+
+- Implemented SLA Decision review handoff v1 in local private-cockpit source.
+  The selected Action must reconcile to exactly one open Risk and an exact
+  immutable Decision Brief version, recommendation, selected alternative, and
+  rationale before the full Brief opens. The return journey shows only that
+  Action card; mismatch fails closed and no evidence request or mutation runs
+  automatically. The feature is locally verified but not deployed, and it
+  grants no human Action authority.
+- Implemented Decision Queue discovery controls v1 in local private-cockpit
+  source. Internal navigation now says `Risk Hotspots`, and the authenticated
+  queue can filter waiting Actions by Critical, High, Medium, or Low severity
+  with visible counts and bounded empty states. Filtering is browser-local,
+  excludes closed Actions, preserves the exact Brief handoff, and adds no
+  request, mutation, deployment, or business-decision authority.
+
 ## 2026-08-27
 
 - Implemented the aggregate-only `SLA_BREACH` runtime evidence reconciler. It

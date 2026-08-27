@@ -222,6 +222,52 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_sla_outcome_provenance_readiness_boundary(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
+    def test_sla_decision_review_handoff_binding_drift_is_detected(self):
+        paths = (
+            "decision-brief-demo/app/decision-review-handoff.ts",
+            "decision-brief-demo/app/page.tsx",
+            "decision-brief-demo/tests/rendered-html.test.mjs",
+            "docs/sla_decision_review_handoff_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_sla_decision_review_handoff_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            resolver_path = root / paths[0]
+            resolver_path.write_text(
+                resolver_path.read_text(encoding="utf-8").replace(
+                    "matchingRisks.length !== 1",
+                    "matchingRisks.length > 1",
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_sla_decision_review_handoff_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_decision_queue_discovery_waiting_boundary_drift_is_detected(self):
+        paths = (
+            "decision-brief-demo/app/decision-queue-filter.ts",
+            "decision-brief-demo/app/page.tsx",
+            "decision-brief-demo/tests/rendered-html.test.mjs",
+            "docs/decision_queue_discovery_controls_v1.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_decision_queue_discovery_controls_boundary(root)[0]
+            self.assertEqual(current.status, "PASS")
+            filter_path = root / paths[0]
+            filter_path.write_text(
+                filter_path.read_text(encoding="utf-8").replace(
+                    'action.status === "PROPOSED" || action.status === "EDITED"',
+                    'action.status !== "REJECTED"',
+                ),
+                encoding="utf-8",
+            )
+            detected = AUDIT.check_decision_queue_discovery_controls_boundary(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
     def test_decision_truth_generator_release_scope_drift_is_detected(self):
         paths = (
             "sql/16_decision_action_binding_v1.sql",

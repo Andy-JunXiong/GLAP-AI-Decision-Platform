@@ -576,6 +576,40 @@
       ]
     },
     {
+      "id": "sla_decision_review_handoff_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local private-cockpit source resolves a selected Action to exactly one current open Risk through alert_fingerprint and requires exact shipment, Alert type, decision-brief.v1 schema, recommended Action, selected alternative, and deterministic rationale agreement before opening the full bound Brief; missing, duplicate, stale, incomplete, or mismatched evidence fails closed; the return path shows only the selected Action card and opening the Brief performs no automatic evidence request or mutation; source is not deployed, the natural proposal remains WAITING_HUMAN_REVIEW, and private publication, runtime canary, and any named-human edit, approve, reject, or complete judgment remain separately authorized",
+      "evidence_files": [
+        "decision-brief-demo/app/decision-review-handoff.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/app/operations.css",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/sla_decision_review_handoff_v1.md",
+        "docs/decision_brief_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "decision_queue_discovery_controls_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local private-cockpit source names the authenticated navigation entry Risk Hotspots and filters only waiting PROPOSED or EDITED Decision Queue Actions by normalized CRITICAL, HIGH, MEDIUM, or LOW server-provided severity; every filter exposes its waiting count and a zero-match filter returns a bounded empty state without substituting an Action; closed Actions cannot re-enter the queue, the exact Decision review handoff remains mandatory, and filtering adds no API route, request, query, storage, telemetry, mutation, deployment, public Pages, or business-decision authority; source is not deployed and runtime verification remains separately authorized",
+      "evidence_files": [
+        "decision-brief-demo/app/decision-queue-filter.ts",
+        "decision-brief-demo/app/page.tsx",
+        "decision-brief-demo/tests/rendered-html.test.mjs",
+        "docs/decision_queue_discovery_controls_v1.md",
+        "docs/operations_api_v1.md",
+        "docs/architecture_current.md",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "cost_anomaly_decision_brief_v1",
       "state": "IMPLEMENTED_VERIFIED",
       "boundary": "the staging-deployed authenticated Risk response derives decision-brief.v1 only for current open COST_ANOMALY shipment-cost Alerts with TOTAL_COST / cost_variance_pct and a strict finite non-negative threshold breach; REVIEW_COST is deterministic, MONITOR_COST and NO_ACTION remain bounded alternatives, the exact calculation source is stateful-cost-variance.v1, the unavailable rate-card version is explicitly null rather than inferred, monetary exposure and benefit remain NOT_ESTIMATED; commit 0e5b740 passed CI 32982375432, Generator plan/deploy runs 32982600783 and 32982946620 preserved the one-resource boundary, Operations API plan/deploy runs 32982375374 and 32983721998 succeeded, and the private cockpit plus read-only/four-role verification passed with four temporary users removed; plan run 33020601008 and actual-calendar continuation run 33020683956 advanced 2026-08-27 with no seed or scenario and passed four stages plus all 41 checks; the separately authorized aggregate query found zero natural Cost proposals and failed closed, while zero invalid bindings and zero pre-release backfilled bindings were observed; no runtime Cost binding, human Action judgment, model, policy, Pages, schedule, alias, or production authority is established",

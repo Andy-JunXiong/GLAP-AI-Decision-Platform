@@ -2119,6 +2119,172 @@ def check_sla_outcome_provenance_readiness_boundary(
     ]
 
 
+def check_sla_decision_review_handoff_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "resolver": "decision-brief-demo/app/decision-review-handoff.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "tests": "decision-brief-demo/tests/rendered-html.test.mjs",
+        "contract": "docs/sla_decision_review_handoff_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    resolver_bounded = all(
+        marker in text["resolver"]
+        for marker in (
+            "matchingRisks.length === 0",
+            "matchingRisks.length !== 1",
+            'risk.status !== "OPEN"',
+            "risk.shipment_id !== action.shipment_id",
+            "risk.alert_type !== action.alert_type",
+            "risk.decision_brief.schema_version !== action.decision_brief_version",
+            "risk.decision_brief.recommendation.action_type !== action.selected_alternative",
+            "risk.decision_brief.recommendation.rationale !== action.selection_rationale",
+            "Human review remains blocked and no Action was changed.",
+        )
+    ) and not any(
+        marker in text["resolver"]
+        for marker in (
+            "fetch(",
+            "loadActionEvidence",
+            "submitOperation",
+            "sessionStorage",
+            "localStorage",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            "resolveDecisionReviewHandoff(action, operationsRisks)",
+            "reviewAction(item)",
+            "Only the Action whose bound Brief you just reviewed is shown.",
+            "no mutation or evidence query ran automatically",
+            "visibleActions.map",
+            "Back to bound Decision Brief",
+            "Open selected Action",
+            "This returns only to the Action whose immutable binding matches this Brief.",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "opens an Action review only when its immutable Decision Brief binding reconciles",
+            'reason_code: "MISSING_RISK"',
+            'reason_code: "AMBIGUOUS_RISK"',
+            'reason_code: "ACTION_BINDING_INCOMPLETE"',
+            'reason_code: "SOURCE_MISMATCH"',
+            'reason_code: "DECISION_BINDING_MISMATCH"',
+            'reason_code: "RATIONALE_MISMATCH"',
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "implemented and locally verified on `2026-08-28`; not deployed",
+            "exactly one current open Risk",
+            "does not fall back to a different Risk, Brief, or Action",
+            "performs no automatic evidence-chain request",
+            "no API route, data write, deployment, or human decision authority",
+            "remains `WAITING_HUMAN_REVIEW`",
+            "require separate explicit human authorization",
+        )
+    )
+    return [
+        _result(
+            "sla_decision_review_handoff_boundary",
+            "governance",
+            resolver_bounded and page_bounded and tests_bounded and contract_bounded,
+            "The SLA Decision review handoff remains exact-one, binding-complete, selected-Action focused, query-passive, mutation-free, and locally verified without deployment authority.",
+            "The SLA Decision review handoff lost its exact binding, fail-closed, selected-Action, no-query, no-mutation, test, maturity, or authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
+def check_decision_queue_discovery_controls_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    paths = {
+        "filter": "decision-brief-demo/app/decision-queue-filter.ts",
+        "page": "decision-brief-demo/app/page.tsx",
+        "tests": "decision-brief-demo/tests/rendered-html.test.mjs",
+        "contract": "docs/decision_queue_discovery_controls_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    normalized_contract = " ".join(text["contract"].split())
+    filter_bounded = all(
+        marker in text["filter"]
+        for marker in (
+            '"ALL"',
+            '"CRITICAL"',
+            '"HIGH"',
+            '"MEDIUM"',
+            '"LOW"',
+            'action.status === "PROPOSED" || action.status === "EDITED"',
+            "action.alert_severity.trim().toUpperCase() === severity",
+            "return filterDecisionQueue(actions, severity).length",
+        )
+    ) and not any(
+        marker in text["filter"]
+        for marker in (
+            "fetch(",
+            "sessionStorage",
+            "localStorage",
+            "submitOperation",
+            "loadActionEvidence",
+        )
+    )
+    page_bounded = all(
+        marker in text["page"]
+        for marker in (
+            'item.id === "signals"',
+            '"Risk Hotspots"',
+            'aria-label="Decision severity filter"',
+            "decisionSeverityFilters.map",
+            "filterDecisionQueue(actions, severityFilter)",
+            "No waiting Actions match this severity",
+            "reviewAction(item)",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "filters the authenticated Decision Queue by severity without changing Action state",
+            'filterDecisionQueue(actions, "MEDIUM")',
+            'decisionSeverityCount(actions, "MEDIUM")',
+            'decisionSeverityCount(actions, "LOW")',
+            'actions[3].status, "COMPLETED"',
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "implemented and locally verified on `2026-08-28`; not deployed",
+            "same `Risk Hotspots` name as the destination page",
+            "`All` contains only `PROPOSED` and `EDITED` Actions",
+            "Closed or completed Actions cannot re-enter Decision Queue through filtering",
+            "Filtering does not weaken its exact-one Risk resolution",
+            "adds no API route, request, storage, query, mutation, telemetry, deployment, or public Pages surface",
+            "remain separate explicit human-authorized actions",
+        )
+    )
+    return [
+        _result(
+            "decision_queue_discovery_controls_boundary",
+            "governance",
+            filter_bounded and page_bounded and tests_bounded and contract_bounded,
+            "Decision Queue discovery remains waiting-only, severity-bounded, Risk-Hotspots aligned, selected-handoff preserving, browser-local, and mutation-free without deployment authority.",
+            "Decision Queue discovery lost its waiting-only, severity, naming, selected-handoff, no-request, no-mutation, test, maturity, or authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "migration": "sql/16_decision_action_binding_v1.sql",
@@ -3886,6 +4052,8 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_cost_anomaly_decision_brief_boundary(root))
     checks.extend(check_sla_breach_runtime_evidence_boundary(root))
     checks.extend(check_sla_outcome_provenance_readiness_boundary(root))
+    checks.extend(check_sla_decision_review_handoff_boundary(root))
+    checks.extend(check_decision_queue_discovery_controls_boundary(root))
     checks.extend(check_cost_anomaly_runtime_evidence_boundary(root))
     checks.extend(check_decision_truth_staging_rollout_boundary(root))
     checks.extend(check_outcome_decision_provenance_boundary(root))

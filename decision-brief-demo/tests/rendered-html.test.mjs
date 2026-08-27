@@ -36,6 +36,169 @@ test("includes the generated social card", async () => {
   await access(new URL("../public/og.png", import.meta.url));
 });
 
+test("filters the authenticated Decision Queue by severity without changing Action state", async () => {
+  const {
+    decisionSeverityCount,
+    decisionSeverityFilters,
+    filterDecisionQueue,
+    waitingDecisionActions,
+  } = await import("../app/decision-queue-filter.ts");
+  const action = (actionId, severity, status) => ({
+    action_id: actionId,
+    alert_fingerprint: `alert-${actionId}`,
+    shipment_id: `shipment-${actionId}`,
+    action_type: "EXPEDITE_MILESTONE",
+    alert_type: "SLA_BREACH",
+    alert_severity: severity,
+    status,
+    approval_required: "YES",
+    approved_by: null,
+    approved_at: null,
+    completed_at: null,
+    decision_brief_version: "decision-brief.v1",
+    selected_alternative: "EXPEDITE_MILESTONE",
+    selection_rationale: "Bound rationale",
+    action_owner: null,
+    action_due_date: null,
+    created_date: "2026-08-27",
+  });
+  const actions = [
+    action("medium-proposed", "MEDIUM", "PROPOSED"),
+    action("medium-edited", "medium", "EDITED"),
+    action("high-proposed", "HIGH", "PROPOSED"),
+    action("medium-completed", "MEDIUM", "COMPLETED"),
+  ];
+
+  assert.deepEqual(decisionSeverityFilters, ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"]);
+  assert.deepEqual(waitingDecisionActions(actions).map((item) => item.action_id), [
+    "medium-proposed",
+    "medium-edited",
+    "high-proposed",
+  ]);
+  assert.deepEqual(filterDecisionQueue(actions, "MEDIUM").map((item) => item.action_id), [
+    "medium-proposed",
+    "medium-edited",
+  ]);
+  assert.equal(decisionSeverityCount(actions, "MEDIUM"), 2);
+  assert.equal(decisionSeverityCount(actions, "LOW"), 0);
+  assert.equal(actions[3].status, "COMPLETED");
+});
+
+test("opens an Action review only when its immutable Decision Brief binding reconciles", async () => {
+  const {
+    decisionReviewHandoffMessage,
+    resolveDecisionReviewHandoff,
+  } = await import("../app/decision-review-handoff.ts");
+  const rationale = "Review an expedite intervention for P2P_ARRIVAL.";
+  const brief = {
+    schema_version: "decision-brief.v1",
+    as_of_date: "2026-08-27",
+    decision_type: "SLA_BREACH",
+    source: {
+      execution_mode: "OPERATIONAL",
+      time_basis: "ACTUAL_CALENDAR",
+      evidence_class: "SYNTHETIC_OPERATIONAL_CALENDAR_ALERT",
+    },
+    risk: { severity: "MEDIUM", milestone: "P2P_ARRIVAL", evidence_class: "OBSERVED_INPUT" },
+    exposure: {
+      metric_name: "governed_delay_hours",
+      delay_hours: 84,
+      threshold_hours: 48,
+      breach_margin_hours: 36,
+      affected_shipments: 1,
+      monetary_value: null,
+      evidence_class: "DERIVED_EXPOSURE",
+    },
+    recommendation: {
+      action_type: "EXPEDITE_MILESTONE",
+      rationale,
+      evidence_class: "DERIVED_EXPOSURE",
+    },
+    alternatives: [
+      { action_type: "EXPEDITE_MILESTONE", label: "Expedite milestone", recommended: true },
+      { action_type: "NO_ACTION", label: "No action", recommended: false },
+    ],
+    no_action_exposure: {
+      status: "DERIVED",
+      delay_hours_at_risk: 84,
+      breach_margin_hours: 36,
+      monetary_value: null,
+      evidence_class: "DERIVED_EXPOSURE",
+    },
+    urgency: { status: "REVIEW_SAME_DAY", basis: "SLA breach", evidence_class: "DERIVED_EXPOSURE" },
+    benefit_estimate: { status: "NOT_ESTIMATED", estimate_evidence_class: "NOT_ESTIMATED", assumption_set_version: null },
+    governance: {
+      human_review_required: true,
+      execution_authorized: false,
+      outcome_observed: false,
+      financial_value_estimated: false,
+      deterministic_rule: true,
+    },
+  };
+  const action = {
+    action_id: "action-1",
+    alert_fingerprint: "alert-1",
+    shipment_id: "shipment-1",
+    action_type: "EXPEDITE_MILESTONE",
+    alert_type: "SLA_BREACH",
+    alert_severity: "MEDIUM",
+    status: "PROPOSED",
+    approval_required: "YES",
+    approved_by: null,
+    approved_at: null,
+    completed_at: null,
+    decision_brief_version: "decision-brief.v1",
+    selected_alternative: "EXPEDITE_MILESTONE",
+    selection_rationale: rationale,
+    action_owner: null,
+    action_due_date: null,
+    created_date: "2026-08-27",
+  };
+  const risk = {
+    alert_fingerprint: "alert-1",
+    shipment_id: "shipment-1",
+    alert_type: "SLA_BREACH",
+    alert_grain: "SHIPMENT_MILESTONE",
+    alert_dimension: "P2P_ARRIVAL",
+    severity: "MEDIUM",
+    status: "OPEN",
+    first_detected_date: "2026-08-27",
+    last_detected_date: "2026-08-27",
+    resolved_date: null,
+    metric_name: "governed_delay_hours",
+    metric_value: "84",
+    threshold_value: "48",
+    as_of_date: "2026-08-27",
+    decision_brief: brief,
+  };
+
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [risk]), { status: "READY", brief });
+  assert.deepEqual(resolveDecisionReviewHandoff(action, []), { status: "BLOCKED", reason_code: "MISSING_RISK" });
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [risk, structuredClone(risk)]), { status: "BLOCKED", reason_code: "AMBIGUOUS_RISK" });
+
+  const resolvedRisk = { ...risk, status: "RESOLVED" };
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [resolvedRisk]), { status: "BLOCKED", reason_code: "RISK_NOT_OPEN" });
+
+  const missingBrief = { ...risk, decision_brief: null };
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [missingBrief]), { status: "BLOCKED", reason_code: "MISSING_DECISION_BRIEF" });
+
+  const incompleteAction = { ...action, decision_brief_version: null };
+  assert.deepEqual(resolveDecisionReviewHandoff(incompleteAction, [risk]), { status: "BLOCKED", reason_code: "ACTION_BINDING_INCOMPLETE" });
+
+  const changedSource = structuredClone(risk);
+  changedSource.shipment_id = "shipment-2";
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [changedSource]), { status: "BLOCKED", reason_code: "SOURCE_MISMATCH" });
+
+  const changedDecision = structuredClone(risk);
+  changedDecision.decision_brief.recommendation.action_type = "NO_ACTION";
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [changedDecision]), { status: "BLOCKED", reason_code: "DECISION_BINDING_MISMATCH" });
+
+  const changedRationale = structuredClone(risk);
+  changedRationale.decision_brief.recommendation.rationale = "Changed rationale";
+  assert.deepEqual(resolveDecisionReviewHandoff(action, [changedRationale]), { status: "BLOCKED", reason_code: "RATIONALE_MISMATCH" });
+  assert.match(decisionReviewHandoffMessage("RATIONALE_MISMATCH"), /Human review remains blocked and no Action was changed/);
+});
+
 test("verifies the server comparison fingerprint and fails closed on drift", async () => {
   const {
     isOutcomeComparisonFingerprintRetryable,
@@ -256,6 +419,7 @@ test("keeps authenticated Action writes behind the internal API client", async (
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(page, /loadRiskHotspots\(token, "OPEN"\)/);
   assert.match(page, /title="Risk hotspots"/);
+  assert.match(page, /item\.id === "signals"[\s\S]*"Risk Hotspots"/);
   assert.match(page, /risk\.decision_brief \? openBrief\(risk\.decision_brief\)/);
   assert.match(page, /function OperationalDecisionBrief/);
   assert.match(page, /Expected benefit" value="NOT ESTIMATED"/);
@@ -268,6 +432,15 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /No rate-card identifier is inferred/);
   assert.match(page, /Deterministic \$\{contract\.decision_type\} rule/);
   assert.match(page, /This brief itself performs no mutation/);
+  assert.match(page, /reviewAction\(item\)/);
+  assert.match(page, /aria-label="Decision severity filter"/);
+  assert.match(page, /decisionSeverityFilters\.map/);
+  assert.match(page, /filterDecisionQueue\(actions, severityFilter\)/);
+  assert.match(page, /No waiting Actions match this severity/);
+  assert.match(page, /Only the Action whose bound Brief you just reviewed is shown/);
+  assert.match(page, /visibleActions\.map/);
+  assert.match(page, /Back to bound Decision Brief/);
+  assert.match(page, /Open selected Action/);
   assert.match(page, /Bound to \$\{item\.decision_brief_version\}/);
   assert.match(page, /selected deterministic alternative/);
   assert.match(page, /Named-human review reasons remain append-only audit events/);
@@ -387,6 +560,7 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(operationsCss, /\.data-state\.failed/);
   assert.match(operationsCss, /prefers-reduced-motion: reduce/);
   assert.match(operationsCss, /\.action-evidence-flow/);
+  assert.match(operationsCss, /\.review-handoff-banner/);
   assert.match(operationsCss, /\.learning-proposal/);
   assert.match(operationsCss, /\.label-readiness-grid/);
   assert.match(operationsCss, /\.label-targets/);

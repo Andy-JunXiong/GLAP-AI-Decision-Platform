@@ -582,15 +582,28 @@ product remains in read-only demonstration mode and sends no request.
 
 The deployed cockpit currently labels the Risk Hotspots navigation item
 `Signals`; `Risk hotspots` appears only as the destination page title. A
-named-human staging inspection on `2026-08-27` also confirmed that Decision
-Queue's `Review now` control opens the unscoped Action Board. It neither carries
-the selected Action into the Board nor opens the selected bound Decision Brief.
-The Board can display each immutable binding summary and evidence chain, but
-this observed journey did not give the reviewer a reliable selected-Brief
-handoff. No mutation button was submitted. Until the handoff is corrected, the
-natural SLA proposal remains `WAITING_HUMAN_REVIEW`; this is a private-staging
-usability gap and grants no authority to infer, approve, reject, or complete a
+named-human staging inspection on `2026-08-27` also confirmed that the deployed
+Decision Queue's `Review now` control opens the unscoped Action Board. No
+mutation button was submitted.
+
+Source now contains a locally verified correction: the selected Action must
+reconcile to exactly one open Risk and its complete immutable Brief binding
+before the full Brief opens; the return path then shows only that Action card.
+Missing, duplicate, stale, incomplete, or mismatched evidence fails closed, and
+opening the Brief performs no automatic evidence request. See
+[`sla_decision_review_handoff_v1.md`](sla_decision_review_handoff_v1.md). This
+source has not been republished to private staging, so the deployed usability
+gap and `WAITING_HUMAN_REVIEW` state remain current. Neither implementation nor
+future publication grants authority to infer, approve, reject, or complete a
 business decision.
+
+The same local source now labels the internal navigation entry `Risk Hotspots`
+and filters waiting Decision Queue Actions by All, Critical, High, Medium, or
+Low severity with explicit counts and bounded empty states. The browser-local
+filter admits only `PROPOSED` / `EDITED` rows and neither adds a request nor
+changes an Action. See
+[`decision_queue_discovery_controls_v1.md`](decision_queue_discovery_controls_v1.md).
+This naming and filter correction is also not deployed.
 
 As of the Australia/Sydney business date `2026-08-07`, the dedicated identity,
 internal hosting, Operations API, alarms, and DLQ staging resources are deployed.

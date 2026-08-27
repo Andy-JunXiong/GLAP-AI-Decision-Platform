@@ -124,9 +124,21 @@ staging runtime binding evidence only. No named-human judgment, Action
 execution, Outcome observation attributable to this contract, production
 change, or Pages publication has been established.
 
-The subsequent named-human staging inspection found that Decision Queue's
-`Review now` control opens the unscoped Action Board rather than the selected
-full brief. Navigation labels the risk entry `Signals` while the destination
-page title is `Risk hotspots`. The reviewer submitted no mutation. The next
-frontend slice must preserve selected-Action context and expose its complete
-bound brief before the human review journey is treated as usable.
+The subsequent named-human staging inspection found that the deployed Decision
+Queue's `Review now` control opens the unscoped Action Board rather than the
+selected full brief. Navigation labels the risk entry `Signals` while the
+destination page title is `Risk hotspots`. The reviewer submitted no mutation.
+
+The `2026-08-28` local source correction now preserves selected-Action context,
+requires the Action to match exactly one open Risk and its full immutable Brief
+binding, opens that Brief, and returns to only the selected Action card. Any
+missing or drifting evidence blocks review, and no evidence query or mutation
+runs automatically. See
+[`sla_decision_review_handoff_v1.md`](sla_decision_review_handoff_v1.md).
+Because this source is not yet deployed, it does not establish staging runtime
+usability or change `WAITING_HUMAN_REVIEW`.
+
+Local source also makes that review entry discoverable through a consistently
+named `Risk Hotspots` navigation item and read-only Decision Queue severity
+filters, including `MEDIUM`. Filtered Actions still enter the exact same
+fail-closed Brief handoff; filtering grants no review or mutation authority.

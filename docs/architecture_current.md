@@ -39,10 +39,19 @@ rate-card version, the Cost contract exposes that value as unavailable and
 never infers an identifier. Both include monitor/no-action alternatives and
 keep expected benefit `NOT_ESTIMATED`; no monetary exposure, intervention
 effect, execution, or Outcome is inferred. The private UI can render a full
-brief from an authenticated `Signals` row, but Decision Queue's deployed
-`Review now` handoff currently opens the unscoped Action Board without carrying
-the selected Action or opening its bound brief. The `2026-08-27` named-human
-inspection submitted no mutation and records this as a staging usability gap.
+brief from an authenticated `Signals` row. Source now also reconciles a selected
+Decision Queue Action to exactly one open Risk and its immutable Brief binding,
+then returns from that Brief to only the same Action card. The handoff fails
+closed on any binding drift and performs no automatic evidence query. This
+correction is locally verified but not deployed; the deployed `Review now`
+journey therefore still opens the unscoped Action Board. The `2026-08-27`
+named-human inspection submitted no mutation and the proposal remains
+`WAITING_HUMAN_REVIEW`.
+
+Local private-cockpit source also aligns the internal navigation label with the
+`Risk Hotspots` page and adds browser-local Decision Queue severity filtering
+over waiting `PROPOSED` / `EDITED` Actions. It adds no route, request, query,
+storage, or mutation boundary and is not yet present in deployed staging.
 Both contracts are deployed and reader/RBAC verified. A natural SLA proposal
 now has aggregate runtime binding evidence; the Cost cohort still has no
 natural runtime proposal.

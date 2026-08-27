@@ -43,6 +43,17 @@ import {
   signInOperations,
   signOutOperations,
 } from "./operations-auth";
+import {
+  decisionReviewHandoffMessage,
+  resolveDecisionReviewHandoff,
+} from "./decision-review-handoff";
+import {
+  decisionSeverityCount,
+  decisionSeverityFilters,
+  filterDecisionQueue,
+  type DecisionSeverityFilter,
+  waitingDecisionActions,
+} from "./decision-queue-filter";
 import "./operations.css";
 
 type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "learning" | "readiness" | "forecasts" | "health" | "brief";
@@ -105,6 +116,8 @@ export default function Home() {
   const [decision, setDecision] = useState<"pending" | "approved" | "rejected">("pending");
   const [signalFilter, setSignalFilter] = useState("All");
   const [selectedDecisionBrief, setSelectedDecisionBrief] = useState<DecisionBriefV1 | null>(null);
+  const [selectedReviewActionId, setSelectedReviewActionId] = useState<string | null>(null);
+  const [reviewHandoffMessage, setReviewHandoffMessage] = useState("");
   const [operationsActions, setOperationsActions] = useState<OperationsAction[]>([]);
   const [operationsRisks, setOperationsRisks] = useState<OperationsRisk[]>([]);
   const [operationsOutcomes, setOperationsOutcomes] = useState<OperationsOutcome[]>([]);
@@ -361,14 +374,52 @@ export default function Home() {
   }, [diverted]);
 
   const go = (next: View) => {
+    if (next !== "brief" && next !== "actions") {
+      setSelectedReviewActionId(null);
+    }
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const openDecisionBrief = (brief: DecisionBriefV1) => {
+    setSelectedReviewActionId(null);
+    setReviewHandoffMessage("");
     setSelectedDecisionBrief(brief);
     go("brief");
   };
+
+  const reviewAction = (action: OperationsAction) => {
+    const handoff = resolveDecisionReviewHandoff(action, operationsRisks);
+    if (handoff.status === "BLOCKED") {
+      setSelectedReviewActionId(null);
+      setSelectedDecisionBrief(null);
+      setReviewHandoffMessage(decisionReviewHandoffMessage(handoff.reason_code));
+      return;
+    }
+    setSelectedReviewActionId(action.action_id);
+    setSelectedDecisionBrief(handoff.brief);
+    setReviewHandoffMessage("");
+    go("brief");
+  };
+
+  const openSelectedAction = () => {
+    if (!selectedReviewActionId) return;
+    setView("actions");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const navigationLabel = (item: (typeof navItems)[number]) => (
+    internalOperationsEnabled() && item.id === "signals"
+      ? "Risk Hotspots"
+      : item.label
+  );
+  const currentNavigationItem = navItems.find((item) => item.id === view);
+  const currentNavigationLabel = view === "brief"
+    ? "Decision Brief"
+    : currentNavigationItem
+      ? navigationLabel(currentNavigationItem)
+      : undefined;
+  const waitingDecisionCount = waitingDecisionActions(operationsActions).length;
 
   return (
     <div className="product-shell">
@@ -380,8 +431,8 @@ export default function Home() {
           <p>Workspace</p>
           {navItems.filter((item) => !item.internalOnly || internalOperationsEnabled()).map((item) => (
             <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => go(item.id)}>
-              <i>{item.icon}</i>{item.label}
-              {item.id === "decisions" && <b>3</b>}
+              <i>{item.icon}</i>{navigationLabel(item)}
+              {item.id === "decisions" && <b>{internalOperationsEnabled() ? waitingDecisionCount : 3}</b>}
             </button>
           ))}
         </nav>
@@ -395,7 +446,7 @@ export default function Home() {
         <header className="app-header">
           <div className="mobile-brand"><strong>GLAP</strong></div>
           <div className="header-context">
-            <span>Australia Operations</span><b>/</b><strong>{view === "brief" ? "Decision Brief" : navItems.find((item) => item.id === view)?.label}</strong>
+            <span>Australia Operations</span><b>/</b><strong>{currentNavigationLabel}</strong>
           </div>
           <div className="header-actions">
             <span className="demo-badge">{internalOperationsEnabled() ? "Internal staging" : "Synthetic workspace"}</span>
@@ -411,8 +462,8 @@ export default function Home() {
 
         {view === "overview" && <Overview go={go} />}
         {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} openBrief={openDecisionBrief} risks={operationsRisks} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
-        {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
-        {view === "actions" && <ActionBoard actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
+        {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} reviewHandoffMessage={reviewHandoffMessage} reviewAction={reviewAction} refresh={refreshOperations} />}
+        {view === "actions" && <ActionBoard actions={operationsActions} focusedActionId={selectedReviewActionId} clearFocusedAction={() => setSelectedReviewActionId(null)} backToDecisionBrief={() => go("brief")} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments
           go={go} contract={networkContract} entities={shipmentEntities}
           state={networkState} message={networkMessage} shipmentState={shipmentState}
@@ -432,6 +483,8 @@ export default function Home() {
             setDecision={setDecision}
             economics={economics}
             contract={selectedDecisionBrief}
+            selectedReviewActionId={selectedReviewActionId}
+            openSelectedAction={openSelectedAction}
             go={go}
           />
         )}
@@ -539,26 +592,34 @@ function Signals({ filter, setFilter, go, openBrief, risks, operationsState, ope
   </div>;
 }
 
-function Decisions({ go, actions, operationsState, operationsMessage, refresh }: {
+function Decisions({ go, actions, operationsState, operationsMessage, reviewHandoffMessage, reviewAction, refresh }: {
   go: (view: View) => void;
   actions: OperationsAction[];
   operationsState: OperationsLoadState;
   operationsMessage: string;
+  reviewHandoffMessage: string;
+  reviewAction: (action: OperationsAction) => void;
   refresh: () => Promise<void>;
 }) {
+  const [severityFilter, setSeverityFilter] = useState<DecisionSeverityFilter>("ALL");
+  const waitingActions = waitingDecisionActions(actions);
+  const visibleActions = filterDecisionQueue(actions, severityFilter);
   if (operationsState === "demo") return <DemoDecisions go={go} />;
   return <div className="page">
     <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Authenticated operational Actions ready for human review." action={<button className="outline-button" onClick={() => void refresh()}>Refresh queue</button>} />
+    <div className="toolbar"><div className="filters" aria-label="Decision severity filter">{decisionSeverityFilters.map((severity) => <button aria-pressed={severityFilter === severity} className={severityFilter === severity ? "active" : ""} onClick={() => setSeverityFilter(severity)} key={severity}>{severity === "ALL" ? "All" : severity.charAt(0) + severity.slice(1).toLowerCase()} {decisionSeverityCount(actions, severity)}</button>)}</div></div>
     <OperationsState state={operationsState} message={operationsMessage} label="decision queue" onRetry={refresh} />
+    {reviewHandoffMessage && <DataState kind="failed" title="Decision review handoff blocked" message={reviewHandoffMessage} />}
     {operationsState === "connected" && <div className="decision-list">
-      {actions.filter((item) => item.status === "PROPOSED" || item.status === "EDITED").map((item) => <button className="decision-card" key={item.action_id} onClick={() => go("actions")}>
+      {visibleActions.map((item) => <button className="decision-card" key={item.action_id} onClick={() => reviewAction(item)}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
         <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>Shipment {item.shipment_id}</span><span>{item.decision_brief_version ? `Bound to ${item.decision_brief_version}` : "Legacy proposal — no Decision Brief binding"}</span></div>
         <div className="decision-value"><small>Alert</small><strong>{item.alert_type.replaceAll("_", " ")}</strong></div>
         <div className="decision-due"><small>{item.action_due_date ? "Due" : "Created"}</small><strong>{item.action_due_date ?? item.created_date}</strong></div>
         <span className="status-button">Review now</span>
       </button>)}
-      {actions.every((item) => item.status !== "PROPOSED" && item.status !== "EDITED") && <DataState kind="empty" title="Decision queue is clear" message="No Actions are waiting for human review at this Sydney cutoff." />}
+      {waitingActions.length === 0 && <DataState kind="empty" title="Decision queue is clear" message="No Actions are waiting for human review at this Sydney cutoff." />}
+      {waitingActions.length > 0 && visibleActions.length === 0 && <DataState kind="empty" title={`No ${severityFilter.toLowerCase()} Decisions`} message="No waiting Actions match this severity. Choose another filter or refresh the queue." />}
     </div>}
   </div>;
 }
@@ -577,8 +638,11 @@ function DemoDecisions({ go }: { go: (view: View) => void }) {
   </div>;
 }
 
-function ActionBoard({ actions, operationsState, operationsMessage, submitOperation, refresh }: {
+function ActionBoard({ actions, focusedActionId, clearFocusedAction, backToDecisionBrief, operationsState, operationsMessage, submitOperation, refresh }: {
   actions: OperationsAction[];
+  focusedActionId: string | null;
+  clearFocusedAction: () => void;
+  backToDecisionBrief: () => void;
   operationsState: OperationsLoadState;
   operationsMessage: string;
   submitOperation: (actionId: string, operation: ActionOperation, reason: string, assignment?: { actionOwner?: string; actionDueDate?: string }) => Promise<boolean>;
@@ -592,6 +656,10 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
   const [evidence, setEvidence] = useState<ActionEvidence | null>(null);
   const [evidenceState, setEvidenceState] = useState<"idle" | "loading" | "connected" | "error">("idle");
   const [evidenceMessage, setEvidenceMessage] = useState("");
+  const focusedAction = focusedActionId
+    ? actions.find((item) => item.action_id === focusedActionId) ?? null
+    : null;
+  const visibleActions = focusedActionId ? (focusedAction ? [focusedAction] : []) : actions;
   const reviewEvidence = async (actionId: string, forceRefresh = false) => {
     if (!forceRefresh && selectedEvidence === actionId && evidenceState === "connected") {
       setSelectedEvidence("");
@@ -630,12 +698,17 @@ function ActionBoard({ actions, operationsState, operationsMessage, submitOperat
       ? <p className="data-disclaimer">Public demonstration mode is read-only. Configure the internal Operations API and sign in to use the Action Board.</p>
       : <OperationsState state={operationsState} message={operationsMessage} label="Action Board" onRetry={refresh} />}
     {operationsState === "connected" && <>
-      {actions.length === 0
+      {focusedActionId && !focusedAction && <DataState kind="failed" title="Selected Action unavailable" message="The selected Action is no longer present in the authenticated queue. No mutation is available from this review handoff." action={<button className="outline-button" onClick={clearFocusedAction}>Show all Actions</button>} />}
+      {focusedAction && <section className="review-handoff-banner" role="status">
+        <div><small>Selected Decision review</small><strong>Only the Action whose bound Brief you just reviewed is shown.</strong><span>Its immutable binding was reconciled before this page opened; no mutation or evidence query ran automatically.</span></div>
+        <div className="review-handoff-actions"><button className="outline-button" onClick={backToDecisionBrief}>Back to bound Decision Brief</button><button className="outline-button" onClick={clearFocusedAction}>Show all Actions</button></div>
+      </section>}
+      {visibleActions.length === 0 && !focusedActionId
         ? <DataState kind="empty" title="No governed Actions" message="There are no Actions available for this authenticated role and cutoff." />
-        : <><label className="select-label"><span>Audit reason for the next update</span><input className="operations-reason" value={reason} minLength={3} maxLength={500} onChange={(event) => setReason(event.target.value)} /></label>
+        : visibleActions.length > 0 && <><label className="select-label"><span>Audit reason for the next update</span><input className="operations-reason" value={reason} minLength={3} maxLength={500} onChange={(event) => setReason(event.target.value)} /></label>
         <label className="select-label"><span>Named Action owner (used by Edit)</span><input className="operations-reason" value={actionOwner} maxLength={128} onChange={(event) => setActionOwner(event.target.value)} /></label>
         <label className="select-label"><span>Action due date (used by Edit)</span><input className="operations-reason" type="date" value={actionDueDate} onChange={(event) => setActionDueDate(event.target.value)} /></label>
-        <div className="decision-list">{actions.map((item) => <article className="decision-card" key={item.action_id}>
+        <div className="decision-list">{visibleActions.map((item) => <article className="decision-card" key={item.action_id}>
         <div className={`decision-priority ${item.alert_severity.toLowerCase()}`}><i /><span>{item.alert_severity}</span></div>
         <div className="decision-main"><small>{item.action_id}</small><strong>{item.action_type.replaceAll("_", " ")}</strong><span>{item.alert_type.replaceAll("_", " ")} · Shipment {item.shipment_id}</span><span>Owner: {item.action_owner ?? "Unassigned"} · Due: {item.action_due_date ?? "Not set"}</span><span>{item.decision_brief_version ? `${item.decision_brief_version} · Selected ${item.selected_alternative?.replaceAll("_", " ")}` : "Legacy proposal — no Decision Brief binding"}</span>{item.selection_rationale && <span>{item.selection_rationale}</span>}</div>
         <div className="decision-value"><small>Status</small><strong>{item.status}</strong></div>
@@ -1139,15 +1212,17 @@ function DemoOutcomes() {
   </div>;
 }
 
-function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics, contract, go }: {
+function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics, contract, selectedReviewActionId, openSelectedAction, go }: {
   diverted: number; setDiverted: (n: number) => void; decision: string;
   setDecision: (v: "pending" | "approved" | "rejected") => void;
   economics: { noAction: number; avoided: number; reroute: number; net: number; stockout: string };
   contract: DecisionBriefV1 | null;
+  selectedReviewActionId: string | null;
+  openSelectedAction: () => void;
   go: (view: View) => void;
 }) {
   if (internalOperationsEnabled() && contract) {
-    return <OperationalDecisionBrief contract={contract} go={go} />;
+    return <OperationalDecisionBrief contract={contract} selectedActionReview={Boolean(selectedReviewActionId)} openSelectedAction={openSelectedAction} go={go} />;
   }
   return <div className="page brief-page" data-claim-id="next-decision-brief" data-claim-classification="ILLUSTRATIVE">
     <button className="back-link" onClick={() => go("decisions")}>← Back to decision queue</button>
@@ -1165,7 +1240,12 @@ function DecisionBrief({ diverted, setDiverted, decision, setDecision, economics
   </div>;
 }
 
-function OperationalDecisionBrief({ contract, go }: { contract: DecisionBriefV1; go: (view: View) => void }) {
+function OperationalDecisionBrief({ contract, selectedActionReview, openSelectedAction, go }: {
+  contract: DecisionBriefV1;
+  selectedActionReview: boolean;
+  openSelectedAction: () => void;
+  go: (view: View) => void;
+}) {
   const readable = (value: string) => value.replaceAll("_", " ");
   const isCost = contract.decision_type === "COST_ANOMALY";
   const riskScope = isCost ? contract.risk.cost_scope : contract.risk.milestone;
@@ -1178,7 +1258,7 @@ function OperationalDecisionBrief({ contract, go }: { contract: DecisionBriefV1;
     ? `${contract.source.source_contract_version} · Rate-card version unavailable in Alert contract`
     : contract.source.evidence_class;
   return <div className="page brief-page">
-    <button className="back-link" onClick={() => go("signals")}>← Back to risk hotspots</button>
+    <button className="back-link" onClick={() => go(selectedActionReview ? "decisions" : "signals")}>← {selectedActionReview ? "Back to decision queue" : "Back to risk hotspots"}</button>
     <div className="brief-title">
       <div><span className="critical-label">{contract.decision_type}</span><small>DECISION BRIEF V1 · Sydney cutoff {contract.as_of_date}</small><h1>{isCost ? "Review the governed response to a cost anomaly." : "Review the governed response to an SLA breach."}</h1><p>This brief is derived from one operational-calendar synthetic Alert. It recommends a bounded review action; it does not claim execution, an observed Outcome, or financial value.</p></div>
       <div className="decision-status pending"><span>Review status</span><strong>Human review required</strong><small>{readable(contract.urgency.status)}</small></div>
@@ -1193,7 +1273,7 @@ function OperationalDecisionBrief({ contract, go }: { contract: DecisionBriefV1;
       <article className="card"><CardHead title="Why review is required" copy="Observed input and derived exposure stay separate" /><div className="economics-list"><div><span>{isCost ? "Observed variance input" : "Observed delay input"}</span><strong>{exposureValue} {isCost ? "percent" : "hours"}</strong></div><div><span>Governed threshold</span><strong>{thresholdValue} {isCost ? "percent" : "hours"}</strong></div><div><span>Derived breach margin</span><strong>{breachMargin} {isCost ? "percentage points" : "hours"}</strong></div></div><p className="data-disclaimer">Risk evidence: {contract.risk.evidence_class} · exposure evidence: {contract.exposure.evidence_class}</p>{isCost && <p className="data-disclaimer">Cost source: {sourceDetail}. No rate-card identifier is inferred.</p>}</article>
       <article className="card"><CardHead title="Recommended action" copy={`Deterministic ${contract.decision_type} rule`} /><div className="recommendation"><i>↗</i><div><strong>{readable(contract.recommendation.action_type)}</strong><p>{contract.recommendation.rationale}</p></div></div><p className="data-disclaimer">This recommendation requires human review and does not authorize execution.</p></article>
       <article className="card"><CardHead title="Bounded alternatives" copy="Including an explicit no-action path" /><div className="economics-list">{contract.alternatives.map((alternative) => <div key={alternative.action_type}><span>{alternative.label}</span><strong>{alternative.recommended ? "RECOMMENDED" : "AVAILABLE"}</strong></div>)}</div></article>
-      <article className="card review-card"><CardHead title="Benefit and authority" copy="No pseudo-precision" /><div className="economics-list"><div><span>Benefit estimate</span><strong>{readable(contract.benefit_estimate.status)}</strong></div><div><span>Assumption set</span><strong>{contract.benefit_estimate.assumption_set_version ?? "NONE"}</strong></div><div><span>Monetary exposure</span><strong>NOT ESTIMATED</strong></div></div><button className="primary-button" onClick={() => go("actions")}>Open governed Action Board</button><p className="data-disclaimer">The Action Board retains signed-human role checks and append-only audit semantics. This brief itself performs no mutation.</p></article>
+      <article className="card review-card"><CardHead title="Benefit and authority" copy="No pseudo-precision" /><div className="economics-list"><div><span>Benefit estimate</span><strong>{readable(contract.benefit_estimate.status)}</strong></div><div><span>Assumption set</span><strong>{contract.benefit_estimate.assumption_set_version ?? "NONE"}</strong></div><div><span>Monetary exposure</span><strong>NOT ESTIMATED</strong></div></div><button className="primary-button" onClick={selectedActionReview ? openSelectedAction : () => go("actions")}>{selectedActionReview ? "Open selected Action" : "Open governed Action Board"}</button><p className="data-disclaimer">{selectedActionReview ? "This returns only to the Action whose immutable binding matches this Brief. " : ""}The Action Board retains signed-human role checks and append-only audit semantics. This brief itself performs no mutation.</p></article>
     </section>
     <p className="data-disclaimer">Source: {sourceDetail} · execution authorized: no · Outcome observed: no · financial value estimated: no.</p>
   </div>;

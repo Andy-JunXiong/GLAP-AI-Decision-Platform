@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-27`
+**Sydney as-of date:** `2026-08-28`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -43,6 +43,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
+| SLA Decision review handoff v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Decision Queue now reconciles the selected Action to exactly one open Risk and its immutable Decision Brief binding before opening the full Brief, then returns to only that Action card. Drift fails closed, no evidence query runs automatically, and no Action mutation or staging publication occurred. |
+| Decision Queue discovery controls v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Private navigation now names the authenticated entry `Risk Hotspots`; Decision Queue filters waiting `PROPOSED` / `EDITED` Actions by All, Critical, High, Medium, or Low with bounded counts and empty states. Filtering is browser-local, read-only, and preserves the exact Brief handoff. |
 | `COST_ANOMALY` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL` | Commit `0e5b740` delivered the deterministic `REVIEW_COST` brief and immutable binding. Actual-calendar continuation run `33020683956` invoked the Generator successfully. The separately authorized aggregate reconciler then found zero natural Cost proposals and failed closed; the remaining six checks passed, including zero invalid bindings and an intact pre-release legacy-null boundary. No runtime Cost binding is established. |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_SLA_RUNTIME_BINDING_VERIFIED` | The corrected full SLA reconciler returned every exact-source, exact-binding, immutable-state, current-view, and legacy-null check true. This establishes synthetic staging runtime evidence for the natural SLA Decision binding only; no Action was reviewed, repaired, or mutated. |
 | Decision Truth private-staging rollout handoff | `PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_SLA_GATE_PASSED_COST_GATE_NO_CANDIDATE` | Producer, authenticated API, and private cockpit releases are deployed and reader/RBAC verified. Continuation run `33020683956` passed all 41 checks. The corrected SLA runtime gate passed all seven checks; the Cost gate still has zero natural candidates and remains failed closed. No human Action judgment, schedule, alias, Pages, or production change is claimed. |
@@ -170,46 +172,43 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — `SLA_BREACH` Outcome provenance readiness audit
+## Active slice — private Decision review discovery and handoff
+
+**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+
+Private source now uses `Risk Hotspots` consistently in navigation and the page
+title. Decision Queue can narrow waiting `PROPOSED` / `EDITED` Actions by All,
+Critical, High, Medium, or Low, displays a count for every filter, and returns a
+bounded empty state rather than substituting an Action. Closed Actions never
+re-enter the waiting queue through filtering.
+
+The private cockpit also retains the selected Decision Queue Action, resolves it
+to exactly one current open Risk, and verifies its full immutable Decision
+binding before opening the bound Brief. Shipment, Alert type, schema version,
+recommended Action, selected alternative, and deterministic rationale must all
+match. Missing, duplicate, stale, incomplete, or mismatched evidence fails
+closed in the queue and explicitly records that no Action changed.
+
+After review, the Brief returns to an Action Board containing only that Action
+card, with explicit controls to return to the bound Brief or show all Actions.
+The handoff performs no automatic evidence-chain request and adds no API or
+write surface. Existing signed-human RBAC and append-only audit controls remain
+unchanged. Frontend lint, the public production build, the standard internal
+static production build with TypeScript, seven rendered/contract tests, Python
+compilation, all 599 repository tests, the 54/54 drift audit, and
+`git diff --check` pass locally. Private staging has not been republished or
+runtime-verified with this source. The natural SLA proposal remains
+`WAITING_HUMAN_REVIEW`.
+
+## Recently completed — `SLA_BREACH` Outcome provenance readiness audit
 
 **Status:** `EXECUTED_WAITING_HUMAN_REVIEW`
 
-The repository now contains a separate aggregate-only readiness audit that
-connects the runtime-verified natural SLA Decision binding to the existing
-Outcome provenance contract. It admits only cutoff-eligible `OPERATIONAL` /
-`ACTUAL_CALENDAR` rows with no scenario ID, requires the exact
-`decision-brief.v1` / `EXPEDITE_MILESTONE` pair, validates the named-human
-`APPROVE` / zero-`REJECT` / `COMPLETE` audit chain, rejects any Outcome without
-a valid completion or duplicate latest Outcome, and admits a closed Outcome
-only with valid observation timing and a finite effect.
-
-Expected absence produces a bounded readiness state rather than invented
-evidence: no bound proposal, waiting human review, waiting Outcome, waiting due
-date, ready for observation, or ready for provenance verification. Invalid
-binding, human audit, Outcome cardinality, or closed evidence fails closed as
-`BLOCKED_CONTRACT_DRIFT`. Output contains only named booleans and one state; no
-counts, actor values, effects, or identifiers are printed.
-
-The seven focused contract tests, PowerShell parser, and pre-AWS future-date
-guard pass locally. The separately authorized `2026-08-27` audit returned
-`WAITING_HUMAN_REVIEW`: a natural exact-bound proposal exists, but no named-
-human completed SLA Action, pending Outcome, due pending Outcome, or closed
-observed Outcome exists. Every human-chain, no-Outcome-without-completion,
-latest-Outcome, temporal-shape, closed-provenance, and cutoff check remained
-valid. No counts, actors, effects, or identifiers were printed and no mutation
-occurred. Every future run remains separately authorized because Athena stores
-a protected result object.
-
-A named-human staging inspection then exposed a review-navigation gap without
-submitting a mutation. Decision Queue displayed the natural SLA proposals, but
-`Review now` opened the unscoped Action Board rather than the selected
-Decision Brief or selected Action. The Action Board exposed the immutable
-binding summary and evidence chain, while the risk entry is labelled `Signals`
-in navigation and `Risk hotspots` only inside the page. The reviewer could not
-reliably reach the selected full brief from the observed journey and therefore
-made no `EDIT`, `APPROVE`, `REJECT`, or `COMPLETE` event. This preserves
-`WAITING_HUMAN_REVIEW`; it is a staging usability blocker, not evidence of a
-Decision-contract or provenance failure.
+The separately authorized `2026-08-27` aggregate-only audit found the natural
+exact-bound SLA proposal but no named-human completed Action or Outcome. Every
+binding, audit-chain, latest-Outcome, temporal, provenance, privacy, and
+no-mutation check remained valid. Expected absence therefore remains the
+truthful governance state rather than invented evidence.
 
 ## Recently completed — `SLA_BREACH` runtime evidence gate
 
@@ -1787,6 +1786,22 @@ done.
 
 ### Codex-run validation
 
+- Decision Queue discovery controls v1 passes frontend lint, the public
+  production build, the standard internal static production build with
+  TypeScript, and a focused browser-local filter contract test. It proves
+  `MEDIUM` selection is case-normalized, includes only waiting Actions, excludes
+  completed Actions, reports zero-count severities, and does not mutate source
+  state. Its dedicated mutation-drift test, Python compilation, all 599
+  repository tests, the expanded 54/54 drift audit, JSON parsing, and
+  `git diff --check` pass.
+- SLA Decision review handoff v1 passes frontend lint, the public production
+  build, the standard internal static production build with TypeScript, and six
+  rendered/contract tests, including exact-match entry plus missing, duplicate,
+  incomplete, source-mismatch, Decision-mismatch, and rationale-mismatch fail-
+  closed cases. Python compilation, all 599 repository tests, the expanded
+  54/54 drift audit, and `git diff --check` also pass. Staging publication and
+  runtime verification are still pending; no Action, Outcome, API, workflow,
+  AWS, Pages, or production mutation occurred.
 - `SLA_BREACH` Outcome provenance readiness audit v1 passes seven focused
   temporal, Decision-pair, named-human-chain, latest-Outcome, bounded-state,
   no-manufactured-evidence, and authority scenarios plus its dedicated
@@ -2258,13 +2273,13 @@ done.
 
 ## Next Up
 
-1. Fix the private-cockpit review handoff before asking a named human to judge
-   the natural SLA proposal: `Review now` must retain the selected Action and
-   expose its complete bound Decision Brief, with a clear return to that Action
-   Board card. Preserve `WAITING_HUMAN_REVIEW` meanwhile. An agent must not
-   approve, reject, complete, backfill, or mutate the proposal, and readiness
-   may be rerun only after an independently justified human workflow event and
-   new authorization.
+1. Separately authorize publication of the private frontend source, then run a
+   read-only staging canary proving that navigation says `Risk Hotspots`, the
+   `MEDIUM` Decision filter narrows the queue correctly, and `Review now` opens
+   the selected bound Brief before returning to only that Action card.
+   Publication and canary evidence do not authorize a business judgment.
+   Preserve `WAITING_HUMAN_REVIEW`; only a named human may later edit, approve,
+   reject, or complete the proposal.
 2. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
    The `2026-08-27` reconciler found zero natural proposals and failed closed.
    Re-run it only after a future independently justified operational
