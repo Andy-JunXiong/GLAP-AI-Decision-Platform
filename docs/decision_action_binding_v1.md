@@ -1,7 +1,8 @@
 # Decision-to-Action binding v1
 
 **Status:** staging schema, producer, and private readers deployed and verified;
-`2026-08-27` COST_ANOMALY reconciliation failed closed with zero natural candidates
+`2026-08-27` Cost reconciliation failed closed with zero natural candidates;
+SLA reconciliation found natural candidates but failed closed on exact binding
 
 This contract makes a newly generated governed Action prove which implemented
 Decision Brief recommendation produced its immutable proposal. It does not add
@@ -107,3 +108,39 @@ with the current view, and fails if any pre-release Cost Action was backfilled.
 Its separately authorized `2026-08-27` run found zero natural candidates and
 failed closed; it cannot invoke the Generator or mutate an Action. See
 [`cost_anomaly_runtime_evidence_v1.md`](cost_anomaly_runtime_evidence_v1.md).
+
+The separate SLA runtime reconciler is also aggregate-only and fail-closed. It
+requires exactly one eligible same-date source Alert, one of the seven governed
+milestone/metric pairs, the exact `decision-brief.v1` /
+`EXPEDITE_MILESTONE` binding and calculated breach-hours rationale, an
+immutable unreviewed proposal, a matching current-view projection, and no
+invented binding on pre-release SLA Actions. Its separately authorized
+`2026-08-27` query found natural proposals and passed the source, immutable-
+state, current-view, and legacy-null checks. At least one proposal failed the
+exact binding and the invalid-binding count was non-zero, so no runtime binding
+evidence or root cause is accepted. Every future query is a separately
+authorized external operation. See
+[`sla_breach_runtime_evidence_v1.md`](sla_breach_runtime_evidence_v1.md).
+
+The separately authorized `-BindingDiagnostic` run preserved the seven full-
+gate booleans and added five aggregate-only binding components. Brief version,
+Action type, and selected alternative passed; exact milestone-bound rationale
+shape and calculated rationale value failed. Versioned deployed source matches
+the expected template, but aggregate evidence cannot distinguish persisted-
+text from verifier-expression drift. It exposed no identifiers, repaired
+nothing, and established no root cause.
+
+The optional `-RationaleDiagnostic` mode retains every earlier check and adds
+five regex-independent booleans for presence, exact milestone prefix, governed
+suffix, finite non-negative numeric token, and numeric equality. Its first
+separately authorized execution failed before results on
+`ENDS_WITH_EXPRESSION`; after a local `length` plus `substr` correction, the
+separately authorized retry returned all five rationale-only booleans true
+while the legacy regex checks remained false. This validates the persisted
+rationale and isolates verifier-expression drift: `[A-Z_]+` excludes digits in
+governed `P2P_*` milestones. The local full-gate verifier now reuses the
+compositional rationale checks and contains no rationale regex. The separately
+authorized corrected full reconciliation returned all seven aggregate booleans
+true, establishing synthetic staging runtime evidence for the natural SLA
+Decision binding. It exposes no text or identifiers and cannot repair a
+proposal; no Action was mutated.

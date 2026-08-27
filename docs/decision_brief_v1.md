@@ -1,7 +1,8 @@
 # SLA_BREACH Decision Brief v1
 
 **Status:** deployed private staging readers and producer verified; Generator
-invoked on `2026-08-27`; bound runtime proposal evidence not reconciled
+invoked on `2026-08-27`; aggregate-only SLA runtime reconciliation found natural
+proposals but failed closed on exact Decision binding
 
 Decision Brief v1 turns one current governed `SLA_BREACH` Alert into a bounded,
 human-reviewable decision explanation. It is intentionally narrow, adds no AI
@@ -71,8 +72,34 @@ version, deterministic selected alternative, and proposal rationale on the
 immutable Action row. Named-human review reasons remain append-only audit
 events because they do not exist when the system creates the proposal. See
 [`decision_action_binding_v1.md`](decision_action_binding_v1.md). The binding
-is schema-deployed and reader/RBAC verified, but the Generator has not been
-invoked and no bound runtime proposal has been observed.
+is schema-deployed and reader/RBAC verified. The Generator was invoked on
+`2026-08-27`, but that workflow exposed no aggregate SLA proposal or binding
+count. The later separately authorized SLA reconciliation found natural
+proposals whose source and immutable-state checks passed, but at least one
+proposal failed the exact binding and the invalid-binding count was non-zero.
+The aggregate result established no root cause or bound SLA runtime evidence. See
+[`sla_breach_runtime_evidence_v1.md`](sla_breach_runtime_evidence_v1.md).
+
+The same reconciler's separately authorized binding diagnostic retained the
+full gate and separately reported brief version, Action type, selected
+alternative, rationale shape, and rationale value. The first three passed; both
+rationale checks failed. Versioned deployed source matches the expected
+template, but the aggregate result cannot distinguish persisted-text from
+verifier-expression drift and therefore establishes no root cause.
+
+A regex-independent `-RationaleDiagnostic` mode splits presence, exact
+milestone prefix, governed suffix, numeric token, and numeric equality into
+five identifier-free booleans. Its first separately authorized execution
+failed before results on `ENDS_WITH_EXPRESSION`; after a local `length` plus
+`substr` correction, the separately authorized retry returned all five
+rationale-only booleans true while the legacy regex checks remained false.
+This validates the persisted rationale and isolates verifier-expression drift:
+`[A-Z_]+` excludes digits in governed `P2P_*` milestones. The local full-gate
+verifier now reuses the compositional rationale checks and contains no rationale
+regex. The separately authorized corrected full reconciliation returned all
+seven aggregate booleans true, establishing synthetic staging runtime evidence
+for the natural SLA Decision binding. The mode cannot repair a proposal and no
+Action was mutated.
 
 ## Evidence boundary
 
@@ -82,6 +109,11 @@ not mean real-world logistics evidence. Derived delay exposure is
 `DERIVED_EXPOSURE`. Expected benefit is `NOT_ESTIMATED`.
 
 Local tests plus private reader/RBAC verification establish deterministic
-contract and access mechanics. No lifecycle invocation, bound runtime Action,
-Outcome observation attributable to this contract, production change, or
-Pages publication has occurred.
+contract and access mechanics. The later lifecycle continuation establishes
+Generator invocation only. The local aggregate-only reconciler validates an
+exactly-one same-date source Alert, one of seven governed milestone/metric
+pairs, the exact immutable rationale, current-view agreement, and the legacy-
+null boundary. Its `2026-08-27` staging run passed the source, immutable-state,
+current-view, and legacy-null checks but failed the two exact-binding checks.
+No bound SLA runtime Action, root cause, Outcome observation attributable to
+this contract, production change, or Pages publication has been established.

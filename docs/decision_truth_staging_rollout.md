@@ -3,7 +3,8 @@
 **Status:** existing SLA schema, independent one-resource stack, authenticated
 Operations API, and private cockpit deployed and verified; COST_ANOMALY v1
 producer/readers released and RBAC verified; Generator invoked on `2026-08-27`;
-aggregate Cost gate executed and failed closed with zero natural candidates
+aggregate Cost gate executed and failed closed with zero natural candidates;
+corrected aggregate SLA gate passed all seven checks
 
 This is the minimum human execution handoff for moving the locally verified
 `SLA_BREACH` Decision Truth chain into isolated private staging. It adds no new
@@ -103,8 +104,8 @@ change set, and changed no resource. The replacement is an independent
 one-resource Generator stack with five separately dispatched refactor/release
 actions. The bounded IAM update, refactor, plan-first release, deployment, and
 read-only artifact/runtime-config verification are complete through runs
-`32948002162`, `32951563950`, and `32956001803`. The Generator has not been
-invoked, so no bound runtime Action has been observed.
+`32948002162`, `32951563950`, and `32956001803`. At that release checkpoint the
+Generator had not been invoked, so no bound runtime Action had been observed.
 
 Operations API plan run `32972934184` then completed from commit `a3fe692` with
 the deploy step explicitly skipped. Separately authorized run `32973297196`
@@ -156,6 +157,36 @@ complete, but end-to-end runtime proof still requires a separately authorized
 `OPERATIONAL` / `ACTUAL_CALENDAR` lifecycle continuation that naturally
 generates an eligible new `SLA_BREACH` or `COST_ANOMALY` proposal.
 Do not create, backfill, or mutate an Action merely to satisfy the test.
+
+The repository now provides separate aggregate-only reconcilers for this
+proof. The Cost reconciler's authorized `2026-08-27` query found no natural
+candidate and failed closed. The separately authorized SLA query found natural
+proposals and passed the source, immutable-state, current-view, and legacy-null
+checks, but at least one proposal failed the exact binding and the invalid-
+binding count was non-zero. It failed closed without establishing root cause or
+runtime binding evidence. Every future Athena execution requires separate
+authorization.
+
+The separately authorized `-BindingDiagnostic` run preserved the full gate and
+split the exact binding into version, Action type, selected alternative,
+rationale shape, and rationale value. The first three passed and both rationale
+checks failed. It exposed no identifiers, mutated or repaired nothing, and the
+aggregate result cannot distinguish persisted-text from verifier-expression
+drift. Every future query requires a new separate authorization.
+
+The optional regex-independent `-RationaleDiagnostic` mode retains the full
+and binding gates, then adds five identifier-free booleans for rationale
+presence, exact milestone prefix, governed suffix, numeric token, and numeric
+equality. Its first separately authorized execution failed before results on
+`ENDS_WITH_EXPRESSION`; after a local `length` plus `substr` correction, the
+separately authorized retry returned all five rationale-only booleans true
+while the legacy regex checks remained false. This validates the persisted
+rationale and isolates verifier drift: `[A-Z_]+` excludes digits in governed
+`P2P_*` milestones. The local full-gate verifier now reuses the compositional
+rationale checks and contains no rationale regex. The separately authorized
+corrected full reconciliation returned all seven aggregate booleans true,
+establishing synthetic staging runtime evidence for the natural SLA Decision
+binding. It cannot mutate or repair an Action and performed no mutation.
 
 The runtime verifier may then report only aggregate counts showing that:
 

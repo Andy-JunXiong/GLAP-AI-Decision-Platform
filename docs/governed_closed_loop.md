@@ -43,6 +43,41 @@ creates no mutation. The SLA and Cost surfaces are deployed and reader/RBAC
 verified, but no newly bound Cost proposal has been observed. See [`decision_brief_v1.md`](decision_brief_v1.md)
 and [`cost_anomaly_decision_brief_v1.md`](cost_anomaly_decision_brief_v1.md).
 
+The local SLA runtime-evidence reconciler prepares the corresponding producer
+proof. Its aggregate-only query requires exactly one eligible same-date source
+Alert, one of seven governed milestone/metric pairs, the exact
+`decision-brief.v1` / `EXPEDITE_MILESTONE` binding and calculated rationale,
+an immutable unreviewed proposal, a matching current-view projection, and
+unchanged legacy-null pre-release SLA Actions. Its separately authorized
+`2026-08-27` staging query found natural proposals and passed the source,
+immutable-state, current-view, and legacy-null checks, but at least one proposal
+failed the exact binding and the invalid-binding count was non-zero. The gate
+failed closed and established neither root cause nor runtime binding evidence.
+Any future Athena query remains a separately authorized external AWS operation;
+the reconciler invokes no lifecycle date and performs no Action mutation. See
+[`sla_breach_runtime_evidence_v1.md`](sla_breach_runtime_evidence_v1.md).
+
+Its separately authorized binding-diagnostic run kept the full gate and added
+five identifier-free booleans. Version, Action type, and selected alternative
+passed; rationale shape and rationale value failed. Versioned deployed source
+matches the expected template, but aggregate evidence cannot distinguish
+persisted-text from verifier-expression drift. It mutated or repaired nothing,
+established no root cause, and every future query requires separate authority.
+
+The optional regex-independent rationale diagnostic retains the full and
+binding gates, then adds five identifier-free booleans for rationale presence,
+milestone prefix, governed suffix, numeric token, and numeric equality. Its
+first separately authorized execution failed before results on
+`ENDS_WITH_EXPRESSION`; after a local `length` plus `substr` correction, the
+separately authorized retry returned all five rationale-only booleans true
+while the legacy regex checks remained false. This validates the persisted
+rationale and isolates verifier drift: `[A-Z_]+` excludes digits in governed
+`P2P_*` milestones. The local full-gate verifier now reuses the compositional
+rationale checks and contains no rationale regex. The separately authorized
+corrected full reconciliation returned all seven aggregate booleans true,
+establishing synthetic staging runtime evidence for the natural SLA Decision
+binding. It cannot mutate or repair an Action, and no human judgment occurred.
+
 The local Cost runtime-evidence reconciler prepares the remaining producer
 proof without manufacturing it. Its aggregate-only query requires a naturally
 generated operational actual-calendar proposal, the exact eligible Alert and

@@ -41,10 +41,10 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
-| `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_GENERATOR_INVOKED_RUNTIME_PROPOSAL_NOT_RECONCILED` | The staging Generator contains the bounded brief and deterministic proposal logic; expected benefit remains `NOT_ESTIMATED`. The Generator, authenticated reader API, and private cockpit are deployed and the read/RBAC boundaries passed verification. Continuation run `33020683956` invoked the Generator successfully, but aggregate proposal evidence has not been queried or reconciled. |
+| `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `COST_ANOMALY` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL` | Commit `0e5b740` delivered the deterministic `REVIEW_COST` brief and immutable binding. Actual-calendar continuation run `33020683956` invoked the Generator successfully. The separately authorized aggregate reconciler then found zero natural Cost proposals and failed closed; the remaining six checks passed, including zero invalid bindings and an intact pre-release legacy-null boundary. No runtime Cost binding is established. |
-| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_NO_COST_RUNTIME_CANDIDATE` | New valid SLA or Cost proposals can preserve the exact brief version, deterministic alternative, and rationale on the immutable Action row. The `2026-08-27` aggregate query found no Cost proposal to validate, while zero invalid or pre-release backfilled bindings were observed. The exact-pair validator revision remains separately unrun. |
-| Decision Truth private-staging rollout handoff | `COST_PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_RUNTIME_GATE_FAILED_CLOSED_NO_CANDIDATE` | Producer, authenticated API, and private cockpit releases are deployed and reader/RBAC verified. Continuation run `33020683956` passed all 41 checks; the subsequent aggregate Cost gate found zero natural candidates and correctly failed closed. No runtime binding, human Action judgment, schedule, alias, Pages, or production change is claimed. |
+| Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_SLA_RUNTIME_BINDING_VERIFIED` | The corrected full SLA reconciler returned every exact-source, exact-binding, immutable-state, current-view, and legacy-null check true. This establishes synthetic staging runtime evidence for the natural SLA Decision binding only; no Action was reviewed, repaired, or mutated. |
+| Decision Truth private-staging rollout handoff | `PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_SLA_GATE_PASSED_COST_GATE_NO_CANDIDATE` | Producer, authenticated API, and private cockpit releases are deployed and reader/RBAC verified. Continuation run `33020683956` passed all 41 checks. The corrected SLA runtime gate passed all seven checks; the Cost gate still has zero natural candidates and remains failed closed. No human Action judgment, schedule, alias, Pages, or production change is claimed. |
 | Outcome Review decision provenance v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The authenticated API and private cockpit expose each cutoff-eligible Outcome's nullable immutable Decision binding; legacy bindings remain null and effects remain synthetic and non-causal. Reader and four-role contracts passed, but no eligible bound Decision cohort was observed. |
 | Decision-contract Outcome cohort summary v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed private readers separately aggregate observed numeric bound synthetic Outcomes by immutable brief version and selected alternative; counts and distributions fail closed and remain descriptive only. No eligible bound cohort was returned. |
 | Outcome cohort evidence-sufficiency gate v1 | `DEPLOYED_STAGING_CONTRACT_VERIFIED_NO_ELIGIBLE_COHORT_EVIDENCE` | The deployed v1 contract requires 20 observed Outcomes and two represented result states per cohort; runtime pass/fail remains descriptive synthetic only. Verification found no eligible comparison cohort. |
@@ -169,7 +169,67 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — `COST_ANOMALY` runtime evidence gate
+## Active slice — `SLA_BREACH` runtime evidence gate
+
+**Status:** `RUNTIME_RECONCILIATION_PASSED`
+
+The repository now has a separate aggregate-only SLA runtime reconciler. It
+fails closed unless one or more naturally generated `OPERATIONAL` /
+`ACTUAL_CALENDAR` SLA proposals each trace to exactly one eligible same-date
+Alert, use one of the seven governed milestone/metric pairs, preserve the exact
+`decision-brief.v1` / `EXPEDITE_MILESTONE` binding and calculated breach-hours
+rationale, remain immutable unreviewed proposals, match the current view, and
+leave all pre-release SLA Actions legacy-null. Future simulations cannot pass,
+and the default output contains only seven named booleans with no protected
+identifiers.
+
+The PowerShell parser, six focused contract tests, mutation drift guard, and
+project drift contract passed at the local implementation checkpoint. That
+checkpoint performed no Athena query, lifecycle invocation, Action mutation,
+deployment, schedule, alias, Pages publication, policy/model change, or
+production operation. Generator invocation alone does not establish a bound
+SLA proposal.
+
+The separately authorized `2026-08-27` query found one or more natural SLA
+proposals. Candidate existence, exactly-one eligible source Alert, immutable
+unreviewed proposal state, current-view agreement, and the pre-release legacy-
+null boundary passed. Exact binding correctness and zero-invalid-binding checks
+failed, so the gate failed closed. The aggregate output does not distinguish
+whether brief version, Action type, selected alternative, or rationale caused
+the failure; no root cause or runtime SLA binding evidence is established. No
+protected identifier was printed and no domain or infrastructure mutation ran.
+Every future query requires new explicit authorization.
+
+The separately authorized optional `-BindingDiagnostic` mode retained the full
+seven results and added five binding components. Brief version, Action type,
+and selected alternative passed. Exact milestone-bound rationale shape and
+calculated breach value failed, so the gate failed closed again. It printed no
+counts or identifiers and performed no domain or infrastructure mutation. The
+deployed commit uses the same rationale template as the current source, but the
+aggregate result cannot distinguish persisted-text drift from verifier-
+expression drift. No root cause is established, and every future query requires
+new explicit authorization.
+
+The optional `-RationaleDiagnostic` mode keeps the full seven checks and five
+binding components, then adds five regex-independent booleans for rationale
+presence, exact Alert-milestone prefix, governed suffix, finite non-negative
+numeric token, and numeric equality with the rounded breach margin. Its first
+execution failed before results on `ENDS_WITH_EXPRESSION`; after the locally
+verified `length` plus `substr` correction, the separately authorized retry
+returned all five rationale-only booleans true. The legacy regex shape and
+value checks remained false. Local inspection identifies verifier-expression
+drift: `[A-Z_]+` excludes the digit used by governed `P2P_DEPARTURE` and
+`P2P_ARRIVAL` milestones. The persisted rationale is therefore validated, but
+the earlier full reconciliation result failed closed. The local verifier then
+defined rationale shape from presence, the exact source-derived prefix, the
+governed suffix, and a finite non-negative numeric token, with numeric equality
+checked independently. The separately authorized corrected full reconciliation
+returned all seven booleans true. This establishes synthetic staging runtime
+evidence for the natural SLA binding while preserving exact-one source,
+immutable proposal, current-view, and legacy-null boundaries. It printed no
+counts, text, or identifiers and performed no mutation.
+
+## Recently completed — `COST_ANOMALY` runtime evidence gate
 
 **Status:** `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL`
 
@@ -1685,6 +1745,38 @@ done.
 
 ### Codex-run validation
 
+- `SLA_BREACH` runtime evidence reconciler v1 passes all eight focused
+  aggregate-only, seven-pair source-contract, exact-rationale, five-component
+  binding diagnostic, regex-independent rationale diagnostic, temporal, human-
+  governance, and maturity scenarios plus its dedicated mutation-drift test.
+  The PowerShell parser, Python compilation, all 589 repository tests, JSON
+  contract parsing, the expanded 51/51 project
+  drift audit, and `git diff --check` pass. That test checkpoint was local only:
+  no Athena query, lifecycle run, Action judgment, deployment, identity change,
+  schedule, alias, Pages, policy, model, or production action occurred.
+- The separately authorized `2026-08-27` SLA reconciliation observed natural
+  proposals. Five aggregate checks passed: candidate existence, exactly-one
+  eligible source, immutable unreviewed state, current-view agreement, and the
+  pre-release legacy-null boundary. Exact binding correctness and zero invalid
+  bindings failed, so the gate failed closed. The aggregate result establishes
+  no root cause or accepted runtime binding and printed no protected identifier.
+- The separately authorized follow-up binding diagnostic preserved the seven
+  results. Brief version, Action type, and selected alternative passed;
+  rationale shape and calculated rationale value failed. Versioned deployed
+  source matches the expected template, but the aggregate result cannot
+  distinguish persisted-text from verifier-expression drift. It established no
+  root cause, printed no count or identifier, and mutated nothing.
+- The first rationale-only diagnostic attempt failed before results on
+  `ENDS_WITH_EXPRESSION`. After the local `length` plus `substr` correction, the
+  separately authorized retry returned all five rationale-only booleans true
+  and isolated the legacy `[A-Z_]+` verifier mismatch with governed `P2P_*`
+  milestones. It printed no count, text, or identifier and mutated nothing.
+- The local full-gate verifier now reuses the compositional rationale checks and
+  contains no rationale regex. The separately authorized corrected full
+  reconciliation returned all seven aggregate booleans true, establishing
+  synthetic staging runtime evidence for the natural SLA Decision binding
+  while preserving exact-one source, immutable proposal, current-view, and
+  legacy-null boundaries. It performed no Action or infrastructure mutation.
 - `COST_ANOMALY` runtime evidence reconciler v1 passes all five focused
   aggregate-only, source-contract, temporal, human-governance, and maturity
   scenarios plus its dedicated mutation-drift test. The PowerShell parser,
@@ -2113,11 +2205,15 @@ done.
 
 ## Next Up
 
-1. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
+1. Preserve the verified SLA proposal for the named-human governed Action
+   workflow. Do not have an agent approve, reject, complete, backfill, or mutate
+   it. After a naturally completed Action produces a cutoff-eligible observed
+   Outcome, separately verify Decision provenance and cohort eligibility.
+2. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
    The `2026-08-27` reconciler found zero natural proposals and failed closed.
    Re-run it only after a future independently justified operational
    continuation and a new explicit authorization.
-2. On or after Sydney date `2026-08-28`, separately authorize only the one
+3. On or after Sydney date `2026-08-28`, separately authorize only the one
    already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
    reconcile its due Outcome/Learning delta. Stop after that canary; do not
    mechanically advance 2/20 toward 20/20. This remains future human authority

@@ -119,6 +119,40 @@ separately authorized external operation because Athena stores a protected
 result object. See
 [`cost_anomaly_runtime_evidence_v1.md`](cost_anomaly_runtime_evidence_v1.md).
 
+The separate local SLA reconciler likewise uses the API stack only to discover
+protected Athena configuration; it calls no API route and changes no API
+contract. Its aggregate-only checks require exactly one eligible same-date
+Alert, one of the seven governed milestone/metric pairs, the exact
+`decision-brief.v1` / `EXPEDITE_MILESTONE` binding and breach-hours rationale,
+an immutable unreviewed proposal, current-view agreement, and an intact pre-
+release SLA legacy-null boundary. Its separately authorized `2026-08-27`
+staging query found natural proposals. Source, immutable-state, current-view,
+and legacy-null checks passed, but at least one proposal failed the exact
+binding and the invalid-binding count was non-zero. No root cause or runtime
+binding evidence is established. Any future Athena query remains separately
+authorized because it stores a protected result object. See
+[`sla_breach_runtime_evidence_v1.md`](sla_breach_runtime_evidence_v1.md).
+
+The same script's separately authorized binding-diagnostic run retained the
+full seven-check gate and added five aggregate booleans. Version, Action type,
+and selected alternative passed; rationale shape and value failed. It called
+no API route, exposed no identifiers, mutated nothing, and cannot distinguish
+persisted-text from verifier-expression drift.
+
+The optional regex-independent rationale diagnostic adds five aggregate
+booleans for presence, milestone prefix, governed suffix, numeric token, and
+numeric equality while retaining all earlier gates. Its first separately
+authorized execution failed before results on `ENDS_WITH_EXPRESSION`; after a
+local `length` plus `substr` correction, the separately authorized retry
+returned all five rationale-only booleans true while the legacy regex checks
+remained false. This validates the persisted rationale and isolates verifier
+drift: `[A-Z_]+` excludes digits in governed `P2P_*` milestones. The local
+full-gate verifier now reuses the compositional rationale checks and contains no
+rationale regex. The separately authorized corrected full reconciliation
+returned all seven aggregate booleans true, establishing synthetic staging
+runtime evidence for the natural SLA Decision binding. It calls no API route,
+exposes no text or identifier, and performed no mutation.
+
 `GET /v1/outcomes?status=PENDING&limit=50` returns the latest operational
 Outcome version for each completed Action, bounded by the current Sydney date.
 Pending rows must have no `observed_date` or `effect_pct` and are labelled

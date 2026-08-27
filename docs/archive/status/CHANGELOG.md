@@ -6,6 +6,39 @@ preserved handoffs.
 
 ## 2026-08-27
 
+- Implemented the aggregate-only `SLA_BREACH` runtime evidence reconciler. It
+  fails closed unless a naturally generated actual-calendar proposal traces to
+  exactly one eligible same-date Alert, uses one of seven governed milestone /
+  delay-metric pairs, preserves the exact `decision-brief.v1` /
+  `EXPEDITE_MILESTONE` binding and calculated breach-hours rationale, remains
+  an immutable unreviewed proposal, matches the current view, and leaves pre-
+  release SLA Actions legacy-null. Future simulations cannot pass and only
+  seven aggregate booleans are emitted. The contract, focused tests, and drift
+  guard passed locally. The later separately authorized `2026-08-27` Athena
+  query found natural proposals and passed the source, immutable-state,
+  current-view, and legacy-null checks, but at least one proposal failed the
+  exact binding and the invalid-binding count was non-zero. The gate failed
+  closed without establishing runtime SLA binding evidence or root cause; no
+  protected identifier or domain/infrastructure mutation occurred. The later
+  separately authorized diagnostic preserved the full gate and split version,
+  Action type, selected alternative, rationale shape, and rationale value into
+  five aggregate booleans. The first three passed and both rationale checks
+  failed. Versioned deployed source matches the expected template, but the
+  aggregate result cannot distinguish persisted-text from verifier-expression
+  drift; it repaired nothing and established no root cause.
+  A regex-independent rationale-only mode retains all earlier gates and adds
+  five identifier-free checks for presence, milestone prefix, governed suffix,
+  numeric token, and numeric equality. Its first separately authorized run
+  failed before results on `ENDS_WITH_EXPRESSION`; after a local `length` plus
+  `substr` correction, the separately authorized retry returned all five
+  rationale-only booleans true while the legacy regex checks remained false.
+  This validates the persisted rationale and isolates verifier drift:
+  `[A-Z_]+` excludes digits in governed `P2P_*` milestones. The local full-gate
+  verifier now reuses the compositional rationale checks and contains no
+  rationale regex. The separately authorized corrected full reconciliation
+  returned all seven aggregate booleans true, establishing synthetic staging
+  runtime evidence for the natural SLA Decision binding. No proposal was
+  repaired or mutated.
 - Advanced the isolated staging lifecycle through `2026-08-27` under a bounded
   actual-calendar authorization. Plan run `33020601008` passed; continuation
   run `33020683956` used no seed or scenario and passed four stages plus all 41

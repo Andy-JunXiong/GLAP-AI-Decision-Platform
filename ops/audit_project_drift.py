@@ -1907,6 +1907,122 @@ def check_cost_anomaly_runtime_evidence_boundary(root: Path) -> list[CheckResult
     ]
 
 
+def check_sla_breach_runtime_evidence_boundary(root: Path) -> list[CheckResult]:
+    paths = {
+        "reconciler": "ops/reconcile_sla_breach_runtime_staging.ps1",
+        "tests": "tests/test_sla_breach_runtime_evidence.py",
+        "contract": "docs/sla_breach_runtime_evidence_v1.md",
+    }
+    text = {
+        key: (root / path).read_text(encoding="utf-8")
+        for key, path in paths.items()
+    }
+    reconciler_lower = text["reconciler"].lower()
+    normalized_contract = " ".join(text["contract"].split())
+    reconciler_bounded = all(
+        marker in text["reconciler"]
+        for marker in (
+            "Get-SydneyBusinessDate",
+            "Minimum created date is in the future; no AWS call was made",
+            "alert.alert_type = 'SLA_BREACH'",
+            "alert.alert_grain = 'SHIPMENT_MILESTONE'",
+            "source_match_count = 1 AND eligible_source_match_count = 1",
+            "decision_brief_version = 'decision-brief.v1'",
+            "action_type = 'EXPEDITE_MILESTONE'",
+            "selected_alternative = 'EXPEDITE_MILESTONE'",
+            "round(metric_value - threshold_value, 2)",
+            "[switch]$BindingDiagnostic",
+            "brief_version_valid",
+            "action_type_valid",
+            "selected_alternative_valid",
+            "rationale_shape_valid",
+            "rationale_value_valid",
+            "Every SLA rationale has the calculated breach value",
+            "[switch]$RationaleDiagnostic",
+            "rationale_present_valid",
+            "rationale_prefix_valid",
+            "rationale_suffix_valid",
+            "rationale_numeric_token_valid",
+            "rationale_numeric_equality_valid",
+            "FROM binding_diagnostics",
+            "Every SLA rationale numeric token equals the calculated breach",
+            "substr(",
+            "At least one naturally generated SLA proposal exists",
+            "Pre-release SLA Actions remain legacy-null",
+            "Protected identifiers were not printed",
+        )
+    ) and not any(
+        marker in reconciler_lower
+        for marker in (
+            "ends_with(",
+            "regexp_like",
+            "regexp_extract",
+        )
+    ) and not any(
+        marker in reconciler_lower
+        for marker in (
+            "insert into",
+            "merge into",
+            "update ",
+            "delete from",
+            "invoke-restmethod",
+            "invoke-webrequest",
+            "write-host $query",
+        )
+    )
+    contract_bounded = all(
+        marker in normalized_contract
+        for marker in (
+            "corrected full reconciliation passed against `2026-08-27` staging",
+            "exactly one same-date open `SLA_BREACH` Alert",
+            "seven governed milestone/delay-metric pairs",
+            "calculated hours above threshold",
+            "does not invoke the Generator",
+            "does not create, backfill, edit, approve, reject, or complete an Action",
+            "Future simulation cannot satisfy the gate",
+            "every run is an external AWS operation requiring separate human authorization",
+            "no root cause is established",
+            "Binding diagnostic result — 2026-08-27",
+            "Exact milestone-bound rationale shape and calculated breach value failed",
+            "cannot distinguish a persisted rationale-text difference from a verifier-expression difference",
+            "optional `-RationaleDiagnostic` mode",
+            "`ENDS_WITH_EXPRESSION`",
+            "`length` plus `substr` comparison",
+            "returned all five rationale-only booleans true",
+            "`[A-Z_]+`",
+            "digit-bearing `P2P_DEPARTURE` and `P2P_ARRIVAL`",
+            "contains no rationale regex",
+            "Corrected full reconciliation result",
+            "returned all seven aggregate booleans true",
+            "synthetic staging runtime evidence",
+            "would not establish human approval, execution, realised value, causal effect",
+        )
+    )
+    tests_bounded = all(
+        marker in text["tests"]
+        for marker in (
+            "test_reconciler_is_aggregate_only_and_read_only",
+            "test_reconciler_enforces_all_seven_sla_source_pairs",
+            "test_reconciler_enforces_exact_binding_and_rationale_inputs",
+            "test_optional_binding_diagnostic_splits_five_components",
+            "test_optional_rationale_diagnostic_avoids_regex_for_five_subchecks",
+            "test_reconciler_is_actual_calendar_and_future_fail_closed",
+            "test_reconciler_requires_natural_proposal_and_preserves_human_gate",
+            "test_contract_preserves_authority_and_maturity",
+        )
+    )
+    return [
+        _result(
+            "sla_breach_runtime_evidence_boundary",
+            "governance",
+            reconciler_bounded and contract_bounded and tests_bounded,
+            "The SLA runtime reconciler remains aggregate-only, exact-one-source, actual-calendar bounded, fail-closed, and unable to manufacture a proposal or human judgment.",
+            "The SLA runtime reconciler lost its read-only, temporal, exact-source, exact-binding, legacy-null, test, or authority boundary.",
+            tuple(paths.values()),
+        )
+    ]
+
+
 def check_decision_truth_staging_rollout_boundary(root: Path) -> list[CheckResult]:
     paths = {
         "migration": "sql/16_decision_action_binding_v1.sql",
@@ -3672,6 +3788,7 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_governed_action_outcome_boundary(root))
     checks.extend(check_action_outcome_evidence_chain_boundary(root))
     checks.extend(check_cost_anomaly_decision_brief_boundary(root))
+    checks.extend(check_sla_breach_runtime_evidence_boundary(root))
     checks.extend(check_cost_anomaly_runtime_evidence_boundary(root))
     checks.extend(check_decision_truth_staging_rollout_boundary(root))
     checks.extend(check_outcome_decision_provenance_boundary(root))

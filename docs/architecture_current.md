@@ -42,6 +42,39 @@ effect, execution, or Outcome is inferred. The private UI links onward to the
 Action Board without mutation. Both contracts are deployed and reader/RBAC
 verified; neither has a newly generated bound runtime proposal.
 
+The source tree also contains a fail-closed, aggregate-only SLA runtime
+reconciler. It requires exactly one eligible same-date source Alert, one of the
+seven governed milestone/metric pairs, the exact immutable
+`decision-brief.v1` / `EXPEDITE_MILESTONE` binding and calculated rationale,
+current-view agreement, and an intact pre-release SLA legacy-null boundary. Its
+separately authorized `2026-08-27` staging run found natural proposals; source,
+immutable-state, current-view, and legacy-null checks passed, but at least one
+proposal failed the exact binding and the invalid-binding count was non-zero.
+The gate failed closed without establishing a root cause or runtime binding
+evidence. Any future Athena run requires separate human authorization because
+the service persists a protected query-result object.
+
+The separately authorized binding-diagnostic run retained the full seven-check
+gate and added five identifier-free booleans. Brief version, Action type, and
+selected alternative passed; rationale shape and rationale value failed.
+Versioned deployed source matches the expected template, but aggregate evidence
+cannot distinguish persisted-text from verifier-expression drift. It repaired
+nothing and established no root cause.
+
+The reconciler also has a regex-independent rationale diagnostic. It preserves
+the full and binding gates and adds five identifier-free booleans for rationale
+presence, exact milestone prefix, governed suffix, numeric token, and numeric
+equality. Its first separately authorized execution failed before results on
+`ENDS_WITH_EXPRESSION`; after a local `length` plus `substr` correction, the
+separately authorized retry returned all five rationale-only booleans true
+while the legacy regex checks remained false. This validates the persisted
+rationale and isolates verifier drift: `[A-Z_]+` excludes digits in governed
+`P2P_*` milestones. The local full-gate verifier now reuses the compositional
+rationale checks and contains no rationale regex. The separately authorized
+corrected full reconciliation returned all seven aggregate booleans true,
+establishing synthetic staging runtime evidence for the natural SLA Decision
+binding. It cannot repair a row and performed no mutation.
+
 The source tree now contains a fail-closed, aggregate-only Cost runtime
 reconciler. It is designed to inspect a naturally generated actual-calendar
 proposal and validate the exact source Alert, immutable binding, current-view
@@ -60,10 +93,12 @@ evidence chain read those fields beside append-only named-human review reasons.
 Legacy and pre-release Cost Actions remain explicitly unbound. A named human
 applied the additive isolated-staging
 migration on `2026-08-25`; all six aggregate checks returned zero. The
-independent producer is deployed and artifact/configuration verified but has
-not been invoked. The SLA and Cost readers are deployed and reader/RBAC
-verified; the revised exact-pair validator has not run in staging and every new
-runtime Cost binding remains unobserved.
+independent producer is deployed and artifact/configuration verified. It was
+later invoked by bounded actual-calendar run `33020683956`, but that workflow
+did not expose aggregate proposal or binding counts. The SLA and Cost readers
+are deployed and reader/RBAC verified; the revised exact-pair validator has not
+run in staging, the corrected SLA reconciler passed all seven runtime checks,
+and the Cost reconciler found no natural candidate.
 
 The Decision Truth staging handoff makes the producer dependency explicit:
 after the now-validated additive schema, the isolated lifecycle producer had
