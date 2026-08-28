@@ -1,0 +1,124 @@
+{
+  "schema_version": "operations-authenticated-read-load-plan.v1",
+  "as_of_date": "2026-08-28",
+  "status": "PLAN_ONLY_NOT_AUTHORIZED",
+  "business_timezone": "Australia/Sydney",
+  "scope": "PRIVATE_OPERATIONS_STAGING",
+  "evidence_boundary": "SYNTHETIC_ENGINEERING_ONLY",
+  "execution": {
+    "mode": "OFFLINE_CONTRACT_VALIDATION",
+    "network_access": false,
+    "load_executed": false,
+    "external_writes_executed": false
+  },
+  "authorization": {
+    "named_human_run_authorization_required": true,
+    "temporary_identity_creation_authorized": false,
+    "staging_load_run_authorized": false,
+    "alarm_or_throttle_change_authorized": false,
+    "operational_mutation_authorized": false,
+    "production_access_authorized": false,
+    "recurring_schedule_authorized": false
+  },
+  "authentication": {
+    "mechanism": "COGNITO_ADMIN_USER_PASSWORD_AUTH",
+    "role": "viewer",
+    "temporary_identity_required": true,
+    "email_delivery_suppressed": true,
+    "token_storage": "PROCESS_MEMORY_ONLY",
+    "token_or_claim_logging_allowed": false,
+    "temporary_identity_removal_required": true
+  },
+  "load_shape": {
+    "duration_seconds": 900,
+    "ramp_up_seconds": 60,
+    "target_requests_per_second": 2,
+    "max_concurrency": 4,
+    "max_total_requests": 1800,
+    "request_timeout_ms": 10000,
+    "retries_per_request": 0
+  },
+  "routes": [
+    {
+      "id": "risks_open",
+      "method": "GET",
+      "path": "/v1/risks?status=OPEN&limit=50",
+      "weight_pct": 20
+    },
+    {
+      "id": "actions_proposed",
+      "method": "GET",
+      "path": "/v1/actions?status=PROPOSED&limit=50",
+      "weight_pct": 20
+    },
+    {
+      "id": "actions_edited",
+      "method": "GET",
+      "path": "/v1/actions?status=EDITED&limit=50",
+      "weight_pct": 10
+    },
+    {
+      "id": "outcomes_pending",
+      "method": "GET",
+      "path": "/v1/outcomes?status=PENDING&limit=50",
+      "weight_pct": 15
+    },
+    {
+      "id": "learning_review",
+      "method": "GET",
+      "path": "/v1/learning",
+      "weight_pct": 10
+    },
+    {
+      "id": "pipeline_health",
+      "method": "GET",
+      "path": "/v1/pipeline-health",
+      "weight_pct": 15
+    },
+    {
+      "id": "label_readiness",
+      "method": "GET",
+      "path": "/v1/label-readiness",
+      "weight_pct": 10
+    }
+  ],
+  "abort_gates": {
+    "abort_on_non_allowlisted_route": true,
+    "abort_on_unexpected_http_method": true,
+    "abort_on_any_401_or_403": true,
+    "max_429_rate_pct": 5.0,
+    "max_5xx_rate_pct": 1.0,
+    "max_consecutive_failures": 5,
+    "max_p95_latency_ms": 3000,
+    "mutation_routes_allowed": false,
+    "automatic_retries_allowed": false
+  },
+  "sanitized_baseline": {
+    "schema_version": "operations-authenticated-read-load-baseline.v1",
+    "schema_path": "docs/operations_authenticated_read_load_baseline_v1.schema.json",
+    "aggregate_only": true,
+    "raw_request_records_allowed": false,
+    "artifact_storage_authorized": false,
+    "prohibited_fields": [
+      "authorization_header",
+      "access_token",
+      "identity_claim",
+      "email",
+      "actor",
+      "request_id",
+      "query_id",
+      "action_id",
+      "outcome_id",
+      "shipment_id",
+      "raw_url",
+      "infrastructure_identifier"
+    ]
+  },
+  "claim_boundary": {
+    "production_readiness": false,
+    "production_sla": false,
+    "real_logistics_performance": false,
+    "operational_mutation_authority": false,
+    "deployment_authority": false
+  }
+}

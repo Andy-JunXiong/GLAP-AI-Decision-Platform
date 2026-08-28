@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.local/schemas/operations-authenticated-read-load-plan-v1.schema.json",
+  "title": "GLAP authenticated read-load plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_date",
+    "status",
+    "business_timezone",
+    "scope",
+    "evidence_boundary",
+    "execution",
+    "authorization",
+    "authentication",
+    "load_shape",
+    "routes",
+    "abort_gates",
+    "sanitized_baseline",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "operations-authenticated-read-load-plan.v1"},
+    "as_of_date": {"type": "string", "format": "date"},
+    "status": {"const": "PLAN_ONLY_NOT_AUTHORIZED"},
+    "business_timezone": {"const": "Australia/Sydney"},
+    "scope": {"const": "PRIVATE_OPERATIONS_STAGING"},
+    "evidence_boundary": {"const": "SYNTHETIC_ENGINEERING_ONLY"},
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network_access", "load_executed", "external_writes_executed"],
+      "properties": {
+        "mode": {"const": "OFFLINE_CONTRACT_VALIDATION"},
+        "network_access": {"const": false},
+        "load_executed": {"const": false},
+        "external_writes_executed": {"const": false}
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "named_human_run_authorization_required",
+        "temporary_identity_creation_authorized",
+        "staging_load_run_authorized",
+        "alarm_or_throttle_change_authorized",
+        "operational_mutation_authorized",
+        "production_access_authorized",
+        "recurring_schedule_authorized"
+      ],
+      "properties": {
+        "named_human_run_authorization_required": {"const": true},
+        "temporary_identity_creation_authorized": {"const": false},
+        "staging_load_run_authorized": {"const": false},
+        "alarm_or_throttle_change_authorized": {"const": false},
+        "operational_mutation_authorized": {"const": false},
+        "production_access_authorized": {"const": false},
+        "recurring_schedule_authorized": {"const": false}
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mechanism",
+        "role",
+        "temporary_identity_required",
+        "email_delivery_suppressed",
+        "token_storage",
+        "token_or_claim_logging_allowed",
+        "temporary_identity_removal_required"
+      ],
+      "properties": {
+        "mechanism": {"const": "COGNITO_ADMIN_USER_PASSWORD_AUTH"},
+        "role": {"const": "viewer"},
+        "temporary_identity_required": {"const": true},
+        "email_delivery_suppressed": {"const": true},
+        "token_storage": {"const": "PROCESS_MEMORY_ONLY"},
+        "token_or_claim_logging_allowed": {"const": false},
+        "temporary_identity_removal_required": {"const": true}
+      }
+    },
+    "load_shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "duration_seconds",
+        "ramp_up_seconds",
+        "target_requests_per_second",
+        "max_concurrency",
+        "max_total_requests",
+        "request_timeout_ms",
+        "retries_per_request"
+      ],
+      "properties": {
+        "duration_seconds": {"const": 900},
+        "ramp_up_seconds": {"const": 60},
+        "target_requests_per_second": {"const": 2},
+        "max_concurrency": {"const": 4},
+        "max_total_requests": {"const": 1800},
+        "request_timeout_ms": {"const": 10000},
+        "retries_per_request": {"const": 0}
+      }
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "method", "path", "weight_pct"],
+        "properties": {
+          "id": {
+            "enum": [
+              "risks_open",
+              "actions_proposed",
+              "actions_edited",
+              "outcomes_pending",
+              "learning_review",
+              "pipeline_health",
+              "label_readiness"
+            ]
+          },
+          "method": {"const": "GET"},
+          "path": {
+            "enum": [
+              "/v1/risks?status=OPEN&limit=50",
+              "/v1/actions?status=PROPOSED&limit=50",
+              "/v1/actions?status=EDITED&limit=50",
+              "/v1/outcomes?status=PENDING&limit=50",
+              "/v1/learning",
+              "/v1/pipeline-health",
+              "/v1/label-readiness"
+            ]
+          },
+          "weight_pct": {"type": "integer", "minimum": 1, "maximum": 100}
+        }
+      }
+    },
+    "abort_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "abort_on_non_allowlisted_route",
+        "abort_on_unexpected_http_method",
+        "abort_on_any_401_or_403",
+        "max_429_rate_pct",
+        "max_5xx_rate_pct",
+        "max_consecutive_failures",
+        "max_p95_latency_ms",
+        "mutation_routes_allowed",
+        "automatic_retries_allowed"
+      ],
+      "properties": {
+        "abort_on_non_allowlisted_route": {"const": true},
+        "abort_on_unexpected_http_method": {"const": true},
+        "abort_on_any_401_or_403": {"const": true},
+        "max_429_rate_pct": {"const": 5.0},
+        "max_5xx_rate_pct": {"const": 1.0},
+        "max_consecutive_failures": {"const": 5},
+        "max_p95_latency_ms": {"const": 3000},
+        "mutation_routes_allowed": {"const": false},
+        "automatic_retries_allowed": {"const": false}
+      }
+    },
+    "sanitized_baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "schema_path",
+        "aggregate_only",
+        "raw_request_records_allowed",
+        "artifact_storage_authorized",
+        "prohibited_fields"
+      ],
+      "properties": {
+        "schema_version": {"const": "operations-authenticated-read-load-baseline.v1"},
+        "schema_path": {"const": "docs/operations_authenticated_read_load_baseline_v1.schema.json"},
+        "aggregate_only": {"const": true},
+        "raw_request_records_allowed": {"const": false},
+        "artifact_storage_authorized": {"const": false},
+        "prohibited_fields": {
+          "type": "array",
+          "minItems": 12,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "authorization_header",
+              "access_token",
+              "identity_claim",
+              "email",
+              "actor",
+              "request_id",
+              "query_id",
+              "action_id",
+              "outcome_id",
+              "shipment_id",
+              "raw_url",
+              "infrastructure_identifier"
+            ]
+          }
+        }
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "production_readiness",
+        "production_sla",
+        "real_logistics_performance",
+        "operational_mutation_authority",
+        "deployment_authority"
+      ],
+      "properties": {
+        "production_readiness": {"const": false},
+        "production_sla": {"const": false},
+        "real_logistics_performance": {"const": false},
+        "operational_mutation_authority": {"const": false},
+        "deployment_authority": {"const": false}
+      }
+    }
+  }
+}

@@ -463,12 +463,64 @@ Gateway access-log filter counts 429 responses. See the
 `ops/evaluate_operations_production_readiness.py` reconciles the versioned
 `docs/operations_production_readiness_evidence_v1.json` manifest without any
 network request or external write. It reuses the bounded staging reliability
-evidence above rather than rerunning failure injection. As of `2026-08-25`,
+evidence above rather than rerunning failure injection. As of `2026-08-28`,
 four of ten required gates are runtime-verified in staging and six remain
 blocked or incomplete, so the only valid result is
 `NOT_READY_INCOMPLETE_EVIDENCE`. The report is synthetic engineering evidence;
 it is not a production SLA, real logistics performance, deployment approval,
 or production-readiness decision.
+
+The sustained-read gate now has a versioned, plan-only contract at
+`operations-authenticated-read-load-plan.v1`. It fixes seven authenticated
+viewer-safe `GET` projections, a 15-minute ceiling, two requests per second,
+four-way maximum concurrency, 1,800 total-request ceiling, no automatic
+retries, and fail-closed authorization, route, error-rate, latency, and
+identity-cleanup gates. The companion
+`operations-authenticated-read-load-baseline.v1` schema accepts only aggregate
+route/status/latency totals and all-false authority; it has no field for tokens,
+claims, emails, actors, request/query IDs, entity IDs, raw URLs, or
+infrastructure identifiers. Local validation executes zero requests. Any
+temporary identity creation or staging traffic remains a separate named-human
+authorization, and a future result would remain staging engineering evidence,
+not a production SLA or production-readiness decision.
+
+`ops/simulate_operations_authenticated_read_load.py` consumes that exact plan
+without waiting, authenticating, or opening a socket. It deterministically
+builds a one-rps first-minute ramp followed by the two-rps target, producing
+1,740 in-memory request slots under the 1,800 ceiling. Ten scenarios exercise
+healthy completion plus authentication, throttle, server-error, latency,
+consecutive-failure, route, method, identity-cleanup, and result-reconciliation
+failure paths. The emitted aggregate report is explicitly
+`REPOSITORY_ENGINEERING_SIMULATION`, with staging runtime evidence false; it is
+never a substitute for an authorized load run or baseline.
+
+`ops/run_operations_authenticated_read_load_staging.ps1` is the corresponding
+plan-first executor. Its default mode revalidates the contract and returns a
+redacted preview before any AWS or HTTP path is initialized. The external path
+requires both `-Apply` and the separately human-authorized
+`-AuthorizedSustainedReadLoad` switch. It is restricted to one temporary
+email-suppressed `viewer`, process-memory token handling, the exact seven GET
+routes, contract pacing and fail-closed abort gates, aggregate-only temporary
+result validation, and confirmed identity deletion. On 2026-08-28 a separately
+authorized apply attempt reached cleanup, but the expected nonzero result from
+checking a deleted user was promoted to a terminating PowerShell error and
+masked the request aggregate. A follow-up aggregate identity audit found zero
+residual temporary users. The runner now confirms absence through a successful
+`list-users` read and exact local match. The first correction was locally
+verified while the gate remained `PARTIAL_EVIDENCE`, not runtime verified.
+A separately authorized retry then reached aggregate serialization but failed
+closed because Windows PowerShell 5 does not accept the `utf8NoBOM` encoding
+enumerator. A second aggregate identity audit again found zero residual
+temporary users. The temporary writer now uses .NET UTF-8 without BOM, clears
+its in-memory JSON, and removes its file in `finally`. This second correction is
+locally verified.
+A separately authorized third attempt then produced a schema-valid aggregate:
+20/20 completed requests returned 2xx and no 429, other 4xx, or 5xx response
+occurred, but p95 latency was 6,177 ms against the 3,000 ms abort gate. The
+runner correctly returned `ABORTED / P95_LATENCY_EXCEEDED`, confirmed removal of
+the temporary viewer, and persisted no raw request record or result artifact.
+The gate remains `PARTIAL_EVIDENCE`; there is no completed sustained baseline,
+production SLA, or readiness advancement.
 
 Risk, queue, and Outcome reads use the existing governed Glue/Athena tables and
 view. The API execution role

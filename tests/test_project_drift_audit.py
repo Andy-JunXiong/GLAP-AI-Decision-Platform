@@ -672,6 +672,15 @@ class ProjectDriftAuditTests(unittest.TestCase):
             "docs/operations_production_readiness_evidence_v1.json",
             "docs/operations_production_readiness_evidence_v1.schema.json",
             "ops/evaluate_operations_production_readiness.py",
+            "docs/operations_authenticated_read_load_plan_v1.json",
+            "docs/operations_authenticated_read_load_plan_v1.schema.json",
+            "docs/operations_authenticated_read_load_baseline_v1.schema.json",
+            "ops/validate_operations_authenticated_read_load_plan.py",
+            "ops/simulate_operations_authenticated_read_load.py",
+            "ops/run_operations_authenticated_read_load_staging.ps1",
+            "tests/test_operations_authenticated_read_load_plan.py",
+            "tests/test_operations_authenticated_read_load_simulator.py",
+            "tests/test_operations_authenticated_read_load_runner.py",
             "tests/test_operations_production_readiness.py",
             "docs/athena_cost_governance.md",
             "docs/incremental_refresh_contract.md",
@@ -691,6 +700,41 @@ class ProjectDriftAuditTests(unittest.TestCase):
             evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
             evidence["summary"]["production_readiness"] = True
             evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+            detected = AUDIT.check_readiness_contract(root)[0]
+        self.assertEqual(detected.status, "DRIFT")
+
+    def test_authenticated_read_load_authority_expansion_is_detected(self):
+        paths = (
+            "docs/production_readiness_contract.json",
+            "docs/operations_production_readiness_evidence_v1.json",
+            "docs/operations_production_readiness_evidence_v1.schema.json",
+            "ops/evaluate_operations_production_readiness.py",
+            "docs/operations_authenticated_read_load_plan_v1.json",
+            "docs/operations_authenticated_read_load_plan_v1.schema.json",
+            "docs/operations_authenticated_read_load_baseline_v1.schema.json",
+            "ops/validate_operations_authenticated_read_load_plan.py",
+            "ops/simulate_operations_authenticated_read_load.py",
+            "ops/run_operations_authenticated_read_load_staging.ps1",
+            "tests/test_operations_authenticated_read_load_plan.py",
+            "tests/test_operations_authenticated_read_load_simulator.py",
+            "tests/test_operations_authenticated_read_load_runner.py",
+            "tests/test_operations_production_readiness.py",
+            "docs/athena_cost_governance.md",
+            "docs/incremental_refresh_contract.md",
+            "docs/data_governance_operations.md",
+            "docs/operations_api_v1.md",
+            "docs/runbooks/operations_api_reliability.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            current = AUDIT.check_readiness_contract(root)[0]
+            self.assertEqual(current.status, "PASS")
+            plan_path = root / "docs" / "operations_authenticated_read_load_plan_v1.json"
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan["authorization"]["staging_load_run_authorized"] = True
+            plan_path.write_text(json.dumps(plan), encoding="utf-8")
             detected = AUDIT.check_readiness_contract(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 

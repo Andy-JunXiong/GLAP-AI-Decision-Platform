@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glap.local/schemas/operations-authenticated-read-load-baseline-v1.schema.json",
+  "title": "GLAP sanitized authenticated read-load baseline v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_date",
+    "business_timezone",
+    "scope",
+    "plan_schema_version",
+    "evidence_class",
+    "run_status",
+    "load_shape",
+    "summary",
+    "routes",
+    "authority",
+    "claim_boundary"
+  ],
+  "properties": {
+    "schema_version": {"const": "operations-authenticated-read-load-baseline.v1"},
+    "as_of_date": {"type": "string", "format": "date"},
+    "business_timezone": {"const": "Australia/Sydney"},
+    "scope": {"const": "PRIVATE_OPERATIONS_STAGING"},
+    "plan_schema_version": {"const": "operations-authenticated-read-load-plan.v1"},
+    "evidence_class": {"const": "STAGING_ENGINEERING"},
+    "run_status": {"enum": ["COMPLETED", "ABORTED", "FAILED_CLOSED"]},
+    "load_shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration_seconds", "target_requests_per_second", "max_concurrency"],
+      "properties": {
+        "duration_seconds": {"type": "integer", "minimum": 1},
+        "target_requests_per_second": {"type": "integer", "minimum": 1},
+        "max_concurrency": {"type": "integer", "minimum": 1}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requests_attempted",
+        "requests_completed",
+        "responses_2xx",
+        "responses_429",
+        "responses_other_4xx",
+        "responses_5xx",
+        "latency_p50_ms",
+        "latency_p95_ms",
+        "latency_p99_ms",
+        "abort_reason_code"
+      ],
+      "properties": {
+        "requests_attempted": {"type": "integer", "minimum": 0},
+        "requests_completed": {"type": "integer", "minimum": 0},
+        "responses_2xx": {"type": "integer", "minimum": 0},
+        "responses_429": {"type": "integer", "minimum": 0},
+        "responses_other_4xx": {"type": "integer", "minimum": 0},
+        "responses_5xx": {"type": "integer", "minimum": 0},
+        "latency_p50_ms": {"type": "integer", "minimum": 0},
+        "latency_p95_ms": {"type": "integer", "minimum": 0},
+        "latency_p99_ms": {"type": "integer", "minimum": 0},
+        "abort_reason_code": {
+          "enum": [
+            "NONE",
+            "AUTHORIZATION_FAILURE",
+            "NON_ALLOWLISTED_ROUTE",
+            "UNEXPECTED_HTTP_METHOD",
+            "THROTTLE_RATE_EXCEEDED",
+            "SERVER_ERROR_RATE_EXCEEDED",
+            "CONSECUTIVE_FAILURES_EXCEEDED",
+            "P95_LATENCY_EXCEEDED",
+            "IDENTITY_CLEANUP_FAILED",
+            "RESULT_RECONCILIATION_FAILED"
+          ]
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "route_id",
+          "requests_completed",
+          "responses_2xx",
+          "responses_429",
+          "responses_other_4xx",
+          "responses_5xx",
+          "latency_p50_ms",
+          "latency_p95_ms",
+          "latency_p99_ms"
+        ],
+        "properties": {
+          "route_id": {
+            "enum": [
+              "risks_open",
+              "actions_proposed",
+              "actions_edited",
+              "outcomes_pending",
+              "learning_review",
+              "pipeline_health",
+              "label_readiness"
+            ]
+          },
+          "requests_completed": {"type": "integer", "minimum": 0},
+          "responses_2xx": {"type": "integer", "minimum": 0},
+          "responses_429": {"type": "integer", "minimum": 0},
+          "responses_other_4xx": {"type": "integer", "minimum": 0},
+          "responses_5xx": {"type": "integer", "minimum": 0},
+          "latency_p50_ms": {"type": "integer", "minimum": 0},
+          "latency_p95_ms": {"type": "integer", "minimum": 0},
+          "latency_p99_ms": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operational_mutation_executed", "production_accessed", "recurring_schedule_created"],
+      "properties": {
+        "operational_mutation_executed": {"const": false},
+        "production_accessed": {"const": false},
+        "recurring_schedule_created": {"const": false}
+      }
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["production_readiness", "production_sla", "real_logistics_performance"],
+      "properties": {
+        "production_readiness": {"const": false},
+        "production_sla": {"const": false},
+        "real_logistics_performance": {"const": false}
+      }
+    }
+  }
+}

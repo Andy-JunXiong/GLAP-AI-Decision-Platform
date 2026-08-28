@@ -40,6 +40,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
+| Authenticated sustained read-load plan, simulator, and runner v1 | `PARTIAL_STAGING_EVIDENCE_P95_ABORT` | After two locally corrected harness failures, a separately authorized third attempt produced a schema-valid aggregate: 20/20 responses were 2xx with zero 429/other-4xx/5xx, but p95 latency was 6,177 ms against the 3,000 ms gate, so the run aborted; the temporary viewer was confirmed removed and no completed sustained-load baseline exists |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
@@ -1710,6 +1711,56 @@ done.
 
 ## Recently completed — current seven-day window
 
+- Implemented and locally verified the plan-only authenticated Operations API
+  sustained-read contract. It fixes seven viewer-safe GET projections, a
+  15-minute / 2-rps / four-concurrency / 1,800-request ceiling, zero automatic
+  retries, and fail-closed auth, route, error, latency, and cleanup gates. Its
+  companion baseline schema permits only aggregate route/status/latency totals
+  and all-false authority, with no token, claim, contact, actor, request/query,
+  entity, raw-URL, or infrastructure field. The production-readiness manifest
+  initially classified this gate as `DESIGNED_NOT_EXERCISED`; eligible readiness
+  remained 4/10 and `NOT_READY_INCOMPLETE_EVIDENCE`.
+  Thirty-nine focused plan/simulator/runner scenarios, all 647 repository tests, Python
+  compilation, the 54/54 drift audit, machine-contract parsing, and
+  `git diff --check` pass. `DEVELOPMENT_PLAN.md` is unchanged because the slice
+  implements an already-recommended readiness gate without changing durable
+  direction or authority.
+  A deterministic offline simulator now builds the exact one-rps ramp and
+  two-rps steady cadence into 1,740 in-memory request slots and exercises ten
+  healthy/failure scenarios. Its output is
+  `REPOSITORY_ENGINEERING_SIMULATION`, staging-runtime evidence remains false,
+  and no simulated pass advances the gate.
+  A plan-first staging runner now revalidates the same immutable contract and
+  prints a redacted zero-network preview by default. Its apply path requires
+  both `-Apply` and `-AuthorizedSustainedReadLoad`, creates only one suppressed-
+  email viewer, keeps the token in process memory, sends only the seven
+  allowlisted GETs, stops on the contract abort gates, validates an aggregate-
+  only result in a temporary file, and confirms identity deletion before it
+  can succeed.
+  A later separately authorized apply attempt entered staging and reached
+  cleanup, but expected `UserNotFound` confirmation was promoted by PowerShell
+  to a terminating native-command error. That masked the request aggregate, so
+  no baseline is accepted and the gate is now `PARTIAL_EVIDENCE`, not runtime-
+  verified. A separate aggregate Cognito audit returned zero residual temporary
+  read-load identities. The runner now confirms absence through a successful
+  `list-users` read and exact local match instead of depending on an expected
+  CLI failure. A separately authorized corrected retry then reached aggregate
+  serialization, but Windows PowerShell 5 rejected the `utf8NoBOM` encoding
+  enumerator before the temporary candidate could be written or validated.
+  The retry also deleted its temporary viewer, and a second aggregate audit
+  returned zero residual read-load identities. The writer now uses the cross-
+  version .NET `UTF8Encoding(false)` path and clears/removes temporary content
+  in `finally`. Both corrections are locally verified.
+  A separately authorized third attempt then produced and validated an
+  aggregate-only result: all 20 completed requests returned 2xx, with zero 429,
+  other 4xx, or 5xx responses. The p95 latency was 6,177 ms, exceeding the
+  frozen 3,000 ms gate, so the runner correctly returned
+  `ABORTED / P95_LATENCY_EXCEEDED` after the minimum 20-request window. The
+  temporary viewer was confirmed removed, no raw request record or artifact
+  was persisted, and no completed sustained-load baseline is accepted. This
+  advances the gate only to measurable `PARTIAL_EVIDENCE`; readiness remains
+  4/10 and false. No fourth attempt, deployment, Action mutation, production
+  access, schedule, alias, Pages publication, or policy/model operation followed.
 - Reconciled two stale canonical architecture claims with current runtime and
   evaluation truth. `INFRASTRUCTURE.md` now records the deployed and verified
   private Action–Outcome evidence chain instead of the earlier plan-only state;
@@ -2366,7 +2417,12 @@ done.
    isolated Generator configuration and `CodeSha256` against the commit-bound
    artifact. Do not invoke the function or query/mutate lifecycle data as part
    of this check.
-2. Do not retry or advance lifecycle dates merely to manufacture Cost or
+2. If approved for implementation, add a redacted per-route latency diagnostic
+   to the existing aggregate-only runner output so the 6,177 ms p95 breach can
+   be localized without exposing URLs, identities, entities, or request records.
+   Any new staging traffic after that implementation remains a separate named-
+   human authorization; do not change the 3,000 ms gate merely to obtain a pass.
+3. Do not retry or advance lifecycle dates merely to manufacture Cost or
    Learning evidence. Re-run the relevant reconciler only after a future
    independently justified operational continuation and new explicit authority.
    Do not mutate or activate the stored proposal, publish Pages, create a

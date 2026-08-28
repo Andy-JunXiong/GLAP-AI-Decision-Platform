@@ -665,7 +665,41 @@ and do not establish operational performance, outcome maturity, model
 readiness, promotion, or production reporting. See the
 [development plan](../DEVELOPMENT_PLAN.md) for remaining production
 readiness dependencies. The local-only Operations production-readiness evidence
-harness reconciles those dependencies without calling AWS: its `2026-08-25`
+harness reconciles those dependencies without calling AWS: its `2026-08-28`
 manifest records four staging-runtime-verified gates and six incomplete gates,
 so it fails closed to `NOT_READY_INCOMPLETE_EVIDENCE` and grants no production
-authority.
+authority. One previously unexecuted gate now has a locally verified plan-only
+shape: the authenticated sustained-read contract allowlists only seven bounded
+viewer `GET` projections and defines an aggregate-only result schema with no
+raw request, identity, entity, query, URL, or infrastructure fields. Staging
+execution requires separate named-human authorization and cannot establish a
+production SLA.
+The companion offline simulator deterministically exercises the 1,740-slot
+ramped schedule and every bounded abort family without sleeping, resolving an
+origin, authenticating, or sending traffic. Its aggregate output is repository
+simulation with staging-runtime evidence false, so the gate remains designed
+but unexercised.
+The plan-first staging runner reuses that contract rather than carrying a
+second route or threshold inventory. Its default path performs only local
+validation and a redacted preview. Its external path is double-gated by
+`-Apply -AuthorizedSustainedReadLoad`, limits authentication to one ephemeral
+viewer, keeps the token in process memory, validates only aggregate results in
+a removable temporary file, and confirms user deletion before success. The
+runner cannot mutate Actions, access production, persist a baseline, or create
+a schedule. A separately authorized apply attempt reached runtime and cleanup,
+but its expected user-absence confirmation terminated the script before an
+aggregate result could be reconciled. A separate aggregate audit found zero
+residual temporary identities. The confirmation path was locally corrected to
+use a successful list-and-match read. This remained partial staging engineering
+evidence, not a sustained-load baseline or production evidence.
+A separately authorized corrected retry reached aggregate serialization, but
+Windows PowerShell 5 rejected the `utf8NoBOM` enumerator before the candidate
+could be written or validated. Cleanup again left zero residual temporary
+identities. The writer now uses cross-version .NET UTF-8 without BOM and removes
+temporary content in `finally`.
+A separately authorized third attempt produced a schema-valid aggregate after
+20 requests: every response was 2xx, with no throttles or other errors, but p95
+latency was 6,177 ms against the frozen 3,000 ms gate. The runner therefore
+aborted with `P95_LATENCY_EXCEEDED`, confirmed the viewer was removed, and
+persisted no raw record or artifact. This is measured partial staging evidence,
+not a completed sustained-load baseline or production SLA.

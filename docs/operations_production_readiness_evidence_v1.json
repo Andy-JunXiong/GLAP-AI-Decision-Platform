@@ -1,6 +1,6 @@
 {
   "schema_version": "operations-production-readiness-evidence.v1",
-  "as_of_date": "2026-08-25",
+  "as_of_date": "2026-08-28",
   "business_timezone": "Australia/Sydney",
   "scope": "PRIVATE_OPERATIONS_STAGING",
   "evidence_boundary": "SYNTHETIC_ENGINEERING_ONLY",
@@ -58,10 +58,16 @@
     },
     {
       "id": "sustained_read_load",
-      "state": "NOT_EXECUTED",
-      "evidence_class": "NONE",
-      "evidence_refs": [],
-      "finding": "No governed sustained-load baseline has been executed for the authenticated Operations API."
+      "state": "PARTIAL_EVIDENCE",
+      "evidence_class": "STAGING_ENGINEERING",
+      "evidence_refs": [
+        "docs/operations_authenticated_read_load_plan_v1.json",
+        "docs/operations_authenticated_read_load_baseline_v1.schema.json",
+        "ops/simulate_operations_authenticated_read_load.py",
+        "ops/run_operations_authenticated_read_load_staging.ps1",
+        "docs/runbooks/operations_api_reliability.md"
+      ],
+      "finding": "After two failed-closed runner attempts were locally corrected, a separately authorized third attempt produced a schema-valid aggregate: 20 of 20 responses were successful with zero throttles or other errors, but p95 latency was 6177 ms against the 3000 ms abort gate, so the run aborted and the temporary viewer was confirmed removed; no completed sustained-load baseline exists."
     },
     {
       "id": "security_negative_suite",

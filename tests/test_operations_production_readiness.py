@@ -25,7 +25,7 @@ class OperationsProductionReadinessTests(unittest.TestCase):
     def test_repository_evidence_is_valid_and_not_ready(self):
         self.assertEqual(
             EVALUATOR.validate_evidence(
-                self.evidence, today=date(2026, 8, 25)
+                self.evidence, today=date(2026, 8, 28)
             ),
             [],
         )
@@ -48,7 +48,7 @@ class OperationsProductionReadinessTests(unittest.TestCase):
         evidence = copy.deepcopy(self.evidence)
         evidence["authority"]["production_deployment_authorized"] = True
         evidence["execution"]["external_writes_executed"] = True
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("production_deployment_authorized" in error for error in errors))
         self.assertTrue(any("external_writes_executed" in error for error in errors))
 
@@ -59,29 +59,48 @@ class OperationsProductionReadinessTests(unittest.TestCase):
             if gate["id"] == "security_negative_suite"
         )
         gate["state"] = "RUNTIME_VERIFIED_STAGING"
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("summary does not match" in error for error in errors))
 
     def test_not_executed_gate_cannot_claim_runtime_evidence(self):
         evidence = copy.deepcopy(self.evidence)
         gate = next(
             gate for gate in evidence["required_gates"]
-            if gate["id"] == "sustained_read_load"
+            if gate["id"] == "athena_query_cost_baseline"
         )
         gate["evidence_class"] = "STAGING_ENGINEERING"
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("must use NONE" in error for error in errors))
+
+    def test_sustained_read_load_is_partial_but_not_runtime_verified(self):
+        gate = next(
+            gate for gate in self.evidence["required_gates"]
+            if gate["id"] == "sustained_read_load"
+        )
+        self.assertEqual(gate["state"], "PARTIAL_EVIDENCE")
+        self.assertEqual(gate["evidence_class"], "STAGING_ENGINEERING")
+        self.assertIn(
+            "docs/operations_authenticated_read_load_plan_v1.json",
+            gate["evidence_refs"],
+        )
+        self.assertIn(
+            "ops/run_operations_authenticated_read_load_staging.ps1",
+            gate["evidence_refs"],
+        )
+        self.assertIn("20 of 20 responses were successful", gate["finding"])
+        self.assertIn("p95 latency was 6177 ms", gate["finding"])
+        self.assertIn("temporary viewer was confirmed removed", gate["finding"])
 
     def test_future_as_of_date_fails_closed(self):
         evidence = copy.deepcopy(self.evidence)
-        evidence["as_of_date"] = "2026-08-26"
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        evidence["as_of_date"] = "2026-08-29"
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("current Sydney date" in error for error in errors))
 
     def test_required_gate_inventory_is_exact(self):
         evidence = copy.deepcopy(self.evidence)
         evidence["required_gates"].pop()
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("gate inventory" in error for error in errors))
 
     def test_malformed_nested_shapes_fail_closed_without_exception(self):
@@ -90,7 +109,7 @@ class OperationsProductionReadinessTests(unittest.TestCase):
         evidence["authority"] = "production"
         evidence["required_gates"][0] = "verified"
         evidence["claim_boundary"] = None
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("execution must be an object" in error for error in errors))
         self.assertTrue(any("authority must be an object" in error for error in errors))
         self.assertTrue(any("every gate must be an object" in error for error in errors))
@@ -110,7 +129,7 @@ class OperationsProductionReadinessTests(unittest.TestCase):
         evidence = copy.deepcopy(self.evidence)
         evidence["required_gates"][0]["finding"] = "account 123456789012"
         evidence["required_gates"][0]["raw_identity"] = "hidden"
-        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 25))
+        errors = EVALUATOR.validate_evidence(evidence, today=date(2026, 8, 28))
         self.assertTrue(any("protected identifier" in error for error in errors))
         self.assertTrue(any("field inventory" in error for error in errors))
 

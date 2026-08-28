@@ -6,6 +6,51 @@ preserved handoffs.
 
 ## 2026-08-28
 
+- Implemented the plan-only authenticated Operations API sustained-read
+  contract and sanitized baseline format. Seven viewer-safe GET projections
+  are bounded to 15 minutes, two requests per second, four-way concurrency,
+  1,800 total requests, zero automatic retries, and fail-closed authorization,
+  route, error, latency, and identity-cleanup gates. The result schema permits
+  only aggregate route/status/latency evidence and all-false authority; it has
+  no raw request, credential, identity, entity, query, URL, or infrastructure
+  fields. A deterministic offline simulator generates a one-rps first-minute
+  ramp and two-rps steady cadence into 1,740 in-memory slots and exercises ten
+  healthy/failure scenarios, including result reconciliation failure. Its
+  output is repository engineering simulation, not staging evidence. The
+  production-readiness gate advances only from `NOT_EXECUTED` to
+  `DESIGNED_NOT_EXERCISED`; readiness remains 4/10 and false. Local validation
+  executed zero requests and created no identity, deployment, mutation,
+  schedule, alias, Pages, policy/model, or production change.
+- Added the plan-first private-staging executor for that exact contract. Its
+  default mode stops after local validation and a redacted zero-network preview;
+  its external path requires both `-Apply` and
+  `-AuthorizedSustainedReadLoad`. The apply path is restricted to one
+  email-suppressed ephemeral viewer, process-memory token handling, the seven
+  allowlisted GET routes, frozen pacing and abort gates, aggregate-only
+  temporary validation, and confirmed identity deletion. Drift tests protect
+  the double gate, cleanup, no-mutation, no-production, and no-schedule
+  boundaries.
+- Recorded the first separately authorized runner attempt as failed-closed
+  partial staging evidence. Temporary-user deletion succeeded and a separate
+  aggregate audit found zero residual identities, but the expected not-found
+  cleanup confirmation terminated PowerShell before aggregate reconciliation.
+  The runner now confirms absence through a successful list-and-local-match
+  read, with a regression test preventing the expected-error pattern from
+  returning. That attempt produced no baseline, deployment, mutation, schedule,
+  production access, or readiness promotion.
+- Recorded the separately authorized corrected retry as a second failed-closed
+  partial staging attempt. It reached aggregate serialization after cleanup,
+  but Windows PowerShell 5 rejected the `utf8NoBOM` encoding enumerator before
+  candidate validation. A second aggregate audit again found zero residual
+  temporary identities. The writer now uses cross-version .NET UTF-8 without
+  BOM, clears serialized content, and removes its temporary file in `finally`.
+  No baseline followed from that attempt.
+- Recorded the separately authorized third attempt as a schema-valid, failed-
+  closed staging aggregate. All 20 completed requests returned 2xx with zero
+  throttles or other errors, but p95 latency was 6,177 ms against the frozen
+  3,000 ms gate. The runner returned `ABORTED / P95_LATENCY_EXCEEDED`, confirmed
+  temporary-viewer removal, and persisted no raw records or result artifact.
+  Production readiness remains 4/10; no completed sustained baseline exists.
 - Implemented the local Learning proposal cardinality forward fix. Proposal
   generation now thresholds exactly one latest cutoff version per
   `outcome_id`, excludes an earlier closed version when the latest is pending,

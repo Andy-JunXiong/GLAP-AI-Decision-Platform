@@ -959,9 +959,18 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
     evidence_path = "docs/operations_production_readiness_evidence_v1.json"
     schema_path = "docs/operations_production_readiness_evidence_v1.schema.json"
     evaluator_path = "ops/evaluate_operations_production_readiness.py"
+    read_load_plan_path = "docs/operations_authenticated_read_load_plan_v1.json"
+    read_load_plan_schema_path = "docs/operations_authenticated_read_load_plan_v1.schema.json"
+    read_load_baseline_schema_path = "docs/operations_authenticated_read_load_baseline_v1.schema.json"
+    read_load_validator_path = "ops/validate_operations_authenticated_read_load_plan.py"
+    read_load_simulator_path = "ops/simulate_operations_authenticated_read_load.py"
+    read_load_runner_path = "ops/run_operations_authenticated_read_load_staging.ps1"
     contract = json.loads((root / contract_path).read_text(encoding="utf-8"))
     evidence = json.loads((root / evidence_path).read_text(encoding="utf-8"))
     evaluator = _load_repository_module(root, evaluator_path)
+    read_load_validator = _load_repository_module(root, read_load_validator_path)
+    read_load_simulator = _load_repository_module(root, read_load_simulator_path)
+    read_load_plan = json.loads((root / read_load_plan_path).read_text(encoding="utf-8"))
     authority = contract.get("authority", {})
     forbidden_authority = (
         "recurring_schedule_enabled",
@@ -992,18 +1001,134 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
         and evidence.get("claim_boundary", {}).get("status")
         == "NOT_READY_INCOMPLETE_EVIDENCE"
     )
+    read_load_errors = read_load_validator.validate_plan(
+        read_load_plan,
+        today=sydney_business_date(),
+        root=root,
+    )
+    sustained_gate = next(
+        (
+            gate
+            for gate in evidence.get("required_gates", [])
+            if gate.get("id") == "sustained_read_load"
+        ),
+        {},
+    )
+    simulator_source = (root / read_load_simulator_path).read_text(encoding="utf-8")
+    runner_source = (root / read_load_runner_path).read_text(encoding="utf-8")
+    simulator_bounded = False
+    if read_load_errors == []:
+        try:
+            healthy_simulation = read_load_simulator.simulate_scenario(
+                read_load_plan, "healthy"
+            )
+            reconciliation_simulation = read_load_simulator.simulate_scenario(
+                read_load_plan, "reconciliation_failure"
+            )
+        except (AssertionError, ValueError):
+            pass
+        else:
+            simulator_bounded = (
+                read_load_simulator.validate_simulation_report(
+                    healthy_simulation, read_load_plan
+                )
+                == []
+                and read_load_simulator.validate_simulation_report(
+                    reconciliation_simulation, read_load_plan
+                )
+                == []
+                and healthy_simulation.get("schedule", {}).get("scheduled_requests")
+                == 1740
+                and healthy_simulation.get("result", {}).get("run_status")
+                == "COMPLETED"
+                and healthy_simulation.get("execution", {}).get("network_access")
+                is False
+                and healthy_simulation.get("execution", {}).get(
+                    "staging_requests_executed"
+                )
+                is False
+                and healthy_simulation.get("claim_boundary", {}).get(
+                    "staging_runtime_evidence"
+                )
+                is False
+                and reconciliation_simulation.get("result", {}).get("run_status")
+                == "FAILED_CLOSED"
+                and reconciliation_simulation.get("result", {}).get(
+                    "candidate_baseline_valid"
+                )
+                is False
+                and all(
+                    marker not in simulator_source
+                    for marker in (
+                        "import boto3",
+                        "import requests",
+                        "import subprocess",
+                        "import socket",
+                        "import urllib",
+                        "import time",
+                        "sleep(",
+                    )
+                )
+            )
+    runner_bounded = (
+        "[switch]$Apply" in runner_source
+        and "[switch]$AuthorizedSustainedReadLoad" in runner_source
+        and "if (-not $Apply)" in runner_source
+        and "Apply requires -AuthorizedSustainedReadLoad from a named human"
+        in runner_source
+        and runner_source.index("if (-not $Apply)")
+        < runner_source.index("$awsScope =")
+        and "--message-action SUPPRESS" in runner_source
+        and "--group-name viewer" in runner_source
+        and "-Method GET" in runner_source
+        and "-Method POST" not in runner_source
+        and "admin-delete-user" in runner_source
+        and "cognito-idp list-users" in runner_source
+        and "Test-UserAbsent" in runner_source
+        and "admin-get-user" not in runner_source
+        and "$accessToken = $null" in runner_source
+        and "--baseline $baselinePath" in runner_source
+        and "[System.IO.File]::WriteAllText" in runner_source
+        and "[System.Text.UTF8Encoding]::new($false)" in runner_source
+        and "-Encoding utf8NoBOM" not in runner_source
+        and "Remove-Item -LiteralPath $baselinePath" in runner_source
+        and "Persisted result artifact: False" in runner_source
+        and "production_accessed = $false" in runner_source
+        and "recurring_schedule_created = $false" in runner_source
+    )
+    read_load_bounded = (
+        read_load_errors == []
+        and simulator_bounded
+        and runner_bounded
+        and sustained_gate.get("state") == "PARTIAL_EVIDENCE"
+        and sustained_gate.get("evidence_class") == "STAGING_ENGINEERING"
+        and read_load_plan_path in sustained_gate.get("evidence_refs", [])
+        and read_load_simulator_path in sustained_gate.get("evidence_refs", [])
+        and read_load_runner_path in sustained_gate.get("evidence_refs", [])
+        and read_load_plan.get("execution", {}).get("load_executed") is False
+        and read_load_plan.get("authorization", {}).get("staging_load_run_authorized") is False
+    )
     return [
         _result(
             "production_readiness_boundary",
             "governance",
-            contract_bounded and evidence_bounded,
-            "Production-readiness controls remain plan-only while the offline evidence harness truthfully reports 4/10 eligible gates and no production authority.",
+            contract_bounded and evidence_bounded and read_load_bounded,
+            "Production-readiness controls remain bounded while the offline evidence harness truthfully reports 4/10 eligible gates and a schema-valid partial authenticated read-load result that failed closed at the frozen p95 latency gate with successful identity cleanup, no completed sustained baseline, and no production authority.",
             "The production-readiness contract or evidence harness claims unsupported maturity, loses required gates, or expands protected authority.",
             (
                 contract_path,
                 evidence_path,
                 schema_path,
                 evaluator_path,
+                read_load_plan_path,
+                read_load_plan_schema_path,
+                read_load_baseline_schema_path,
+                read_load_validator_path,
+                read_load_simulator_path,
+                read_load_runner_path,
+                "tests/test_operations_authenticated_read_load_plan.py",
+                "tests/test_operations_authenticated_read_load_simulator.py",
+                "tests/test_operations_authenticated_read_load_runner.py",
                 "tests/test_operations_production_readiness.py",
                 "docs/athena_cost_governance.md",
                 "docs/incremental_refresh_contract.md",
