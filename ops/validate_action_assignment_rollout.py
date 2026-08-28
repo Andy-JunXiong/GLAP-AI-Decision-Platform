@@ -264,9 +264,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     if canary.get("pending_outcome_reconciled") is not True:
         errors.append("verified read-only pending Outcome reconciliation is hidden")
     if canary.get("current_blocker") != (
-        "OBSERVATION_DUE_DATE_NOT_REACHED_AND_CONTINUATION_NOT_AUTHORIZED"
+        "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED"
     ):
-        errors.append("observed Outcome continuation must remain calendar-gated and unauthorized")
+        errors.append("failed-closed runtime and local-only source-fix maturity must remain visible")
 
     role_script = (root / "ops" / "verify_operations_roles_staging.ps1").read_text(
         encoding="utf-8"
@@ -296,11 +296,9 @@ def main() -> int:
             print(f"DRIFT: {error}")
         return 1
     print(
-        "PASS: response fix, stable retry, separate approver decision, and "
-        "private frontend refresh release are verified; the named-human UI "
-        "refresh interaction, named-human COMPLETE, and read-only completion "
-        "reconciliation pass; the pending simulated Outcome is reconciled and "
-        "observed-Outcome continuation remains calendar-gated and unauthorized"
+        "PASS: Action assignment and delayed Outcome evidence remain verified; "
+        "the downstream Learning source fix is local-only and staging remains "
+        "failed closed without standing authority"
     )
     return 0
 

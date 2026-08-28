@@ -293,12 +293,9 @@ def build_closed_loop_rows(
         if key not in prior_outcome_keys:
             outcomes.append(outcome)
 
-    closed_history = [
-        row for row in existing_outcomes
-        if row.get("status") in closed_loop.OUTCOME_STATES
-    ] + [row for row in outcomes if row.get("status") in closed_loop.OUTCOME_STATES]
+    outcome_history = [*existing_outcomes, *outcomes]
     proposal = closed_loop.build_policy_proposal(
-        closed_history, policy_version, logical_date, minimum_observed
+        outcome_history, policy_version, logical_date, minimum_observed
     )
     proposals = []
     if proposal and proposal["proposal_id"] not in existing_proposal_ids:

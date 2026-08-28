@@ -1,11 +1,11 @@
 # SLA Decision review handoff v1
 
-**Status:** implemented and locally verified on `2026-08-28`; not deployed
+**Status:** deployed to private staging and exact-source canary verified on `2026-08-28`
 
 This private-cockpit handoff connects one authenticated Decision Queue entry to
 its complete bound Decision Brief and then back to that same governed Action.
 It fixes a navigation ambiguity only. It adds no API route, data write,
-deployment, or human decision authority.
+deployment mechanism, or human decision authority.
 
 ## Fail-closed entry contract
 
@@ -39,9 +39,15 @@ still govern every Action mutation.
 
 ## Authority and maturity boundary
 
-Local implementation and tests do not establish private-staging publication or
-runtime usability. They do not approve, reject, edit, complete, execute, or
-observe an Action or Outcome. The natural SLA proposal therefore remains
-`WAITING_HUMAN_REVIEW`. Publishing the private frontend and performing a
-read-only staging canary each require separate explicit human authorization;
-any business judgment remains named-human owned after that verification.
+Commit `3316627` was published to the private Amplify staging branch after
+separate explicit human authorization. The standard read-only staging verifier
+passed, and an exact-source canary found the live index plus all 9 referenced
+assets byte-identical to the authorized internal build. The live bundle contains
+the `Review now`, selected-Action return, and Brief-return markers; the focused
+deterministic handoff scenario also passed.
+
+This evidence establishes deployed package and contract integrity, not a named-
+human review of an entity. The canary created no user, made no authenticated
+entity request, and did not approve, reject, edit, complete, execute, or observe
+an Action or Outcome. The natural SLA proposal remains
+`WAITING_HUMAN_REVIEW`, and any business judgment remains named-human owned.

@@ -462,7 +462,7 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
         for marker in (
             "Action assignment canary",
             "named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified",
-            "One pending simulated Outcome passed 6/6 reconciliation",
+            "Local source now counts one latest cutoff version per `outcome_id`",
         )
     )
     return [
@@ -758,14 +758,14 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         is True
         and rollout.get("canary", {}).get("pending_outcome_reconciled") is True
         and rollout.get("canary", {}).get("current_blocker")
-        == "OBSERVATION_DUE_DATE_NOT_REACHED_AND_CONTINUATION_NOT_AUTHORIZED"
+        == "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED"
     )
     return [
         _result(
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment, named-human COMPLETE, and the pending simulated Outcome are reconciled; observation remains calendar-gated and separately unauthorized.",
+            "Action assignment and named-human COMPLETE remain reconciled; downstream Learning is locally source-fixed but staging stays failed closed without standing authority.",
             "Action assignment rollout hides verified evidence or expands deployment, mutation, completion, or scheduling authority.",
             (
                 contract_path,
@@ -790,7 +790,11 @@ def check_action_complete_outcome_canary(root: Path) -> list[CheckResult]:
         "ops/reconcile_pending_outcome_staging.ps1",
         "ops/check_observed_outcome_due_date.ps1",
         "ops/reconcile_observed_outcome_learning_staging.ps1",
+        "lambda/glap_governed_closed_loop.py",
+        "lambda/glap_lifecycle_athena_adapter.py",
         "tests/test_action_complete_outcome_canary.py",
+        "tests/test_governed_closed_loop.py",
+        "tests/test_lifecycle_athena_adapter.py",
     )
     try:
         validator = _load_repository_module(
@@ -811,7 +815,7 @@ def check_action_complete_outcome_canary(root: Path) -> list[CheckResult]:
             "action_complete_outcome_canary_boundary",
             "governance",
             passed,
-            "The pending simulated Outcome is reconciled and its observed Outcome/Learning verifier is implemented; observation remains calendar-gated and separately unauthorized.",
+            "The runtime canary remains failed closed below threshold; proposal generation now counts latest logical Outcomes in locally verified source that is not deployed and grants no standing authority.",
             failure,
             evidence,
         )
@@ -2182,13 +2186,13 @@ def check_sla_decision_review_handoff_boundary(root: Path) -> list[CheckResult]:
     contract_bounded = all(
         marker in normalized_contract
         for marker in (
-            "implemented and locally verified on `2026-08-28`; not deployed",
+            "deployed to private staging and exact-source canary verified on `2026-08-28`",
             "exactly one current open Risk",
             "does not fall back to a different Risk, Brief, or Action",
             "performs no automatic evidence-chain request",
-            "no API route, data write, deployment, or human decision authority",
+            "no API route, data write, deployment mechanism, or human decision authority",
             "remains `WAITING_HUMAN_REVIEW`",
-            "require separate explicit human authorization",
+            "made no authenticated entity request",
         )
     )
     return [
@@ -2196,7 +2200,7 @@ def check_sla_decision_review_handoff_boundary(root: Path) -> list[CheckResult]:
             "sla_decision_review_handoff_boundary",
             "governance",
             resolver_bounded and page_bounded and tests_bounded and contract_bounded,
-            "The SLA Decision review handoff remains exact-one, binding-complete, selected-Action focused, query-passive, mutation-free, and locally verified without deployment authority.",
+            "The SLA Decision review handoff remains exact-one, binding-complete, selected-Action focused, query-passive, mutation-free, and exact-source verified in private staging without business-decision authority.",
             "The SLA Decision review handoff lost its exact binding, fail-closed, selected-Action, no-query, no-mutation, test, maturity, or authority boundary.",
             tuple(paths.values()),
         )
@@ -2264,13 +2268,13 @@ def check_decision_queue_discovery_controls_boundary(
     contract_bounded = all(
         marker in normalized_contract
         for marker in (
-            "implemented and locally verified on `2026-08-28`; not deployed",
+            "deployed to private staging and exact-source canary verified on `2026-08-28`",
             "same `Risk Hotspots` name as the destination page",
             "`All` contains only `PROPOSED` and `EDITED` Actions",
             "Closed or completed Actions cannot re-enter Decision Queue through filtering",
             "Filtering does not weaken its exact-one Risk resolution",
-            "adds no API route, request, storage, query, mutation, telemetry, deployment, or public Pages surface",
-            "remain separate explicit human-authorized actions",
+            "adds no API route, request, storage, query, mutation, telemetry, deployment mechanism, or public Pages surface",
+            "made no authenticated entity request",
         )
     )
     return [
@@ -2278,7 +2282,7 @@ def check_decision_queue_discovery_controls_boundary(
             "decision_queue_discovery_controls_boundary",
             "governance",
             filter_bounded and page_bounded and tests_bounded and contract_bounded,
-            "Decision Queue discovery remains waiting-only, severity-bounded, Risk-Hotspots aligned, selected-handoff preserving, browser-local, and mutation-free without deployment authority.",
+            "Decision Queue discovery remains waiting-only, severity-bounded, Risk-Hotspots aligned, selected-handoff preserving, browser-local, mutation-free, and exact-source verified in private staging.",
             "Decision Queue discovery lost its waiting-only, severity, naming, selected-handoff, no-request, no-mutation, test, maturity, or authority boundary.",
             tuple(paths.values()),
         )

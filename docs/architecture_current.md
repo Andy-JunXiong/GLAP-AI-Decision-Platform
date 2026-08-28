@@ -39,19 +39,22 @@ rate-card version, the Cost contract exposes that value as unavailable and
 never infers an identifier. Both include monitor/no-action alternatives and
 keep expected benefit `NOT_ESTIMATED`; no monetary exposure, intervention
 effect, execution, or Outcome is inferred. The private UI can render a full
-brief from an authenticated `Signals` row. Source now also reconciles a selected
+brief from an authenticated `Risk Hotspots` row. The deployed cockpit now also reconciles a selected
 Decision Queue Action to exactly one open Risk and its immutable Brief binding,
 then returns from that Brief to only the same Action card. The handoff fails
-closed on any binding drift and performs no automatic evidence query. This
-correction is locally verified but not deployed; the deployed `Review now`
-journey therefore still opens the unscoped Action Board. The `2026-08-27`
-named-human inspection submitted no mutation and the proposal remains
-`WAITING_HUMAN_REVIEW`.
+closed on any binding drift and performs no automatic evidence query. Commit
+`3316627` was published to private staging after separate authorization; the
+live index and all 9 referenced static assets matched the authorized build
+byte-for-byte, and the packaged handoff markers plus deterministic contract
+passed. No authenticated entity interaction or mutation ran, and the proposal
+remains `WAITING_HUMAN_REVIEW`.
 
-Local private-cockpit source also aligns the internal navigation label with the
+The same deployed private-cockpit source aligns the internal navigation label with the
 `Risk Hotspots` page and adds browser-local Decision Queue severity filtering
 over waiting `PROPOSED` / `EDITED` Actions. It adds no route, request, query,
-storage, or mutation boundary and is not yet present in deployed staging.
+storage, or mutation boundary. The exact-source staging canary found the
+`Risk Hotspots`, `MEDIUM`, and `Review now` markers, and the waiting-only filter
+contract passed without modifying source state.
 Both contracts are deployed and reader/RBAC verified. A natural SLA proposal
 now has aggregate runtime binding evidence; the Cost cohort still has no
 natural runtime proposal.
@@ -422,10 +425,18 @@ observed Outcomes and reads the existing policy-proposal table. Its private
 Learning Review shows whether the minimum evidence gate remains blocked and,
 when present, exposes a proposal only as review-required. There is no policy
 activation endpoint and deterministic rules remain authoritative. The same
-staging release passed both explicit Learning evidence gates and reported the
-gate still blocked at `1/20`, with no proposal present. The earlier
-merge-triggered run remained plan-only; the later separately authorized
-workflow dispatch performed the deployment.
+staging release passed both explicit Learning evidence gates and, at that
+checkpoint, reported the gate blocked at `1/20` with no proposal. After a
+separately authorized due-date continuation on `2026-08-28`, the latest-version
+eligible count reached `2/20`; the aggregate reconciler failed closed because
+at least one unactivated policy proposal exists below the threshold. Source
+inspection identified historical-row counting in proposal generation versus
+latest-`outcome_id` de-duplication in Learning reads. The locally verified
+forward fix now thresholds only one latest cutoff version per logical Outcome
+and fails closed on future or same-date conflicting versions. It is not
+deployed and does not establish runtime proposal provenance. No proposal was
+activated or changed. The earlier merge-triggered run remained plan-only; the
+later separately authorized workflow dispatch performed the deployment.
 
 The repository now also implements a local-only Outcome Review provenance
 projection. The existing `GET /v1/outcomes` read joins each cutoff-eligible
@@ -537,8 +548,11 @@ creation remained separate human-owned steps. They were later separately
 authorized and executed on `2026-08-25`: a named human recorded `COMPLETE`, and
 one bounded actual-calendar continuation created a single `PENDING` simulated
 Outcome due on `2026-08-28`. Both states passed aggregate-only reconciliation.
-Observation remains calendar-gated and separately unauthorized before that
-date; no production, schedule, alias, policy, or model authority was created.
+After the gate opened, one separately authorized continuation closed that
+simulated Outcome and the latest-version 1-to-2 eligible-count checks passed.
+Learning then failed closed because at least one unactivated proposal exists
+below the 20-Outcome threshold. No production, schedule, alias, proposal
+mutation or activation, or model authority was created.
 
 The mutation Lambda release boundary is deployed and verified. A read-only Plan
 precedes two separately protected GitHub environments: Prepare uploads one
@@ -595,6 +609,12 @@ later advanced isolated actual-calendar state through `2026-08-27`. No seed or
 scenario was used; four stages and all 41 checks passed. The baseline remains at
 the earlier `2026-08-24` cutoff. The subsequent aggregate Cost query found zero
 natural proposals and correctly failed closed.
+
+Plan run `33149532396` and exactly one separately authorized continuation run
+`33149577300` then advanced only `2026-08-28` from commit `3316627`, again with
+no seed or scenario, and passed four stages plus all 41 checks. This was the
+bounded due-Outcome canary, not a baseline refresh or evidence-manufacturing
+loop. No later date was processed.
 
 Commit `28e3edf` later delivered the public display and strict exporter gate.
 CI run `32731582106` and separately authorized aggregate-only Pages run

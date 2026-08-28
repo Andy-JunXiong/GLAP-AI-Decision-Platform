@@ -24,7 +24,7 @@
     {
       "id": "stateful_multimodal_lifecycle",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "manual isolated staging only; cross-gap recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks; actual-calendar continuation later reached 2026-08-24 with 41 checks per date, a redundant older-start request failed closed, and one aggregate 2026-08-24 operational baseline view passed the deployed 10-check contract; those staging operations were without seed, replay, production alias, schedule, Pages publication, or Action mutation; a later separately authorized aggregate-only Pages publication exercised the connected exporter gate with source coverage equals cutoff at 2026-08-24 without redeploying SQL or mutating lifecycle data; synthetic engineering evidence with real-world evidence false",
+      "boundary": "manual isolated staging only; cross-gap recovery passed 28 lifecycle, 5 compatibility, and 8 analytics checks; actual-calendar continuation later reached 2026-08-24 with 41 checks per date, a redundant older-start request failed closed, and one aggregate 2026-08-24 operational baseline view passed the deployed 10-check contract; those staging operations were without seed, replay, production alias, schedule, Pages publication, or Action mutation; a later separately authorized aggregate-only Pages publication exercised the connected exporter gate with source coverage equals cutoff at 2026-08-24 without redeploying SQL or mutating lifecycle data; separately authorized plan run 33149532396 and one-date continuation run 33149577300 then extended isolated actual-calendar state through 2026-08-28 with no seed or scenario and all 41 checks passing, without changing the 2026-08-24 public baseline; synthetic engineering evidence with real-world evidence false",
       "evidence_files": [
         "lambda/glap_stateful_lifecycle_generator.py",
         "infrastructure/stateful-lifecycle-staging.yaml",
@@ -73,7 +73,7 @@
     {
       "id": "action_edit_owner_due_date",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "staging response fix, stable same-request replay, distinct named-approver APPROVE, later auto-refreshed Evidence interaction, named-human COMPLETE, one authorized actual-calendar pending-Outcome continuation, and both aggregate reconciliations are verified; observation remains calendar-gated and separately unauthorized",
+      "boundary": "staging response fix, stable same-request replay, distinct named-approver APPROVE, later auto-refreshed Evidence interaction, named-human COMPLETE, pending Outcome, and the separately governed closed simulated Outcome are verified; the downstream Learning reconciliation is failed closed below threshold and grants no standing continuation or activation authority",
       "evidence_files": [
         "lambda/glap_action_mutation.py",
         "lambda/glap_operations_api.py",
@@ -128,8 +128,8 @@
     },
     {
       "id": "complete_outcome_canary_preparation",
-      "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "local redacted planning, contract validation, the 2026-08-25 aggregate-only staging preflight, named-human COMPLETE, authorized workflow run 32803181376, one pending simulated Outcome, both completed runtime reconciliations, the fail-closed Sydney due-date gate, and the latest-version observed Outcome/Learning reconciler are verified; the due-date check blocked before any AWS setup on 2026-08-25, the observed reconciler has not run, the consumed authority grants no standing authority, observation remains blocked before 2026-08-28 and separately unauthorized, and no deployment, future simulation, policy activation, model promotion, production effect, observed result, or real-world performance claim occurred",
+      "state": "BLOCKED_EVIDENCE",
+      "boundary": "the 2026-08-25 preflight, named-human COMPLETE, pending Outcome run 32803181376, and pending reconciliation remain verified; after a separate 2026-08-28 authorization, plan run 33149532396 and exactly one actual-calendar continuation run 33149577300 processed only the due date with no seed or future simulation and passed all 41 lifecycle checks; the aggregate-only latest-version reconciliation verified one closed simulated Outcome and eligible count 1 to 2, but failed closed because at least one unactivated policy proposal exists below the 20-Outcome threshold; the local forward fix now selects one latest cutoff version per outcome_id before thresholding, excludes an earlier closed version when the latest is pending, fails closed on future or same-date conflicting versions, and proves that 20 history rows for one Outcome cannot trigger while 20 distinct Outcomes can; the fix is not deployed and no second continuation, stored-proposal mutation or activation, AWS call, schedule, alias, Pages, model, production effect, or real-world performance claim occurred",
       "evidence_files": [
         "docs/action_complete_outcome_canary_v1.json",
         "docs/action_complete_outcome_canary.md",
@@ -140,7 +140,11 @@
         "ops/reconcile_pending_outcome_staging.ps1",
         "ops/check_observed_outcome_due_date.ps1",
         "ops/reconcile_observed_outcome_learning_staging.ps1",
+        "lambda/glap_governed_closed_loop.py",
+        "lambda/glap_lifecycle_athena_adapter.py",
         "tests/test_action_complete_outcome_canary.py",
+        "tests/test_governed_closed_loop.py",
+        "tests/test_lifecycle_athena_adapter.py",
         "docs/governed_closed_loop.md",
         "docs/operations_api_v1.md",
         "CURRENT_DEVELOPMENT_STATUS.md"
@@ -149,7 +153,7 @@
     {
       "id": "outcome_learning_evidence_gate",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal view deployed and runtime-verified in private staging, with no approval or activation authority",
+      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal view are deployed in private staging with no approval or activation authority; latest-version reconciliation reports 2/20 eligible Outcomes and fails closed because at least one unactivated proposal exists below threshold; the locally verified source fix now thresholds one latest cutoff version per outcome_id and fails closed on future or conflicting versions, but it is not deployed and does not establish runtime proposal provenance",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",
@@ -577,8 +581,8 @@
     },
     {
       "id": "sla_decision_review_handoff_v1",
-      "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "local private-cockpit source resolves a selected Action to exactly one current open Risk through alert_fingerprint and requires exact shipment, Alert type, decision-brief.v1 schema, recommended Action, selected alternative, and deterministic rationale agreement before opening the full bound Brief; missing, duplicate, stale, incomplete, or mismatched evidence fails closed; the return path shows only the selected Action card and opening the Brief performs no automatic evidence request or mutation; source is not deployed, the natural proposal remains WAITING_HUMAN_REVIEW, and private publication, runtime canary, and any named-human edit, approve, reject, or complete judgment remain separately authorized",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "private-cockpit source resolves a selected Action to exactly one current open Risk through alert_fingerprint and requires exact shipment, Alert type, decision-brief.v1 schema, recommended Action, selected alternative, and deterministic rationale agreement before opening the full bound Brief; missing, duplicate, stale, incomplete, or mismatched evidence fails closed; the return path shows only the selected Action card and opening the Brief performs no automatic evidence request or mutation; commit 3316627 is deployed to private staging and the live index plus all 9 referenced assets matched the authorized build byte-for-byte; the exact-source canary made no authenticated entity request or Action mutation, the natural proposal remains WAITING_HUMAN_REVIEW, and any named-human edit, approve, reject, or complete judgment remains separately authorized",
       "evidence_files": [
         "decision-brief-demo/app/decision-review-handoff.ts",
         "decision-brief-demo/app/page.tsx",
@@ -595,8 +599,8 @@
     },
     {
       "id": "decision_queue_discovery_controls_v1",
-      "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "local private-cockpit source names the authenticated navigation entry Risk Hotspots and filters only waiting PROPOSED or EDITED Decision Queue Actions by normalized CRITICAL, HIGH, MEDIUM, or LOW server-provided severity; every filter exposes its waiting count and a zero-match filter returns a bounded empty state without substituting an Action; closed Actions cannot re-enter the queue, the exact Decision review handoff remains mandatory, and filtering adds no API route, request, query, storage, telemetry, mutation, deployment, public Pages, or business-decision authority; source is not deployed and runtime verification remains separately authorized",
+      "state": "IMPLEMENTED_STAGING",
+      "boundary": "private-cockpit source names the authenticated navigation entry Risk Hotspots and filters only waiting PROPOSED or EDITED Decision Queue Actions by normalized CRITICAL, HIGH, MEDIUM, or LOW server-provided severity; every filter exposes its waiting count and a zero-match filter returns a bounded empty state without substituting an Action; closed Actions cannot re-enter the queue, the exact Decision review handoff remains mandatory, and filtering adds no API route, request, query, storage, telemetry, mutation, public Pages, or business-decision authority; commit 3316627 is deployed to private staging and the exact-source canary found the live index plus all 9 referenced assets byte-identical to the authorized build without an authenticated entity request or Action mutation",
       "evidence_files": [
         "decision-brief-demo/app/decision-queue-filter.ts",
         "decision-brief-demo/app/page.tsx",

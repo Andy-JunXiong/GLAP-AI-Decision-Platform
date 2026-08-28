@@ -108,7 +108,11 @@ class GovernedClosedLoopTests(unittest.TestCase):
 
     def test_policy_learning_stays_pending_until_human_approval(self):
         outcomes = [
-            {"status": "SUCCESSFUL" if index % 2 else "FAILED"}
+            {
+                "outcome_id": f"outcome-{index}",
+                "dt": "2026-08-06",
+                "status": "SUCCESSFUL" if index % 2 else "FAILED",
+            }
             for index in range(20)
         ]
         proposal = closed_loop.build_policy_proposal(outcomes, "policy-v1", date(2026, 8, 6))
@@ -121,6 +125,74 @@ class GovernedClosedLoopTests(unittest.TestCase):
         )
         self.assertEqual(approved["status"], "APPROVED")
         self.assertEqual(approved["rollback_policy_version"], "policy-v1")
+
+    def test_policy_threshold_counts_latest_logical_outcomes_not_history_rows(self):
+        versions = [
+            {
+                "outcome_id": "outcome-one",
+                "dt": f"2026-08-{index:02d}",
+                "status": "SUCCESSFUL",
+            }
+            for index in range(1, 21)
+        ]
+        proposal = closed_loop.build_policy_proposal(
+            versions, "policy-v1", date(2026, 8, 20)
+        )
+        self.assertIsNone(proposal)
+
+        distinct = [
+            {
+                "outcome_id": f"outcome-{index}",
+                "dt": "2026-08-20",
+                "status": "SUCCESSFUL",
+            }
+            for index in range(20)
+        ]
+        proposal = closed_loop.build_policy_proposal(
+            distinct, "policy-v1", date(2026, 8, 20)
+        )
+        self.assertEqual(proposal["observed_outcome_count"], 20)
+
+    def test_latest_pending_version_excludes_earlier_closed_version(self):
+        outcomes = [
+            {
+                "outcome_id": "outcome-one",
+                "dt": "2026-08-19",
+                "status": "SUCCESSFUL",
+            },
+            {
+                "outcome_id": "outcome-one",
+                "dt": "2026-08-20",
+                "status": "PENDING",
+            },
+        ]
+        proposal = closed_loop.build_policy_proposal(
+            outcomes, "policy-v1", date(2026, 8, 20), minimum_observed=1
+        )
+        self.assertIsNone(proposal)
+
+    def test_outcome_version_selection_fails_closed_on_temporal_or_key_drift(self):
+        with self.assertRaisesRegex(ValueError, "future version"):
+            closed_loop.latest_outcome_versions(
+                [{"outcome_id": "outcome-one", "dt": "2026-08-21"}],
+                date(2026, 8, 20),
+            )
+        with self.assertRaisesRegex(ValueError, "conflicting versions"):
+            closed_loop.latest_outcome_versions(
+                [
+                    {
+                        "outcome_id": "outcome-one",
+                        "dt": "2026-08-20",
+                        "status": "PENDING",
+                    },
+                    {
+                        "outcome_id": "outcome-one",
+                        "dt": "2026-08-20",
+                        "status": "SUCCESSFUL",
+                    },
+                ],
+                date(2026, 8, 20),
+            )
 
     def test_only_actual_calendar_closed_outcomes_are_eligible(self):
         rows = [

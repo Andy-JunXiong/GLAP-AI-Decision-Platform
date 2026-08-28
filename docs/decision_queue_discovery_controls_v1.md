@@ -1,6 +1,6 @@
 # Decision Queue discovery controls v1
 
-**Status:** implemented and locally verified on `2026-08-28`; not deployed
+**Status:** deployed to private staging and exact-source canary verified on `2026-08-28`
 
 This private-cockpit feature makes the authenticated review entry easier to
 find and narrow before a human opens a Decision Brief. Internal navigation now
@@ -25,10 +25,16 @@ binding checks, or selected-Action return path.
 
 The feature is browser-local presentation over the already authenticated
 Action response. It adds no API route, request, storage, query, mutation,
-telemetry, deployment, or public Pages surface. It cannot edit, approve, reject,
+telemetry, deployment mechanism, or public Pages surface. It cannot edit, approve, reject,
 complete, execute, or observe an Action or Outcome.
 
-Local verification does not prove the private staging UI has changed. Private
-frontend publication and a read-only runtime canary remain separate explicit
-human-authorized actions. The natural SLA proposal remains
+Commit `3316627` was published to private staging after separate explicit human
+authorization. The standard read-only staging verifier passed, and an exact-
+source canary found the live index and all 9 referenced assets byte-identical to
+the authorized build. The byte-matched live bundle contains `Risk Hotspots`,
+`MEDIUM`, and `Review now`; the focused waiting-only filter scenario passed
+without changing source state.
+
+The canary created no user, made no authenticated entity request, and granted no
+Action or business-decision authority. The natural SLA proposal remains
 `WAITING_HUMAN_REVIEW` until an independently justified named-human decision.

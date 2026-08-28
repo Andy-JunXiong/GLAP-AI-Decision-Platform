@@ -52,10 +52,12 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     if contract.get("schema_version") != "action-complete-outcome-canary.v1":
         errors.append("unsupported schema_version")
-    if contract.get("status") != "OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE":
-        errors.append("canary must retain the prepared observation verifier and calendar wait")
-    if contract.get("authority_semantics") != "CURRENT_AND_FUTURE_AUTHORITY_AFTER_PENDING_OUTCOME":
-        errors.append("authority map must describe only current and future authority")
+    if contract.get("status") != (
+        "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED"
+    ):
+        errors.append("canary must distinguish the failed runtime gate from the local source fix")
+    if contract.get("authority_semantics") != "CURRENT_AND_FUTURE_AUTHORITY_AFTER_OBSERVED_OUTCOME":
+        errors.append("authority map must describe only authority after the observed Outcome")
     if contract.get("business_timezone") != "Australia/Sydney":
         errors.append("business timezone must remain Australia/Sydney")
     if contract.get("evidence_boundary") != "SYNTHETIC_STAGING_ACTUAL_CALENDAR_ONLY":
@@ -269,6 +271,61 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     }:
         errors.append("observation verifier preparation is incomplete or overclaimed")
 
+    runtime_observation = contract.get("runtime_observation", {})
+    if runtime_observation != {
+        "authorization_received": True,
+        "executed_on_sydney_date": "2026-08-28",
+        "plan_workflow_run_id": 33149532396,
+        "continuation_workflow_run_id": 33149577300,
+        "source_commit": "3316627",
+        "workflow_result": "PASS",
+        "execution_mode": "OPERATIONAL",
+        "time_basis": "ACTUAL_CALENDAR",
+        "logical_start_date": "2026-08-28",
+        "logical_date_count": 1,
+        "initial_seed_loaded": False,
+        "future_simulation_used": False,
+        "lifecycle_check_count": 41,
+        "closed_candidate_check_passed": True,
+        "latest_outcome_check_passed": True,
+        "closed_outcome_check_passed": True,
+        "observed_effect_check_passed": True,
+        "simulated_provenance_check_passed": True,
+        "due_date_rule_check_passed": True,
+        "observed_on_or_after_due_date_check_passed": True,
+        "observed_by_sydney_cutoff_check_passed": True,
+        "eligible_outcome_delta_check_passed": True,
+        "eligible_outcome_count": 2,
+        "minimum_policy_outcomes": 20,
+        "threshold_unmet_check_passed": True,
+        "zero_policy_proposal_below_threshold_check_passed": False,
+        "proposal_presence": "AT_LEAST_ONE_UNACTIVATED_PROPOSAL_BELOW_THRESHOLD",
+        "zero_policy_activation_check_passed": True,
+        "reconciliation_result": "FAIL_CLOSED_POLICY_PROPOSAL_PRESENT_BELOW_THRESHOLD",
+        "protected_identifiers_printed": False,
+        "second_lifecycle_continuation_executed": False,
+        "policy_activation_executed": False,
+        "production_effect": False,
+    }:
+        errors.append("observed Outcome runtime evidence or failed-closed Learning result has drifted")
+
+    local_forward_fix = contract.get("local_forward_fix", {})
+    if local_forward_fix != {
+        "implemented_on_sydney_date": "2026-08-28",
+        "proposal_counting_basis": "LATEST_CUTOFF_VERSION_PER_OUTCOME_ID",
+        "latest_pending_excludes_earlier_closed": True,
+        "same_date_conflicting_versions_fail_closed": True,
+        "future_versions_fail_closed": True,
+        "repeated_versions_of_one_outcome_trigger_threshold": False,
+        "twenty_distinct_outcomes_trigger_threshold": True,
+        "stored_proposal_deleted_or_rewritten": False,
+        "policy_activation_executed": False,
+        "aws_calls_executed": False,
+        "deployment_executed": False,
+        "production_effect": False,
+    }:
+        errors.append("local latest-logical-Outcome forward fix is incomplete or overclaimed")
+
     rollback = contract.get("rollback", {})
     if not (
         rollback.get("delete_audit_events_allowed") is False
@@ -301,6 +358,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     mutation = (root / "lambda" / "glap_action_mutation.py").read_text(encoding="utf-8")
     operations = (root / "lambda" / "glap_operations_api.py").read_text(encoding="utf-8")
     closed_loop = (root / "lambda" / "glap_governed_closed_loop.py").read_text(encoding="utf-8")
+    lifecycle_adapter = (root / "lambda" / "glap_lifecycle_athena_adapter.py").read_text(
+        encoding="utf-8"
+    )
     renderer = (root / "ops" / "render_action_complete_outcome_canary_plan.py").read_text(encoding="utf-8")
     preflight = (root / "ops" / "preflight_action_complete_outcome_staging.ps1").read_text(encoding="utf-8")
     complete_reconciliation = (root / "ops" / "reconcile_action_complete_staging.ps1").read_text(encoding="utf-8")
@@ -317,6 +377,24 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         errors.append("Outcome implementation no longer preserves the three-day pending gate")
     if "minimum_observed: int = 20" not in closed_loop or '"status": "PENDING_HUMAN_REVIEW"' not in closed_loop:
         errors.append("Learning implementation no longer preserves the review-only threshold")
+    if not all(
+        marker in closed_loop
+        for marker in (
+            "def latest_outcome_versions(",
+            'raise ValueError("Outcome history contains a future version")',
+            'raise ValueError("Outcome history contains conflicting versions")',
+            "latest_versions = latest_outcome_versions(outcomes, as_of_date)",
+        )
+    ):
+        errors.append("Learning proposal generation lost latest logical Outcome cardinality")
+    if not all(
+        marker in lifecycle_adapter
+        for marker in (
+            "outcome_history = [*existing_outcomes, *outcomes]",
+            "outcome_history, policy_version, logical_date, minimum_observed",
+        )
+    ) or "closed_history =" in lifecycle_adapter:
+        errors.append("lifecycle adapter filters state before latest Outcome selection")
     renderer_lower = renderer.lower()
     if any(
         token in renderer_lower
@@ -436,9 +514,9 @@ def main() -> int:
             print(f"DRIFT: {error}")
         return 1
     print(
-        "PASS: the pending simulated Outcome is reconciled and the observed "
-        "Outcome/Learning verifier is implemented; observation remains "
-        "calendar-gated and separately unauthorized"
+        "PASS: the closed simulated Outcome and failed-closed Learning result "
+        "are preserved; the latest-logical-Outcome source fix is locally "
+        "verified and not deployed"
     )
     return 0
 

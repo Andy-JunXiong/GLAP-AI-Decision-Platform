@@ -273,18 +273,19 @@ pending-Outcome reconciliation then passed all six checks: one completed
 candidate, one `PENDING` / `SIMULATED` Outcome, null observed date and effect,
 and a due date three days after completion. It printed no protected
 identifiers. The consumed authority creates no standing authority.
-The system-computed due date is `2026-08-28`. Relative to the execution date it
-is a future calendar gate, not observed evidence. A new separately authorized
-actual-calendar continuation may be considered only on or after that date.
+The system-computed due date was `2026-08-28`. Relative to the pending run it
+was a future calendar gate, not observed evidence. On that Sydney date, plan
+run `33149532396` passed and separately authorized continuation run
+`33149577300` processed only that one date from commit `3316627`, with no seed
+or future simulation, and passed all 41 lifecycle checks.
 
-The repository now prepares that later evidence check without advancing the
-calendar. A local Australia/Sydney due-date verifier returned `BLOCKED` on
-`2026-08-25` before any AWS setup or call. The companion aggregate-only
-observed Outcome/Learning reconciler selects the latest version per Outcome,
-requires one closed simulated result observed within the governed calendar
-window, verifies an eligible-count increase from 1 to 2, and requires the
-20-Outcome review threshold to remain unmet with no policy proposal or
-activation. It is locally verified but has not run against an observed Outcome.
+A local Australia/Sydney due-date verifier returned `BLOCKED` on `2026-08-25`
+before any AWS setup or call and returned ready on `2026-08-28`. The companion
+aggregate-only reconciler then passed the latest closed simulated Outcome,
+governed calendar window, and eligible-count increase from 1 to 2. It confirmed
+that 2 is below 20 and that no proposal is activated, but failed closed because
+at least one unactivated policy proposal exists below the threshold. No second
+continuation, proposal mutation, or activation followed.
 
 Outcomes remain `PENDING` until their observation lag expires. Once due, the
 result is reproducible from stable entity/version identifiers and depends on
@@ -307,8 +308,22 @@ cannot approve or activate that proposal, cannot replace deterministic safety
 rules, and labels all summarized effects as synthetic rather than real
 logistics performance. Passing this synthetic policy-review threshold is not
 model readiness or production readiness. The implementation is deployed in
-private staging and passed both explicit Learning runtime gates; the inspected
-state remained blocked at `1/20` eligible Outcomes with no proposal present.
+private staging. Its earlier explicit reader gates passed at `1/20` with no
+proposal. After the authorized due observation, the latest-version eligible
+count is `2/20`; the canary failed closed because at least one unactivated
+proposal is already present below that threshold.
+
+Source inspection identified a counting mismatch capable of explaining this
+state: the lifecycle adapter supplied all closed historical Outcome rows to the
+proposal builder, which thresholded by row count, while the Learning reader and
+canary reconciled only the latest version per `outcome_id`. The separately
+authorized local forward fix now selects one latest cutoff version per logical
+Outcome before thresholding. It excludes earlier closed history when the latest
+version is pending and fails closed on future or same-date conflicting versions.
+Regression tests preserve both sides of the threshold: 20 versions of one
+Outcome do not trigger, while 20 distinct Outcomes do. This source fix is not
+deployed and is not runtime-confirmed proposal provenance. The stored proposal
+remains immutable and unactivated.
 
 Learning maturity is therefore reported on four independent dimensions rather
 than compressed into one optimistic lifecycle label:
@@ -320,8 +335,9 @@ than compressed into one optimistic lifecycle label:
 
 The contract and staging mechanics are implemented, but Learning is not an
 active evidence-producing product loop under the current synthetic-data pace.
-The already-started due-date canary may be completed once on or after
-`2026-08-28`; advancing mechanically from 2/20 to 20/20 is not the roadmap.
+The already-started due-date canary reached its one authorized observation and
+then stopped failed closed. Advancing mechanically from 2/20 to 20/20 is not
+the roadmap.
 
 Operational model-readiness inputs must satisfy every condition below:
 

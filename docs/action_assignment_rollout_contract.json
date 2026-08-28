@@ -168,7 +168,7 @@
     "action_complete_reconciled": true,
     "pending_outcome_continuation_completed": true,
     "pending_outcome_reconciled": true,
-    "current_blocker": "OBSERVATION_DUE_DATE_NOT_REACHED_AND_CONTINUATION_NOT_AUTHORIZED",
+    "current_blocker": "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED",
     "expected_states": ["PROPOSED", "EDITED", "APPROVED", "REJECTED", "COMPLETED"]
   }
 }

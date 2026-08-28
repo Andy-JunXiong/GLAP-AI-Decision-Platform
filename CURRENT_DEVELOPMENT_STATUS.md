@@ -16,13 +16,13 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
 | Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
-| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-27`. Plan run `33020601008` and separately authorized continuation run `33020683956` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
+| Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-28`. Plan run `33149532396` and separately authorized continuation run `33149577300` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the one-date continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
-| `COMPLETE`-to-Outcome canary | `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE` | One pending simulated Outcome passed 6/6 reconciliation; the local due-date gate blocked as expected on 2026-08-25, and the latest-version Outcome/Learning reconciler is ready but cannot run before 2026-08-28 |
+| `COMPLETE`-to-Outcome canary | `RUNTIME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED` | The authorized `2026-08-28` continuation and 1-to-2 eligible-count checks passed, then failed closed on an unactivated proposal below threshold. Local source now counts one latest cutoff version per `outcome_id`; regression tests pass, but staging remains unchanged. |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
 | Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed; the `2026-08-24` expanded-chain refresh was named-human observed and aggregate-only backend-reconciled |
-| Outcome–Learning evidence gate | `IMPLEMENTED_STAGING` | Private read-only eligible-Outcome threshold and review-only policy proposal; deployed and runtime-verified, with no activation authority |
+| Outcome–Learning evidence gate | `SOURCE_FIX_LOCALLY_VERIFIED_STAGING_STILL_BLOCKED` | Private staging remains failed closed at 2/20 with at least one unactivated proposal. Local proposal generation now de-duplicates the latest cutoff version per logical Outcome and fails closed on future or conflicting versions; the fix is not deployed. |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Provider label-readiness dashboard | `IMPLEMENTED_STAGING` | Commit `eb35a3f` passed CI, staging deploy run `32809501684` from `af52ea7` succeeded, the private frontend and 11-route API are live, and both staging and four-role runtime verifiers passed with four temporary users removed |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
@@ -43,8 +43,8 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
-| SLA Decision review handoff v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Decision Queue now reconciles the selected Action to exactly one open Risk and its immutable Decision Brief binding before opening the full Brief, then returns to only that Action card. Drift fails closed, no evidence query runs automatically, and no Action mutation or staging publication occurred. |
-| Decision Queue discovery controls v1 | `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED` | Private navigation now names the authenticated entry `Risk Hotspots`; Decision Queue filters waiting `PROPOSED` / `EDITED` Actions by All, Critical, High, Medium, or Low with bounded counts and empty states. Filtering is browser-local, read-only, and preserves the exact Brief handoff. |
+| SLA Decision review handoff v1 | `DEPLOYED_STAGING_EXACT_SOURCE_CANARY_VERIFIED` | Commit `3316627` is published to the private staging cockpit. The live index and all 9 referenced assets matched the authorized build byte-for-byte; the selected-Action Brief and return markers plus the deterministic handoff contract passed without an Action mutation or authenticated entity interaction. |
+| Decision Queue discovery controls v1 | `DEPLOYED_STAGING_EXACT_SOURCE_CANARY_VERIFIED` | Commit `3316627` is published to the private staging cockpit. The live bundle contains `Risk Hotspots`, `MEDIUM`, and `Review now`; the browser-local waiting-only filter contract passed, while the staging verifier preserved the API, CORS, alarm, logging, and no-unauthenticated-access boundaries. |
 | `COST_ANOMALY` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RECONCILER_EXECUTED_NO_NATURAL_PROPOSAL` | Commit `0e5b740` delivered the deterministic `REVIEW_COST` brief and immutable binding. Actual-calendar continuation run `33020683956` invoked the Generator successfully. The separately authorized aggregate reconciler then found zero natural Cost proposals and failed closed; the remaining six checks passed, including zero invalid bindings and an intact pre-release legacy-null boundary. No runtime Cost binding is established. |
 | Decision-to-Action binding v1 | `STAGING_SCHEMA_PRODUCER_AND_READERS_DEPLOYED_SLA_RUNTIME_BINDING_VERIFIED` | The corrected full SLA reconciler returned every exact-source, exact-binding, immutable-state, current-view, and legacy-null check true. This establishes synthetic staging runtime evidence for the natural SLA Decision binding only; no Action was reviewed, repaired, or mutated. |
 | Decision Truth private-staging rollout handoff | `PRODUCER_API_PRIVATE_COCKPIT_DEPLOYED_SLA_GATE_PASSED_COST_GATE_NO_CANDIDATE` | Producer, authenticated API, and private cockpit releases are deployed and reader/RBAC verified. Continuation run `33020683956` passed all 41 checks. The corrected SLA runtime gate passed all seven checks; the Cost gate still has zero natural candidates and remains failed closed. No human Action judgment, schedule, alias, Pages, or production change is claimed. |
@@ -61,7 +61,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Bounded local comparison re-verification v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | Only transient browser failures receive one same-response local retry; structural failures cannot retry, content stays hidden, and no network or storage is used. The corrected cockpit is deployed, but no eligible comparison exercised this path. |
 | Outcome comparison envelope runtime validator v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | The deployed client validates a present comparison envelope before React or per-cohort verification can use it; malformed envelopes fail the Outcome load closed. No eligible comparison envelope was available for runtime exercise. |
 | Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
-| Learning operation | `DORMANT_EVIDENCE_GATED` | `implementation_status=IMPLEMENTED_VERIFIED`, `operational_status=DORMANT`, `evidence_status=INSUFFICIENT_ELIGIBLE_OUTCOMES`, and `progression_status=EVIDENCE_GATED`; current inspected state remains 1/20 |
+| Learning operation | `DORMANT_SOURCE_FIXED_LOCALLY_RUNTIME_BLOCKED` | Latest staging state remains 2/20 with at least one unactivated proposal. The cardinality invariant is locally corrected and tested, but progression remains blocked pending a separately authorized staging release and runtime artifact verification. |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
@@ -155,6 +155,19 @@ deploy infrastructure, refresh the baseline, replay history, create a schedule,
 move an alias, publish Pages, or touch production. The run proves Generator
 invocation, not the existence or correctness of a Cost proposal or binding.
 
+On `2026-08-28`, due-date plan run `33149532396` passed without lifecycle
+writes. Exactly one separately authorized `extend-integration-validate` run,
+`33149577300`, processed only that date from commit `3316627` in
+`OPERATIONAL` / `ACTUAL_CALENDAR` mode, with no seed or scenario, and passed
+four stages plus all 41 checks in 213803 ms. The aggregate-only canary then
+verified one latest closed simulated Outcome, its observed date and effect,
+the due-date/current-cutoff window, and eligible-count increase from 1 to 2.
+It also confirmed the 20-Outcome threshold remains unmet and no proposal is
+activated, but failed closed because at least one unactivated proposal exists
+below threshold. No second continuation, proposal mutation or activation,
+baseline refresh, deployment, schedule, alias, Pages, or production operation
+followed.
+
 The mainland-access review surface has a human-created isolated DynamoDB
 table, Lambda Function URL, execution role, and direct invited-account login.
 Inspected runtime screenshots confirmed the health response and, after raising
@@ -172,9 +185,44 @@ rubric, lock, attestation, and pseudonymous-reviewer compatibility before
 combining them with the two complete Sites submissions. The private result has
 four reviewers and 120 review records; neither live source was mutated.
 
-## Active slice — private Decision review discovery and handoff
+## Active slice — Learning proposal cardinality forward fix
 
-**Status:** `IMPLEMENTED_LOCALLY_VERIFIED_NOT_DEPLOYED`
+**Status:** `IMPLEMENTED_LOCAL_RELEASE_PREFLIGHT_VERIFIED_NOT_DEPLOYED`
+
+The authorized due-date canary stopped after one `2026-08-28` continuation.
+Outcome and temporal checks passed at 2/20, but the Learning gate found at
+least one unactivated proposal below threshold and failed closed. Local source
+inspection identified a historical-row versus latest-logical-Outcome counting
+mismatch capable of explaining the result; no extra AWS diagnostic query was
+authorized, so stored-proposal provenance is not runtime-confirmed.
+
+The authorized local forward fix is implemented. `build_policy_proposal` now
+selects exactly one latest cutoff version per `outcome_id` before checking the
+closed-state threshold. A latest pending version excludes earlier closed
+history, and future or same-date conflicting versions fail closed. Regression
+coverage proves that 20 historical rows for one logical Outcome do not trigger
+a proposal, while 20 distinct latest closed Outcomes still do.
+
+The independent Generator release preflight is also verified locally. The
+manual workflow and its exact-one-resource guard pass all 30 focused deployment
+contract tests; the governed-loop and Athena-adapter regressions pass all 29
+focused tests. A temporary package contained exactly the four workflow-owned
+root Python files and compiled successfully after extraction. The temporary
+archive was deleted and its local ZIP digest is not treated as a release
+identity because the workflow keys the deployable artifact to the pushed Git
+commit.
+
+The immutable unexpected proposal remains unchanged and unactivated. No AWS
+call, workflow dispatch, deployment, lifecycle continuation, Pages publication,
+schedule, alias, model, or production operation occurred. Commit and push
+maturity is represented by Git history and the final handoff rather than a
+self-referential status claim. The next external slice is a separately
+human-executed plan-first staging Generator release and exact-artifact
+verification after the approved source is present on the remote.
+
+## Recently completed — private Decision review discovery and handoff
+
+**Status:** `DEPLOYED_STAGING_EXACT_SOURCE_CANARY_VERIFIED`
 
 Private source now uses `Risk Hotspots` consistently in navigation and the page
 title. Decision Queue can narrow waiting `PROPOSED` / `EDITED` Actions by All,
@@ -195,10 +243,18 @@ The handoff performs no automatic evidence-chain request and adds no API or
 write surface. Existing signed-human RBAC and append-only audit controls remain
 unchanged. Frontend lint, the public production build, the standard internal
 static production build with TypeScript, seven rendered/contract tests, Python
-compilation, all 599 repository tests, the 54/54 drift audit, and
-`git diff --check` pass locally. Private staging has not been republished or
-runtime-verified with this source. The natural SLA proposal remains
-`WAITING_HUMAN_REVIEW`.
+compilation, all 606 repository tests, the 54/54 drift audit, and
+`git diff --check` pass locally. After separate human authorization, commit
+`3316627` was published to the private Amplify staging branch. The standard
+read-only staging verifier passed every configured site, asset, unauthenticated
+`401`, exact-origin CORS, Lambda, alarm, redacted-log, and throttle check. A
+second exact-source canary found the live index and all 9 referenced assets
+byte-identical to the authorized internal build and found the `Risk Hotspots`,
+`MEDIUM`, `Review now`, selected-Action return, and Brief-return markers. The
+two deterministic filter and handoff scenarios passed without changing source
+state. No authenticated entity interaction, Action mutation, temporary user,
+Pages publication, schedule, alias, policy/model operation, or production
+change occurred. The natural SLA proposal remains `WAITING_HUMAN_REVIEW`.
 
 ## Recently completed — `SLA_BREACH` Outcome provenance readiness audit
 
@@ -936,9 +992,9 @@ has not changed, and the Next frontend has not been redeployed. No AWS call,
 Pages publication, staging deployment, Action mutation, production change, or
 new intelligence layer occurred.
 
-## Date-gated carry-over — Governed `COMPLETE`-to-Outcome evidence canary
+## Runtime carry-over — Governed `COMPLETE`-to-Outcome evidence canary
 
-**Status:** `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE`
+**Status:** `OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED`
 
 **Goal**
 
@@ -982,25 +1038,38 @@ gate without merging the separate write authorities.
 - Added a local system-derived Sydney due-date gate. On `2026-08-25` it
   returned `BLOCKED` against the governed `2026-08-28` due date before any AWS
   setup or call and reported `external_writes_executed=false`.
-- Added the aggregate-only observed Outcome/Learning reconciler for later use.
-  It selects only the latest version of each Outcome, requires one closed
-  simulated result observed on or after its due date and by the current Sydney
-  cutoff, freezes the eligible Learning count from 1 to 2, keeps the 20-Outcome
-  review threshold unmet, and requires zero policy proposals or activations.
-  It is implemented and locally verified but has not queried AWS or run against
-  an observed Outcome.
+- On `2026-08-28`, the local due gate returned ready. Plan run `33149532396`
+  passed without lifecycle writes, then exactly one separately authorized
+  continuation run `33149577300` processed only that date from commit
+  `3316627`, with no seed or future simulation, and passed all 41 checks.
+- Ran the aggregate-only observed Outcome/Learning reconciler. It passed the
+  exact candidate, latest closed simulated Outcome, observed date/effect,
+  due-date/current-cutoff, eligible-count 1-to-2, below-20 threshold, and zero-
+  activation checks. It failed closed on the zero-proposal check because at
+  least one unactivated proposal exists below threshold. Protected identifiers
+  were not printed, and no second continuation or proposal operation followed.
+- Local source inspection found a counting mismatch capable of explaining the
+  failure: proposal generation thresholds all closed historical rows while
+  Learning reads de-duplicate the latest version per `outcome_id`. A repeated-
+  version local proof reproduces the mismatch. No additional AWS query was
+  authorized, so this is not runtime-confirmed stored-proposal provenance.
+- Implemented the separately authorized local forward fix. Proposal generation
+  now selects one latest cutoff version per `outcome_id`, excludes earlier
+  closed history when the latest version is pending, and fails closed on future
+  or same-date conflicting versions. Repeated-history and 20-distinct-Outcome
+  regression cases pass. The fix is not deployed.
 
 **Boundary**
 
-The local package, preflight, named-human completion, pending-Outcome
-continuation, and both read-only reconciliations are verified. The one-time
-continuation authority is consumed and creates no standing authority. The
-Outcome is pending synthetic staging evidence, not an observed result. Its
-system-computed due date is `2026-08-28`, which is a future gate relative to
-today and must not be described as observed or actual evidence. A later
-actual-calendar continuation requires new separate named-human authorization
-on or after that date. No deployment, production effect, schedule, future
-simulation, policy activation, or model promotion occurred.
+The local package, preflight, named-human completion, pending Outcome, and
+closed simulated Outcome are verified. The one-time continuation authority is
+consumed and creates no standing authority. The result is synthetic staging
+evidence, not real logistics performance. Learning progression is failed
+closed at 2/20. Latest-logical-Outcome proposal cardinality is restored only in
+local source; staging continues to run the previous artifact until a separate
+release is authorized. The unexpected immutable proposal remains audit
+evidence. No AWS call, deployment, production effect, schedule, future
+simulation, proposal mutation or activation, or model promotion occurred.
 
 ## Recently completed — Read-only Evaluation publication canary
 
@@ -1791,17 +1860,22 @@ done.
   TypeScript, and a focused browser-local filter contract test. It proves
   `MEDIUM` selection is case-normalized, includes only waiting Actions, excludes
   completed Actions, reports zero-count severities, and does not mutate source
-  state. Its dedicated mutation-drift test, Python compilation, all 599
+  state. Its dedicated mutation-drift test, Python compilation, all 606
   repository tests, the expanded 54/54 drift audit, JSON parsing, and
-  `git diff --check` pass.
+  `git diff --check` pass. The separately authorized private-staging release
+  published commit `3316627`; the standard verifier passed and the live index
+  plus all 9 referenced assets matched the authorized build byte-for-byte. The
+  live bundle contains `Risk Hotspots`, `MEDIUM`, and `Review now`.
 - SLA Decision review handoff v1 passes frontend lint, the public production
   build, the standard internal static production build with TypeScript, and six
   rendered/contract tests, including exact-match entry plus missing, duplicate,
   incomplete, source-mismatch, Decision-mismatch, and rationale-mismatch fail-
-  closed cases. Python compilation, all 599 repository tests, the expanded
-  54/54 drift audit, and `git diff --check` also pass. Staging publication and
-  runtime verification are still pending; no Action, Outcome, API, workflow,
-  AWS, Pages, or production mutation occurred.
+  closed cases. Python compilation, all 606 repository tests, the expanded
+  54/54 drift audit, and `git diff --check` also pass. The same exact-source
+  staging canary found the selected-Action and Brief-return markers, and the
+  focused deterministic handoff scenario passed. No authenticated entity
+  request, Action, Outcome, temporary identity, Pages, schedule, alias,
+  policy/model, or production mutation occurred.
 - `SLA_BREACH` Outcome provenance readiness audit v1 passes seven focused
   temporal, Decision-pair, named-human-chain, latest-Outcome, bounded-state,
   no-manufactured-evidence, and authority scenarios plus its dedicated
@@ -2266,29 +2340,26 @@ done.
 
 ### Incomplete
 
-- Action `COMPLETE` and creation of one pending simulated Outcome are
-  separately authorized, executed, and read-only reconciled. Due-date
-  observation remains separately human-owned and cannot run before
-  `2026-08-28`.
+- Action `COMPLETE`, pending Outcome creation, and the one due-date observation
+  are separately authorized, executed, and read-only reconciled. Learning
+  progression remains failed closed because at least one unactivated proposal
+  exists while the latest eligible count is only 2/20. The source fix is local
+  only and has not changed the deployed Generator artifact.
 
 ## Next Up
 
-1. Separately authorize publication of the private frontend source, then run a
-   read-only staging canary proving that navigation says `Risk Hotspots`, the
-   `MEDIUM` Decision filter narrows the queue correctly, and `Review now` opens
-   the selected bound Brief before returning to only that Action card.
-   Publication and canary evidence do not authorize a business judgment.
-   Preserve `WAITING_HUMAN_REVIEW`; only a named human may later edit, approve,
-   reject, or complete the proposal.
-2. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
+1. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
    The `2026-08-27` reconciler found zero natural proposals and failed closed.
    Re-run it only after a future independently justified operational
    continuation and a new explicit authorization.
-3. On or after Sydney date `2026-08-28`, separately authorize only the one
-   already-started `OPERATIONAL` / `ACTUAL_CALENDAR` staging continuation and
-   reconcile its due Outcome/Learning delta. Stop after that canary; do not
-   mechanically advance 2/20 toward 20/20. This remains future human authority
-   and grants no production, schedule, alias, policy, or model authority.
+2. Confirm the approved cardinality-fix commit exists on the remote, then a
+   named human may separately use the existing plan-first independent Generator
+   release path to deploy it to private staging and verify the deployed artifact
+   only. Commit and push maturity is recorded by Git history and the final
+   handoff. Do not run another
+   lifecycle date or AWS diagnostic query, mutate or activate a proposal,
+   publish Pages, create a schedule, move an alias, promote a model, or touch
+   production without additional authority.
 
 ## Current-week history
 

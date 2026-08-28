@@ -6,19 +6,33 @@ preserved handoffs.
 
 ## 2026-08-28
 
-- Implemented SLA Decision review handoff v1 in local private-cockpit source.
+- Implemented the local Learning proposal cardinality forward fix. Proposal
+  generation now thresholds exactly one latest cutoff version per
+  `outcome_id`, excludes an earlier closed version when the latest is pending,
+  and fails closed on future or same-date conflicting versions. Regression
+  coverage proves that 20 historical versions of one Outcome do not trigger a
+  proposal while 20 distinct latest closed Outcomes still do. The fix is not
+  deployed; the unexpected staging proposal remains immutable, unactivated,
+  and failed-closed audit evidence.
+- Implemented and released SLA Decision review handoff v1 to the private
+  staging cockpit from commit `3316627`.
   The selected Action must reconcile to exactly one open Risk and an exact
   immutable Decision Brief version, recommendation, selected alternative, and
   rationale before the full Brief opens. The return journey shows only that
   Action card; mismatch fails closed and no evidence request or mutation runs
-  automatically. The feature is locally verified but not deployed, and it
-  grants no human Action authority.
-- Implemented Decision Queue discovery controls v1 in local private-cockpit
-  source. Internal navigation now says `Risk Hotspots`, and the authenticated
-  queue can filter waiting Actions by Critical, High, Medium, or Low severity
+  automatically. The standard staging verifier passed, and the live index plus
+  all 9 referenced assets matched the authorized build byte-for-byte. The
+  canary made no authenticated entity request or Action mutation and grants no
+  human Action authority.
+- Implemented and released Decision Queue discovery controls v1 to the same
+  private staging cockpit. Internal navigation now says `Risk Hotspots`, and
+  the authenticated queue can filter waiting Actions by Critical, High,
+  Medium, or Low severity
   with visible counts and bounded empty states. Filtering is browser-local,
-  excludes closed Actions, preserves the exact Brief handoff, and adds no
-  request, mutation, deployment, or business-decision authority.
+  excludes closed Actions and preserves the exact Brief handoff. The live bundle
+  contains the `Risk Hotspots`, `MEDIUM`, and `Review now` markers, and the
+  focused filter contract passed without adding a request, mutation, Pages
+  surface, production change, or business-decision authority.
 
 ## 2026-08-27
 

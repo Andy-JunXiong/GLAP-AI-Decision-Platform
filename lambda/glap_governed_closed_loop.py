@@ -241,6 +241,41 @@ def observe_outcome(
     return {**base, "status": status, "observed_date": as_of_date.isoformat(), "effect_pct": effect_pct}
 
 
+def latest_outcome_versions(
+    outcomes: Iterable[dict[str, Any]], as_of_date: date
+) -> list[dict[str, Any]]:
+    """Return one deterministic latest cutoff version per logical Outcome."""
+
+    latest: dict[str, tuple[date, dict[str, Any]]] = {}
+    for source_row in outcomes:
+        row = dict(source_row)
+        outcome_id = str(row.get("outcome_id") or "").strip()
+        raw_date = row.get("dt")
+        if not outcome_id or raw_date is None:
+            raise ValueError("Outcome history requires outcome_id and dt")
+        try:
+            if isinstance(raw_date, datetime):
+                version_date = raw_date.date()
+            elif isinstance(raw_date, date):
+                version_date = raw_date
+            else:
+                version_date = date.fromisoformat(str(raw_date))
+        except ValueError as error:
+            raise ValueError("Outcome history dt must be an ISO date") from error
+        if version_date > as_of_date:
+            raise ValueError("Outcome history contains a future version")
+
+        prior = latest.get(outcome_id)
+        if prior and prior[0] == version_date:
+            if prior[1] != row:
+                raise ValueError("Outcome history contains conflicting versions")
+            continue
+        if prior is None or version_date > prior[0]:
+            latest[outcome_id] = (version_date, row)
+
+    return [latest[outcome_id][1] for outcome_id in sorted(latest)]
+
+
 def build_policy_proposal(
     outcomes: Iterable[dict[str, Any]],
     current_policy_version: str,
@@ -249,7 +284,10 @@ def build_policy_proposal(
 ) -> dict[str, Any] | None:
     """Create reviewable learning evidence; never activate the proposal."""
 
-    observed = [row for row in outcomes if row.get("status") in OUTCOME_STATES]
+    latest_versions = latest_outcome_versions(outcomes, as_of_date)
+    observed = [
+        row for row in latest_versions if row.get("status") in OUTCOME_STATES
+    ]
     if len(observed) < minimum_observed:
         return None
     success = sum(row["status"] in {"SUCCESSFUL", "PARTIALLY_SUCCESSFUL"} for row in observed)

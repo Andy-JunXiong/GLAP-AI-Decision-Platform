@@ -402,7 +402,9 @@ trigger an autonomous operational action.
 - progress actions through proposed, approved, completed and overdue states;
 - observe context-conditioned outcomes only after the defined lag;
 - preserve simulated provenance and deterministic replay;
-- aggregate learning by sufficient context to compare policy performance.
+- aggregate learning by sufficient context to compare policy performance;
+- count only the latest cutoff-eligible version of each logical Outcome toward
+  a policy-proposal threshold, failing closed on conflicting or future versions.
 
 ### P4 -- Close the human-gated policy loop and expand presentation
 
@@ -427,7 +429,8 @@ The stateful lifecycle is complete only when:
    downstream actions;
 7. outcomes are delayed, reproducible, context-dependent and not uniformly
    successful;
-8. learning changes decision policy only through a human-approved version;
+8. learning counts each logical Outcome once at its latest cutoff version and
+   changes decision policy only through a human-approved version;
 9. public metrics reconcile to the governed v2/v3 quality-gate contract; and
 10. GitHub Actions performs no business calculation and publishes only the
     sanitized AWS aggregate.

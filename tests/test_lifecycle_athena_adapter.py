@@ -151,6 +151,71 @@ class LifecycleAthenaAdapterTests(unittest.TestCase):
         self.assertEqual(action["selected_alternative"], "REVIEW_COST")
         self.assertIn("stateful-cost-variance.v1", action["selection_rationale"])
 
+    def test_policy_generation_deduplicates_historical_outcome_versions(self):
+        repeated_versions = [
+            {
+                "outcome_id": "outcome-one",
+                "dt": f"2026-08-{index:02d}",
+                "status": "SUCCESSFUL",
+            }
+            for index in range(1, 21)
+        ]
+        rows = adapter.build_closed_loop_rows(
+            date(2026, 8, 20),
+            [],
+            [],
+            [],
+            [],
+            repeated_versions,
+            set(),
+        )
+        self.assertEqual(rows["proposals"], [])
+
+        distinct_outcomes = [
+            {
+                "outcome_id": f"outcome-{index}",
+                "dt": "2026-08-20",
+                "status": "SUCCESSFUL",
+            }
+            for index in range(20)
+        ]
+        rows = adapter.build_closed_loop_rows(
+            date(2026, 8, 20),
+            [],
+            [],
+            [],
+            [],
+            distinct_outcomes,
+            set(),
+        )
+        self.assertEqual(len(rows["proposals"]), 1)
+        self.assertEqual(rows["proposals"][0]["observed_outcome_count"], 20)
+
+    def test_policy_generation_uses_latest_version_before_closed_state_filter(self):
+        outcome_history = [
+            {
+                "outcome_id": "outcome-one",
+                "dt": "2026-08-19",
+                "status": "SUCCESSFUL",
+            },
+            {
+                "outcome_id": "outcome-one",
+                "dt": "2026-08-20",
+                "status": "PENDING",
+            },
+        ]
+        rows = adapter.build_closed_loop_rows(
+            date(2026, 8, 20),
+            [],
+            [],
+            [],
+            [],
+            outcome_history,
+            set(),
+            minimum_observed=1,
+        )
+        self.assertEqual(rows["proposals"], [])
+
     def test_closed_loop_tables_use_temporal_scope_in_merge_keys(self):
         cases = (
             (adapter.ALERT_TABLE, adapter.ALERT_COLUMNS, ("temporal_scope_id", "alert_fingerprint", "dt")),

@@ -1,16 +1,19 @@
 # Governed COMPLETE-to-Outcome canary
 
-**Status:** `OBSERVED_OUTCOME_RECONCILER_IMPLEMENTED_WAITING_DUE_DATE`
+**Status:** `OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED`
 **Boundary:** synthetic isolated staging, Australia/Sydney actual calendar
 
 ## Purpose
 
-This package prepares the smallest governed path from the already verified
-`APPROVED` Action to one delayed simulated Outcome and the existing Learning
-gate. The governed path has now executed through creation and reconciliation
-of one pending Outcome; observation remains calendar-gated and separately
-unauthorized. The plan contains no Action, request, actor, shipment, Outcome,
-AWS, or storage identifiers.
+This package governs the smallest path from the already verified `APPROVED`
+Action to one delayed simulated Outcome and the existing Learning gate. The
+path has now executed through the due-date observation. The Outcome checks and
+eligible-count increase from 1 to 2 passed, but the Learning reconciliation
+failed closed because at least one unactivated policy proposal exists below
+the 20-Outcome threshold. The source-level counting defect is now corrected and
+locally verified, but that fix is not deployed and does not alter the failed-
+closed staging state. The evidence contains no Action, request, actor, shipment,
+Outcome, AWS, or storage identifiers.
 
 The machine-readable source is
 [`action_complete_outcome_canary_v1.json`](action_complete_outcome_canary_v1.json).
@@ -52,7 +55,25 @@ The aggregate-only pending reconciliation then passed all six checks: one
 completed candidate, exactly one Outcome, `PENDING` status, null observed date
 and effect, `SIMULATED` provenance, and a due date three days after completion.
 Protected identifiers were not printed. The system-computed `2026-08-28` due
-date is a future gate relative to the execution date, not observed evidence.
+date was a future gate relative to the pending-Outcome execution date. It was
+not treated as observed evidence until that Sydney date arrived.
+
+After a further explicit project-owner authorization on `2026-08-28`, plan run
+`33149532396` passed without lifecycle writes. Exactly one
+`extend-integration-validate` run, `33149577300`, then processed only
+`2026-08-28` from commit `3316627` in `OPERATIONAL` /
+`ACTUAL_CALENDAR` mode, with no seed or future simulation. It passed four
+stages and all 41 lifecycle checks. No second date or continuation ran.
+
+The final aggregate-only reconciliation passed the Outcome and temporal gates:
+one closed candidate, one latest closed simulated Outcome with an observed
+date and effect, observation on or after its due date and by the Sydney cutoff,
+and an eligible Outcome increase from 1 to exactly 2. It also confirmed that
+2 remains below 20 and that no proposal is activated. The required zero-
+proposal check failed, however, because at least one unactivated proposal
+exists below the threshold. The reconciler therefore stopped failed closed;
+protected identifiers were not printed and no proposal was changed or
+activated.
 
 ## Governed phase sequence
 
@@ -73,7 +94,8 @@ Every persisted mutation remains human-owned and append-only. `COMPLETE`, the
 pending-Outcome continuation, and the observed-Outcome continuation are three
 separate authority decisions; approval of one does not approve the next.
 Future simulation cannot satisfy this canary. A pending record is not observed
-evidence, and a closed simulated Outcome is not real logistics performance.
+evidence, and the now-closed simulated Outcome is not real logistics
+performance.
 
 The contract grants no AWS write, deployment, production, schedule, policy
 activation, or model-promotion authority. Evidence handoff must remain
@@ -91,23 +113,37 @@ A second verifier at `ops/reconcile_pending_outcome_staging.ps1` checked the
 first lifecycle continuation. It requires exactly one Outcome for
 the completed candidate, `PENDING` status, `SIMULATED` provenance, null
 observed date and effect, and an observation due date exactly three days after
-completion. It passed after run `32803181376`. No observed-Outcome continuation
-is authorized, and the calendar gate prohibits it before `2026-08-28`.
+completion. It passed after run `32803181376`. The later one-time observed-
+Outcome continuation authority was separately granted and consumed on
+`2026-08-28`.
 
 ## Observed Outcome and Learning verifier
 
 The local `ops/check_observed_outcome_due_date.ps1` reads the governed due date
 from this contract and derives the current date from the Australia/Sydney
 timezone. On `2026-08-25` it returned `BLOCKED` for the `2026-08-28` gate before
-any AWS setup or call and reported that no external write occurred.
+any AWS setup or call. On `2026-08-28` the same local gate returned ready.
 
-The prepared aggregate-only
-`ops/reconcile_observed_outcome_learning_staging.ps1` also fails before any AWS
-setup when the due date has not been reached. Once separately authorized on or
-after the due date, it will select only the latest version of each Outcome and
-require exactly one closed simulated result for the canary Action, a non-null
-observed date and effect, observation on or after the due date and by the
-current Sydney cutoff, and an eligible Learning count increase from the frozen
-baseline of 1 to exactly 2. Because 2 remains below the 20-Outcome review
-threshold, it also requires zero policy proposals and zero activations. The
-reconciler has not run against AWS and makes no observed-result claim today.
+The aggregate-only `ops/reconcile_observed_outcome_learning_staging.ps1` fails
+before any AWS setup when the due date has not been reached. Its authorized
+`2026-08-28` run selected only the latest version of each Outcome and passed
+the closed simulated result, observed date/effect, calendar window, and frozen
+1-to-2 eligible-count checks. Because 2 remains below the 20-Outcome review
+threshold, it required zero policy proposals and zero activations. The zero-
+activation check passed; the zero-proposal check failed closed.
+
+Local source inspection found a deterministic mismatch capable of explaining
+the failure: the lifecycle adapter supplied all closed historical Outcome rows
+to a row-count threshold, while the read-side Learning and canary queries de-
+duplicated to the latest version per `outcome_id`. The authorized local forward
+fix now makes `build_policy_proposal` select exactly one latest cutoff version
+per `outcome_id` before applying the closed-state threshold. A latest
+`PENDING` version excludes an earlier closed version; a future version or two
+conflicting versions for the same ID and date fails closed.
+
+Regression tests prove that 20 historical versions of one logical Outcome do
+not trigger a proposal, while 20 distinct latest closed Outcomes still do.
+This fixes source behavior but is not runtime confirmation of how the stored
+proposal was created. No additional AWS query, deployment, stored-proposal
+delete/rewrite, activation, or lifecycle continuation was authorized or run.
+The unexpected immutable proposal remains failed-closed audit evidence.

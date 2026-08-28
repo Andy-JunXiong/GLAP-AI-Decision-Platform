@@ -1,8 +1,9 @@
 # Action assignment staging rollout
 
 **Status:** assignment, approval, Evidence refresh, named-human Action
-completion, and pending simulated Outcome runtime-verified; observation waits
-for the separately governed due-date continuation
+completion, and the delayed closed simulated Outcome are runtime-verified;
+downstream Learning reconciliation is failed closed below threshold, with its
+cardinality correction locally verified but not deployed
 
 This package governs the repository implementation of Action `EDIT`, owner,
 due date, and `EDITED` review state for private staging. The Action mutation
@@ -13,10 +14,10 @@ through their separately approved plan-first paths. This document does not
 authorize another deployment, persistent user creation, or an operational
 Action mutation. The separately authorised named-human canary now covers the
 operator `EDIT`, stable request-ID retry, different-person `APPROVE`, and the
-later separately authorized named-human `COMPLETE`. A later separately
-authorized actual-calendar continuation created one pending simulated Outcome.
-Neither consumed authority creates standing authority; observation remains a
-separate decision.
+later separately authorized named-human `COMPLETE`. Separately authorized
+actual-calendar continuations created the pending simulated Outcome and then
+closed it on its due date. None of the consumed authorities creates standing
+authority; Learning remains failed closed without policy activation.
 
 ## Preflight and release order
 
@@ -122,9 +123,16 @@ not printed. A later explicit project-owner authorization allowed the agent to
 trigger manual workflow run `32803181376` through the named GitHub session.
 The run extended only `2026-08-25` in `OPERATIONAL` / `ACTUAL_CALENDAR` mode;
 the aggregate-only pending reconciler passed 6/6 with one unobserved
-`PENDING` / `SIMULATED` Outcome and the three-day due-date rule. The consumed
-authority grants no observation, production, Pages, deployment, schedule,
-alias, policy, or model authority.
+`PENDING` / `SIMULATED` Outcome and the three-day due-date rule. On
+`2026-08-28`, a new explicit authorization bounded plan run `33149532396` and
+continuation run `33149577300` to only the due date, with no seed or future
+simulation. All 41 lifecycle checks passed. The final read-only reconciliation
+verified the latest closed simulated Outcome and eligible count 1 to 2, then
+failed closed because at least one unactivated proposal exists below the
+20-Outcome threshold. The local forward fix now counts one latest cutoff
+version per logical Outcome, but it is not deployed and did not alter the
+stored proposal. The consumed authority grants no further lifecycle,
+production, Pages, deployment, schedule, alias, policy, or model authority.
 
 The agent may prepare and validate these artifacts but may not perform steps
 3, 6-7, 9, 11-12, or any future release write. Temporary role-test users in

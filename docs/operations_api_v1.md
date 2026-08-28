@@ -400,17 +400,30 @@ GitHub session to trigger manual workflow run `32803181376` from commit
 pending-Outcome aggregate-only verifier then passed all six checks: one
 completed candidate, one `PENDING` / `SIMULATED` Outcome, null observed date
 and effect, and the three-day due-date rule. It printed no protected
-identifiers. The pending record is not observed evidence. Its system-computed
-`2026-08-28` due date is a future gate, and the later continuation remains
-separately unauthorized.
+identifiers. The pending record was not observed evidence. Its system-computed
+`2026-08-28` due date remained a future gate until that Sydney date.
 
-The local observation package is now implemented. Its system-derived Sydney
-due-date checker blocked as expected on `2026-08-25` before any AWS setup or
-call. Its aggregate-only post-observation reconciler will select only the
-latest Outcome version, require a closed simulated result within the due-date
-and current-cutoff window, verify the Learning eligible count increases from 1
-to 2, and require zero policy proposals or activations while the 20-Outcome
-threshold remains unmet. It has not run and does not claim an observed result.
+The local observation package is implemented and has now exercised its bounded
+runtime path. Its Sydney due-date checker blocked on `2026-08-25` before any
+AWS setup and returned ready on `2026-08-28`. Plan run `33149532396` passed;
+separately authorized continuation run `33149577300` processed only that date
+from commit `3316627`, with no seed or future simulation, and passed all 41
+lifecycle checks. The aggregate-only reconciler verified the latest closed
+simulated Outcome, due-date/current-cutoff window, and eligible count increase
+from 1 to 2. It confirmed that the 20-Outcome threshold remains unmet and no
+proposal is activated, but failed closed because at least one unactivated
+proposal exists below threshold. No API mutation, proposal change, or second
+continuation followed.
+
+Local source inspection identified historical-row counting in the lifecycle
+proposal builder versus latest-`outcome_id` de-duplication in the reader as a
+capable explanation. The separately authorized local forward fix now selects
+one latest cutoff version per `outcome_id` before proposal thresholding, with
+future and same-date conflicting versions failing closed. Repeated-version and
+distinct-Outcome regression tests pass. This does not change the authenticated
+API contract, is not deployed, and is not runtime-confirmed proposal
+provenance; no additional AWS query ran and the immutable stored proposal was
+neither changed nor activated.
 
 The ordered release, validation, role-check, canary, and evidence-preserving
 rollback boundary is defined in
@@ -580,30 +593,30 @@ The browser obtains its short-lived access token through Cognito and keeps it on
 in session storage. Without the internal build-time configuration, the public
 product remains in read-only demonstration mode and sends no request.
 
-The deployed cockpit currently labels the Risk Hotspots navigation item
-`Signals`; `Risk hotspots` appears only as the destination page title. A
-named-human staging inspection on `2026-08-27` also confirmed that the deployed
-Decision Queue's `Review now` control opens the unscoped Action Board. No
-mutation button was submitted.
-
-Source now contains a locally verified correction: the selected Action must
+The cockpit published from commit `3316627` now labels the authenticated
+navigation item `Risk Hotspots`. The selected Action must
 reconcile to exactly one open Risk and its complete immutable Brief binding
 before the full Brief opens; the return path then shows only that Action card.
 Missing, duplicate, stale, incomplete, or mismatched evidence fails closed, and
 opening the Brief performs no automatic evidence request. See
-[`sla_decision_review_handoff_v1.md`](sla_decision_review_handoff_v1.md). This
-source has not been republished to private staging, so the deployed usability
-gap and `WAITING_HUMAN_REVIEW` state remain current. Neither implementation nor
-future publication grants authority to infer, approve, reject, or complete a
-business decision.
+[`sla_decision_review_handoff_v1.md`](sla_decision_review_handoff_v1.md). The
+separately authorized private-staging publication passed the standard read-only
+verifier. An exact-source canary found the live index and all 9 referenced
+assets byte-identical to the authorized internal build and found every selected-
+Action Brief/return marker. The deterministic handoff scenarios passed without
+an authenticated entity interaction or Action mutation. `WAITING_HUMAN_REVIEW`
+therefore remains current; deployment grants no authority to infer, approve,
+reject, or complete a business decision.
 
-The same local source now labels the internal navigation entry `Risk Hotspots`
+The same deployed source labels the internal navigation entry `Risk Hotspots`
 and filters waiting Decision Queue Actions by All, Critical, High, Medium, or
 Low severity with explicit counts and bounded empty states. The browser-local
 filter admits only `PROPOSED` / `EDITED` rows and neither adds a request nor
 changes an Action. See
 [`decision_queue_discovery_controls_v1.md`](decision_queue_discovery_controls_v1.md).
-This naming and filter correction is also not deployed.
+The exact-source canary found the `Risk Hotspots`, `MEDIUM`, and `Review now`
+markers in the byte-matched live bundle, and the focused filter contract passed
+without changing source state.
 
 As of the Australia/Sydney business date `2026-08-07`, the dedicated identity,
 internal hosting, Operations API, alarms, and DLQ staging resources are deployed.
