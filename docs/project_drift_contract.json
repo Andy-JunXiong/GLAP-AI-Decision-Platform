@@ -129,7 +129,7 @@
     {
       "id": "complete_outcome_canary_preparation",
       "state": "BLOCKED_EVIDENCE",
-      "boundary": "the 2026-08-25 preflight, named-human COMPLETE, pending Outcome run 32803181376, and pending reconciliation remain verified; after a separate 2026-08-28 authorization, plan run 33149532396 and exactly one actual-calendar continuation run 33149577300 processed only the due date with no seed or future simulation and passed all 41 lifecycle checks; the aggregate-only latest-version reconciliation verified one closed simulated Outcome and eligible count 1 to 2, but failed closed because at least one unactivated policy proposal exists below the 20-Outcome threshold; the local forward fix now selects one latest cutoff version per outcome_id before thresholding, excludes an earlier closed version when the latest is pending, fails closed on future or same-date conflicting versions, and proves that 20 history rows for one Outcome cannot trigger while 20 distinct Outcomes can; the fix is not deployed and no second continuation, stored-proposal mutation or activation, AWS call, schedule, alias, Pages, model, production effect, or real-world performance claim occurred",
+      "boundary": "the 2026-08-25 preflight, named-human COMPLETE, pending Outcome run 32803181376, and pending reconciliation remain verified; after a separate 2026-08-28 authorization, plan run 33149532396 and exactly one actual-calendar continuation run 33149577300 processed only the due date with no seed or future simulation and passed all 41 lifecycle checks; the aggregate-only latest-version reconciliation verified one closed simulated Outcome and eligible count 1 to 2, but failed closed because at least one unactivated policy proposal exists below the 20-Outcome threshold; the forward fix selects one latest cutoff version per outcome_id before thresholding, excludes an earlier closed version when the latest is pending, fails closed on future or same-date conflicting versions, and proves that 20 history rows for one Outcome cannot trigger while 20 distinct Outcomes can; commit a10678b passed CI run 33154815653, plan run 33155014510 completed without upload or execution, and separately authorized deploy run 33157729317 released only the isolated Generator; no post-release lifecycle or Learning reconciliation, independent CodeSha256 verification, second continuation, stored-proposal mutation or activation, schedule, alias, Pages, model, production effect, or real-world performance claim occurred",
       "evidence_files": [
         "docs/action_complete_outcome_canary_v1.json",
         "docs/action_complete_outcome_canary.md",
@@ -140,12 +140,15 @@
         "ops/reconcile_pending_outcome_staging.ps1",
         "ops/check_observed_outcome_due_date.ps1",
         "ops/reconcile_observed_outcome_learning_staging.ps1",
+        ".github/workflows/refactor-stateful-lifecycle-generator-staging.yml",
+        "ops/deploy_stateful_lifecycle_generator_stack.ps1",
         "lambda/glap_governed_closed_loop.py",
         "lambda/glap_lifecycle_athena_adapter.py",
         "tests/test_action_complete_outcome_canary.py",
         "tests/test_governed_closed_loop.py",
         "tests/test_lifecycle_athena_adapter.py",
         "docs/governed_closed_loop.md",
+        "docs/deployment_workflow.md",
         "docs/operations_api_v1.md",
         "CURRENT_DEVELOPMENT_STATUS.md"
       ]
@@ -153,7 +156,7 @@
     {
       "id": "outcome_learning_evidence_gate",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal view are deployed in private staging with no approval or activation authority; latest-version reconciliation reports 2/20 eligible Outcomes and fails closed because at least one unactivated proposal exists below threshold; the locally verified source fix now thresholds one latest cutoff version per outcome_id and fails closed on future or conflicting versions, but it is not deployed and does not establish runtime proposal provenance",
+      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal view are deployed in private staging with no approval or activation authority; latest-version reconciliation reports 2/20 eligible Outcomes and fails closed because at least one unactivated proposal exists below threshold; the source fix now thresholds one latest cutoff version per outcome_id and fails closed on future or conflicting versions; commit a10678b passed CI and plan/deploy runs 33155014510 and 33157729317 released only the isolated Generator, but no post-release lifecycle or Learning reconciliation ran and the deployed digest was not independently verified, so runtime proposal provenance remains unestablished",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",

@@ -24,7 +24,7 @@ class ActionCompleteOutcomeCanaryTests(unittest.TestCase):
         self.assertTrue(all(value is False for value in contract["authority"].values()))
         self.assertEqual(
             contract["status"],
-            "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED",
+            "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_DEPLOYED_RUNTIME_RECHECK_PENDING",
         )
 
     def test_runtime_observation_preserves_failed_closed_learning_result(self):
@@ -37,12 +37,12 @@ class ActionCompleteOutcomeCanaryTests(unittest.TestCase):
             validator.validate_contract(contract),
         )
 
-    def test_local_forward_fix_cannot_claim_deployment_or_rewrite_evidence(self):
+    def test_deployed_forward_fix_cannot_claim_runtime_recheck_or_rewrite_evidence(self):
         contract = copy.deepcopy(validator.load_contract())
-        contract["local_forward_fix"]["deployment_executed"] = True
+        contract["local_forward_fix"]["post_deploy_runtime_reconciliation_executed"] = True
         contract["local_forward_fix"]["stored_proposal_deleted_or_rewritten"] = True
         self.assertIn(
-            "local latest-logical-Outcome forward fix is incomplete or overclaimed",
+            "latest-logical-Outcome release maturity is incomplete or overclaimed",
             validator.validate_contract(contract),
         )
 

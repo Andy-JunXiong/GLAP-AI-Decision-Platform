@@ -53,9 +53,9 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
     if contract.get("schema_version") != "action-complete-outcome-canary.v1":
         errors.append("unsupported schema_version")
     if contract.get("status") != (
-        "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED"
+        "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_DEPLOYED_RUNTIME_RECHECK_PENDING"
     ):
-        errors.append("canary must distinguish the failed runtime gate from the local source fix")
+        errors.append("canary must distinguish the failed runtime gate from the deployed source fix")
     if contract.get("authority_semantics") != "CURRENT_AND_FUTURE_AUTHORITY_AFTER_OBSERVED_OUTCOME":
         errors.append("authority map must describe only authority after the observed Outcome")
     if contract.get("business_timezone") != "Australia/Sydney":
@@ -320,11 +320,23 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "twenty_distinct_outcomes_trigger_threshold": True,
         "stored_proposal_deleted_or_rewritten": False,
         "policy_activation_executed": False,
-        "aws_calls_executed": False,
-        "deployment_executed": False,
+        "aws_calls_executed": True,
+        "deployment_executed": True,
+        "source_commit": "a10678b",
+        "ci_workflow_run_id": 33154815653,
+        "plan_release_workflow_run_id": 33155014510,
+        "deploy_release_workflow_run_id": 33157729317,
+        "release_scope": "LIFECYCLE_GENERATOR_FUNCTION_ONLY",
+        "generator_stack_resource_count": 1,
+        "lifecycle_invoked_by_release": False,
+        "schema_applied_by_release": False,
+        "controller_changed_by_release": False,
+        "schedule_or_alias_changed_by_release": False,
+        "post_deploy_code_digest_independently_verified": False,
+        "post_deploy_runtime_reconciliation_executed": False,
         "production_effect": False,
     }:
-        errors.append("local latest-logical-Outcome forward fix is incomplete or overclaimed")
+        errors.append("latest-logical-Outcome release maturity is incomplete or overclaimed")
 
     rollback = contract.get("rollback", {})
     if not (
@@ -515,8 +527,8 @@ def main() -> int:
         return 1
     print(
         "PASS: the closed simulated Outcome and failed-closed Learning result "
-        "are preserved; the latest-logical-Outcome source fix is locally "
-        "verified and not deployed"
+        "are preserved; the latest-logical-Outcome source fix is deployed to "
+        "staging with digest and runtime rechecks still pending"
     )
     return 0
 

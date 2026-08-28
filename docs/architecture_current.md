@@ -433,10 +433,15 @@ at least one unactivated policy proposal exists below the threshold. Source
 inspection identified historical-row counting in proposal generation versus
 latest-`outcome_id` de-duplication in Learning reads. The locally verified
 forward fix now thresholds only one latest cutoff version per logical Outcome
-and fails closed on future or same-date conflicting versions. It is not
-deployed and does not establish runtime proposal provenance. No proposal was
-activated or changed. The earlier merge-triggered run remained plan-only; the
-later separately authorized workflow dispatch performed the deployment.
+and fails closed on future or same-date conflicting versions. Commit `a10678b`
+passed CI run `33154815653`. Plan run `33155014510` accepted only the isolated
+one-resource, non-replacing Generator modification and removed the unexecuted
+change set; separately authorized deploy run `33157729317` then completed that
+release. Its bounded summary records one Generator resource and no lifecycle,
+schema, Controller, schedule, alias, or production effect. The deployed digest
+and post-release Learning behavior remain independently unverified, so this does
+not yet establish runtime proposal provenance. No proposal was activated or
+changed.
 
 The repository now also implements a local-only Outcome Review provenance
 projection. The existing `GET /v1/outcomes` read joins each cutoff-eligible

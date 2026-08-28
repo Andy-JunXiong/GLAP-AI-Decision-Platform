@@ -198,6 +198,18 @@ or production path ran. The later bounded actual-calendar continuation
 or production changes; aggregate proposal and binding reconciliation remain
 pending.
 
+The `2026-08-28` Learning cardinality correction reused this independent path
+from commit `a10678b`, after CI run `33154815653` passed. Named-human
+`plan-release` run `33155014510` completed the fail-closed exact-one,
+non-replacing `LifecycleGeneratorFunction` plan and deleted its unexecuted
+change set without uploading code. Separately authorized `deploy-release` run
+`33157729317` completed the isolated Generator update. The successful bounded
+summary records one Generator resource, no lifecycle invocation, no schema or
+Controller change, no schedule or alias change, and no production effect. A
+separate post-release `CodeSha256` and configuration read was not performed, and
+no later lifecycle or Learning reconciliation ran; exact artifact and runtime
+behavior verification therefore remain pending.
+
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The
 named human configured distinct GitHub OIDC orchestration identities and a

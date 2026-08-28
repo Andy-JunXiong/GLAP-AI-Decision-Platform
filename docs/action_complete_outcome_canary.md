@@ -1,6 +1,6 @@
 # Governed COMPLETE-to-Outcome canary
 
-**Status:** `OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED`
+**Status:** `OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_DEPLOYED_RUNTIME_RECHECK_PENDING`
 **Boundary:** synthetic isolated staging, Australia/Sydney actual calendar
 
 ## Purpose
@@ -10,10 +10,11 @@ Action to one delayed simulated Outcome and the existing Learning gate. The
 path has now executed through the due-date observation. The Outcome checks and
 eligible-count increase from 1 to 2 passed, but the Learning reconciliation
 failed closed because at least one unactivated policy proposal exists below
-the 20-Outcome threshold. The source-level counting defect is now corrected and
-locally verified, but that fix is not deployed and does not alter the failed-
-closed staging state. The evidence contains no Action, request, actor, shipment,
-Outcome, AWS, or storage identifiers.
+the 20-Outcome threshold. The source-level counting defect is corrected, tested,
+and released to the isolated staging Generator from commit `a10678b`. No later
+lifecycle or Learning reconciliation has exercised it, so the failed-closed
+staging evidence remains the latest runtime result. The evidence contains no
+Action, request, actor, shipment, Outcome, AWS, or storage identifiers.
 
 The machine-readable source is
 [`action_complete_outcome_canary_v1.json`](action_complete_outcome_canary_v1.json).
@@ -144,6 +145,16 @@ conflicting versions for the same ID and date fails closed.
 Regression tests prove that 20 historical versions of one logical Outcome do
 not trigger a proposal, while 20 distinct latest closed Outcomes still do.
 This fixes source behavior but is not runtime confirmation of how the stored
-proposal was created. No additional AWS query, deployment, stored-proposal
-delete/rewrite, activation, or lifecycle continuation was authorized or run.
-The unexpected immutable proposal remains failed-closed audit evidence.
+proposal was created. Commit `a10678b` passed CI run `33154815653`.
+Separately authorized `plan-release` run `33155014510` completed the exact-one
+non-replacing Generator plan and deleted its unexecuted change set. Separately
+authorized `deploy-release` run `33157729317` then completed only the isolated
+Generator release. Its bounded summary reports one Generator resource and no
+lifecycle invocation, schema, Controller, schedule, alias, or production
+effect.
+
+No post-release lifecycle continuation or Learning reconciliation ran. The
+deployed Lambda digest and configuration were not independently read after the
+workflow, so exact artifact verification remains pending. No additional Athena
+query, stored-proposal delete/rewrite, or activation occurred. The unexpected
+immutable proposal remains failed-closed audit evidence.

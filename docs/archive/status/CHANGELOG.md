@@ -11,9 +11,12 @@ preserved handoffs.
   `outcome_id`, excludes an earlier closed version when the latest is pending,
   and fails closed on future or same-date conflicting versions. Regression
   coverage proves that 20 historical versions of one Outcome do not trigger a
-  proposal while 20 distinct latest closed Outcomes still do. The fix is not
-  deployed; the unexpected staging proposal remains immutable, unactivated,
-  and failed-closed audit evidence.
+  proposal while 20 distinct latest closed Outcomes still do. Commit `a10678b`
+  passed CI run `33154815653`; plan run `33155014510` completed without upload
+  or execution, and separately authorized deploy run `33157729317` released
+  only the isolated Generator. No later lifecycle or Learning reconciliation
+  ran, so runtime behavior remains unverified. The unexpected staging proposal
+  remains immutable, unactivated, and failed-closed audit evidence.
 - Implemented and released SLA Decision review handoff v1 to the private
   staging cockpit from commit `3316627`.
   The selected Action must reconcile to exactly one open Risk and an exact

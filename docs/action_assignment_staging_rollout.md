@@ -129,10 +129,13 @@ continuation run `33149577300` to only the due date, with no seed or future
 simulation. All 41 lifecycle checks passed. The final read-only reconciliation
 verified the latest closed simulated Outcome and eligible count 1 to 2, then
 failed closed because at least one unactivated proposal exists below the
-20-Outcome threshold. The local forward fix now counts one latest cutoff
-version per logical Outcome, but it is not deployed and did not alter the
-stored proposal. The consumed authority grants no further lifecycle,
-production, Pages, deployment, schedule, alias, policy, or model authority.
+20-Outcome threshold. The forward fix now counts one latest cutoff version per
+logical Outcome. Commit `a10678b` passed CI, plan run `33155014510` completed
+without upload or execution, and separately authorized deploy run `33157729317`
+released only the isolated Generator. No post-release lifecycle or Learning
+reconciliation ran, and the stored proposal was not altered. The consumed
+authority grants no further lifecycle, production, Pages, deployment, schedule,
+alias, policy, or model authority.
 
 The agent may prepare and validate these artifacts but may not perform steps
 3, 6-7, 9, 11-12, or any future release write. Temporary role-test users in

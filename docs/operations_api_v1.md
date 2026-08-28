@@ -421,9 +421,11 @@ capable explanation. The separately authorized local forward fix now selects
 one latest cutoff version per `outcome_id` before proposal thresholding, with
 future and same-date conflicting versions failing closed. Repeated-version and
 distinct-Outcome regression tests pass. This does not change the authenticated
-API contract, is not deployed, and is not runtime-confirmed proposal
-provenance; no additional AWS query ran and the immutable stored proposal was
-neither changed nor activated.
+API contract. Commit `a10678b` passed CI; plan run `33155014510` and separately
+authorized deploy run `33157729317` then released only the isolated Generator.
+No Operations API code or stack changed. No post-release lifecycle or Learning
+reconciliation ran, so the fix is not runtime-confirmed proposal provenance;
+the immutable stored proposal was neither changed nor activated.
 
 The ordered release, validation, role-check, canary, and evidence-preserving
 rollback boundary is defined in

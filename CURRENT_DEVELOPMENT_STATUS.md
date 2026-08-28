@@ -19,10 +19,10 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-28`. Plan run `33149532396` and separately authorized continuation run `33149577300` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the one-date continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
-| `COMPLETE`-to-Outcome canary | `RUNTIME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED` | The authorized `2026-08-28` continuation and 1-to-2 eligible-count checks passed, then failed closed on an unactivated proposal below threshold. Local source now counts one latest cutoff version per `outcome_id`; regression tests pass, but staging remains unchanged. |
+| `COMPLETE`-to-Outcome canary | `RUNTIME_FAILED_CLOSED_SOURCE_FIX_DEPLOYED_RECHECK_PENDING` | The authorized `2026-08-28` continuation and 1-to-2 eligible-count checks passed, then failed closed on an unactivated proposal below threshold. Staging source now counts one latest cutoff version per `outcome_id`; the bounded release succeeded, while independent digest and runtime behavior rechecks remain pending. |
 | Governed Action and Outcome | `IMPLEMENTED_STAGING` | Synthetic actual-calendar staging evidence |
 | Action–Outcome evidence chain | `IMPLEMENTED_STAGING` | Private proposal/audit/Outcome timeline deployed; the `2026-08-24` expanded-chain refresh was named-human observed and aggregate-only backend-reconciled |
-| Outcome–Learning evidence gate | `SOURCE_FIX_LOCALLY_VERIFIED_STAGING_STILL_BLOCKED` | Private staging remains failed closed at 2/20 with at least one unactivated proposal. Local proposal generation now de-duplicates the latest cutoff version per logical Outcome and fails closed on future or conflicting versions; the fix is not deployed. |
+| Outcome–Learning evidence gate | `SOURCE_FIX_DEPLOYED_STAGING_RUNTIME_RECHECK_PENDING` | Private staging remains failed closed at 2/20 with at least one unactivated proposal. Proposal generation deployed from `a10678b` now de-duplicates the latest cutoff version per logical Outcome and fails closed on future or conflicting versions; no post-release lifecycle or Learning reconciliation has run. |
 | Forecast backtest framework | `IMPLEMENTED_STAGING` | Private advisory evaluation; label maturity remains blocked |
 | Provider label-readiness dashboard | `IMPLEMENTED_STAGING` | Commit `eb35a3f` passed CI, staging deploy run `32809501684` from `af52ea7` succeeded, the private frontend and 11-route API are live, and both staging and four-role runtime verifiers passed with four temporary users removed |
 | Evaluation Architecture | `IMPLEMENTED_VERIFIED` | Local read-only engineering evaluation now isolates External Evidence and Decision Memory independently; System Correctness and Capability Attribution pass while Decision Quality and Business Outcome Effect remain unevaluated |
@@ -61,7 +61,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Bounded local comparison re-verification v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | Only transient browser failures receive one same-response local retry; structural failures cannot retry, content stays hidden, and no network or storage is used. The corrected cockpit is deployed, but no eligible comparison exercised this path. |
 | Outcome comparison envelope runtime validator v1 | `DEPLOYED_STAGING_FAIL_CLOSED_CONTRACT_VERIFIED_NOT_EXERCISED_WITH_ELIGIBLE_COHORT` | The deployed client validates a present comparison envelope before React or per-cohort verification can use it; malformed envelopes fail the Outcome load closed. No eligible comparison envelope was available for runtime exercise. |
 | Business deployment readiness | `DESIGNED_NOT_VALIDATED` | Primary-user and JTBD hypotheses exist, but no real stakeholder or user validation exists |
-| Learning operation | `DORMANT_SOURCE_FIXED_LOCALLY_RUNTIME_BLOCKED` | Latest staging state remains 2/20 with at least one unactivated proposal. The cardinality invariant is locally corrected and tested, but progression remains blocked pending a separately authorized staging release and runtime artifact verification. |
+| Learning operation | `DORMANT_SOURCE_FIX_DEPLOYED_RUNTIME_RECHECK_PENDING` | Latest reconciled staging state remains 2/20 with at least one unactivated proposal. The cardinality fix is deployed to the isolated Generator, but progression remains blocked pending independent artifact verification and a later naturally justified runtime observation. |
 
 All logistics records, exposures, outcomes, and replay enterprise state remain
 synthetic. Only inspected AWS runtime, delivery, and reliability facts may be
@@ -187,7 +187,7 @@ four reviewers and 120 review records; neither live source was mutated.
 
 ## Active slice — Learning proposal cardinality forward fix
 
-**Status:** `IMPLEMENTED_LOCAL_RELEASE_PREFLIGHT_VERIFIED_NOT_DEPLOYED`
+**Status:** `DEPLOYED_STAGING_WORKFLOW_VERIFIED_POST_DEPLOY_RECHECK_PENDING`
 
 The authorized due-date canary stopped after one `2026-08-28` continuation.
 Outcome and temporal checks passed at 2/20, but the Learning gate found at
@@ -212,13 +212,20 @@ archive was deleted and its local ZIP digest is not treated as a release
 identity because the workflow keys the deployable artifact to the pushed Git
 commit.
 
-The immutable unexpected proposal remains unchanged and unactivated. No AWS
-call, workflow dispatch, deployment, lifecycle continuation, Pages publication,
-schedule, alias, model, or production operation occurred. Commit and push
-maturity is represented by Git history and the final handoff rather than a
-self-referential status claim. The next external slice is a separately
-human-executed plan-first staging Generator release and exact-artifact
-verification after the approved source is present on the remote.
+Commit `a10678b` passed CI run `33154815653`. Separately authorized
+`plan-release` run `33155014510` accepted the fail-closed one-resource release
+boundary and completed without upload or execution. Separately authorized
+`deploy-release` run `33157729317` then completed the independent Generator
+release. The successful job and bounded summary report exactly one
+`LifecycleGeneratorFunction`, no lifecycle invocation, no schema application,
+no Controller change, no schedule or alias change, and no production effect.
+
+The immutable unexpected proposal remains unchanged and unactivated. No later
+lifecycle continuation or Learning reconciliation ran. The deployed Lambda
+`CodeSha256` and configuration were not independently read after the workflow,
+so exact runtime artifact verification remains pending and the prior failed-
+closed 2/20 result is not reclassified. Pages, model, policy activation, and
+production paths remain unchanged.
 
 ## Recently completed — private Decision review discovery and handoff
 
@@ -994,7 +1001,7 @@ new intelligence layer occurred.
 
 ## Runtime carry-over — Governed `COMPLETE`-to-Outcome evidence canary
 
-**Status:** `OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED`
+**Status:** `OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_DEPLOYED_RUNTIME_RECHECK_PENDING`
 
 **Goal**
 
@@ -1057,7 +1064,12 @@ gate without merging the separate write authorities.
   now selects one latest cutoff version per `outcome_id`, excludes earlier
   closed history when the latest version is pending, and fails closed on future
   or same-date conflicting versions. Repeated-history and 20-distinct-Outcome
-  regression cases pass. The fix is not deployed.
+  regression cases pass.
+- Commit `a10678b` passed CI run `33154815653`. Named-human plan run
+  `33155014510` completed the one-resource, non-invoking release plan; separately
+  authorized deploy run `33157729317` then released only the isolated Generator.
+  Its bounded summary reports one Generator resource and no lifecycle, schema,
+  Controller, schedule, alias, or production effect.
 
 **Boundary**
 
@@ -1065,11 +1077,12 @@ The local package, preflight, named-human completion, pending Outcome, and
 closed simulated Outcome are verified. The one-time continuation authority is
 consumed and creates no standing authority. The result is synthetic staging
 evidence, not real logistics performance. Learning progression is failed
-closed at 2/20. Latest-logical-Outcome proposal cardinality is restored only in
-local source; staging continues to run the previous artifact until a separate
-release is authorized. The unexpected immutable proposal remains audit
-evidence. No AWS call, deployment, production effect, schedule, future
-simulation, proposal mutation or activation, or model promotion occurred.
+closed at 2/20. Latest-logical-Outcome proposal cardinality is now released to
+the isolated staging Generator, but no post-release lifecycle or Learning
+reconciliation has exercised it. The deployed code digest and configuration
+also remain independently unverified. The unexpected immutable proposal remains
+audit evidence. No production effect, schedule, future simulation, proposal
+mutation or activation, model promotion, or Pages publication occurred.
 
 ## Recently completed — Read-only Evaluation publication canary
 
@@ -2343,23 +2356,21 @@ done.
 - Action `COMPLETE`, pending Outcome creation, and the one due-date observation
   are separately authorized, executed, and read-only reconciled. Learning
   progression remains failed closed because at least one unactivated proposal
-  exists while the latest eligible count is only 2/20. The source fix is local
-  only and has not changed the deployed Generator artifact.
+  exists while the latest eligible count is only 2/20. The source fix is
+  deployed, but its exact runtime digest and post-release behavior have not been
+  independently rechecked.
 
 ## Next Up
 
-1. Do not retry or advance lifecycle dates merely to manufacture Cost evidence.
-   The `2026-08-27` reconciler found zero natural proposals and failed closed.
-   Re-run it only after a future independently justified operational
-   continuation and a new explicit authorization.
-2. Confirm the approved cardinality-fix commit exists on the remote, then a
-   named human may separately use the existing plan-first independent Generator
-   release path to deploy it to private staging and verify the deployed artifact
-   only. Commit and push maturity is recorded by Git history and the final
-   handoff. Do not run another
-   lifecycle date or AWS diagnostic query, mutate or activate a proposal,
-   publish Pages, create a schedule, move an alias, promote a model, or touch
-   production without additional authority.
+1. If separately authorized, perform read-only post-release verification of the
+   isolated Generator configuration and `CodeSha256` against the commit-bound
+   artifact. Do not invoke the function or query/mutate lifecycle data as part
+   of this check.
+2. Do not retry or advance lifecycle dates merely to manufacture Cost or
+   Learning evidence. Re-run the relevant reconciler only after a future
+   independently justified operational continuation and new explicit authority.
+   Do not mutate or activate the stored proposal, publish Pages, create a
+   schedule, move an alias, promote a model, or touch production.
 
 ## Current-week history
 

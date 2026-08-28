@@ -321,9 +321,14 @@ authorized local forward fix now selects one latest cutoff version per logical
 Outcome before thresholding. It excludes earlier closed history when the latest
 version is pending and fails closed on future or same-date conflicting versions.
 Regression tests preserve both sides of the threshold: 20 versions of one
-Outcome do not trigger, while 20 distinct Outcomes do. This source fix is not
-deployed and is not runtime-confirmed proposal provenance. The stored proposal
-remains immutable and unactivated.
+Outcome do not trigger, while 20 distinct Outcomes do. Commit `a10678b` passed
+CI run `33154815653`; plan run `33155014510` completed the independent
+one-resource guard without upload or execution, and separately authorized
+deploy run `33157729317` released only the isolated Generator. The release
+summary reports no lifecycle, schema, Controller, schedule, alias, or production
+effect. The deployed digest and post-release behavior are not independently
+reconciled, so this remains no runtime confirmation of stored-proposal
+provenance. The stored proposal remains immutable and unactivated.
 
 Learning maturity is therefore reported on four independent dimensions rather
 than compressed into one optimistic lifecycle label:

@@ -462,7 +462,7 @@ def check_action_contract(root: Path, contract: dict[str, Any]) -> list[CheckRes
         for marker in (
             "Action assignment canary",
             "named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified",
-            "Local source now counts one latest cutoff version per `outcome_id`",
+            "Staging source now counts one latest cutoff version per `outcome_id`",
         )
     )
     return [
@@ -758,14 +758,14 @@ def check_action_assignment_rollout(root: Path) -> list[CheckResult]:
         is True
         and rollout.get("canary", {}).get("pending_outcome_reconciled") is True
         and rollout.get("canary", {}).get("current_blocker")
-        == "OBSERVED_OUTCOME_FAILED_CLOSED_SOURCE_FIX_LOCALLY_VERIFIED_NOT_DEPLOYED"
+        == "OBSERVED_OUTCOME_SOURCE_FIX_DEPLOYED_RUNTIME_RECHECK_PENDING"
     )
     return [
         _result(
             "action_assignment_rollout_boundary",
             "governance",
             bounded,
-            "Action assignment and named-human COMPLETE remain reconciled; downstream Learning is locally source-fixed but staging stays failed closed without standing authority.",
+            "Action assignment and named-human COMPLETE remain reconciled; the downstream Learning source fix is staging-deployed with runtime recheck pending and no standing authority.",
             "Action assignment rollout hides verified evidence or expands deployment, mutation, completion, or scheduling authority.",
             (
                 contract_path,
@@ -790,11 +790,14 @@ def check_action_complete_outcome_canary(root: Path) -> list[CheckResult]:
         "ops/reconcile_pending_outcome_staging.ps1",
         "ops/check_observed_outcome_due_date.ps1",
         "ops/reconcile_observed_outcome_learning_staging.ps1",
+        ".github/workflows/refactor-stateful-lifecycle-generator-staging.yml",
+        "ops/deploy_stateful_lifecycle_generator_stack.ps1",
         "lambda/glap_governed_closed_loop.py",
         "lambda/glap_lifecycle_athena_adapter.py",
         "tests/test_action_complete_outcome_canary.py",
         "tests/test_governed_closed_loop.py",
         "tests/test_lifecycle_athena_adapter.py",
+        "docs/deployment_workflow.md",
     )
     try:
         validator = _load_repository_module(
@@ -815,7 +818,7 @@ def check_action_complete_outcome_canary(root: Path) -> list[CheckResult]:
             "action_complete_outcome_canary_boundary",
             "governance",
             passed,
-            "The runtime canary remains failed closed below threshold; proposal generation now counts latest logical Outcomes in locally verified source that is not deployed and grants no standing authority.",
+            "The runtime canary remains failed closed below threshold; the latest-logical-Outcome source fix is staging-deployed with digest and runtime rechecks pending and grants no standing authority.",
             failure,
             evidence,
         )
