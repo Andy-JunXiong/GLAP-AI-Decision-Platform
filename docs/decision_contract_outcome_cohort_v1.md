@@ -76,6 +76,13 @@ migration in `sql/16_decision_action_binding_v1.sql` and all six aggregate
 checks returned zero; producer/API/frontend deployment and cohort runtime
 verification remain separate.
 
+A local latency correction now executes this unchanged cohort query alongside
+the unchanged bounded Outcome-list query using exactly two workers and separate
+Athena clients. Both results remain mandatory for the same response; either
+failure rejects the complete response, and no cache, query omission, response
+field change, permission expansion, deployment, or runtime-performance claim is
+introduced. The correction remains locally verified and undeployed.
+
 The response now also carries a fail-closed evidence-sufficiency gate. Its
 mechanics evaluate the project-owner-approved minimum of 20 observed Outcomes
 and two represented result states. A cohort passing both becomes eligible only

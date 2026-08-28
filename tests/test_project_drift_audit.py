@@ -361,8 +361,22 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            detected = AUDIT.check_outcome_decision_provenance_boundary(root)[0]
-        self.assertEqual(detected.status, "DRIFT")
+            causal_detected = AUDIT.check_outcome_decision_provenance_boundary(root)[0]
+            self.assertEqual(causal_detected.status, "DRIFT")
+            self._copy_paths(root, paths)
+            api_path = root / "lambda/glap_operations_api.py"
+            api_path.write_text(
+                api_path.read_text(encoding="utf-8").replace(
+                    "ThreadPoolExecutor(max_workers=2",
+                    "ThreadPoolExecutor(max_workers=3",
+                ),
+                encoding="utf-8",
+            )
+            concurrency_detected = (
+                AUDIT.check_outcome_decision_provenance_boundary(root)[0]
+            )
+        self.assertEqual(causal_detected.status, "DRIFT")
+        self.assertEqual(concurrency_detected.status, "DRIFT")
 
     def test_decision_contract_outcome_cohort_authority_drift_is_detected(self):
         paths = (
@@ -703,7 +717,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
             detected = AUDIT.check_readiness_contract(root)[0]
         self.assertEqual(detected.status, "DRIFT")
 
-    def test_authenticated_read_load_authority_expansion_is_detected(self):
+    def test_authenticated_read_load_authority_and_diagnostic_drift_are_detected(self):
         paths = (
             "docs/production_readiness_contract.json",
             "docs/operations_production_readiness_evidence_v1.json",
@@ -735,8 +749,24 @@ class ProjectDriftAuditTests(unittest.TestCase):
             plan = json.loads(plan_path.read_text(encoding="utf-8"))
             plan["authorization"]["staging_load_run_authorized"] = True
             plan_path.write_text(json.dumps(plan), encoding="utf-8")
-            detected = AUDIT.check_readiness_contract(root)[0]
-        self.assertEqual(detected.status, "DRIFT")
+            authority_detected = AUDIT.check_readiness_contract(root)[0]
+
+            plan["authorization"]["staging_load_run_authorized"] = False
+            plan_path.write_text(json.dumps(plan), encoding="utf-8")
+            self.assertEqual(AUDIT.check_readiness_contract(root)[0].status, "PASS")
+            runner_path = (
+                root / "ops" / "run_operations_authenticated_read_load_staging.ps1"
+            )
+            runner_path.write_text(
+                runner_path.read_text(encoding="utf-8").replace(
+                    "Redacted per-route latency diagnostic",
+                    "Route latency details",
+                ),
+                encoding="utf-8",
+            )
+            diagnostic_detected = AUDIT.check_readiness_contract(root)[0]
+        self.assertEqual(authority_detected.status, "DRIFT")
+        self.assertEqual(diagnostic_detected.status, "DRIFT")
 
     def test_public_claim_truth_mapping_drift_is_detected(self):
         paths = (

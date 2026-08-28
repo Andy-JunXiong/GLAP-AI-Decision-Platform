@@ -4,6 +4,7 @@ import io
 import json
 from pathlib import Path
 import sys
+import threading
 import types
 import unittest
 from unittest.mock import patch
@@ -1135,10 +1136,16 @@ class OperationsApiTests(unittest.TestCase):
 
     def test_viewer_can_read_outcomes(self):
         fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+
+        def outcome_query_rows(_client, query):
+            if "GROUP BY a.decision_brief_version" in query:
+                return []
+            return [{"outcome_id": "outcome-123"}]
+
         with patch.dict(sys.modules, {"boto3": fake_boto3}), \
-             patch.object(api, "_query_rows", side_effect=[
-                 [{"outcome_id": "outcome-123"}], []
-             ]) as query_rows, \
+             patch.object(
+                 api, "_query_rows", side_effect=outcome_query_rows
+             ) as query_rows, \
              patch.object(api, "_sydney_date", return_value="2026-08-07"):
             response = api.lambda_handler(request(path="/v1/outcomes"), None)
         body = json.loads(response["body"])
@@ -1148,9 +1155,56 @@ class OperationsApiTests(unittest.TestCase):
             body["cohort_summary"]["status"], "NO_ELIGIBLE_BOUND_OUTCOMES"
         )
         queries = [call.args[1] for call in query_rows.call_args_list]
-        self.assertIn("observed_date <= DATE '2026-08-07'", queries[0])
-        self.assertIn("a.decision_brief_version", queries[0])
-        self.assertIn("GROUP BY a.decision_brief_version", queries[1])
+        self.assertEqual(len(queries), 2)
+        self.assertTrue(any(
+            "observed_date <= DATE '2026-08-07'" in query
+            and "a.decision_brief_version" in query
+            for query in queries
+        ))
+        self.assertTrue(any(
+            "GROUP BY a.decision_brief_version" in query for query in queries
+        ))
+
+    def test_outcome_reads_overlap_with_exactly_two_bounded_workers(self):
+        barrier = threading.Barrier(2)
+        active = 0
+        peak_active = 0
+        lock = threading.Lock()
+
+        def overlapping_query(_client, query):
+            nonlocal active, peak_active
+            with lock:
+                active += 1
+                peak_active = max(peak_active, active)
+            try:
+                barrier.wait(timeout=2)
+                return [{"query": query}]
+            finally:
+                with lock:
+                    active -= 1
+
+        with patch.object(api, "_query_rows", side_effect=overlapping_query):
+            item_rows, cohort_rows = api._query_outcome_rows_parallel(
+                object(), object(), "item-query", "cohort-query"
+            )
+        self.assertEqual(peak_active, 2)
+        self.assertEqual(item_rows, [{"query": "item-query"}])
+        self.assertEqual(cohort_rows, [{"query": "cohort-query"}])
+
+    def test_outcome_parallel_read_fails_closed_without_partial_response(self):
+        barrier = threading.Barrier(2)
+
+        def one_failed_query(_client, query):
+            barrier.wait(timeout=2)
+            if query == "item-query":
+                raise RuntimeError("bounded query failed")
+            return [{"query": query}]
+
+        with patch.object(api, "_query_rows", side_effect=one_failed_query):
+            with self.assertRaisesRegex(RuntimeError, "bounded query failed"):
+                api._query_outcome_rows_parallel(
+                    object(), object(), "item-query", "cohort-query"
+                )
 
     def test_outcome_response_preserves_bound_and_legacy_null_provenance(self):
         rows = [
@@ -1166,8 +1220,14 @@ class OperationsApiTests(unittest.TestCase):
             },
         ]
         fake_boto3 = types.SimpleNamespace(client=lambda _service: object())
+
+        def outcome_query_rows(_client, query):
+            if "GROUP BY a.decision_brief_version" in query:
+                return []
+            return rows
+
         with patch.dict(sys.modules, {"boto3": fake_boto3}), \
-             patch.object(api, "_query_rows", side_effect=[rows, []]), \
+             patch.object(api, "_query_rows", side_effect=outcome_query_rows), \
              patch.object(api, "_sydney_date", return_value="2026-08-25"):
             response = api.lambda_handler(request(path="/v1/outcomes"), None)
         body = json.loads(response["body"])

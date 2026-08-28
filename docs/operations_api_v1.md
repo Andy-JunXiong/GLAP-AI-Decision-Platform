@@ -522,6 +522,29 @@ the temporary viewer, and persisted no raw request record or result artifact.
 The gate remains `PARTIAL_EVIDENCE`; there is no completed sustained baseline,
 production SLA, or readiness advancement.
 
+The local runner now renders the already validated route aggregates as a
+redacted latency diagnostic: fixed safe route ID, sample count, p50/p95/p99,
+and whether that route's p95 exceeds the unchanged 3,000 ms gate. The output is
+emitted only after aggregate schema reconciliation and contains no path, URL,
+credential, identity, entity, raw request, query, or infrastructure value. This
+was exercised once after separate authorization on `2026-08-29`. The validated
+20-request aggregate contained only 2xx responses and no throttles or other
+errors, but overall p95 was 6,023 ms. Route p95 breached the unchanged gate for
+`outcomes_pending` at 7,054 ms, `risks_open` at 6,023 ms, and
+`label_readiness` at 4,167 ms; the other four safe route IDs remained below the
+gate. The runner aborted, confirmed viewer removal, and retained no artifact.
+This remains partial staging engineering evidence, not a completed baseline,
+production SLA, or readiness advancement.
+
+The first local route-specific correction preserves both existing
+`GET /v1/outcomes` reads and the complete response contract while removing
+their serial wait. The bounded Outcome list and Decision-cohort aggregate now
+start together through separate Athena clients and exactly two workers. Results
+return in their original list/summary positions; either query failure rejects
+the whole response, and no cache, stale-data allowance, SQL change, field
+removal, permission expansion, or threshold change was introduced. This source
+correction is locally verified only and is not deployed or runtime-verified.
+
 Risk, queue, and Outcome reads use the existing governed Glue/Athena tables and
 view. The API execution role
 has `lakeformation:GetDataAccess` in addition to exact Glue table, Athena

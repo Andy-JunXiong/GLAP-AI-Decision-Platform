@@ -120,6 +120,38 @@ class OperationsAuthenticatedReadLoadRunnerTests(unittest.TestCase):
         ):
             self.assertNotIn(f'Write-Host "{protected}', self.source)
 
+    def test_runner_prints_only_redacted_per_route_latency_aggregates(self):
+        for marker in (
+            "Redacted per-route latency diagnostic",
+            "foreach ($safeRouteResult in $routeResults)",
+            "$safeRouteResult.route_id",
+            "$safeRouteResult.requests_completed",
+            "$safeRouteResult.latency_p50_ms",
+            "$safeRouteResult.latency_p95_ms",
+            "$safeRouteResult.latency_p99_ms",
+            "$plan.abort_gates.max_p95_latency_ms",
+            "exceeds_p95_gate={5}",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
+        self.assertLess(
+            self.source.index("--baseline $baselinePath"),
+            self.source.index("Redacted per-route latency diagnostic"),
+        )
+        write_host_source = "\n".join(
+            line for line in self.source.splitlines() if "Write-Host" in line
+        )
+        for protected in (
+            "$endpoint",
+            "$route.path",
+            "$username",
+            "$accessToken",
+            "$login",
+            "$password",
+        ):
+            with self.subTest(protected=protected):
+                self.assertNotIn(protected, write_host_source)
+
     def test_runner_contains_no_deployment_or_schedule_mutation(self):
         for forbidden in (
             "update-stack",

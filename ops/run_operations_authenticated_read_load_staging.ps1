@@ -361,6 +361,20 @@ Write-Host "  Abort reason: $abortReason"
 Write-Host "  Requests completed: $completed"
 Write-Host "  Responses 2xx/429/other4xx/5xx: $responses2xx/$responses429/$responsesOther4xx/$responses5xx"
 Write-Host "  P95 latency ms: $(Get-Percentile $latencies 95)"
+Write-Host "  Redacted per-route latency diagnostic:"
+foreach ($safeRouteResult in $routeResults) {
+    $routeP95GateExceeded = `
+        [int]$safeRouteResult.latency_p95_ms -gt [int]$plan.abort_gates.max_p95_latency_ms
+    Write-Host (
+        "    route_id={0} samples={1} p50_ms={2} p95_ms={3} p99_ms={4} exceeds_p95_gate={5}" -f `
+        $safeRouteResult.route_id,
+        $safeRouteResult.requests_completed,
+        $safeRouteResult.latency_p50_ms,
+        $safeRouteResult.latency_p95_ms,
+        $safeRouteResult.latency_p99_ms,
+        $routeP95GateExceeded
+    )
+}
 Write-Host "  Temporary viewer removed and confirmed: $cleanupConfirmed"
 Write-Host "  Persisted result artifact: False"
 Write-Host "  Tokens, identity values, endpoint, and infrastructure identifiers printed: False"

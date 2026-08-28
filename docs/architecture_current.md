@@ -703,3 +703,19 @@ latency was 6,177 ms against the frozen 3,000 ms gate. The runner therefore
 aborted with `P95_LATENCY_EXCEEDED`, confirmed the viewer was removed, and
 persisted no raw record or artifact. This is measured partial staging evidence,
 not a completed sustained-load baseline or production SLA.
+The runner now projects its schema-validated per-route aggregates as a redacted
+diagnostic containing only fixed safe route IDs, sample counts, p50/p95/p99
+latency, and a derived p95-gate boolean. Paths, URLs, credentials, identities,
+entities, request records, query IDs, and infrastructure values remain outside
+the output. A separately authorized `2026-08-29` attempt exercised it: 20/20
+responses were 2xx, overall p95 was 6,023 ms, and the unchanged 3,000 ms gate
+aborted the run. Safe route p95 values localized breaches to `outcomes_pending`
+at 7,054 ms, `risks_open` at 6,023 ms, and `label_readiness` at 4,167 ms; the
+other four routes stayed below the gate. The temporary viewer was confirmed
+removed and no artifact or completed sustained baseline was retained.
+The first route-specific source correction is now local: the unchanged bounded
+Outcome list and Decision-cohort aggregate start concurrently through separate
+Athena clients under exactly two workers, then return in the existing response
+positions. Both remain required and either failure rejects the whole response.
+No caching, SQL, cutoff, schema, permission, threshold, deployment, or runtime-
+evidence change is included.

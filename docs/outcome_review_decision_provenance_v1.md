@@ -1,7 +1,8 @@
 # Outcome Review decision provenance v1
 
 **Status:** deployed and reader/RBAC verified in private staging; no eligible
-bound cohort observed; COST_ANOMALY producer/readers deployed and RBAC verified
+bound cohort observed; COST_ANOMALY producer/readers deployed and RBAC verified;
+bounded parallel-read correction implemented locally, not deployed
 
 This contract lets an authenticated reviewer see which immutable Decision
 Brief proposal produced the Action connected to each cutoff-eligible Outcome.
@@ -32,6 +33,22 @@ never backfilled. A future newly generated eligible Cost Action may expose the
 exact `decision-brief.v1` / `REVIEW_COST` pair only after a separately authorized
 lifecycle continuation. The cockpit labels all null rows as legacy or
 unbound rather than inferring a source.
+
+## Bounded read-latency correction
+
+The existing Outcome list and Decision-cohort aggregate are independent reads
+needed by one complete authenticated response. The local API correction starts
+both unchanged Athena queries together with separate clients and exactly two
+bounded workers, then restores their results to the existing list/summary
+positions. It does not cache or omit either query, change either SQL statement,
+alter the server-derived Sydney cutoff, add permissions, or change the response
+contract.
+
+If either read fails, the complete response still fails closed; no partial list
+or cohort summary is returned. The existing per-query timeout and cancellation
+behavior remains inside `_query_rows`. This correction is local-only and is not
+deployed or runtime-verified. The three-sample `outcomes_pending` latency result
+motivated the bounded change but does not prove its eventual runtime effect.
 
 ## Evaluation and governance boundary
 

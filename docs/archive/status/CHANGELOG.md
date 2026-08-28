@@ -4,6 +4,38 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-29
+
+- Implemented a redacted per-route latency diagnostic in the authenticated
+  sustained-read staging runner. After the aggregate candidate passes the
+  existing schema and reconciliation gate, the console can now show each of
+  the seven fixed safe route IDs with its sample count, p50/p95/p99 latency,
+  and a derived boolean against the unchanged 3,000 ms p95 threshold. Tests and
+  the project drift gate reject printing endpoint, path, credential, identity,
+  or other protected runtime variables. This is locally verified diagnostic
+  support only: no new staging traffic, temporary identity, runtime result,
+  completed baseline, threshold change, deployment, mutation, schedule, Pages,
+  or production operation occurred.
+- After separate authorization, exercised the diagnostic exactly once in
+  staging on `2026-08-29`. The schema-valid aggregate contained 20/20 2xx
+  responses with zero throttles or other errors and aborted at overall p95
+  6,023 ms. Safe route p95 values localized breaches to `outcomes_pending`
+  7,054 ms, `risks_open` 6,023 ms, and `label_readiness` 4,167 ms; the other
+  four route IDs remained below the unchanged 3,000 ms gate. Cleanup confirmed
+  the temporary viewer absent and no artifact was persisted. The result remains
+  partial staging engineering evidence: readiness stays 4/10 and no completed
+  sustained baseline, production SLA, retry authority, threshold change,
+  deployment, mutation, schedule, Pages, policy/model, or production operation
+  followed.
+- Implemented the first local route-specific correction for the highest-p95
+  `outcomes_pending` path. Its unchanged bounded Outcome list and Decision-
+  cohort aggregate now start together through separate Athena clients and
+  exactly two workers rather than waiting serially. Both results retain their
+  original response positions and remain mandatory; either query failure
+  rejects the complete response. The change adds no cache, SQL or response
+  contract drift, permission, threshold, deployment, runtime evidence, or
+  retry authority.
+
 ## 2026-08-28
 
 - Implemented the plan-only authenticated Operations API sustained-read

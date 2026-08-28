@@ -147,6 +147,25 @@ not a completed sustained-load baseline. Diagnose the aggregate route-level
 latency before another run; changing the threshold to manufacture a pass is not
 authorized. Any new traffic requires new named-human authorization.
 
+The runner now prints that route-level diagnostic only after the candidate
+baseline passes schema and reconciliation validation. Each of the seven fixed,
+safe route IDs gets a sample count, p50/p95/p99 latency, and a derived boolean
+showing whether its p95 exceeds the unchanged 3,000 ms gate. It prints no path,
+URL, token, identity, entity, request record, query ID, or infrastructure value.
+The diagnostic is implemented and regression-protected. A separately
+authorized `2026-08-29` apply exercised it once: all 20 responses were 2xx,
+with zero 429, other 4xx, or 5xx responses, while overall p95 was 6,023 ms.
+The route p95 results were `outcomes_pending` 7,054 ms, `risks_open` 6,023 ms,
+`label_readiness` 4,167 ms, `actions_proposed` 2,553 ms, `learning_review`
+2,538 ms, `actions_edited` 2,272 ms, and `pipeline_health` 797 ms. The first
+three exceeded the unchanged 3,000 ms gate. The run aborted, viewer cleanup was
+confirmed, and no artifact or completed baseline was retained. Do not rerun on
+this evidence alone. The local `outcomes_pending` correction now starts its two
+unchanged required queries together with separate clients and exactly two
+workers; either failure still rejects the complete response. It is not deployed
+or runtime-verified and does not justify another apply. Commit/push, a plan-first
+staging release, and any later traffic remain separately authorized actions.
+
 ## Recovery order
 
 1. Stop clients from creating new request IDs for an uncertain operation.

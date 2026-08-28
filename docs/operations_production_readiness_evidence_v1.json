@@ -1,6 +1,6 @@
 {
   "schema_version": "operations-production-readiness-evidence.v1",
-  "as_of_date": "2026-08-28",
+  "as_of_date": "2026-08-29",
   "business_timezone": "Australia/Sydney",
   "scope": "PRIVATE_OPERATIONS_STAGING",
   "evidence_boundary": "SYNTHETIC_ENGINEERING_ONLY",
@@ -67,7 +67,7 @@
         "ops/run_operations_authenticated_read_load_staging.ps1",
         "docs/runbooks/operations_api_reliability.md"
       ],
-      "finding": "After two failed-closed runner attempts were locally corrected, a separately authorized third attempt produced a schema-valid aggregate: 20 of 20 responses were successful with zero throttles or other errors, but p95 latency was 6177 ms against the 3000 ms abort gate, so the run aborted and the temporary viewer was confirmed removed; no completed sustained-load baseline exists."
+      "finding": "After the earlier failed-closed attempts and 6177 ms aggregate p95 abort, a separately authorized 2026-08-29 diagnostic attempt produced another schema-valid aggregate: 20 of 20 responses were successful with zero throttles or other errors, but overall p95 latency was 6023 ms against the 3000 ms abort gate. Safe route-level p95 values localized breaches to outcomes_pending at 7054 ms, risks_open at 6023 ms, and label_readiness at 4167 ms; the other four routes remained below the gate. The run aborted, the temporary viewer was confirmed removed, no result artifact was persisted, and no completed sustained-load baseline exists. A local bounded correction now starts the two unchanged mandatory outcomes_pending queries together with exactly two workers and fails the complete response closed if either query fails; it is not deployed or runtime-verified."
     },
     {
       "id": "security_negative_suite",

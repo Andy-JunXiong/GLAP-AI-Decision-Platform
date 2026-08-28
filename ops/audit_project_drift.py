@@ -1070,6 +1070,9 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
                     )
                 )
             )
+    runner_write_hosts = "\n".join(
+        line for line in runner_source.splitlines() if "Write-Host" in line
+    )
     runner_bounded = (
         "[switch]$Apply" in runner_source
         and "[switch]$AuthorizedSustainedReadLoad" in runner_source
@@ -1093,9 +1096,30 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
         and "-Encoding utf8NoBOM" not in runner_source
         and "Remove-Item -LiteralPath $baselinePath" in runner_source
         and "Persisted result artifact: False" in runner_source
+        and "Redacted per-route latency diagnostic" in runner_source
+        and "foreach ($safeRouteResult in $routeResults)" in runner_source
+        and "$safeRouteResult.route_id" in runner_source
+        and "$safeRouteResult.requests_completed" in runner_source
+        and "$safeRouteResult.latency_p50_ms" in runner_source
+        and "$safeRouteResult.latency_p95_ms" in runner_source
+        and "$safeRouteResult.latency_p99_ms" in runner_source
+        and "$plan.abort_gates.max_p95_latency_ms" in runner_source
+        and "exceeds_p95_gate={5}" in runner_source
+        and all(
+            marker not in runner_write_hosts
+            for marker in (
+                "$endpoint",
+                "$route.path",
+                "$username",
+                "$accessToken",
+                "$login",
+                "$password",
+            )
+        )
         and "production_accessed = $false" in runner_source
         and "recurring_schedule_created = $false" in runner_source
     )
+    sustained_finding = str(sustained_gate.get("finding", ""))
     read_load_bounded = (
         read_load_errors == []
         and simulator_bounded
@@ -1105,6 +1129,17 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
         and read_load_plan_path in sustained_gate.get("evidence_refs", [])
         and read_load_simulator_path in sustained_gate.get("evidence_refs", [])
         and read_load_runner_path in sustained_gate.get("evidence_refs", [])
+        and "20 of 20 responses were successful" in sustained_finding
+        and "overall p95 latency was 6023 ms" in sustained_finding
+        and "outcomes_pending at 7054 ms" in sustained_finding
+        and "risks_open at 6023 ms" in sustained_finding
+        and "label_readiness at 4167 ms" in sustained_finding
+        and "other four routes remained below the gate" in sustained_finding
+        and "temporary viewer was confirmed removed" in sustained_finding
+        and "no result artifact was persisted" in sustained_finding
+        and "two unchanged mandatory outcomes_pending queries together with exactly two workers"
+        in sustained_finding
+        and "not deployed or runtime-verified" in sustained_finding
         and read_load_plan.get("execution", {}).get("load_executed") is False
         and read_load_plan.get("authorization", {}).get("staging_load_run_authorized") is False
     )
@@ -1113,7 +1148,7 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
             "production_readiness_boundary",
             "governance",
             contract_bounded and evidence_bounded and read_load_bounded,
-            "Production-readiness controls remain bounded while the offline evidence harness truthfully reports 4/10 eligible gates and a schema-valid partial authenticated read-load result that failed closed at the frozen p95 latency gate with successful identity cleanup, no completed sustained baseline, and no production authority.",
+            "Production-readiness controls remain bounded while the offline evidence harness truthfully reports 4/10 eligible gates, the 2026-08-29 diagnostic p95 breaches, and a local-only two-worker outcomes_pending correction that retains both mandatory queries and complete-response fail-closed behavior without claiming deployment, runtime improvement, a completed baseline, or production authority.",
             "The production-readiness contract or evidence harness claims unsupported maturity, loses required gates, or expands protected authority.",
             (
                 contract_path,
@@ -2662,6 +2697,14 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "a.time_basis = 'ACTUAL_CALENDAR'",
             "a.as_of_date <= DATE",
             "a.created_date <= DATE",
+            "from concurrent.futures import ThreadPoolExecutor",
+            "def _query_outcome_rows_parallel",
+            'ThreadPoolExecutor(max_workers=2, thread_name_prefix="outcome-read")',
+            "pool.submit(_query_rows, item_client, item_query)",
+            "pool.submit(_query_rows, cohort_client, cohort_query)",
+            "item_future.cancel()",
+            "cohort_future.cancel()",
+            "rows, cohort_rows = _query_outcome_rows_parallel(",
         )
     )
     client_bounded = all(
@@ -2689,6 +2732,10 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "applied it and all six aggregate checks returned zero",
             "deployed private readers passed read-only and four-role verification",
             "Cost producer/API/cockpit revisions are deployed and reader/RBAC verified",
+            "exactly two bounded workers",
+            "either read fails, the complete response still fails closed",
+            "does not cache or omit either query",
+            "local-only and is not deployed or runtime-verified",
         )
     )
     return [
@@ -2696,7 +2743,7 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "outcome_decision_provenance_boundary",
             "governance",
             api_bounded and client_bounded and page_bounded and contract_bounded,
-            "Outcome Review preserves cutoff-bounded, read-only Decision provenance without inventing legacy bindings or causal performance claims.",
+            "Outcome Review preserves cutoff-bounded, read-only Decision provenance while a local-only two-worker read correction retains both queries, complete-response fail-closed behavior, legacy-null handling, and non-causal claims.",
             "Outcome Review lost a temporal, read-only, legacy-null, or non-causal Decision provenance boundary.",
             tuple(paths.values()),
         )

@@ -15,6 +15,7 @@ import math
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from statistics import fmean
 from typing import Any
@@ -1684,6 +1685,25 @@ def _query_rows(client: Any, query: str) -> list[dict[str, str | None]]:
         time.sleep(0.25)
 
 
+def _query_outcome_rows_parallel(
+    item_client: Any,
+    cohort_client: Any,
+    item_query: str,
+    cohort_query: str,
+) -> tuple[list[dict[str, str | None]], list[dict[str, str | None]]]:
+    """Run the two independent Outcome reads concurrently and fail as one unit."""
+
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="outcome-read") as pool:
+        item_future = pool.submit(_query_rows, item_client, item_query)
+        cohort_future = pool.submit(_query_rows, cohort_client, cohort_query)
+        try:
+            return item_future.result(), cohort_future.result()
+        except Exception:
+            item_future.cancel()
+            cohort_future.cancel()
+            raise
+
+
 def _sydney_date() -> str:
     return datetime.now(ZoneInfo("Australia/Sydney")).date().isoformat()
 
@@ -2076,12 +2096,12 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             params = event.get("queryStringParameters") or {}
             limit = min(max(int(params.get("limit", 50)), 1), 100)
             cutoff = _sydney_date()
-            athena = boto3.client("athena")
-            rows = _query_rows(
-                athena,
+            rows, cohort_rows = _query_outcome_rows_parallel(
+                boto3.client("athena"),
+                boto3.client("athena"),
                 build_outcome_review_query(limit, params.get("status"), cutoff),
+                build_outcome_cohort_query(cutoff),
             )
-            cohort_rows = _query_rows(athena, build_outcome_cohort_query(cutoff))
             return _response(
                 200, build_outcome_review_response(rows, cohort_rows, cutoff)
             )
