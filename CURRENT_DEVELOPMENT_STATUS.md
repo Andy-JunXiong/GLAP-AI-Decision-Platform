@@ -41,7 +41,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Authenticated sustained read-load plan, simulator, and runner v1 | `PARTIAL_STAGING_EVIDENCE_POST_DEPLOYMENT_OBSERVATION_COMPLETE_OVERALL_P95_ABORT` | After commit `66eeb52` was deployed to the private staging stack, one separately authorized bounded observation preserved the frozen workload and 3,000 ms gate. It returned 20/20 2xx responses and aborted at overall p95 4,996 ms. The three `outcomes_pending` samples had p95 2,913 ms, below the gate, while `risks_open` 6,089 ms, `actions_proposed` 3,108 ms, `learning_review` 3,345 ms, and `label_readiness` 4,996 ms exceeded it. The temporary viewer was confirmed removed, no artifact or protected value was retained, and no retry or further optimization followed. The small sample is descriptive only and proves neither causal improvement nor production performance. No completed sustained-load baseline exists and readiness remains 4/10. |
-| Public Claim Truth v1 | `PARTIALLY_PUBLISHED_PAGES_READ_ONLY_VERIFIED_CANARY_IMPLEMENTED_NOT_EXECUTED` | All seven high-risk regions remain mapped and locally valid. Scheduled Pages run `33240515028` published the two Scenario Lab claims from commit `66eeb52`; a later direct read verified both claim markers, classifications, and disclosures. The README mapping is repository-visible, while the Next demo publication channel remains unverified. The build gate and aggregate-only live canary are implemented locally but have not run. |
+| Public Claim Truth v1 | `PARTIALLY_PUBLISHED_PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_UNVERIFIED` | Commit `819e40e` added the pre-artifact gate and aggregate-only live canary; truth-sync commit `682a262` was pushed with it. CI run `33247712691` passed. Pages run `33247712692` passed the seven-claim validator before artifact preparation, published the Scenario Lab, and returned `PASS` from the read-only two-claim canary with both mappings, anchors, disclosures, and all-false authority valid. The README mapping is repository-visible; the Next demo publication channel remains unverified. |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
 | SLA Decision review handoff v1 | `DEPLOYED_STAGING_EXACT_SOURCE_CANARY_VERIFIED` | Commit `3316627` is published to the private staging cockpit. The live index and all 9 referenced assets matched the authorized build byte-for-byte; the selected-Action Brief and return markers plus the deterministic handoff contract passed without an Action mutation or authenticated entity interaction. |
@@ -965,7 +965,7 @@ No deployment has occurred.
 
 ## Recently completed — Public Claim Truth v1
 
-**Status:** `PARTIALLY_PUBLISHED_PAGES_READ_ONLY_VERIFIED_CANARY_IMPLEMENTED_NOT_EXECUTED`
+**Status:** `PARTIALLY_PUBLISHED_PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_UNVERIFIED`
 
 **Goal**
 
@@ -1003,18 +1003,22 @@ inputs, or purely illustrative before expanding the decision engine.
   unauthenticated HTTP GET, verifies the two Pages claim markers, anchors, and
   disclosures, and emits only classification counts, safe booleans, and all-
   false authority. Bounded retries cover publication propagation.
+- After separate publication authority, commits `819e40e` and `682a262` were
+  pushed to `main`. CI run `33247712691` passed. Pages run `33247712692`
+  validated all seven source mappings before artifact preparation, deployed
+  successfully, and then returned `PASS` from `public-claim-canary.v1`: two
+  Pages claims, `ILLUSTRATIVE=1`, `MODELLED_SYNTHETIC=1`,
+  `RUNTIME_BACKED=0`, all five checks true, and every authority field false.
 
 **Boundary**
 
-The two Scenario Lab claims are already public and were directly read-only
-verified. The README mapping is visible in the public repository. The Next
-frontend's publication channel has not been identified or runtime-verified, so
-the full seven-claim boundary is not `PUBLISHED_VERIFIED`. The implementation
-is committed locally as `819e40e`; neither that commit nor this truth sync has
-been pushed, and the workflow gate and canary have not run or published a new
-Pages artifact. This implementation made no AWS call,
-staging deployment, Action mutation, production change, or new intelligence
-layer.
+The two Scenario Lab claims are published and automated-canary verified. The
+README mapping is visible in the public repository. The Next frontend's
+publication channel has not been identified or runtime-verified, so the full
+seven-claim boundary is not `PUBLISHED_VERIFIED`. The release performed the
+existing read-only OPS export and public Pages publication only; it made no AWS
+write, staging deployment, Action mutation, production change, or new
+intelligence layer.
 
 ## Runtime carry-over — Governed `COMPLETE`-to-Outcome evidence canary
 
@@ -2173,9 +2177,10 @@ done.
   tests, five aggregate-only canary tests, and its project-drift regression.
   Python compilation, all 655 repository tests, the 54/54 project drift audit,
   deployment-contract file checks, JSON parsing, and `git diff --check` pass.
-  The build validator and post-deployment canary remain local and unexecuted;
-  the only live claim check in this slice was the separate unauthenticated
-  direct read of the already-published Pages artifact.
+  CI run `33247712691` and Pages run `33247712692` passed. The latter exercised
+  the validator before artifact preparation and the aggregate-only read-only
+  canary after deployment with two claims, the 1/1/0 classification split, all
+  five checks true, and all authority false.
 - The private-frontend release evidence synchronization passes Python
   compilation, all 434 repository tests, the updated fail-closed rollout
   contract validator, the 30/30 project drift audit, JSON contract parsing,
@@ -2507,10 +2512,10 @@ done.
    `outcomes_pending` p95 2,913 ms as descriptive staging evidence only. Do not
    rerun it, claim causal improvement, change the gate, or reopen latency
    optimization. Public Claim Truth Pages gating and its aggregate-only live
-   canary are now implemented locally. Any commit and push to `main` would
-   trigger a new Pages publication and requires separate explicit authority;
-   after that run, preserve the Next demo as publication-unverified unless its
-   actual deployment channel is separately established and checked.
+   canary are now published and workflow-verified. The next portfolio-hardening
+   slice is to establish the actual Next demo deployment channel and its
+   publication state before deciding whether a separately authorized release
+   or read-only verification is needed; do not infer publication from source.
 3. Do not retry or advance lifecycle dates merely to manufacture Cost or
    Learning evidence. Re-run the relevant reconciler only after a future
    independently justified operational continuation and new explicit authority.

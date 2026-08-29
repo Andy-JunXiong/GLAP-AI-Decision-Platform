@@ -517,7 +517,7 @@
     {
       "id": "public_claim_truth_v1",
       "state": "PARTIAL",
-      "boundary": "the compact high-risk decision, execution, Outcome, and value manifest maps seven public semantic regions to exactly RUNTIME_BACKED, MODELLED_SYNTHETIC, or ILLUSTRATIVE; modelled claims require a repository backing source, illustrative claims require explicit disclosure, prior unqualified executed-value wording is rejected, the Pages workflow validates the contract before artifact preparation, and its post-deployment canary performs only aggregate-output unauthenticated reads; the two Scenario Lab claims are published and manually read-only verified, the automated canary is locally implemented but has not run, and the Next surface publication remains unverified",
+      "boundary": "the compact high-risk decision, execution, Outcome, and value manifest maps seven public semantic regions to exactly RUNTIME_BACKED, MODELLED_SYNTHETIC, or ILLUSTRATIVE; modelled claims require a repository backing source, illustrative claims require explicit disclosure, prior unqualified executed-value wording is rejected, the Pages workflow validates the contract before artifact preparation, and its post-deployment canary performs only aggregate-output unauthenticated reads; commit 819e40e added the gate and canary, truth-sync commit 682a262 was pushed with it, CI run 33247712691 passed, and Pages run 33247712692 passed the seven-claim gate plus the two-claim aggregate-only canary with all checks true and authority false; the README mapping is repository-visible while the Next surface publication remains unverified",
       "evidence_files": [
         "docs/public_claim_manifest_v1.json",
         "ops/validate_public_claims.py",

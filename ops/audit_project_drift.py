@@ -1189,7 +1189,7 @@ def check_public_claim_truth(root: Path) -> list[CheckResult]:
     canary = (root / canary_path).read_text(encoding="utf-8")
     bounded = (
         errors == []
-        and "PARTIALLY_PUBLISHED_PAGES_READ_ONLY_VERIFIED_CANARY_IMPLEMENTED_NOT_EXECUTED"
+        and "PARTIALLY_PUBLISHED_PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_UNVERIFIED"
         in status
         and "HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1" in architecture
         and "Public Claim Truth publication gate" in architecture

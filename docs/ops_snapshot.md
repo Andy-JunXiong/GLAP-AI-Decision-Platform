@@ -110,12 +110,15 @@ two Pages claim markers, classifications, anchors, and disclosures. Its report
 is aggregate-only: two-claim and per-class counts, safe booleans, and all-false
 authority; it emits no claim text or entity data.
 
-This gate and canary are locally implemented and have not executed. Existing
-scheduled run `33240515028` had already published the two annotations from
-commit `66eeb52`; a later direct HTTP read verified both live mappings and
-disclosures. That manual read does not verify the four Next-demo claims or
-grant a future push, Pages publication, AWS write, Action mutation, schedule,
-production, policy, or model authority.
+Existing scheduled run `33240515028` had already published the two annotations
+from commit `66eeb52`; a later direct HTTP read verified both mappings and
+disclosures. Commit `819e40e` added the gate and canary and was pushed with
+truth-sync commit `682a262`. CI run `33247712691` passed. Pages run
+`33247712692` passed the seven-claim pre-artifact validator, deployed the site,
+and returned `PASS` from the aggregate-only canary with two claims, the 1/1/0
+classification split, all five checks true, and all authority false. This does
+not verify the four Next-demo claims or grant a future push, Pages publication,
+AWS write, Action mutation, schedule, production, policy, or model authority.
 
 The same workflow now includes a post-deployment canary. It
 uses only unauthenticated HTTP reads after `actions/deploy-pages`, rejects a

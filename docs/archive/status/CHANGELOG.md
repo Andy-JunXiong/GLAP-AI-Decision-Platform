@@ -13,10 +13,13 @@ preserved handoffs.
   authority. Read-only audit also established that scheduled Pages run
   `33240515028` had already published the two Scenario Lab annotations from
   commit `66eeb52`; a direct HTTP check verified both live classifications and
-  disclosures. The new gate and canary are committed locally as `819e40e` but
-  remain unpushed and unexecuted, and the Next demo publication channel remains
-  unverified. No new Pages publication, AWS call, Action mutation, schedule,
-  production, policy, or model operation occurred.
+  disclosures. Commit `819e40e` added the gate and canary and was pushed with
+  truth-sync commit `682a262`. CI run `33247712691` passed. Pages run
+  `33247712692` passed the seven-claim pre-artifact validator, deployed the
+  Scenario Lab, and returned a two-claim aggregate-only canary `PASS` with the
+  1/1/0 classification split, all five checks true, and all authority false.
+  The Next demo publication channel remains unverified. No AWS write, Action
+  mutation, schedule change, production, policy, or model operation occurred.
 - Implemented a redacted per-route latency diagnostic in the authenticated
   sustained-read staging runner. After the aggregate candidate passes the
   existing schema and reconciliation gate, the console can now show each of

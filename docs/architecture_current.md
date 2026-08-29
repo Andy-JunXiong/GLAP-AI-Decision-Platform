@@ -36,13 +36,15 @@ and classification counts, safe booleans, and all-false authority. It has
 bounded retries for propagation and no mutation path.
 
 Scheduled Pages run `33240515028` had already published commit `66eeb52`, which
-contains those two annotations. A later direct HTTP read verified both live
-markers, classifications, and disclosures. That is manual read-only runtime
-evidence for only the Pages subset: the new automated canary remains locally
-implemented and unexecuted, the README claim is repository-visible, and the
-Next demo publication channel remains unverified. No claim gate or canary
-grants publication, operational, production, Action, policy, or model
-authority.
+contains those two annotations, and a later direct HTTP read verified them.
+Commit `819e40e` then added the gate and canary; truth-sync commit `682a262` was
+pushed with it. CI run `33247712691` passed. Pages run `33247712692` validated
+all seven mappings before artifact preparation and returned `PASS` after
+deployment for the two Pages claims, the 1/1/0 classification split, all five
+checks, and all-false authority. This is automated runtime evidence for only
+the Pages subset: the README claim is repository-visible and the Next demo
+publication channel remains unverified. No claim gate or canary grants future
+publication, operational, production, Action, policy, or model authority.
 
 Decision Truth has two deterministic `decision-brief.v1` contracts. The
 authenticated Risk response derives the deployed SLA contract for valid
