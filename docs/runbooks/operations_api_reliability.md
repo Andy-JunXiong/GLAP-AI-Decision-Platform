@@ -165,10 +165,19 @@ unchanged required queries together with separate clients and exactly two
 workers; either failure still rejects the complete response. Commit `66eeb52`
 passed CI, and separately authorized manual run `33220634162` passed contract
 tests and updated the private Operations API staging stack. The workflow called
-no deployed endpoint and generated no post-deployment traffic, so live contract
-preservation and latency effect remain unverified. Any bounded observation
-remains separately authorized, must preserve the frozen workload and gate, and
-must not be treated as an automatic entrance to further optimization.
+no deployed endpoint and generated no post-deployment traffic at that release
+checkpoint. The later bounded observation required separate authorization and
+had to preserve the frozen workload and gate without becoming an automatic
+entrance to further optimization.
+A separately authorized observation has now used that exact boundary once. It
+returned 20/20 2xx responses and failed closed at overall p95 4,996 ms. Safe
+route p95 values were `risks_open` 6,089 ms, `actions_proposed` 3,108 ms,
+`actions_edited` 2,797 ms, `outcomes_pending` 2,913 ms, `learning_review`
+3,345 ms, `pipeline_health` 767 ms, and `label_readiness` 4,996 ms. The
+temporary viewer was removed, no result artifact or protected value was
+retained, and the run must not be retried. Treat the three `outcomes_pending`
+samples as descriptive only; do not infer causal improvement or reopen
+optimization.
 
 ## Recovery order
 

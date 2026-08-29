@@ -2,7 +2,7 @@
 
 **Status:** deployed and reader/RBAC verified in private staging; no eligible
 bound cohort observed; COST_ANOMALY producer/readers deployed and RBAC verified;
-bounded parallel-read correction delivered to staging, live recheck pending
+bounded parallel-read correction deployed; one small-sample observation complete
 
 This contract lets an authenticated reviewer see which immutable Decision
 Brief proposal produced the Action connected to each cutoff-eligible Outcome.
@@ -49,9 +49,16 @@ or cohort summary is returned. The existing per-query timeout and cancellation
 behavior remains inside `_query_rows`. Commit `66eeb52` passed CI, and separately
 authorized workflow run `33220634162` passed contract tests and updated the
 private staging stack. It performed no post-deployment live read or latency
-measurement, so functional runtime preservation and performance effect remain
-unverified. The three-sample `outcomes_pending` latency result motivated the
-bounded change but does not prove its eventual runtime effect.
+measurement at that deployment checkpoint. The earlier three-sample
+`outcomes_pending` latency result motivated the bounded change but did not prove
+its eventual runtime effect.
+A later separately authorized frozen-workload observation returned three
+`outcomes_pending` samples at p95 2,913 ms, compared descriptively with the
+earlier 7,054 ms observation. All 20 requests were 2xx, but overall p95
+4,996 ms still failed the unchanged gate because other routes remained above
+it. The sample is too small to attribute the difference to parallel execution;
+no causal improvement, production-performance, retry, or further-optimization
+claim follows.
 
 ## Evaluation and governance boundary
 

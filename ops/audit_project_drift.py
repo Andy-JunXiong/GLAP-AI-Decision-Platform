@@ -1130,19 +1130,19 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
         and read_load_simulator_path in sustained_gate.get("evidence_refs", [])
         and read_load_runner_path in sustained_gate.get("evidence_refs", [])
         and "20 of 20 responses were successful" in sustained_finding
-        and "overall p95 latency was 6023 ms" in sustained_finding
-        and "outcomes_pending at 7054 ms" in sustained_finding
-        and "risks_open at 6023 ms" in sustained_finding
-        and "label_readiness at 4167 ms" in sustained_finding
-        and "other four routes remained below the gate" in sustained_finding
+        and "overall p95 latency was 4996 ms" in sustained_finding
+        and "outcomes_pending samples had p95 2913 ms" in sustained_finding
+        and "four of the other six safe route aggregates exceeded it"
+        in sustained_finding
         and "temporary viewer was confirmed removed" in sustained_finding
         and "no result artifact was persisted" in sustained_finding
         and "two unchanged mandatory outcomes_pending queries together with exactly two workers"
         in sustained_finding
         and "manual workflow run 33220634162" in sustained_finding
-        and "updated the private staging stack" in sustained_finding
-        and "performed no live API or latency recheck" in sustained_finding
-        and "functional runtime preservation and performance effect remain unverified"
+        and "no retry followed" in sustained_finding
+        and "three outcomes_pending samples remain descriptive only"
+        in sustained_finding
+        and "do not establish causal improvement or production performance"
         in sustained_finding
         and read_load_plan.get("execution", {}).get("load_executed") is False
         and read_load_plan.get("authorization", {}).get("staging_load_run_authorized") is False
@@ -1152,7 +1152,7 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
             "production_readiness_boundary",
             "governance",
             contract_bounded and evidence_bounded and read_load_bounded,
-            "Production-readiness controls remain bounded while the offline evidence harness truthfully reports 4/10 eligible gates, the 2026-08-29 diagnostic p95 breaches, and a two-worker outcomes_pending correction delivered to private staging without claiming a live functional recheck, runtime improvement, a completed baseline, or production authority.",
+            "Production-readiness controls remain bounded while the offline evidence harness truthfully reports 4/10 eligible gates, the completed one-run post-deployment observation, its 4996 ms overall p95 abort, and its descriptive three-sample outcomes_pending result without claiming causal improvement, a completed baseline, or production authority.",
             "The production-readiness contract or evidence harness claims unsupported maturity, loses required gates, or expands protected authority.",
             (
                 contract_path,
@@ -2739,9 +2739,10 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "exactly two bounded workers",
             "either read fails, the complete response still fails closed",
             "does not cache or omit either query",
-            "bounded parallel-read correction delivered to staging, live recheck pending",
+            "bounded parallel-read correction deployed; one small-sample observation complete",
             "authorized workflow run `33220634162` passed contract tests and updated the",
-            "performed no post-deployment live read or latency",
+            "three `outcomes_pending` samples at p95 2,913 ms",
+            "sample is too small to attribute the difference to parallel execution",
         )
     )
     return [
@@ -2749,7 +2750,7 @@ def check_outcome_decision_provenance_boundary(root: Path) -> list[CheckResult]:
             "outcome_decision_provenance_boundary",
             "governance",
             api_bounded and client_bounded and page_bounded and contract_bounded,
-            "Outcome Review preserves cutoff-bounded, read-only Decision provenance while a staging-delivered two-worker read correction retains both queries, complete-response fail-closed behavior, legacy-null handling, and non-causal claims without asserting a live recheck.",
+            "Outcome Review preserves cutoff-bounded, read-only Decision provenance while a staging-delivered two-worker read correction retains both queries, complete-response fail-closed behavior, legacy-null handling, and a completed small-sample observation that asserts neither causal improvement nor production performance.",
             "Outcome Review lost a temporal, read-only, legacy-null, or non-causal Decision provenance boundary.",
             tuple(paths.values()),
         )

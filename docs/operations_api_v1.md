@@ -545,8 +545,14 @@ the whole response, and no cache, stale-data allowance, SQL change, field
 removal, permission expansion, or threshold change was introduced. Commit
 `66eeb52` passed CI, and separately authorized manual workflow run `33220634162`
 passed contract tests and updated the private staging stack. The workflow did
-not call the live API or measure route latency after deployment; live functional
-preservation and performance effect therefore remain unverified.
+not call the live API or measure route latency at that deployment checkpoint.
+A later separately authorized bounded observation returned 20/20 2xx responses
+across the frozen seven-route workload and failed closed at overall p95
+4,996 ms. The three `outcomes_pending` samples had p95 2,913 ms, below the
+unchanged 3,000 ms gate; four other route aggregates exceeded it. The temporary
+viewer was removed and no artifact was retained. The result is descriptive
+small-sample staging evidence, not causal proof of improvement or production
+performance, and it grants no retry or further optimization authority.
 
 Risk, queue, and Outcome reads use the existing governed Glue/Athena tables and
 view. The API execution role

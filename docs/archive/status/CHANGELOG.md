@@ -40,9 +40,18 @@ preserved handoffs.
   Operations API contract tests and completed the stack update; it created no
   schedule, moved no production alias, and published no Pages content. The
   workflow performed no post-deployment live API or latency recheck, so source
-  delivery is verified while functional runtime preservation and performance
-  effect remain pending. Readiness remains 4/10 with no completed sustained-
-  load baseline or production SLA.
+  delivery was verified while functional runtime preservation and performance
+  effect remained pending at that checkpoint. Readiness remained 4/10 with no
+  completed sustained-load baseline or production SLA.
+- Completed the single separately authorized bounded post-deployment latency
+  observation without changing the frozen workload or 3,000 ms gate. All 20
+  requests returned 2xx, but overall p95 4,996 ms failed closed. The three
+  `outcomes_pending` samples had p95 2,913 ms; `risks_open`,
+  `actions_proposed`, `learning_review`, and `label_readiness` remained above
+  the gate. Cleanup removed the temporary viewer and retained no artifact or
+  protected value. The small sample is descriptive only, does not establish
+  causal improvement or production performance, and closes rather than reopens
+  this latency-optimization slice. Readiness remains 4/10.
 
 ## 2026-08-28
 

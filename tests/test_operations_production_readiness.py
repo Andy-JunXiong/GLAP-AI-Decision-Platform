@@ -88,11 +88,12 @@ class OperationsProductionReadinessTests(unittest.TestCase):
             gate["evidence_refs"],
         )
         self.assertIn("20 of 20 responses were successful", gate["finding"])
-        self.assertIn("overall p95 latency was 6023 ms", gate["finding"])
-        self.assertIn("outcomes_pending at 7054 ms", gate["finding"])
-        self.assertIn("risks_open at 6023 ms", gate["finding"])
-        self.assertIn("label_readiness at 4167 ms", gate["finding"])
-        self.assertIn("other four routes remained below the gate", gate["finding"])
+        self.assertIn("overall p95 latency was 4996 ms", gate["finding"])
+        self.assertIn("outcomes_pending samples had p95 2913 ms", gate["finding"])
+        self.assertIn(
+            "four of the other six safe route aggregates exceeded it",
+            gate["finding"],
+        )
         self.assertIn("temporary viewer was confirmed removed", gate["finding"])
         self.assertIn("no result artifact was persisted", gate["finding"])
         self.assertIn(
@@ -100,10 +101,9 @@ class OperationsProductionReadinessTests(unittest.TestCase):
             gate["finding"],
         )
         self.assertIn("manual workflow run 33220634162", gate["finding"])
-        self.assertIn("updated the private staging stack", gate["finding"])
-        self.assertIn("performed no live API or latency recheck", gate["finding"])
+        self.assertIn("no retry followed", gate["finding"])
         self.assertIn(
-            "functional runtime preservation and performance effect remain unverified",
+            "do not establish causal improvement or production performance",
             gate["finding"],
         )
 

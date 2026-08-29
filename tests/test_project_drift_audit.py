@@ -379,8 +379,8 @@ class ProjectDriftAuditTests(unittest.TestCase):
             contract_path = root / "docs/outcome_review_decision_provenance_v1.md"
             contract_path.write_text(
                 contract_path.read_text(encoding="utf-8").replace(
-                    "delivered to staging, live recheck pending",
-                    "delivered to staging, live recheck completed",
+                    "one small-sample observation complete",
+                    "runtime performance verified",
                 ),
                 encoding="utf-8",
             )
@@ -736,7 +736,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 if gate["id"] == "sustained_read_load"
             )
             sustained_gate["finding"] = sustained_gate["finding"].replace(
-                "functional runtime preservation and performance effect remain unverified",
+                "do not establish causal improvement or production performance",
                 "runtime performance verified",
             )
             evidence_path.write_text(json.dumps(evidence), encoding="utf-8")

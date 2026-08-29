@@ -169,9 +169,14 @@ Outcome-list query together with exactly two workers and independent Athena
 clients. Both remain mandatory for one response, and either failure fails the
 response closed. Commit `66eeb52` was delivered to the private staging stack by
 separately authorized workflow run `33220634162`; the run passed contract tests
-and stack deployment but performed no live endpoint or latency recheck. It adds
-no cache, query omission, mutation, permission, causal-performance, schedule,
-production, or Pages claim.
+and stack deployment but performed no endpoint or latency recheck at that
+checkpoint. It adds no cache, query omission, mutation, permission,
+causal-performance, schedule, production, or Pages claim.
+A later separately authorized bounded read observation returned 20/20 2xx
+responses under the frozen workload, while overall p95 4,996 ms still failed
+the unchanged gate. The three `outcomes_pending` samples had p95 2,913 ms. That
+small sample is descriptive only; it does not establish causality, production
+performance, or authority to rerun or optimize.
 
 The cohort response now includes a separate evidence-sufficiency gate whose
 business configuration is now bound to the project-owner-approved

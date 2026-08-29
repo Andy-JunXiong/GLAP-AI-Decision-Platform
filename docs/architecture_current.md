@@ -719,7 +719,14 @@ under exactly two workers, then returns them in the existing response positions.
 Both remain required and either failure rejects the whole response. Commit
 `66eeb52` passed CI and the separately authorized manual workflow run
 `33220634162` passed contract tests and updated the private Operations API
-staging stack. The workflow performed no post-deployment endpoint call or
-latency measurement, so live functional preservation and performance effect
-remain unverified. No caching, SQL, cutoff, schema, permission, threshold,
-schedule, production alias, or Pages change was introduced.
+staging stack. At that deployment checkpoint the workflow performed no endpoint
+call or latency measurement. No caching, SQL, cutoff, schema, permission,
+threshold, schedule, production alias, or Pages change was introduced.
+A later separately authorized bounded observation exercised the same seven
+authenticated read routes with the frozen workload and 3,000 ms gate. All
+20 requests returned 2xx, but overall p95 was 4,996 ms and the runner failed
+closed. The three `outcomes_pending` samples had p95 2,913 ms; `risks_open`,
+`actions_proposed`, `learning_review`, and `label_readiness` remained above the
+gate. Cleanup removed the temporary viewer and retained no artifact. This is
+descriptive small-sample staging evidence only: it verifies neither causal
+improvement nor production performance and does not reopen optimization.

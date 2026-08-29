@@ -83,7 +83,12 @@ failure rejects the complete response, and no cache, query omission, response
 field change, permission expansion, or runtime-performance claim is introduced.
 Commit `66eeb52` passed CI, and separately authorized workflow run `33220634162`
 passed contract tests and updated the private staging stack. No post-deployment
-live response or latency recheck has run.
+live response or latency recheck had run at that deployment checkpoint.
+A later separately authorized bounded observation returned three
+`outcomes_pending` samples at p95 2,913 ms under the frozen workload, with
+20/20 requests returning 2xx, but overall p95 4,996 ms still failed the gate.
+This is descriptive small-sample staging evidence only and does not establish
+causal improvement or production performance.
 
 The response now also carries a fail-closed evidence-sufficiency gate. Its
 mechanics evaluate the project-owner-approved minimum of 20 observed Outcomes
