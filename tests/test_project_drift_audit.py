@@ -799,11 +799,14 @@ class ProjectDriftAuditTests(unittest.TestCase):
         paths = (
             "docs/public_claim_manifest_v1.json",
             "ops/validate_public_claims.py",
+            "ops/canary_public_claims.py",
             "tests/test_public_claims.py",
+            "tests/test_public_claim_canary.py",
             "decision-brief-demo/app/page.tsx",
             "offline/glap-demo.html",
             "README.md",
             "docs/case_study_port_disruption.md",
+            ".github/workflows/pages.yml",
             "docs/architecture_current.md",
             "docs/ops_snapshot.md",
             "DEVELOPMENT_PLAN.md",
@@ -815,15 +818,27 @@ class ProjectDriftAuditTests(unittest.TestCase):
             current = AUDIT.check_public_claim_truth(root)[0]
             self.assertEqual(current.status, "PASS")
             page = root / "decision-brief-demo/app/page.tsx"
+            original_page = page.read_text(encoding="utf-8")
             page.write_text(
-                page.read_text(encoding="utf-8").replace(
+                original_page.replace(
                     'data-claim-id="next-outcomes-summary"',
                     'data-claim-id="unsupported-outcomes-summary"',
                 ),
                 encoding="utf-8",
             )
             detected = AUDIT.check_public_claim_truth(root)[0]
+            page.write_text(original_page, encoding="utf-8")
+            workflow = root / ".github" / "workflows" / "pages.yml"
+            workflow.write_text(
+                workflow.read_text(encoding="utf-8").replace(
+                    "python ops/canary_public_claims.py",
+                    "python ops/missing_public_claim_canary.py",
+                ),
+                encoding="utf-8",
+            )
+            workflow_detected = AUDIT.check_public_claim_truth(root)[0]
         self.assertEqual(detected.status, "DRIFT")
+        self.assertEqual(workflow_detected.status, "DRIFT")
 
     def test_stateful_cross_gap_recovery_maturity_cannot_regress(self):
         paths = (

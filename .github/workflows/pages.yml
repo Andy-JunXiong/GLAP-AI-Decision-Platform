@@ -10,10 +10,14 @@ on:
       - "offline/data/evaluation-snapshot.json"
       - "ops/export_ops_snapshot.py"
       - "ops/export_public_evaluation_snapshot.py"
+      - "ops/validate_public_claims.py"
+      - "ops/canary_public_claims.py"
       - "ops/canary_public_evaluation.py"
       - "ops/validate_decision_quality_adjudication.py"
       - "ops/configure_ops_snapshot_access.ps1"
       - "docs/public_evaluation_snapshot_v1.schema.json"
+      - "docs/public_claim_manifest_v1.json"
+      - "docs/case_study_port_disruption.md"
       - "docs/decision_quality_five_review_corpus_summary_v1.schema.json"
       - "docs/decision_quality_five_review_corpus_summary_v1.json"
       - "docs/decision_quality_rubric_v1.json"
@@ -84,6 +88,10 @@ jobs:
         shell: bash
         run: python ops/export_public_evaluation_snapshot.py
 
+      - name: Validate Public Claim Truth
+        shell: bash
+        run: python ops/validate_public_claims.py
+
       - name: Prepare static site
         shell: bash
         run: |
@@ -106,6 +114,21 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published Public Claim Truth
+        if: ${{ github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: |
+          python ops/canary_public_claims.py \
+            --base-url "${{ steps.deployment.outputs.page_url }}" \
+            --cache-bust "${{ github.sha }}-${{ github.run_attempt }}" \
+            | tee public-claim-canary.json
+          {
+            echo "### Read-only Public Claim Truth publication canary"
+            echo '```json'
+            cat public-claim-canary.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify published Evaluation surface
         if: ${{ github.ref == 'refs/heads/main' }}

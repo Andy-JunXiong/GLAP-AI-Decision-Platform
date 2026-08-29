@@ -101,6 +101,22 @@ tracked JSON differs from the governed source projection. This does not change
 the OPS exporter, its read-only AWS role, or the requirement for separate
 human authority before push or publication.
 
+The same pre-artifact boundary now includes Public Claim Truth validation.
+Changes to the manifest, validator, Pages canary, or modelled Scenario Lab
+backing source enter the Pages path, and `ops/validate_public_claims.py` must
+pass before `_site` is prepared. After deployment,
+`ops/canary_public_claims.py` performs unauthenticated reads only and checks the
+two Pages claim markers, classifications, anchors, and disclosures. Its report
+is aggregate-only: two-claim and per-class counts, safe booleans, and all-false
+authority; it emits no claim text or entity data.
+
+This gate and canary are locally implemented and have not executed. Existing
+scheduled run `33240515028` had already published the two annotations from
+commit `66eeb52`; a later direct HTTP read verified both live mappings and
+disclosures. That manual read does not verify the four Next-demo claims or
+grant a future push, Pages publication, AWS write, Action mutation, schedule,
+production, policy, or model authority.
+
 The same workflow now includes a post-deployment canary. It
 uses only unauthenticated HTTP reads after `actions/deploy-pages`, rejects a
 live page that differs from the validated local source, requires the live JSON

@@ -28,6 +28,22 @@ disclosure, and requires a repository backing source for modelled or runtime
 claims. This is a display/evidence contract, not a new operational component;
 it performs no network call, publication, deployment, or mutation.
 
+The Public Claim Truth publication gate in the existing Pages workflow invokes
+that validator before `_site` preparation. A separate post-deployment canary
+uses unauthenticated reads only, checks the two Scenario Lab markers, anchors,
+classifications, and disclosures against the manifest, and reports only claim
+and classification counts, safe booleans, and all-false authority. It has
+bounded retries for propagation and no mutation path.
+
+Scheduled Pages run `33240515028` had already published commit `66eeb52`, which
+contains those two annotations. A later direct HTTP read verified both live
+markers, classifications, and disclosures. That is manual read-only runtime
+evidence for only the Pages subset: the new automated canary remains locally
+implemented and unexecuted, the README claim is repository-visible, and the
+Next demo publication channel remains unverified. No claim gate or canary
+grants publication, operational, production, Action, policy, or model
+authority.
+
 Decision Truth has two deterministic `decision-brief.v1` contracts. The
 authenticated Risk response derives the deployed SLA contract for valid
 current open `SLA_BREACH` shipment-milestone Alerts and the deployed Cost extension

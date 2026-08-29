@@ -1178,33 +1178,65 @@ def check_readiness_contract(root: Path) -> list[CheckResult]:
 
 def check_public_claim_truth(root: Path) -> list[CheckResult]:
     validator_path = "ops/validate_public_claims.py"
+    canary_path = "ops/canary_public_claims.py"
     manifest_path = "docs/public_claim_manifest_v1.json"
     validator = _load_repository_module(root, validator_path)
     errors = validator.validate_manifest(validator.load_manifest(root), root)
     status = (root / "CURRENT_DEVELOPMENT_STATUS.md").read_text(encoding="utf-8")
     architecture = (root / "docs/architecture_current.md").read_text(encoding="utf-8")
     plan = (root / "DEVELOPMENT_PLAN.md").read_text(encoding="utf-8")
+    workflow = (root / ".github/workflows/pages.yml").read_text(encoding="utf-8")
+    canary = (root / canary_path).read_text(encoding="utf-8")
     bounded = (
         errors == []
-        and "IMPLEMENTED_LOCALLY_VERIFIED_NOT_PUBLISHED" in status
+        and "PARTIALLY_PUBLISHED_PAGES_READ_ONLY_VERIFIED_CANARY_IMPLEMENTED_NOT_EXECUTED"
+        in status
         and "HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1" in architecture
+        and "Public Claim Truth publication gate" in architecture
         and "No new intelligence layer is added" in plan
         and "benefit_estimate.status = NOT_ESTIMATED" in plan
+        and all(
+            marker in workflow
+            for marker in (
+                '"ops/validate_public_claims.py"',
+                '"ops/canary_public_claims.py"',
+                '"docs/public_claim_manifest_v1.json"',
+                "python ops/validate_public_claims.py",
+                "python ops/canary_public_claims.py",
+            )
+        )
+        and all(
+            marker in canary
+            for marker in (
+                '"mode": "READ_ONLY"',
+                "published_claim_markers_match_manifest",
+                "required_disclosures_present",
+                "classification_counts",
+                '"external_writes_executed": False',
+            )
+        )
+        and workflow.index("python ops/validate_public_claims.py")
+        < workflow.index("- name: Prepare static site")
+        and workflow.index("uses: actions/deploy-pages@v4")
+        < workflow.index("python ops/canary_public_claims.py")
     )
     return [
         _result(
             "public_claim_truth_boundary",
             "governance",
             bounded,
-            "High-risk public claims remain semantically mapped, evidence-classified, disclosed, source-backed where required, and locally verified without publication.",
-            "The public Claim Truth manifest, source mapping, disclosure, backing evidence, or maturity boundary drifted.",
+            "High-risk public claims remain semantically mapped, evidence-classified, disclosed, source-backed where required, validated before Pages artifact preparation, and covered by an aggregate-only read-only post-deployment canary.",
+            "The public Claim Truth manifest, source mapping, disclosure, backing evidence, Pages gate, canary, or maturity boundary drifted.",
             (
                 manifest_path,
                 validator_path,
+                canary_path,
                 "tests/test_public_claims.py",
+                "tests/test_public_claim_canary.py",
                 "decision-brief-demo/app/page.tsx",
                 "offline/glap-demo.html",
                 "README.md",
+                ".github/workflows/pages.yml",
                 "docs/architecture_current.md",
                 "docs/ops_snapshot.md",
                 "DEVELOPMENT_PLAN.md",
