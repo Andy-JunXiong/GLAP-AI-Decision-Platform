@@ -1009,9 +1009,10 @@ inputs, or purely illustrative before expanding the decision engine.
 The two Scenario Lab claims are already public and were directly read-only
 verified. The README mapping is visible in the public repository. The Next
 frontend's publication channel has not been identified or runtime-verified, so
-the full seven-claim boundary is not `PUBLISHED_VERIFIED`. The new workflow
-gate and canary are local only and have not been committed, pushed, executed,
-or used to publish a new Pages artifact. This implementation made no AWS call,
+the full seven-claim boundary is not `PUBLISHED_VERIFIED`. The implementation
+is committed locally as `819e40e`; neither that commit nor this truth sync has
+been pushed, and the workflow gate and canary have not run or published a new
+Pages artifact. This implementation made no AWS call,
 staging deployment, Action mutation, production change, or new intelligence
 layer.
 
