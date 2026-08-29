@@ -164,11 +164,14 @@ future-simulation rows are excluded. The summary creates no counterfactual,
 causal, realised-value, real-performance, Learning, model, policy, or
 production claim; see
 [`decision_contract_outcome_cohort_v1.md`](decision_contract_outcome_cohort_v1.md).
-The local API latency correction starts this aggregate and the unchanged
-bounded Outcome-list query together with exactly two workers and independent
-Athena clients. Both remain mandatory for one response, and either failure
-fails the response closed. It adds no cache, query omission, mutation,
-permission, deployment, or runtime-performance claim.
+The API latency correction starts this aggregate and the unchanged bounded
+Outcome-list query together with exactly two workers and independent Athena
+clients. Both remain mandatory for one response, and either failure fails the
+response closed. Commit `66eeb52` was delivered to the private staging stack by
+separately authorized workflow run `33220634162`; the run passed contract tests
+and stack deployment but performed no live endpoint or latency recheck. It adds
+no cache, query omission, mutation, permission, causal-performance, schedule,
+production, or Pages claim.
 
 The cohort response now includes a separate evidence-sufficiency gate whose
 business configuration is now bound to the project-owner-approved

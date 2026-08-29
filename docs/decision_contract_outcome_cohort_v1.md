@@ -80,8 +80,10 @@ A local latency correction now executes this unchanged cohort query alongside
 the unchanged bounded Outcome-list query using exactly two workers and separate
 Athena clients. Both results remain mandatory for the same response; either
 failure rejects the complete response, and no cache, query omission, response
-field change, permission expansion, deployment, or runtime-performance claim is
-introduced. The correction remains locally verified and undeployed.
+field change, permission expansion, or runtime-performance claim is introduced.
+Commit `66eeb52` passed CI, and separately authorized workflow run `33220634162`
+passed contract tests and updated the private staging stack. No post-deployment
+live response or latency recheck has run.
 
 The response now also carries a fail-closed evidence-sufficiency gate. Its
 mechanics evaluate the project-owner-approved minimum of 20 observed Outcomes

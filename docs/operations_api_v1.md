@@ -536,14 +536,17 @@ gate. The runner aborted, confirmed viewer removal, and retained no artifact.
 This remains partial staging engineering evidence, not a completed baseline,
 production SLA, or readiness advancement.
 
-The first local route-specific correction preserves both existing
+The first route-specific correction preserves both existing
 `GET /v1/outcomes` reads and the complete response contract while removing
 their serial wait. The bounded Outcome list and Decision-cohort aggregate now
 start together through separate Athena clients and exactly two workers. Results
 return in their original list/summary positions; either query failure rejects
 the whole response, and no cache, stale-data allowance, SQL change, field
-removal, permission expansion, or threshold change was introduced. This source
-correction is locally verified only and is not deployed or runtime-verified.
+removal, permission expansion, or threshold change was introduced. Commit
+`66eeb52` passed CI, and separately authorized manual workflow run `33220634162`
+passed contract tests and updated the private staging stack. The workflow did
+not call the live API or measure route latency after deployment; live functional
+preservation and performance effect therefore remain unverified.
 
 Risk, queue, and Outcome reads use the existing governed Glue/Athena tables and
 view. The API execution role

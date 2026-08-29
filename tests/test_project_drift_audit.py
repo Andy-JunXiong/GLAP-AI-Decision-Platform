@@ -375,8 +375,21 @@ class ProjectDriftAuditTests(unittest.TestCase):
             concurrency_detected = (
                 AUDIT.check_outcome_decision_provenance_boundary(root)[0]
             )
+            self._copy_paths(root, paths)
+            contract_path = root / "docs/outcome_review_decision_provenance_v1.md"
+            contract_path.write_text(
+                contract_path.read_text(encoding="utf-8").replace(
+                    "delivered to staging, live recheck pending",
+                    "delivered to staging, live recheck completed",
+                ),
+                encoding="utf-8",
+            )
+            maturity_detected = (
+                AUDIT.check_outcome_decision_provenance_boundary(root)[0]
+            )
         self.assertEqual(causal_detected.status, "DRIFT")
         self.assertEqual(concurrency_detected.status, "DRIFT")
+        self.assertEqual(maturity_detected.status, "DRIFT")
 
     def test_decision_contract_outcome_cohort_authority_drift_is_detected(self):
         paths = (
@@ -715,7 +728,21 @@ class ProjectDriftAuditTests(unittest.TestCase):
             evidence["summary"]["production_readiness"] = True
             evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
             detected = AUDIT.check_readiness_contract(root)[0]
+            self._copy_paths(root, paths)
+            evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+            sustained_gate = next(
+                gate
+                for gate in evidence["required_gates"]
+                if gate["id"] == "sustained_read_load"
+            )
+            sustained_gate["finding"] = sustained_gate["finding"].replace(
+                "functional runtime preservation and performance effect remain unverified",
+                "runtime performance verified",
+            )
+            evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+            maturity_detected = AUDIT.check_readiness_contract(root)[0]
         self.assertEqual(detected.status, "DRIFT")
+        self.assertEqual(maturity_detected.status, "DRIFT")
 
     def test_authenticated_read_load_authority_and_diagnostic_drift_are_detected(self):
         paths = (

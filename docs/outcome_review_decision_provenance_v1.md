@@ -2,7 +2,7 @@
 
 **Status:** deployed and reader/RBAC verified in private staging; no eligible
 bound cohort observed; COST_ANOMALY producer/readers deployed and RBAC verified;
-bounded parallel-read correction implemented locally, not deployed
+bounded parallel-read correction delivered to staging, live recheck pending
 
 This contract lets an authenticated reviewer see which immutable Decision
 Brief proposal produced the Action connected to each cutoff-eligible Outcome.
@@ -37,7 +37,7 @@ unbound rather than inferring a source.
 ## Bounded read-latency correction
 
 The existing Outcome list and Decision-cohort aggregate are independent reads
-needed by one complete authenticated response. The local API correction starts
+needed by one complete authenticated response. The API correction starts
 both unchanged Athena queries together with separate clients and exactly two
 bounded workers, then restores their results to the existing list/summary
 positions. It does not cache or omit either query, change either SQL statement,
@@ -46,9 +46,12 @@ contract.
 
 If either read fails, the complete response still fails closed; no partial list
 or cohort summary is returned. The existing per-query timeout and cancellation
-behavior remains inside `_query_rows`. This correction is local-only and is not
-deployed or runtime-verified. The three-sample `outcomes_pending` latency result
-motivated the bounded change but does not prove its eventual runtime effect.
+behavior remains inside `_query_rows`. Commit `66eeb52` passed CI, and separately
+authorized workflow run `33220634162` passed contract tests and updated the
+private staging stack. It performed no post-deployment live read or latency
+measurement, so functional runtime preservation and performance effect remain
+unverified. The three-sample `outcomes_pending` latency result motivated the
+bounded change but does not prove its eventual runtime effect.
 
 ## Evaluation and governance boundary
 

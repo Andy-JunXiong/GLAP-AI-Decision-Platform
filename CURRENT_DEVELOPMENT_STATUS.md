@@ -40,7 +40,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Mainland ten-story review entry | `IMPLEMENTED_VERIFIED` | Two complete 30-moment submissions passed frozen-source, identity, digest, lock, attestation, and reviewer-uniqueness checks and are included in the private Decision Quality aggregate |
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
-| Authenticated sustained read-load plan, simulator, and runner v1 | `PARTIAL_STAGING_EVIDENCE_ROUTE_P95_LOCALIZED_SOURCE_CORRECTION_LOCAL` | A separately authorized `2026-08-29` diagnostic attempt produced a schema-valid aggregate and aborted after 20/20 2xx responses at overall p95 6,023 ms against the unchanged 3,000 ms gate. Safe route aggregates localized p95 breaches to `outcomes_pending` 7,054 ms, `risks_open` 6,023 ms, and `label_readiness` 4,167 ms; the other four routes were below the gate. The temporary viewer was confirmed removed and no artifact was retained. A local bounded correction now starts the two unchanged required `outcomes_pending` queries together with exactly two workers and fails the complete response closed if either fails; it is not deployed or runtime-verified. No completed sustained-load baseline exists and readiness remains 4/10. |
+| Authenticated sustained read-load plan, simulator, and runner v1 | `PARTIAL_STAGING_EVIDENCE_ROUTE_P95_LOCALIZED_SOURCE_CORRECTION_DEPLOYED_RECHECK_PENDING` | A separately authorized `2026-08-29` diagnostic attempt produced a schema-valid aggregate and aborted after 20/20 2xx responses at overall p95 6,023 ms against the unchanged 3,000 ms gate. Safe route aggregates localized p95 breaches to `outcomes_pending` 7,054 ms, `risks_open` 6,023 ms, and `label_readiness` 4,167 ms; the other four routes were below the gate. The temporary viewer was confirmed removed and no artifact was retained. Commit `66eeb52` implements the bounded two-worker correction, and the separately authorized manual workflow run `33220634162` passed contract tests and updated the private staging stack. No post-deployment live API or latency recheck has run, so functional runtime preservation and performance effect remain unverified. No completed sustained-load baseline exists and readiness remains 4/10. |
 | Public Claim Truth v1 | `IMPLEMENTED_LOCALLY_VERIFIED` | Seven high-risk decision, execution, Outcome, and value regions across the Next demo, public Scenario Lab, and README are mapped to `RUNTIME_BACKED`, `MODELLED_SYNTHETIC`, or `ILLUSTRATIVE`; no publication has occurred |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
@@ -1785,6 +1785,14 @@ done.
   Seventy-two focused Operations API, readiness, and drift tests pass, including
   actual two-thread overlap, fixed-worker drift rejection, and complete-response
   failure behavior. Python compilation and all 650 repository tests pass.
+  Commit `66eeb52` was then pushed to `main`; CI run `33219003664` and the
+  push-triggered staging plan run `33219003662` passed. After the user explicitly
+  authorized only the Operations API staging deployment and excluded a traffic
+  recheck, manual workflow run `33220634162` passed contract tests and updated
+  the private Operations API staging stack. The deployment workflow created no
+  schedule, changed no production alias, and published no Pages content. It did
+  not call the deployed API or measure latency, so live functional preservation
+  and performance effect remain pending and readiness remains 4/10.
 - Reconciled two stale canonical architecture claims with current runtime and
   evaluation truth. `INFRASTRUCTURE.md` now records the deployed and verified
   private Action–Outcome evidence chain instead of the earlier plan-only state;
@@ -2330,6 +2338,12 @@ done.
 
 ### User-reported validation
 
+- On `2026-08-29`, the user explicitly authorized deploying commit `66eeb52`
+  only to the authenticated Operations API staging stack and explicitly
+  excluded a traffic recheck. The user manually dispatched workflow run
+  `33220634162`; its contract-test and deploy steps succeeded, while no live
+  endpoint verification, load run, production alias, schedule, Pages, Action,
+  Outcome, policy, or model operation followed.
 - On `2026-08-29`, the user explicitly authorized exactly one staging
   sustained-read latency diagnostic run under the frozen plan. The run stopped
   at the existing p95 gate after 20 requests, confirmed temporary-viewer
@@ -2447,12 +2461,14 @@ done.
    isolated Generator configuration and `CodeSha256` against the commit-bound
    artifact. Do not invoke the function or query/mutate lifecycle data as part
    of this check.
-2. The bounded `outcomes_pending` parallel-read correction is locally
-   implemented. Commit/push and any plan-first Operations API staging release
-   remain separate actions; do not deploy or send more traffic without new
-   authority. A later validation must preserve both required query results and
-   the 3,000 ms gate, and three earlier samples must not be treated as causal or
-   production-performance evidence.
+2. The bounded `outcomes_pending` parallel-read correction is deployed to the
+   private Operations API staging stack from commit `66eeb52`, but no live API
+   or latency recheck has run. If separately authorized, perform at most one
+   bounded post-deployment observation using the unchanged route definitions,
+   aggregate-only output, cleanup, and 3,000 ms gate. Treat the earlier three
+   route samples and any new small sample as descriptive engineering evidence,
+   not causal or production-performance proof; do not use the result to reopen
+   latency optimization automatically.
 3. Do not retry or advance lifecycle dates merely to manufacture Cost or
    Learning evidence. Re-run the relevant reconciler only after a future
    independently justified operational continuation and new explicit authority.

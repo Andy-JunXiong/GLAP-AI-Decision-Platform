@@ -160,11 +160,15 @@ The route p95 results were `outcomes_pending` 7,054 ms, `risks_open` 6,023 ms,
 2,538 ms, `actions_edited` 2,272 ms, and `pipeline_health` 797 ms. The first
 three exceeded the unchanged 3,000 ms gate. The run aborted, viewer cleanup was
 confirmed, and no artifact or completed baseline was retained. Do not rerun on
-this evidence alone. The local `outcomes_pending` correction now starts its two
+this evidence alone. The `outcomes_pending` correction now starts its two
 unchanged required queries together with separate clients and exactly two
-workers; either failure still rejects the complete response. It is not deployed
-or runtime-verified and does not justify another apply. Commit/push, a plan-first
-staging release, and any later traffic remain separately authorized actions.
+workers; either failure still rejects the complete response. Commit `66eeb52`
+passed CI, and separately authorized manual run `33220634162` passed contract
+tests and updated the private Operations API staging stack. The workflow called
+no deployed endpoint and generated no post-deployment traffic, so live contract
+preservation and latency effect remain unverified. Any bounded observation
+remains separately authorized, must preserve the frozen workload and gate, and
+must not be treated as an automatic entrance to further optimization.
 
 ## Recovery order
 

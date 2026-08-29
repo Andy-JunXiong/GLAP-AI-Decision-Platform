@@ -99,7 +99,13 @@ class OperationsProductionReadinessTests(unittest.TestCase):
             "two unchanged mandatory outcomes_pending queries together with exactly two workers",
             gate["finding"],
         )
-        self.assertIn("not deployed or runtime-verified", gate["finding"])
+        self.assertIn("manual workflow run 33220634162", gate["finding"])
+        self.assertIn("updated the private staging stack", gate["finding"])
+        self.assertIn("performed no live API or latency recheck", gate["finding"])
+        self.assertIn(
+            "functional runtime preservation and performance effect remain unverified",
+            gate["finding"],
+        )
 
     def test_future_as_of_date_fails_closed(self):
         evidence = copy.deepcopy(self.evidence)

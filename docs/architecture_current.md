@@ -713,9 +713,13 @@ aborted the run. Safe route p95 values localized breaches to `outcomes_pending`
 at 7,054 ms, `risks_open` at 6,023 ms, and `label_readiness` at 4,167 ms; the
 other four routes stayed below the gate. The temporary viewer was confirmed
 removed and no artifact or completed sustained baseline was retained.
-The first route-specific source correction is now local: the unchanged bounded
-Outcome list and Decision-cohort aggregate start concurrently through separate
-Athena clients under exactly two workers, then return in the existing response
-positions. Both remain required and either failure rejects the whole response.
-No caching, SQL, cutoff, schema, permission, threshold, deployment, or runtime-
-evidence change is included.
+The first route-specific source correction starts the unchanged bounded Outcome
+list and Decision-cohort aggregate concurrently through separate Athena clients
+under exactly two workers, then returns them in the existing response positions.
+Both remain required and either failure rejects the whole response. Commit
+`66eeb52` passed CI and the separately authorized manual workflow run
+`33220634162` passed contract tests and updated the private Operations API
+staging stack. The workflow performed no post-deployment endpoint call or
+latency measurement, so live functional preservation and performance effect
+remain unverified. No caching, SQL, cutoff, schema, permission, threshold,
+schedule, production alias, or Pages change was introduced.
