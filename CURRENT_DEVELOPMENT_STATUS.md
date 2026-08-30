@@ -17,9 +17,9 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
 | Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
 | Restricted Next/Sites decision walkthrough | `PUBLISHED_RESTRICTED_BUILD_VERIFIED` | Owner-only Sites v9 is active with one allowed owner, zero groups, and zero external visitors. It restores the complete six-tab AWS System evidence surface, loads a versioned repository-only snapshot through a fail-closed browser validator, and ships a deterministic source-to-public generator plus CI drift gate. Deployment status succeeded from Sites source commit `f1d4447`; local full-browser verification made no write request. This is not public Pages, live AWS status, or operational authority. |
-| Public System runtime candidate exporter v2 | `IMPLEMENTED_LOCAL_NOT_EXECUTED_OR_PUBLISHED` | The checked-in browser contract now preserves repository mode while admitting runtime mode only from a current-Sydney `system-runtime-observation.v1` aggregate with exact service/reliability/staging boundaries, no Athena query or external write, no retained identifiers, and all-false authority. The local exporter has no AWS client, defaults to validation-only, and refuses to overwrite the tracked Sites snapshot. No AWS observation, candidate promotion, v2 Sites publication, or runtime verification has occurred; owner-only Sites v9 remains on its verified v1 repository build. |
-| System runtime control-plane collector v1 | `IMPLEMENTED_LOCAL_PLAN_FIRST_NOT_EXECUTED` | The collector defaults to a redacted plan and requires an exact read-only confirmation for execution. It permits only fixed S3/Glue/Athena-workgroup/Lambda-alias/Scheduler/SQS/CloudWatch/SNS/IAM control-plane reads, keeps private config and output outside the repository, and fails closed on queries, invocation, writes, staging schedules or prod aliases, managed/broad policies, production-table references, or non-allowlisted Glue/S3 writes. No AWS credential configuration, control-plane call, observation, or new IAM permission occurred. |
-| System runtime manual collection workflow v1 | `IMPLEMENTED_VERIFIED_NOT_CONFIGURED_OR_RUN` | The manual-only workflow defaults to a configuration-free plan with no OIDC or AWS client. Its separate execute branch requires the protected `system-observation-read` environment, short-lived OIDC, exact collector confirmation, secret-backed private config, transient runner files, and unconditional cleanup. It has no artifact, deploy, publication, push, or schedule path; source-control maturity is recorded by Git history, while no GitHub environment, AWS role, credential, call, candidate, or publication was created. |
+| Public System runtime candidate exporter v2 | `IMPLEMENTED_VERIFIED_NOT_EXECUTED_OR_PUBLISHED` | The checked-in browser contract now preserves repository mode while admitting runtime mode only from a current-Sydney `system-runtime-observation.v1` aggregate with exact service/reliability/staging boundaries, no Athena query or external write, no retained identifiers, and all-false authority. The exporter has no AWS client, defaults to validation-only, and refuses to overwrite the tracked Sites snapshot. Commit `4600e4c` is pushed and both source CI paths passed; no AWS observation, candidate promotion, v2 Sites publication, or runtime verification has occurred, and owner-only Sites v9 remains on its verified v1 repository build. |
+| System runtime control-plane collector v1 | `IMPLEMENTED_VERIFIED_PLAN_FIRST_NOT_EXECUTED` | The collector defaults to a redacted plan and requires an exact read-only confirmation for execution. It permits only fixed S3/Glue/Athena-workgroup/Lambda-alias/Scheduler/SQS/CloudWatch/SNS/IAM control-plane reads, keeps private config and output outside the repository, and fails closed on queries, invocation, writes, staging schedules or prod aliases, managed/broad policies, production-table references, or non-allowlisted Glue/S3 writes. Commit `4600e4c` is pushed and both source CI paths passed; no AWS credential configuration, control-plane call, observation, or new IAM permission occurred. |
+| System runtime manual collection workflow v1 | `IMPLEMENTED_VERIFIED_NOT_CONFIGURED_OR_RUN` | The manual-only workflow defaults to a configuration-free plan with no OIDC or AWS client. Its separate execute branch requires the protected `system-observation-read` environment, short-lived OIDC, exact collector confirmation, secret-backed private config, transient runner files, and unconditional cleanup. It has no artifact, deploy, publication, push, or schedule path. Commit `4600e4c` is on `main`; CI run `33320945134` and Decision brief demo CI run `33320945095` passed. No GitHub environment, AWS role, credential, call, candidate, or publication was created. |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-28`. Plan run `33149532396` and separately authorized continuation run `33149577300` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the one-date continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
@@ -1796,6 +1796,11 @@ done.
   smoke, and the expanded 57/57 drift audit pass locally. Source-control
   maturity is recorded by Git history; the workflow has not been configured or
   run, and no AWS or publication action occurred.
+- Delivered the System v2, exporter, collector, workflow, tests, and synchronized
+  documentation to `main` as commit `4600e4c`. Ordinary CI run `33320945134`
+  and path-scoped Decision brief demo CI run `33320945095` both passed. The
+  push did not dispatch the manual collector workflow or trigger Operations API,
+  Pages, Sites, AWS, infrastructure, Action, policy, or model work.
 
 - Implemented and locally verified the plan-only authenticated Operations API
   sustained-read contract. It fixes seven viewer-safe GET projections, a
@@ -2584,11 +2589,12 @@ done.
    restricted build verification as a public Pages canary, live AWS status, or
    operational evidence. The local System v2 runtime candidate exporter is now
    implemented but has not run against AWS or been published. The next bounded
-   collector and its manual plan-first workflow are implemented locally, but
-   neither has run. The bounded commit and push are now explicitly authorized;
-   record source-control and remote-CI maturity through Git history and the
-   final handoff. The new workflow itself is manual-only and will not dispatch
-   from this push. Configuring
+   collector and its manual plan-first workflow are implemented, pushed, and
+   source-CI verified, but neither workflow action has run. The next bounded
+   step, only if separately authorized, is to dispatch the manual workflow's
+   configuration-free `plan` action and retain only its redacted log evidence;
+   it must not request OIDC, load private configuration, or create an AWS
+   client. Configuring
    the protected environment or OIDC role is a separate infrastructure action.
    Any actual AWS execution still needs separate explicit human authorization; Athena is
    limited to `GetWorkGroup`, and query execution remains forbidden because it

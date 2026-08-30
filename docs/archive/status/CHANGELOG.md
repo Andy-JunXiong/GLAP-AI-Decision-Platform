@@ -41,7 +41,9 @@ preserved handoffs.
   read confirmation, temporary files, and unconditional cleanup. It cannot
   upload, deploy, publish, push, or run on a schedule. Source-control maturity
   is recorded by Git history; the protected environment and role remain
-  unconfigured, and the workflow remains unrun.
+  unconfigured, and the workflow remains unrun. Commit `4600e4c` is on `main`;
+  ordinary CI run `33320945134` and Decision brief demo CI run `33320945095`
+  passed without dispatching the workflow or publishing the v2 candidate.
 
 ## 2026-08-29
 
