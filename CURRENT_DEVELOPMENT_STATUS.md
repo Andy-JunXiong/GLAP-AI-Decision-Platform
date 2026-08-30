@@ -1,6 +1,6 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-08-29`
+**Sydney as-of date:** `2026-08-31`
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -16,6 +16,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | --- | --- | --- |
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
 | Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
+| Restricted Next/Sites decision walkthrough | `PUBLISHED_RESTRICTED_BUILD_VERIFIED` | Owner-only Sites v9 is active with one allowed owner, zero groups, and zero external visitors. It restores the complete six-tab AWS System evidence surface, loads a versioned repository-only snapshot through a fail-closed browser validator, and ships a deterministic source-to-public generator plus CI drift gate. Deployment status succeeded from Sites source commit `f1d4447`; local full-browser verification made no write request. This is not public Pages, live AWS status, or operational authority. |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-28`. Plan run `33149532396` and separately authorized continuation run `33149577300` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the one-date continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
@@ -41,7 +42,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Public evaluation evidence view | `V1_PUBLISHED_VERIFIED` | Commit `489ef90`, CI run `32741075346`, and Pages run `32741075493` published the versioned, source-bound `public-evaluation-snapshot.v1` loader and fail-closed gate. Read-only live checks returned HTTP 200 for the page and JSON, the expected 10/30, 5, 150, and 14/16 aggregate, and all-false authority fields |
 | Production readiness | `PARTIAL_NOT_READY` | Offline evidence harness reconciles 10 required gates: 4 staging-runtime-verified and 6 blocked/incomplete; no production authorization |
 | Authenticated sustained read-load plan, simulator, and runner v1 | `PARTIAL_STAGING_EVIDENCE_POST_DEPLOYMENT_OBSERVATION_COMPLETE_OVERALL_P95_ABORT` | After commit `66eeb52` was deployed to the private staging stack, one separately authorized bounded observation preserved the frozen workload and 3,000 ms gate. It returned 20/20 2xx responses and aborted at overall p95 4,996 ms. The three `outcomes_pending` samples had p95 2,913 ms, below the gate, while `risks_open` 6,089 ms, `actions_proposed` 3,108 ms, `learning_review` 3,345 ms, and `label_readiness` 4,996 ms exceeded it. The temporary viewer was confirmed removed, no artifact or protected value was retained, and no retry or further optimization followed. The small sample is descriptive only and proves neither causal improvement nor production performance. No completed sustained-load baseline exists and readiness remains 4/10. |
-| Public Claim Truth v1 | `PARTIALLY_PUBLISHED_PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_UNVERIFIED` | Commit `819e40e` added the pre-artifact gate and aggregate-only live canary; truth-sync commit `682a262` was pushed with it. CI run `33247712691` passed. Pages run `33247712692` passed the seven-claim validator before artifact preparation, published the Scenario Lab, and returned `PASS` from the read-only two-claim canary with both mappings, anchors, disclosures, and all-false authority valid. The README mapping is repository-visible; the Next demo publication channel remains unverified. |
+| Public Claim Truth v1 | `PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_RESTRICTED_BUILD_VERIFIED` | Commit `819e40e` added the pre-artifact gate and aggregate-only live canary; truth-sync commit `682a262` was pushed with it. CI run `33247712691` passed. Pages run `33247712692` passed the seven-claim validator before artifact preparation and returned `PASS` from the read-only two-claim canary. The restricted Next/Sites channel is now established at owner-only v9 from exact source and packaged build, with the local seven-claim validator and zero-write browser path passing; its authenticated live content was not independently fetched, so this is build/deployment verification rather than the Pages canary evidence class. |
 | `SLA_BREACH` Decision Brief v1 | `PRODUCER_API_AND_PRIVATE_UI_DEPLOYED_RUNTIME_BINDING_VERIFIED` | The separately authorized corrected full reconciler returned all seven aggregate booleans true: a natural operational proposal exists, every source Alert is exact-one and eligible, every Decision binding is exact with zero invalid bindings, immutable proposal state and current-view agreement hold, and pre-release Actions remain legacy-null. No identifier or mutation was exposed. |
 | `SLA_BREACH` Outcome provenance readiness audit v1 | `EXECUTED_WAITING_HUMAN_REVIEW` | The separately authorized read-only audit found the natural exact-bound SLA proposal but no named-human completed SLA Action, pending Outcome, or closed Outcome. All drift checks remained valid, so `WAITING_HUMAN_REVIEW` is an expected governance state. No counts, actors, effects, or identifiers were printed. |
 | SLA Decision review handoff v1 | `DEPLOYED_STAGING_EXACT_SOURCE_CANARY_VERIFIED` | Commit `3316627` is published to the private staging cockpit. The live index and all 9 referenced assets matched the authorized build byte-for-byte; the selected-Action Brief and return markers plus the deterministic handoff contract passed without an Action mutation or authenticated entity interaction. |
@@ -1731,6 +1732,31 @@ done.
 
 ## Recently completed — current seven-day window
 
+- Restored and published the restricted Next/Sites decision walkthrough. The
+  public-mode Action Board, Pipeline Health, and Forecast Accuracy now render
+  useful read-only lifecycle, reliability, and forecast-readiness walkthroughs
+  instead of blank authenticated-only shells. Every illustrative Signal,
+  Decision, Shipment, Action, and System navigation path is browser-tested with
+  zero non-GET/HEAD requests and zero runtime errors.
+- Restored the original six-part AWS System information architecture in the
+  current frontend: Daily E2E Flow, AWS Overview, Data Catalog, Logic & SQL,
+  OPS Dashboard, and Release & Lineage. Historical 6 August resource counts are
+  withheld rather than presented as current; no account, ARN, bucket, query,
+  subscriber, or entity identifier is exposed.
+- Added `public-system-evidence-snapshot.v1`, an exact fail-closed browser
+  contract, a versioned machine source, and a deterministic projection
+  generator. Future dates, live-AWS claims, staging authority widening,
+  reliability drift, service-order drift, extra fields, or any true mutation/
+  production authority reject the snapshot. The path-scoped frontend CI runs
+  the byte-for-byte drift gate, lint, contract suite, build, and Chromium smoke
+  test with read-only repository permissions.
+- Owner-only Sites v9 deployed successfully from exact Sites source commit
+  `f1d4447`; access remained one owner, zero groups, and zero external visitors.
+  Thirteen frontend contract tests, one Chromium navigation smoke, all 657
+  Python tests, public-claim validation, the 54/54 drift audit, production
+  dependency audit, and `git diff --check` pass. No AWS, Athena, Pages, Action,
+  production alias, schedule, policy, or model operation occurred.
+
 - Implemented and locally verified the plan-only authenticated Operations API
   sustained-read contract. It fixes seven viewer-safe GET projections, a
   15-minute / 2-rps / four-concurrency / 1,800-request ceiling, zero automatic
@@ -2512,10 +2538,13 @@ done.
    `outcomes_pending` p95 2,913 ms as descriptive staging evidence only. Do not
    rerun it, claim causal improvement, change the gate, or reopen latency
    optimization. Public Claim Truth Pages gating and its aggregate-only live
-   canary are now published and workflow-verified. The next portfolio-hardening
-   slice is to establish the actual Next demo deployment channel and its
-   publication state before deciding whether a separately authorized release
-   or read-only verification is needed; do not infer publication from source.
+   canary are published and workflow-verified. The restricted Next/Sites
+   deployment channel is now established at owner-only v9 with exact-source,
+   packaged-build, and local zero-write browser evidence. Do not reclassify that
+   restricted build verification as a public Pages canary, live AWS status, or
+   operational evidence. Any AWS-backed System snapshot exporter remains a
+   separately approved future boundary because Athena creates a protected query
+   result object.
 3. Do not retry or advance lifecycle dates merely to manufacture Cost or
    Learning evidence. Re-run the relevant reconciler only after a future
    independently justified operational continuation and new explicit authority.

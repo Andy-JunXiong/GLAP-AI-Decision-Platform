@@ -382,6 +382,16 @@ flowchart TB
   source metric date equals its governed cutoff; the UI exposes both dates.
 - Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,
   root-cause, and decision tables remain historical evidence only.
+- The separately hosted Next/Sites System page consumes a versioned
+  `public-system-evidence-snapshot.v1` repository artifact. It performs no AWS
+  query, exposes no resource identifiers or counts, requires all external and
+  operational authority flags to remain false, and withholds service and OPS
+  values when its exact temporal, staging-isolation, reliability, or authority
+  contract fails validation. It is not the GitHub Pages OPS snapshot and does
+  not establish live AWS status. A deterministic local generator projects it
+  from the versioned machine source contract, and the path-scoped frontend CI
+  fails on byte drift before build or browser validation without making a
+  network or AWS call.
 
 ## Isolated stateful multimodal staging boundary
 

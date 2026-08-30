@@ -1,0 +1,55 @@
+name: Decision brief demo CI
+
+on:
+  pull_request:
+    paths:
+      - "decision-brief-demo/**"
+      - ".github/workflows/decision-brief-demo-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "decision-brief-demo/**"
+      - ".github/workflows/decision-brief-demo-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: decision-brief-demo-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    name: Public walkthrough browser smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: decision-brief-demo
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.13.0"
+          cache: npm
+          cache-dependency-path: decision-brief-demo/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint public walkthrough
+        run: npm run lint
+
+      - name: Validate System evidence snapshot
+        run: npm run system-evidence:check
+
+      - name: Build and run contract plus browser tests
+        run: npm test

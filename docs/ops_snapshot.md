@@ -139,6 +139,51 @@ Live read-only checks returned HTTP 200 for the page and v1 JSON and confirmed
 the expected aggregate and all-false authority fields. This publication did
 not change the OPS contract or grant any write path.
 
+## Sites System evidence snapshot
+
+The separately hosted Next/Sites demonstration has a compact
+`public-system-evidence-snapshot.v1` contract at
+`decision-brief-demo/public/data/system-evidence-snapshot.json`. It is not part
+of the GitHub Pages OPS snapshot and does not query AWS.
+
+The contract contains only:
+
+- a repository as-of date and `REPOSITORY_ARCHITECTURE` evidence class;
+- explicit `live_aws_inspection=false` and `read_only=true` boundaries;
+- documented production and isolated-staging track constraints;
+- the governed six-stage, ten-check, retry, event-age, and DLQ-retention
+  reliability constants;
+- six public-safe AWS service responsibilities without resource counts,
+  identifiers, names, paths, or subscriber details; and
+- all-false AWS-write, infrastructure, alias, schedule, Action, policy, and
+  model authority.
+
+The browser validates the exact envelope, fixed service order, temporal
+boundary, staging isolation, reliability constants, and all-false authority
+before displaying service or OPS values. Missing, future-dated, malformed,
+writable, or authority-widened input fails closed and withholds those values.
+The remaining architecture narrative stays explanatory and never substitutes
+live status.
+
+The public JSON is a deterministic projection of
+`decision-brief-demo/contracts/system-evidence-source.v1.json`, produced by
+`decision-brief-demo/scripts/build-system-evidence-snapshot.mjs`. The source
+contract fixes the four canonical repository documents and the complete public
+payload; it cannot point to an unapproved private source. The generator reuses
+the browser contract validator before writing and emits stable formatted JSON.
+
+`npm run system-evidence:check` regenerates the projection in memory and fails
+when the tracked public file differs byte-for-byte. The path-scoped Decision
+brief demo CI runs this gate explicitly and `npm test` runs it again before the
+build, contract tests, and browser smoke test. The generator performs no
+network call, AWS command, query, publication, or operational mutation.
+
+Refreshing this contract from AWS would require a separately approved,
+aggregate-only read path and its own exporter, schema, validation, and
+publication authority. An Athena query is not a read-without-side-effects
+operation because it creates a protected query-result object, so the local
+contract implementation grants no standing AWS-read authority.
+
 ## GitHub configuration
 
 The repository includes an idempotent PowerShell setup command for the current

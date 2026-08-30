@@ -10,7 +10,10 @@
     "build": "vinext build",
     "build:internal": "next build",
     "start": "vinext start",
-    "test": "npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs",
+    "system-evidence:build": "node --experimental-strip-types scripts/build-system-evidence-snapshot.mjs",
+    "system-evidence:check": "node --experimental-strip-types scripts/build-system-evidence-snapshot.mjs --check",
+    "test": "npm run system-evidence:check && npm run build && node --experimental-strip-types --test tests/rendered-html.test.mjs tests/system-evidence-generator.test.mjs tests/system-evidence-snapshot.test.mjs && playwright test --config playwright.config.mjs",
+    "test:smoke": "npm run build && playwright test --config playwright.config.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
@@ -22,6 +25,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
+    "@playwright/test": "1.58.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

@@ -4,6 +4,25 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-08-31
+
+- Restored the complete AWS System information architecture in the restricted
+  Next/Sites decision walkthrough: Daily E2E Flow, AWS Overview, Data Catalog,
+  Logic & SQL, OPS Dashboard, and Release & Lineage. Historical resource counts
+  are withheld rather than presented as current, and the interface exposes no
+  infrastructure or entity identifiers and performs no AWS call.
+- Added `public-system-evidence-snapshot.v1` with a strict browser validator,
+  versioned machine source, deterministic public projection generator, and
+  byte-for-byte CI drift gate. Future dates, live-AWS claims, staging boundary
+  widening, reliability drift, envelope drift, or any operational authority
+  fail closed before display or build.
+- Added the path-scoped Decision brief demo CI workflow with read-only
+  repository permissions, contract tests, and a Chromium smoke that exercises
+  the System tabs and every public walkthrough navigation path without a write
+  request. Owner-only Sites v9 deployed successfully from Sites source commit
+  `f1d4447`; it is restricted build evidence, not public Pages, live AWS status,
+  or production authority.
+
 ## 2026-08-29
 
 - Implemented Public Claim Truth Pages publication hardening. The existing

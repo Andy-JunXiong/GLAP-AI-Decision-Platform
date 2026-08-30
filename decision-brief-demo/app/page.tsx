@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActionEvidence,
   ActionOperation,
@@ -54,9 +54,13 @@ import {
   type DecisionSeverityFilter,
   waitingDecisionActions,
 } from "./decision-queue-filter";
+import {
+  loadSystemEvidenceSnapshot,
+  type SystemEvidenceSnapshot,
+} from "./system-evidence-snapshot";
 import "./operations.css";
 
-type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "learning" | "readiness" | "forecasts" | "health" | "brief";
+type View = "overview" | "signals" | "decisions" | "actions" | "shipments" | "outcomes" | "learning" | "readiness" | "system" | "forecasts" | "health" | "brief";
 type OperationsLoadState = "demo" | "loading" | "connected" | "auth_required" | "error";
 type ShipmentLoadState = "idle" | "loading" | "connected" | "partial" | "error";
 type DataStateKind = "loading" | "empty" | "stale" | "partial" | "failed" | "auth_required" | "idle";
@@ -82,6 +86,7 @@ const navItems: { id: View; label: string; icon: string; internalOnly?: boolean 
   { id: "actions", label: "Action Board", icon: "A" },
   { id: "learning", label: "Learning Review", icon: "L", internalOnly: true },
   { id: "readiness", label: "Label Readiness", icon: "R", internalOnly: true },
+  { id: "system", label: "System", icon: "S" },
   { id: "health", label: "Pipeline Health", icon: "H" },
   { id: "forecasts", label: "Forecast Accuracy", icon: "F" },
 ];
@@ -430,15 +435,15 @@ export default function Home() {
         <nav aria-label="Product navigation">
           <p>Workspace</p>
           {navItems.filter((item) => !item.internalOnly || internalOperationsEnabled()).map((item) => (
-            <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => go(item.id)}>
-              <i>{item.icon}</i>{navigationLabel(item)}
+            <button aria-label={navigationLabel(item)} key={item.id} className={view === item.id ? "active" : ""} onClick={() => go(item.id)}>
+              <i aria-hidden="true">{item.icon}</i>{navigationLabel(item)}
               {item.id === "decisions" && <b>{internalOperationsEnabled() ? waitingDecisionCount : 3}</b>}
             </button>
           ))}
         </nav>
         <div className="sidebar-foot">
-          <div className="system-state"><i /><div><strong>Monitoring active</strong><span>16 sources connected</span></div></div>
-          <button className="user-card"><span>MC</span><div><strong>Mia Chen</strong><small>Import Operations</small></div><i>···</i></button>
+          <div className="system-state"><i /><div><strong>{internalOperationsEnabled() ? "Authenticated monitoring" : "Illustrative mode"}</strong><span>{internalOperationsEnabled() ? "Private staging evidence" : "No live system status"}</span></div></div>
+          <div className="user-card"><span>MC</span><div><strong>Mia Chen</strong><small>Import Operations</small></div><i>···</i></div>
         </div>
       </aside>
 
@@ -455,15 +460,15 @@ export default function Home() {
                 ? <button className="auth-button" onClick={signOutOperations}>Sign out</button>
                 : <button className="auth-button" onClick={() => { void signInOperations(); }}>Internal sign in</button>
             )}
-            <button aria-label="Notifications" className="notification">●<b>3</b></button>
-            <button className="help">?</button>
+            <span aria-label="Illustrative notifications" className="notification" role="img">●<b>3</b></span>
+            <span aria-label="Help is unavailable in the public walkthrough" className="help" role="img">?</span>
           </div>
         </header>
 
         {view === "overview" && <Overview go={go} />}
         {view === "signals" && <Signals filter={signalFilter} setFilter={setSignalFilter} go={go} openBrief={openDecisionBrief} risks={operationsRisks} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "decisions" && <Decisions go={go} actions={operationsActions} operationsState={operationsState} operationsMessage={operationsMessage} reviewHandoffMessage={reviewHandoffMessage} reviewAction={reviewAction} refresh={refreshOperations} />}
-        {view === "actions" && <ActionBoard actions={operationsActions} focusedActionId={selectedReviewActionId} clearFocusedAction={() => setSelectedReviewActionId(null)} backToDecisionBrief={() => go("brief")} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
+        {view === "actions" && <ActionBoard actions={operationsActions} focusedActionId={selectedReviewActionId} clearFocusedAction={() => setSelectedReviewActionId(null)} backToDecisionBrief={() => go("brief")} openDecisionQueue={() => go("decisions")} operationsState={operationsState} operationsMessage={operationsMessage} submitOperation={submitOperation} refresh={refreshOperations} />}
         {view === "shipments" && <Shipments
           go={go} contract={networkContract} entities={shipmentEntities}
           state={networkState} message={networkMessage} shipmentState={shipmentState}
@@ -473,6 +478,7 @@ export default function Home() {
         {view === "outcomes" && <Outcomes outcomes={operationsOutcomes} cohortSummary={outcomeCohortSummary} operationsState={operationsState} operationsMessage={operationsMessage} refresh={refreshOperations} />}
         {view === "learning" && <LearningReview contract={learningContract} state={learningState} message={learningMessage} refresh={refreshLearning} />}
         {view === "readiness" && <LabelReadiness contract={labelReadinessContract} state={labelReadinessState} message={labelReadinessMessage} refresh={refreshLabelReadiness} />}
+        {view === "system" && <SystemOverview go={go} />}
         {view === "health" && <PipelineHealth health={pipelineHealth} state={healthState} message={healthMessage} refresh={refreshPipelineHealth} />}
         {view === "forecasts" && <ForecastAccuracy contract={forecastContract} state={forecastState} message={forecastMessage} refresh={refreshForecasts} />}
         {view === "brief" && (
@@ -497,9 +503,197 @@ function PageTitle({ eyebrow, title, copy, action }: { eyebrow: string; title: s
   return <div className="page-title"><div><span>{eyebrow}</span><h1>{title}</h1><p>{copy}</p></div>{action}</div>;
 }
 
+function SystemOverview({ go }: { go: (view: View) => void }) {
+  type SystemSection = "flow" | "aws" | "data" | "logic" | "ops" | "release";
+  const [section, setSection] = useState<SystemSection>("flow");
+  const [evidence, setEvidence] = useState<SystemEvidenceSnapshot | null>(null);
+  const [evidenceState, setEvidenceState] = useState<"loading" | "connected" | "failed">("loading");
+  const sections: { id: SystemSection; label: string }[] = [
+    { id: "flow", label: "Daily E2E Flow" },
+    { id: "aws", label: "AWS Overview" },
+    { id: "data", label: "Data Catalog" },
+    { id: "logic", label: "Logic & SQL" },
+    { id: "ops", label: "OPS Dashboard" },
+    { id: "release", label: "Release & Lineage" },
+  ];
+
+  useEffect(() => {
+    let active = true;
+    loadSystemEvidenceSnapshot()
+      .then((snapshot) => {
+        if (!active) return;
+        setEvidence(snapshot);
+        setEvidenceState("connected");
+      })
+      .catch(() => {
+        if (!active) return;
+        setEvidence(null);
+        setEvidenceState("failed");
+      });
+    return () => { active = false; };
+  }, []);
+
+  return <div className="page">
+    <PageTitle eyebrow="SYSTEM" title="AWS System & Evidence" copy="Understand what is deployed, how the governed decision loop operates, and where public, staging, and production authority remain separated." />
+    <section className="demo-boundary" role="status">
+      <div><small>Repository-backed architecture</small><strong>Read-only AWS system evidence</strong><span>The architecture and controls below come from the current repository sources of truth. This page performs no AWS inspection and exposes no account IDs, ARNs, buckets, query IDs, subscriber details, or mutation controls.</span></div>
+      <b>NO LIVE CALLS</b>
+    </section>
+    <nav className="system-section-nav" aria-label="System subpages">
+      {sections.map((item) => <button key={item.id} aria-pressed={section === item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}
+    </nav>
+
+    <SystemEvidenceStatus evidence={evidence} state={evidenceState} />
+
+    {section === "flow" && <SystemDailyFlow />}
+    {section === "aws" && <SystemAwsOverview evidence={evidence} state={evidenceState} />}
+    {section === "data" && <SystemDataCatalog />}
+    {section === "logic" && <SystemLogic />}
+    {section === "ops" && <SystemOps go={go} evidence={evidence} state={evidenceState} />}
+    {section === "release" && <SystemRelease />}
+
+    <p className="data-disclaimer">Repository-backed system evidence is not a live AWS console. Logistics records and Outcomes are synthetic; production aliases, schedules, infrastructure changes, Action mutations, policy activation, and model promotion remain separately human-owned.</p>
+  </div>;
+}
+
+function SystemEvidenceStatus({ evidence, state }: {
+  evidence: SystemEvidenceSnapshot | null;
+  state: "loading" | "connected" | "failed";
+}) {
+  if (state === "loading") return <section className="system-evidence-status loading" aria-live="polite"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Validating the versioned repository snapshot</strong><span>Architecture content remains available while its evidence envelope is checked.</span></div><b>CHECKING</b></section>;
+  if (state === "failed" || !evidence) return <section className="system-evidence-status failed" aria-live="assertive"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Snapshot unavailable — status details withheld</strong><span>The AWS and OPS tabs will not substitute unvalidated service or reliability values.</span></div><b>FAIL CLOSED</b></section>;
+  return <section className="system-evidence-status connected" aria-live="polite"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Repository architecture verified for display</strong><span>As of {evidence.repository_as_of_date} · {evidence.evidence_class.replaceAll("_", " ")} · live AWS inspection: no</span></div><b>READ ONLY</b></section>;
+}
+
+function SystemSectionTitle({ eyebrow, title, copy, badge }: { eyebrow: string; title: string; copy: string; badge: string }) {
+  return <div className="system-section-title"><div><small>{eyebrow}</small><h2>{title}</h2><p>{copy}</p></div><b>{badge}</b></div>;
+}
+
+function SystemDailyFlow() {
+  const steps = [
+    ["01", "Ingest synthetic signals", "Shipment, port, disruption, and lifecycle evidence enters the governed analytics boundary.", "S3 + Glue"],
+    ["02", "Detect abnormal conditions", "Athena and Iceberg aggregates identify cutoff-eligible conditions that require review.", "Athena"],
+    ["03", "Explain business exposure", "Deterministic logic connects the condition to fee, inventory, SLA, or cost context.", "Rules"],
+    ["04", "Recommend a bounded response", "Decision Briefs expose the selected rule, alternatives, and unavailable estimates without inventing value.", "Decision"],
+    ["05", "Require named-human review", "Approve, edit, or reject is accepted only from signed identity claims in the private cockpit.", "Human gate"],
+    ["06", "Append governed evidence", "The immutable proposal remains unchanged while idempotent audit events advance Action state.", "Action"],
+    ["07", "Observe and learn cautiously", "Delayed simulated Outcomes can supply review evidence; they do not prove causal or real logistics performance.", "Outcome"],
+  ];
+  return <section className="system-section" aria-label="Daily E2E Flow">
+    <SystemSectionTitle eyebrow="DAILY E2E FLOW" title="Signal to governed learning evidence" copy="The business path and AWS path stay aligned without giving the interface operational execution authority." badge="SYNTHETIC LOGISTICS" />
+    <div className="system-flow-legend"><span><b>Business</b> Signal → Decision → Action → Outcome</span><span><b>AWS</b> S3 → Glue → Athena → Lambda</span><span><b>Control</b> Human review before mutation</span></div>
+    <div className="system-flow-list">
+      {steps.map(([number, title, copy, service]) => <article key={number}>
+        <span>{number}</span><div><h3>{title}</h3><p>{copy}</p></div><b>{service}</b>
+      </article>)}
+    </div>
+    <div className="system-callout"><strong>Two runtime tracks</strong><p>Production uses a success-gated scheduled aggregate path. Stateful multimodal staging is manually invoked, has no production alias or recurring schedule, and cannot write production tables.</p></div>
+  </section>;
+}
+
+function SystemAwsOverview({ evidence, state }: {
+  evidence: SystemEvidenceSnapshot | null;
+  state: "loading" | "connected" | "failed";
+}) {
+  return <section className="system-section" aria-label="AWS Overview">
+    <SystemSectionTitle eyebrow="AWS OVERVIEW" title="Deployed service responsibilities" copy="This inventory preserves verified architecture without presenting historical resource counts as current live status." badge="REPOSITORY EVIDENCE" />
+    {state === "connected" && evidence
+      ? <div className="system-service-grid">{evidence.services.map((service) => <article className="card" key={service.key}><small>{service.key}</small><h3>{service.label}</h3><p>{service.responsibility}</p><span>{service.status.replaceAll("_", " ")}</span></article>)}</div>
+      : <DataState kind={state === "loading" ? "loading" : "failed"} title={state === "loading" ? "Validating service inventory" : "Service inventory withheld"} message={state === "loading" ? "The versioned System evidence snapshot is being checked." : "The snapshot failed validation, so no service status is substituted from page code."} />}
+    <div className="system-boundary-grid">
+      <article><small>PRODUCTION TRACK</small><strong>Scheduler → prod alias → governed aggregates</strong><p>Production automation targets an immutable alias. Movement of that alias remains a separately controlled human action.</p></article>
+      <article><small>ISOLATED STAGING</small><strong>Manual controller → lifecycle history → private cockpit</strong><p>No Scheduler, production alias, or production-table write permission exists in the staging stack.</p></article>
+    </div>
+    <div className="system-callout historical"><strong>Historical counts intentionally withheld</strong><p>The older System page displayed an inspected 6 August 2026 resource inventory. Those counts are preserved in repository history, but this view does not call AWS and therefore does not label them current.</p></div>
+  </section>;
+}
+
+function SystemDataCatalog() {
+  const domains = [
+    ["OPERATE", "Shipment and route state", ["fact_shipment_events_extended_iceberg", "fact_shipment_lifecycle_staging_v1"]],
+    ["DETECT", "Alerts and operational signals", ["fact_ai_alerts_v3", "fact_shipment_signal_candidate_staging_v1"]],
+    ["EXPLAIN", "Root cause and decision context", ["fact_ai_root_causes_v1", "fact_ai_insights_v3"]],
+    ["DECIDE", "Deterministic recommendations", ["fact_ai_decisions_v3", "ai_decision_trace_v1"]],
+    ["ACT", "Governed Action evidence", ["fact_ai_actions_v2", "current Action view"]],
+    ["OBSERVE", "Outcome and learning evidence", ["fact_ai_outcomes_v2", "fact_ai_learning_feedback_v1"]],
+  ];
+  return <section className="system-section" aria-label="Data Catalog">
+    <SystemSectionTitle eyebrow="DATA CATALOG" title="Governed decision domains" copy="Current public analytics use the v3/v2 decision flywheel; staging lifecycle contracts remain isolated and entity identifiers remain private." badge="AGGREGATE SAFE" />
+    <div className="system-domain-grid">
+      {domains.map(([label, title, assets]) => <article className="card" key={String(label)}><small>{label}</small><h3>{title}</h3><div>{(assets as string[]).map((asset) => <code key={asset}>{asset}</code>)}</div></article>)}
+    </div>
+    <div className="system-catalog-boundaries">
+      <article><b>Published contract</b><p>Aggregate counts, freshness, distributions, forecast baselines, quality states, and allowlisted mode/provider/lane labels only.</p></article>
+      <article><b>Private contract</b><p>Shipment and Action identifiers, signed actors, audit events, infrastructure values, and authenticated entity drill-down.</p></article>
+      <article><b>Historical only</b><p>The legacy v1 anomaly, root-cause, and decision tables remain implementation history and cannot claim current daily pipeline health.</p></article>
+    </div>
+  </section>;
+}
+
+function SystemLogic() {
+  const contracts = [
+    ["Cutoff safety", "Only evidence at or before the Sydney business date can enter operational actual-calendar views."],
+    ["Deterministic decision", "Rules select a bounded response and preserve alternatives; learned models cannot replace safety rules."],
+    ["Exact binding", "A proposed Action binds to its Decision Brief version, selected alternative, and deterministic rationale."],
+    ["Append-only state", "Proposal rows remain immutable; idempotent audit events record edit, approve, reject, and complete transitions."],
+    ["Outcome boundary", "Delayed simulated Outcomes support engineering review but never become causal or real-performance evidence."],
+    ["Forecast gate", "At least 28 eligible dates and seven rolling holdouts are required before advisory accuracy can be displayed."],
+  ];
+  return <section className="system-section" aria-label="Logic and SQL">
+    <SystemSectionTitle eyebrow="LOGIC & SQL" title="Fail-closed decision contracts" copy="The interface explains governed calculations and table relationships without executing SQL or exposing query text, IDs, or result locations." badge="DETERMINISTIC FIRST" />
+    <div className="system-contract-list">
+      {contracts.map(([title, copy], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{title}</strong><p>{copy}</p></div><b>ENFORCED</b></article>)}
+    </div>
+    <div className="system-callout"><strong>SQL boundary</strong><p>Athena performs governed aggregate and Iceberg operations behind validated adapters. The public interface presents contracts and safe results only; it cannot submit a query.</p></div>
+  </section>;
+}
+
+function SystemOps({ go, evidence, state }: {
+  go: (view: View) => void;
+  evidence: SystemEvidenceSnapshot | null;
+  state: "loading" | "connected" | "failed";
+}) {
+  const stages = ["Generation", "Lakehouse ingestion", "Input validation", "Decision pipeline", "Decision flywheel", "Output validation"];
+  return <section className="system-section" aria-label="OPS Dashboard">
+    <SystemSectionTitle eyebrow="OPS DASHBOARD" title="Reliability and recovery controls" copy="A run is current only after the exact six-stage sequence and all ten input/output quality checks succeed." badge="FAIL CLOSED" />
+    {state === "connected" && evidence ? <>
+      <div className="system-stage-strip">{stages.map((stage, index) => <article key={stage}><span>{index + 1}</span><strong>{stage}</strong></article>)}</div>
+      <div className="system-ops-grid">
+        <article className="card"><small>QUALITY GATES</small><h3>{evidence.reliability.quality_check_count} required checks</h3><p>Missing dates, empty inputs, duplicate keys, abnormal volume, and stale outputs are checked at both input and output boundaries.</p></article>
+        <article className="card"><small>RECOVERY</small><h3>{evidence.reliability.retry_count} retries · {evidence.reliability.max_event_age_hours}h event age</h3><p>Exhausted scheduled failures enter the encrypted {evidence.reliability.dlq_retention_days}-day DLQ; recovery must finish with a governed rerun.</p></article>
+        <article className="card"><small>OBSERVABILITY</small><h3>Safe operational evidence</h3><p>Logs and alarms cover start, counts, failures, throttles, duration, and DLQ state without publishing sensitive entity data.</p></article>
+      </div>
+    </> : <DataState kind={state === "loading" ? "loading" : "failed"} title={state === "loading" ? "Validating reliability controls" : "Reliability values withheld"} message={state === "loading" ? "The versioned System evidence snapshot is being checked." : "The snapshot failed validation, so stage and recovery values are not displayed."} />}
+    <div className="system-action-row">
+      <button className="outline-button" onClick={() => go("health")}>Open Pipeline Health</button>
+      <button className="outline-button" onClick={() => go("forecasts")}>Open Forecast Accuracy</button>
+      <button className="outline-button" onClick={() => go("actions")}>Open Action Board</button>
+    </div>
+    <div className="system-callout historical"><strong>No live health claim here</strong><p>The public Pipeline Health walkthrough explains controls. Current, stale, partial, or failed operational evidence is available only in the authenticated staging cockpit.</p></div>
+  </section>;
+}
+
+function SystemRelease() {
+  const release = ["Git commit", "CI checks", "GitHub OIDC", "Candidate", "Read-only dry-run", "Immutable version", "staging alias"];
+  return <section className="system-section" aria-label="Release and Lineage">
+    <SystemSectionTitle eyebrow="RELEASE & LINEAGE" title="Delivery without production authority" copy="Short-lived GitHub credentials can prepare and validate a candidate while production promotion stays outside the automated staging path." badge="HUMAN CONTROLLED" />
+    <div className="system-release-flow">{release.map((item, index) => <Fragment key={item}><article><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></article>{index < release.length - 1 && <b>→</b>}</Fragment>)}</div>
+    <div className="system-boundary-grid release">
+      <article><small>STAGING AUTHORITY</small><strong>Candidate, dry-run, immutable version, staging alias</strong><p>The scoped deployer cannot update prod, administer IAM, modify Scheduler, or deploy unrelated functions.</p></article>
+      <article><small>SEPARATE HUMAN AUTHORITY</small><strong>Production, schedules, infrastructure, policies, models</strong><p>Each requires its own explicit approval. Successful tests or a source publication do not grant that authority.</p></article>
+    </div>
+    <div className="system-lineage-grid">
+      <article><small>SIGNAL</small><strong>Alert + insight</strong><p>Aggregate or authenticated evidence identifies a reviewable condition.</p></article>
+      <article><small>DECISION</small><strong>Brief + alternative</strong><p>Deterministic rationale binds the proposed response.</p></article>
+      <article><small>ACTION</small><strong>Proposal + audit</strong><p>Named-human events advance state without rewriting the proposal.</p></article>
+      <article><small>LEARNING</small><strong>Outcome + proposal</strong><p>Evidence may create a pending proposal; activation is never automatic.</p></article>
+    </div>
+  </section>;
+}
+
 function Overview({ go }: { go: (view: View) => void }) {
   return <div className="page">
-    <PageTitle eyebrow="Thursday, 23 July · 09:42 AEST" title="Good morning, Mia." copy="Here is what needs attention across your logistics network." action={<button className="outline-button">Last 24 hours⌄</button>} />
+    <PageTitle eyebrow="Thursday, 23 July · 09:42 AEST" title="Good morning, Mia." copy="Here is what needs attention across your logistics network." action={<span className="outline-button static-control">Fixed walkthrough</span>} />
     <section className="metric-grid">
       <Metric label="Critical signals" value="3" note="+2 since yesterday" tone="red" />
       <Metric label="Pending decisions" value="3" note="1 due within 3 hours" tone="amber" />
@@ -530,7 +724,7 @@ function Overview({ go }: { go: (view: View) => void }) {
           <p>Illustrative scenario recommendation · Sydney congestion and strike assumptions threaten critical inventory.</p>
           <div><span>12 FCL exposed</span><b>Protect $5,760 →</b></div>
         </button>
-        <button className="attention-item">
+        <button className="attention-item" onClick={() => go("signals")}>
           <span className="severity high">HIGH</span><small>Due in 6h 30m</small>
           <strong>Expedite critical SKU replenishment</strong>
           <p>Brisbane DC inventory cover has fallen below threshold.</p>
@@ -579,11 +773,11 @@ function Signals({ filter, setFilter, go, openBrief, risks, operationsState, ope
     </div>}
   </div>;
   return <div className="page">
-    <PageTitle eyebrow="DETECT" title="Signal monitoring" copy="See emerging risks before they become operational disruption." action={<button className="primary-button">＋ Add source</button>} />
+    <PageTitle eyebrow="DETECT" title="Signal monitoring" copy="See emerging risks before they become operational disruption." action={<span className="outline-button static-control">4 illustrative sources</span>} />
     <div className="toolbar"><div className="filters">{["All","Critical","High","Medium"].map((f) => <button className={filter === f ? "active" : ""} onClick={() => setFilter(f)} key={f}>{f}{f === "All" && " 4"}</button>)}</div><label className="search">⌕<input placeholder="Search signals" /></label></div>
     <div className="table-card">
       <div className="data-row table-head"><span>Risk</span><span>Signal</span><span>Current reading</span><span>Exposure</span><span>Detected</span><span /></div>
-      {visible.map((signal, index) => <button className="data-row" key={signal.title} onClick={() => index === 0 && go("brief")}>
+      {visible.map((signal) => <button className="data-row" key={signal.title} onClick={() => go("brief")}>
         <span><b className={`risk-pill ${signal.severity.toLowerCase()}`}>{signal.severity}</b></span>
         <span><strong>{signal.title}</strong><small>{signal.source}</small></span>
         <span><strong>{signal.value}</strong></span><span>{signal.affected}</span><span>{signal.time}</span><span className="row-link">→</span>
@@ -626,9 +820,9 @@ function Decisions({ go, actions, operationsState, operationsMessage, reviewHand
 
 function DemoDecisions({ go }: { go: (view: View) => void }) {
   return <div className="page">
-    <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Prioritised recommendations ready for human review." action={<button className="outline-button">Export queue</button>} />
+    <PageTitle eyebrow="DECIDE" title="Decision queue" copy="Prioritised recommendations ready for human review." action={<span className="outline-button static-control">3 illustrative items</span>} />
     <div className="queue-summary"><span><strong>3</strong>Waiting for review</span><span><strong>1</strong>Due within 3 hours</span><span><strong>$27.4k</strong>Potential value</span></div>
-    <div className="decision-list">{decisions.map((item, index) => <button className="decision-card" key={item.id} onClick={() => index === 0 && go("brief")}>
+    <div className="decision-list">{decisions.map((item) => <button className="decision-card" key={item.id} onClick={() => go("brief")}>
       <div className={`decision-priority ${item.priority.toLowerCase()}`}><i /><span>{item.priority}</span></div>
       <div className="decision-main"><small>{item.id}</small><strong>{item.title}</strong><span>Owner · {item.owner}</span></div>
       <div className="decision-value"><small>Modelled value</small><strong>{item.value}</strong></div>
@@ -638,11 +832,12 @@ function DemoDecisions({ go }: { go: (view: View) => void }) {
   </div>;
 }
 
-function ActionBoard({ actions, focusedActionId, clearFocusedAction, backToDecisionBrief, operationsState, operationsMessage, submitOperation, refresh }: {
+function ActionBoard({ actions, focusedActionId, clearFocusedAction, backToDecisionBrief, openDecisionQueue, operationsState, operationsMessage, submitOperation, refresh }: {
   actions: OperationsAction[];
   focusedActionId: string | null;
   clearFocusedAction: () => void;
   backToDecisionBrief: () => void;
+  openDecisionQueue: () => void;
   operationsState: OperationsLoadState;
   operationsMessage: string;
   submitOperation: (actionId: string, operation: ActionOperation, reason: string, assignment?: { actionOwner?: string; actionDueDate?: string }) => Promise<boolean>;
@@ -692,11 +887,10 @@ function ActionBoard({ actions, focusedActionId, clearFocusedAction, backToDecis
     }
     finally { setBusyAction(""); }
   };
+  if (operationsState === "demo") return <DemoActionBoard openDecisionBrief={backToDecisionBrief} openDecisionQueue={openDecisionQueue} />;
   return <div className="page">
     <PageTitle eyebrow="OPERATE" title="Action Board" copy="Move approved operational Actions through their governed lifecycle." action={<button className="outline-button" onClick={() => void refresh()}>Refresh board</button>} />
-    {operationsState === "demo"
-      ? <p className="data-disclaimer">Public demonstration mode is read-only. Configure the internal Operations API and sign in to use the Action Board.</p>
-      : <OperationsState state={operationsState} message={operationsMessage} label="Action Board" onRetry={refresh} />}
+    <OperationsState state={operationsState} message={operationsMessage} label="Action Board" onRetry={refresh} />
     {operationsState === "connected" && <>
       {focusedActionId && !focusedAction && <DataState kind="failed" title="Selected Action unavailable" message="The selected Action is no longer present in the authenticated queue. No mutation is available from this review handoff." action={<button className="outline-button" onClick={clearFocusedAction}>Show all Actions</button>} />}
       {focusedAction && <section className="review-handoff-banner" role="status">
@@ -737,6 +931,41 @@ function ActionBoard({ actions, focusedActionId, clearFocusedAction, backToDecis
         </section>}
       </article>)}</div></>}
     </>}
+  </div>;
+}
+
+function DemoActionBoard({ openDecisionBrief, openDecisionQueue }: {
+  openDecisionBrief: () => void;
+  openDecisionQueue: () => void;
+}) {
+  return <div className="page">
+    <PageTitle eyebrow="OPERATE" title="Action Board" copy="Follow an illustrative Action from proposal through human review to a delayed Outcome." action={<button className="outline-button" onClick={openDecisionQueue}>Open decision queue</button>} />
+    <section className="demo-boundary" role="status">
+      <div><small>Public walkthrough</small><strong>Read-only lifecycle preview</strong><span>These cards explain the governed workflow. They do not call the Operations API or send instructions to a carrier, terminal, or warehouse.</span></div>
+      <b>NO WRITES</b>
+    </section>
+    <section className="metric-grid compact">
+      <Metric label="Lifecycle steps" value="3" note="Proposal, review, Outcome" />
+      <Metric label="Human decision gates" value="2" note="Approve or reject" />
+      <Metric label="Automatic execution" value="0" note="Always disabled" tone="green" />
+      <Metric label="Evidence mode" value="Illustrative" note="Not operational status" tone="amber" />
+    </section>
+    <section className="demo-lifecycle-grid" aria-label="Illustrative Action lifecycle">
+      <article><span>1</span><div><small>Immutable proposal</small><strong>Decision becomes an Action</strong><p>The recommendation, selected alternative, and rationale are fixed before review.</p></div></article>
+      <article><span>2</span><div><small>Named-human review</small><strong>Approve, reject, or edit</strong><p>Every change becomes an append-only audit event; the public walkthrough cannot perform it.</p></div></article>
+      <article><span>3</span><div><small>Delayed evidence</small><strong>Observe an Outcome later</strong><p>A completed Action can create a synthetic pending Outcome, which remains separate from real performance.</p></div></article>
+    </section>
+    <article className="card demo-action-example">
+      <CardHead title="Illustrative Action ready for review" copy="One fixed example connects the Decision Brief to the governed Action lifecycle." />
+      <div className="decision-card demo-action-card">
+        <div className="decision-priority critical"><i /><span>Critical</span></div>
+        <div className="decision-main"><small>ILLUSTRATIVE ACTION</small><strong>Divert 8 FCL via Melbourne</strong><span>Bound to the fixed port-disruption Decision Brief</span></div>
+        <div className="decision-value"><small>Status</small><strong>Proposed</strong></div>
+        <div className="decision-due"><small>Authority</small><strong>Human review</strong></div>
+        <button className="primary-button" onClick={openDecisionBrief}>Review illustrative brief</button>
+      </div>
+    </article>
+    <p className="data-disclaimer">Illustrative public content only. No Action is assigned, approved, rejected, completed, or executed from this page.</p>
   </div>;
 }
 
@@ -781,10 +1010,7 @@ function PipelineHealth({ health, state, message, refresh }: {
   message: string;
   refresh: () => Promise<void>;
 }) {
-  if (state === "demo") return <div className="page">
-    <PageTitle eyebrow="RELIABILITY" title="Pipeline Health" copy="Stage-level operational diagnostics are available only inside the authenticated staging cockpit." />
-    <p className="data-disclaimer">The public demonstration does not expose private pipeline stages, infrastructure details, or operational runbooks.</p>
-  </div>;
+  if (state === "demo") return <DemoPipelineHealth />;
   const label = (value: string) => value.replaceAll("_", " ");
   return <div className="page">
     <PageTitle eyebrow="RELIABILITY" title="Pipeline Health" copy="See where the latest operational run is healthy, delayed, or blocked before its data reaches decisions." action={<button className="outline-button" onClick={() => void refresh()}>Refresh health</button>} />
@@ -816,16 +1042,42 @@ function PipelineHealth({ health, state, message, refresh }: {
   </div>;
 }
 
+function DemoPipelineHealth() {
+  const stages = [
+    ["Signal intake", "Collect synthetic shipment and disruption inputs."],
+    ["Feature preparation", "Create cutoff-safe aggregates for detection."],
+    ["Anomaly detection", "Identify conditions that require review."],
+    ["Decision generation", "Apply deterministic, explainable rules."],
+    ["Input validation", "Fail closed when required evidence is incomplete."],
+    ["Output validation", "Release only when governed quality checks pass."],
+  ];
+  return <div className="page">
+    <PageTitle eyebrow="RELIABILITY" title="Pipeline Health" copy="Understand the six gates that must pass before synthetic operational evidence can reach a decision." />
+    <section className="demo-boundary" role="status">
+      <div><small>System walkthrough</small><strong>No live health status is exposed</strong><span>The public view explains the control flow without revealing private stages, infrastructure identifiers, timestamps, alarms, or runbooks.</span></div>
+      <b>ILLUSTRATIVE</b>
+    </section>
+    <section className="metric-grid compact">
+      <Metric label="Governed stages" value="6" note="Required sequence" />
+      <Metric label="Quality checks" value="10" note="Input and output gates" />
+      <Metric label="Live stages shown" value="0" note="Private by design" tone="green" />
+      <Metric label="Failure policy" value="Fail closed" note="No partial health claim" tone="amber" />
+    </section>
+    <section className="pipeline-stage-grid">{stages.map(([name, purpose], index) => <article className="pipeline-stage illustrative" key={name}>
+      <div className="pipeline-stage-head"><span>{index + 1}</span><div><small>Stage {index + 1}</small><strong>{name}</strong></div><b>Walkthrough</b></div>
+      <p className="demo-stage-purpose">{purpose}</p>
+    </article>)}</section>
+    <DataState kind="idle" title="What the authenticated cockpit adds" message="Signed-in staging users can see current, stale, partial, or failed evidence and the exact quality gate that blocked a run. This public walkthrough never labels an illustrative stage as healthy." />
+  </div>;
+}
+
 function ForecastAccuracy({ contract, state, message, refresh }: {
   contract: ForecastContract | null;
   state: OperationsLoadState;
   message: string;
   refresh: () => Promise<void>;
 }) {
-  if (state === "demo") return <div className="page">
-    <PageTitle eyebrow="PLAN" title="Forecast Accuracy" copy="Operational forecast and backtest evidence is available only inside the authenticated staging cockpit." />
-    <p className="data-disclaimer">The public demonstration does not present synthetic engineering results as measured forecast performance.</p>
-  </div>;
+  if (state === "demo") return <DemoForecastAccuracy />;
   const metrics = contract?.accuracy.metrics;
   const maxForecast = Math.max(...(contract?.forecast.points.map((point) => point.upper_bound) ?? [1]), 1);
   return <div className="page">
@@ -863,6 +1115,40 @@ function ForecastAccuracy({ contract, state, message, refresh }: {
       </section>
       <p className="data-disclaimer">{contract.disclosure} Scenario: {contract.forecast.scenario_id}.</p>
     </>}
+  </div>;
+}
+
+function DemoForecastAccuracy() {
+  return <div className="page">
+    <PageTitle eyebrow="PLAN" title="Forecast Accuracy" copy="See the evidence gates a forecast must clear before advisory accuracy can be displayed." />
+    <section className="forecast-boundary demo-forecast-boundary">
+      <div><small>Public walkthrough</small><strong>Readiness logic, not measured performance</strong><span>No forecast points, accuracy scores, or production predictions are presented as observed results.</span></div>
+      <b>ILLUSTRATIVE</b>
+    </section>
+    <section className="metric-grid compact">
+      <Metric label="History gate" value="28 dates" note="Actual-calendar coverage required" />
+      <Metric label="Accuracy gate" value="7 holdouts" note="Rolling evaluations required" />
+      <Metric label="Production effect" value="Blocked" note="Advisory only" tone="amber" />
+      <Metric label="Promotion authority" value="Human" note="Never automatic" tone="green" />
+    </section>
+    <section className="forecast-grid demo-forecast-grid">
+      <article className="card"><CardHead title="How evidence becomes displayable" copy="Each gate must be satisfied using cutoff-eligible actual-calendar evidence." />
+        <ol className="demo-readiness-list">
+          <li><span>1</span><div><strong>Build eligible history</strong><p>Future simulations and pending labels cannot fill the 28-date coverage window.</p></div></li>
+          <li><span>2</span><div><strong>Run rolling holdouts</strong><p>At least seven one-step-ahead evaluations are required before accuracy metrics can appear.</p></div></li>
+          <li><span>3</span><div><strong>Keep the decision bounded</strong><p>Passing engineering checks permits an advisory display only; it does not authorize model promotion or production control.</p></div></li>
+        </ol>
+      </article>
+      <article className="card"><CardHead title="What remains hidden here" copy="The public walkthrough avoids pseudo-performance and private operational detail." />
+        <dl className="forecast-metrics">
+          <div><dt>Forecast points</dt><dd>Not shown</dd></div>
+          <div><dt>MAE / RMSE / MAPE</dt><dd>Not claimed</dd></div>
+          <div><dt>Operational cutoff</dt><dd>Private</dd></div>
+          <div><dt>Model promotion</dt><dd className="blocked">Not authorised</dd></div>
+        </dl>
+      </article>
+    </section>
+    <p className="data-disclaimer">This page explains the governed forecast contract only. It does not establish measured accuracy, real logistics performance, label maturity, or production readiness.</p>
   </div>;
 }
 
@@ -932,7 +1218,7 @@ function DemoShipments({ go }: { go: (view: View) => void }) {
     <section className="metric-grid compact"><Metric label="Active shipments" value="46" note="21 inbound FCL" /><Metric label="Delayed" value="11" note="4 over 48 hours" tone="amber" /><Metric label="At-risk FCL" value="15" note="Across 2 ports" tone="red" /><Metric label="Critical SKUs" value="6" note="Below 10 days cover" /></section>
     <div className="table-card shipment-table">
       <div className="shipment-row table-head"><span>Reference</span><span>Route</span><span>ETA</span><span>FCL</span><span>Inventory cover</span><span>Risk</span><span>Action</span></div>
-      {shipments.map((item, index) => <button className="shipment-row" key={item.ref} onClick={() => index === 0 && go("brief")}>
+      {shipments.map((item) => <button className="shipment-row" key={item.ref} onClick={() => go("brief")}>
         <strong>{item.ref}</strong><span>{item.route}</span><span>{item.eta}</span><span>{item.fcl}</span><span>{item.inventory}</span><span><b className={`risk-pill ${item.risk.toLowerCase()}`}>{item.risk}</b></span><span className="row-link">{item.action} →</span>
       </button>)}
     </div>
@@ -1198,7 +1484,7 @@ function LabelReadiness({ contract, state, message, refresh }: {
 
 function DemoOutcomes() {
   return <div className="page" data-claim-id="next-outcomes-summary" data-claim-classification="ILLUSTRATIVE">
-    <PageTitle eyebrow="LEARN" title="Illustrative outcomes & value" copy="Explore how outcome and value reporting could work. No execution or realised-value evidence is shown." action={<button className="outline-button">Fixed scenario⌄</button>} />
+    <PageTitle eyebrow="LEARN" title="Illustrative outcomes & value" copy="Explore how outcome and value reporting could work. No execution or realised-value evidence is shown." action={<span className="outline-button static-control">Fixed scenario</span>} />
     <section className="metric-grid"><Metric label="Illustrative decisions" value="24" note="Assumed 89% acceptance" /><Metric label="Modelled scenario value" value="$128.4k" note="Illustrative comparison only" tone="green" /><Metric label="Illustrative storage avoidance" value="$46.2k" note="12 scenario interventions" /><Metric label="Illustrative stockout scenarios" value="7" note="Across 18 synthetic SKUs" /><Metric label="Illustrative forecast score" value="84%" note="Not operational accuracy" /></section>
     <section className="outcome-grid">
       <article className="card outcome-chart"><CardHead title="Illustrative cumulative scenario value" copy="Fixed modelled examples, not realised benefit" /><div className="line-chart"><div className="chart-line" /><span className="chart-label l1">$0</span><span className="chart-label l2">$50k</span><span className="chart-label l3">$100k</span><div className="chart-dot" /></div><div className="chart-months"><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span></div></article>

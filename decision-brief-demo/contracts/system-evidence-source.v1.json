@@ -1,0 +1,82 @@
+{
+  "schema_version": "system-evidence-source.v1",
+  "source_documents": [
+    "../INFRASTRUCTURE.md",
+    "../docs/architecture_current.md",
+    "../docs/deployment_workflow.md",
+    "../docs/ops_snapshot.md"
+  ],
+  "public_snapshot": {
+    "repository_as_of_date": "2026-08-31",
+    "evidence_class": "REPOSITORY_ARCHITECTURE",
+    "live_aws_inspection": false,
+    "read_only": true,
+    "disclosure": "Repository-backed architecture evidence; not live AWS status or production readiness evidence.",
+    "production_track": {
+      "status": "DOCUMENTED_DEPLOYED",
+      "scheduler_target": "PROD_ALIAS",
+      "immutable_alias": true
+    },
+    "staging_track": {
+      "status": "DEPLOYED_VERIFIED",
+      "manual_only": true,
+      "scheduler_present": false,
+      "production_alias_present": false,
+      "production_table_write": false
+    },
+    "reliability": {
+      "stage_count": 6,
+      "quality_check_count": 10,
+      "retry_count": 2,
+      "max_event_age_hours": 24,
+      "dlq_retention_days": 14
+    },
+    "services": [
+      {
+        "key": "storage",
+        "label": "Amazon S3",
+        "status": "DEPLOYED_ARCHITECTURE",
+        "responsibility": "Iceberg data files and Athena query results; resource names and paths remain private."
+      },
+      {
+        "key": "catalog",
+        "label": "AWS Glue",
+        "status": "DEPLOYED_ARCHITECTURE",
+        "responsibility": "Governed table metadata for production analytics and isolated staging lifecycle data."
+      },
+      {
+        "key": "analytics",
+        "label": "Amazon Athena",
+        "status": "DEPLOYED_ARCHITECTURE",
+        "responsibility": "Cutoff-safe SQL analytics and Iceberg operations with bounded failure handling."
+      },
+      {
+        "key": "compute",
+        "label": "AWS Lambda",
+        "status": "DEPLOYED_ARCHITECTURE",
+        "responsibility": "Deterministic orchestration, validation, export, and bounded release functions."
+      },
+      {
+        "key": "reliability",
+        "label": "Scheduler + SQS",
+        "status": "DEPLOYED_ARCHITECTURE",
+        "responsibility": "Production scheduling, bounded retries, and encrypted dead-letter recovery."
+      },
+      {
+        "key": "observability",
+        "label": "CloudWatch + SNS",
+        "status": "DEPLOYED_ARCHITECTURE",
+        "responsibility": "Safe alarms and notifications while subscriber details remain protected."
+      }
+    ],
+    "authority": {
+      "aws_write": false,
+      "infrastructure_change": false,
+      "production_alias_move": false,
+      "schedule_change": false,
+      "action_mutation": false,
+      "policy_activation": false,
+      "model_promotion": false
+    }
+  }
+}
