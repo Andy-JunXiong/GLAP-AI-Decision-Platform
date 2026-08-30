@@ -22,6 +22,26 @@ preserved handoffs.
   request. Owner-only Sites v9 deployed successfully from Sites source commit
   `f1d4447`; it is restricted build evidence, not public Pages, live AWS status,
   or production authority.
+- Added the local `public-system-evidence-snapshot.v2` runtime-candidate path.
+  The browser now validates repository and AWS-observation modes separately;
+  `system-runtime-observation.v1` and its Python exporter require current-
+  Sydney, aggregate-only, identifier-free control-plane evidence with no Athena
+  query, external write, staging widening, or operational authority. The
+  exporter has no AWS client and cannot overwrite the tracked Sites snapshot;
+  no runtime observation or v2 publication has occurred.
+- Added the local plan-first System runtime control-plane collector. It exposes
+  only a redacted fixed-call plan by default, requires an exact confirmation to
+  execute, and keeps private config/output outside the repository. Mocked AWS
+  clients verify production controls and fail closed on staging schedules,
+  `prod` aliases, managed/broad IAM policies, production-table references, or
+  non-allowlisted Glue/S3 writes. No AWS collection or permission change ran.
+- Added the manual-only System runtime observation workflow. Its default plan
+  is configuration-free and has no OIDC/AWS path; its separate protected
+  execute branch uses short-lived OIDC, secret-backed configuration, exact
+  read confirmation, temporary files, and unconditional cleanup. It cannot
+  upload, deploy, publish, push, or run on a schedule. Source-control maturity
+  is recorded by Git history; the protected environment and role remain
+  unconfigured, and the workflow remains unrun.
 
 ## 2026-08-29
 

@@ -382,16 +382,40 @@ flowchart TB
   source metric date equals its governed cutoff; the UI exposes both dates.
 - Current public health follows the v3/v2 decision flywheel. Stale v1 anomaly,
   root-cause, and decision tables remain historical evidence only.
-- The separately hosted Next/Sites System page consumes a versioned
-  `public-system-evidence-snapshot.v1` repository artifact. It performs no AWS
-  query, exposes no resource identifiers or counts, requires all external and
-  operational authority flags to remain false, and withholds service and OPS
-  values when its exact temporal, staging-isolation, reliability, or authority
-  contract fails validation. It is not the GitHub Pages OPS snapshot and does
-  not establish live AWS status. A deterministic local generator projects it
-  from the versioned machine source contract, and the path-scoped frontend CI
-  fails on byte drift before build or browser validation without making a
-  network or AWS call.
+- The checked-in Next/Sites System page now uses the dual-mode
+  `public-system-evidence-snapshot.v2` contract. Its default tracked artifact is
+  still repository architecture evidence: it performs no AWS query, exposes no
+  resource identifiers or counts, requires all external and operational
+  authority flags to remain false, and withholds service and OPS values when
+  the exact temporal, staging-isolation, reliability, provenance, or authority
+  contract fails validation. The optional runtime mode accepts only a current-
+  Sydney `system-runtime-observation.v1` aggregate with no Athena query,
+  external write, retained identifier, staging widening, or authority. The
+  local exporter has no AWS client and cannot replace the tracked Sites file;
+  collecting, promoting, or publishing a candidate remains separately human-
+  authorized. Owner-only Sites v9 still serves the previously verified v1
+  repository build; no v2 runtime observation has been executed or published.
+- The separate `collect_system_runtime_observation.py` path is implemented and
+  locally verified but has not been run against AWS. It defaults to a safe plan,
+  requires an exact confirmation before execution, and permits only fixed S3,
+  Glue, Athena-workgroup, Lambda-alias, Scheduler, SQS, CloudWatch, SNS, and IAM
+  control-plane reads. Private resource configuration and aggregate output must
+  stay outside the repository. The collector fails closed on Athena queries,
+  Lambda invocation, AWS writes, managed staging policies, broad service
+  actions, production-table references, non-allowlisted Glue/S3 write scopes,
+  staging schedules, or a staging `prod` alias. It adds no deployed resource,
+  IAM permission, publication path, or standing AWS-read authority.
+- The manual `collect-system-runtime-observation.yml` workflow wraps that
+  collector without widening its authority. Its default `plan` job needs no
+  private configuration, protected environment, OIDC token, or AWS client. The
+  separately selected `execute` job is bound to the protected
+  `system-observation-read` environment, obtains only a short-lived OIDC
+  session, requires the collector's exact read confirmation, and keeps both
+  observation and candidate files under the runner's temporary directory. An
+  unconditional cleanup removes those files; the workflow has no artifact
+  upload, deploy, publication, push, or scheduled trigger. Source-control
+  maturity is recorded by Git history; the protected environment and role have
+  not been configured, and the workflow has not run.
 
 ## Isolated stateful multimodal staging boundary
 

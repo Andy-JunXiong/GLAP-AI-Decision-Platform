@@ -4258,6 +4258,427 @@ def check_public_evaluation_snapshot_boundary(root: Path) -> list[CheckResult]:
     ]
 
 
+def check_system_runtime_manual_collection_workflow_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    evidence = (
+        ".github/workflows/collect-system-runtime-observation.yml",
+        "ops/collect_system_runtime_observation.py",
+        "ops/export_public_system_evidence_snapshot.py",
+        "tests/test_collect_system_runtime_workflow.py",
+        "docs/project_drift_contract.json",
+        "docs/architecture_current.md",
+        "docs/deployment_workflow.md",
+        "docs/ops_snapshot.md",
+        "CURRENT_DEVELOPMENT_STATUS.md",
+    )
+    passed = False
+    failure = "The manual System runtime collection workflow boundary drifted."
+    try:
+        workflow = (
+            root / ".github/workflows/collect-system-runtime-observation.yml"
+        ).read_text(encoding="utf-8")
+        collector = _load_repository_module(
+            root, "ops/collect_system_runtime_observation.py"
+        )
+        plan = workflow.split("  plan:\n", 1)[1].split("  execute:\n", 1)[0]
+        execute = workflow.split("  execute:\n", 1)[1]
+        contract = load_contract(root)
+        capability = next(
+            (
+                item
+                for item in contract.get("capabilities", [])
+                if item.get("id")
+                == "system_runtime_manual_collection_workflow_v1"
+            ),
+            {},
+        )
+        environment_names = tuple(collector.ENV_SCALARS.values()) + tuple(
+            collector.ENV_LISTS.values()
+        )
+        secret_bindings = tuple(
+            f"{name}: ${{{{ secrets.SYSTEM_{name.removeprefix('GLAP_SYSTEM_')} }}}}"
+            for name in environment_names
+        )
+        forbidden_workflow = (
+            "\n  push:",
+            "\n  schedule:",
+            "actions/upload-artifact",
+            "actions/deploy-pages",
+            "git push",
+            "start-query-execution",
+            "aws athena",
+        )
+        passed = (
+            "workflow_dispatch:" in workflow
+            and "default: plan" in workflow
+            and "permissions:\n  contents: read" in workflow
+            and "cancel-in-progress: false" in workflow
+            and not any(marker in workflow.lower() for marker in forbidden_workflow)
+            and "--action plan" in plan
+            and "without private configuration or AWS credentials" in plan
+            and "environment:" not in plan
+            and "id-token: write" not in plan
+            and "configure-aws-credentials" not in plan
+            and "secrets." not in plan
+            and "--config-from-environment" not in plan
+            and "environment: system-observation-read" in execute
+            and "permissions:\n      contents: read\n      id-token: write"
+            in execute
+            and execute.count("aws-actions/configure-aws-credentials@v6") == 1
+            and "mask-aws-account-id: true" in execute
+            and "--config-from-environment" in execute
+            and "--confirm-read-only AWS_CONTROL_PLANE_READS" in execute
+            and "--check-output" in execute
+            and "if: always()" in execute
+            and 'rm -f -- "$observation" "$candidate"' in execute
+            and "public/data/system-evidence-snapshot.json" not in execute
+            and all(binding in execute for binding in secret_bindings)
+            and "role-to-assume: ${{ secrets.SYSTEM_OBSERVATION_ROLE_ARN }}"
+            in execute
+            and execute.index("Verify collector contracts before AWS authentication")
+            < execute.index("aws-actions/configure-aws-credentials@v6")
+            < execute.index("Collect and validate one transient candidate")
+            < execute.index("Remove transient observation and candidate")
+            and capability.get("state") == "IMPLEMENTED_VERIFIED"
+            and "has not been configured or run"
+            in capability.get("boundary", "")
+        )
+    except Exception as error:
+        failure = (
+            f"The manual System runtime collection workflow boundary drifted: {error}."
+        )
+    return [
+        _result(
+            "system_runtime_manual_collection_workflow_boundary",
+            "governance",
+            passed,
+            "The manual System workflow remains plan-first, secret-free and OIDC-free in plan mode, separately protected for execute, transient-only, non-publishing, and unexecuted.",
+            failure,
+            evidence,
+        )
+    ]
+
+
+def check_system_runtime_control_plane_collector_boundary(
+    root: Path,
+) -> list[CheckResult]:
+    evidence = (
+        "docs/system_runtime_collector_config_v1.schema.json",
+        "ops/collect_system_runtime_observation.py",
+        "ops/export_public_system_evidence_snapshot.py",
+        "docs/public_system_runtime_observation_v1.schema.json",
+        "tests/test_collect_system_runtime_observation.py",
+        "docs/project_drift_contract.json",
+        "docs/architecture_current.md",
+        "docs/ops_snapshot.md",
+        "CURRENT_DEVELOPMENT_STATUS.md",
+    )
+    passed = False
+    failure = "The System runtime control-plane collector boundary drifted."
+    try:
+        collector = _load_repository_module(
+            root, "ops/collect_system_runtime_observation.py"
+        )
+        source = (root / "ops/collect_system_runtime_observation.py").read_text(
+            encoding="utf-8"
+        )
+        schema = json.loads(
+            (
+                root / "docs/system_runtime_collector_config_v1.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        contract = load_contract(root)
+        capability = next(
+            (
+                item
+                for item in contract.get("capabilities", [])
+                if item.get("id")
+                == "system_runtime_control_plane_collector_v1"
+            ),
+            {},
+        )
+        config = {
+            "schema_version": "system-runtime-collector-config.v1",
+            "region": "us-east-1",
+            "storage_bucket": "private-storage",
+            "glue_database": "private-catalog",
+            "athena_workgroup": "private-workgroup",
+            "production_function_name": "private-production-function",
+            "production_schedule_name": "private-production-schedule",
+            "dlq_url": "private-dlq-url",
+            "alarm_names": ["private-alarm"],
+            "alert_topic_arn": "private-topic",
+            "staging_function_names": ["private-staging-function"],
+            "staging_role_names": ["private-staging-role"],
+            "staging_schedule_prefix": "private-staging-prefix",
+            "staging_table_names": ["private-staging-table"],
+            "staging_s3_write_prefixes": ["private-staging-prefix"],
+        }
+        plan = collector.build_collection_plan(config)
+        rendered_plan = collector.canonical_json(plan)
+        expected_calls = (
+            "s3:HeadBucket",
+            "glue:GetDatabase",
+            "athena:GetWorkGroup",
+            "lambda:GetAlias",
+            "lambda:ListAliases",
+            "scheduler:GetSchedule",
+            "scheduler:ListSchedules",
+            "sqs:GetQueueAttributes",
+            "cloudwatch:DescribeAlarms",
+            "sns:GetTopicAttributes",
+            "iam:ListAttachedRolePolicies",
+            "iam:ListRolePolicies",
+            "iam:GetRolePolicy",
+        )
+        required_markers = (
+            'default="plan"',
+            'EXECUTION_CONFIRMATION = "AWS_CONTROL_PLANE_READS"',
+            "private collector config must remain outside the repository",
+            "runtime observation output must remain outside the repository",
+            "execute requires the exact read-only confirmation",
+            'importlib.import_module("boto3")',
+            "athena.get_work_group",
+            "lambda_client.get_alias",
+            "scheduler.get_schedule",
+            "iam_client.get_role_policy",
+        )
+        forbidden_execution_markers = (
+            "start_query_execution(",
+            ".invoke(",
+            ".update_",
+            ".delete_",
+            ".create_",
+        )
+        private_values = [
+            value
+            for key, configured in config.items()
+            if key not in {"schema_version", "region"}
+            for value in (configured if isinstance(configured, list) else [configured])
+        ]
+        passed = (
+            schema.get("properties", {})
+            .get("schema_version", {})
+            .get("const")
+            == "system-runtime-collector-config.v1"
+            and "Populate outside the repository" in schema.get("description", "")
+            and plan.get("mode") == "PLAN_ONLY"
+            and tuple(plan.get("planned_api_calls", [])) == expected_calls
+            and plan.get("athena_query_started") is False
+            and plan.get("lambda_invoked") is False
+            and plan.get("external_write") is False
+            and plan.get("private_values_logged") is False
+            and plan.get("output_contract") == "system-runtime-observation.v1"
+            and plan.get("execution_requires_confirmation")
+            == "AWS_CONTROL_PLANE_READS"
+            and not any(value in rendered_plan for value in private_values)
+            and all(marker in source for marker in required_markers)
+            and not any(
+                marker in source.lower() for marker in forbidden_execution_markers
+            )
+            and capability.get("state") == "IMPLEMENTED_VERIFIED"
+            and "no AWS collection has been executed"
+            in capability.get("boundary", "")
+        )
+    except Exception as error:
+        failure = (
+            f"The System runtime control-plane collector boundary drifted: {error}."
+        )
+    return [
+        _result(
+            "system_runtime_control_plane_collector_boundary",
+            "governance",
+            passed,
+            "The plan-first System collector remains limited to fixed control-plane reads, keeps private locators outside the repository and output, excludes Athena queries and AWS writes, and requires separate explicit execution authority.",
+            failure,
+            evidence,
+        )
+    ]
+
+
+def check_public_system_runtime_candidate_boundary(root: Path) -> list[CheckResult]:
+    evidence = (
+        "docs/public_system_runtime_observation_v1.schema.json",
+        "ops/export_public_system_evidence_snapshot.py",
+        "decision-brief-demo/app/system-evidence-snapshot.ts",
+        "decision-brief-demo/contracts/system-evidence-source.v2.json",
+        "decision-brief-demo/public/data/system-evidence-snapshot.json",
+        "decision-brief-demo/scripts/build-system-evidence-snapshot.mjs",
+        "docs/project_drift_contract.json",
+        "docs/architecture_current.md",
+        "docs/ops_snapshot.md",
+        "CURRENT_DEVELOPMENT_STATUS.md",
+    )
+    passed = False
+    failure = "The public System runtime candidate exporter boundary drifted."
+    try:
+        exporter = _load_repository_module(
+            root, "ops/export_public_system_evidence_snapshot.py"
+        )
+        source = json.loads(
+            (
+                root
+                / "decision-brief-demo/contracts/system-evidence-source.v2.json"
+            ).read_text(encoding="utf-8")
+        )
+        tracked = json.loads(
+            (
+                root
+                / "decision-brief-demo/public/data/system-evidence-snapshot.json"
+            ).read_text(encoding="utf-8")
+        )
+        schema = json.loads(
+            (
+                root / "docs/public_system_runtime_observation_v1.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        exporter_source = (
+            root / "ops/export_public_system_evidence_snapshot.py"
+        ).read_text(encoding="utf-8")
+        browser_contract = (
+            root / "decision-brief-demo/app/system-evidence-snapshot.ts"
+        ).read_text(encoding="utf-8")
+        generator = (
+            root
+            / "decision-brief-demo/scripts/build-system-evidence-snapshot.mjs"
+        ).read_text(encoding="utf-8")
+        page = (root / "decision-brief-demo/app/page.tsx").read_text(
+            encoding="utf-8"
+        )
+        contract = load_contract(root)
+        capability = next(
+            (
+                item
+                for item in contract.get("capabilities", [])
+                if item.get("id")
+                == "public_system_runtime_candidate_exporter_v2"
+            ),
+            {},
+        )
+        current_date = sydney_business_date()
+        observed_at = (
+            datetime.now(timezone.utc)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
+        observation = {
+            "schema_version": "system-runtime-observation.v1",
+            "as_of_date": current_date.isoformat(),
+            "observed_at_utc": observed_at,
+            "evidence_class": "AWS_CONTROL_PLANE_READS",
+            "aggregate_only": True,
+            "read_only": True,
+            "athena_query_started": False,
+            "external_write": False,
+            "identifiers_retained": False,
+            "production_track": {
+                "scheduler_targets_prod_alias": True,
+                "immutable_alias": True,
+            },
+            "staging_track": {
+                "manual_only": True,
+                "scheduler_present": False,
+                "production_alias_present": False,
+                "production_table_write": False,
+            },
+            "reliability": dict(exporter.RELIABILITY),
+            "services": [
+                {"key": key, "verified": True} for key in exporter.SERVICE_KEYS
+            ],
+            "authority": dict(exporter.AUTHORITY),
+        }
+        candidate = exporter.build_public_runtime_snapshot(
+            observation, today=current_date
+        )
+        expected_tracked = {
+            "schema_version": "public-system-evidence-snapshot.v2",
+            **source["public_snapshot"],
+        }
+        required_browser_markers = (
+            '"public-system-evidence-snapshot.v2"',
+            '"system-runtime-observation.v1"',
+            '"AWS_RUNTIME_INSPECTION"',
+            '"AWS_CONTROL_PLANE_READS"',
+            "athena_query_started: false",
+            "external_write: false",
+            "identifiers_retained: false",
+            "SYSTEM_EVIDENCE_MODE_INVALID",
+            "SYSTEM_EVIDENCE_PROVENANCE_INVALID",
+        )
+        required_page_markers = (
+            "Aggregate AWS runtime observation verified for display",
+            "yes — projected offline",
+            "SAFE PROJECTION",
+        )
+        forbidden_exporter_markers = ("boto3", "subprocess", ".client(")
+        passed = (
+            source.get("schema_version") == "system-evidence-source.v2"
+            and tracked == expected_tracked
+            and tracked.get("evidence_class") == "REPOSITORY_ARCHITECTURE"
+            and tracked.get("live_aws_inspection") is False
+            and tracked.get("source_provenance")
+            == {
+                "mode": "REPOSITORY_DOCUMENTS",
+                "observation_contract": None,
+                "athena_query_started": False,
+                "external_write": False,
+                "identifiers_retained": False,
+            }
+            and set(tracked.get("authority", {}).values()) == {False}
+            and schema.get("properties", {})
+            .get("schema_version", {})
+            .get("const")
+            == "system-runtime-observation.v1"
+            and schema.get("properties", {})
+            .get("athena_query_started", {})
+            .get("const")
+            is False
+            and schema.get("properties", {})
+            .get("external_write", {})
+            .get("const")
+            is False
+            and candidate.get("evidence_class") == "AWS_RUNTIME_INSPECTION"
+            and candidate.get("live_aws_inspection") is True
+            and candidate.get("source_provenance", {}).get("athena_query_started")
+            is False
+            and candidate.get("source_provenance", {}).get("external_write")
+            is False
+            and candidate.get("source_provenance", {}).get("identifiers_retained")
+            is False
+            and set(candidate.get("authority", {}).values()) == {False}
+            and exporter.validate_public_runtime_snapshot(
+                candidate, today=current_date
+            )
+            == []
+            and not any(marker in exporter_source for marker in forbidden_exporter_markers)
+            and "the exporter cannot overwrite the tracked Sites snapshot"
+            in exporter_source
+            and all(marker in browser_contract for marker in required_browser_markers)
+            and all(marker in page for marker in required_page_markers)
+            and '"system-evidence-source.v2"' in generator
+            and '"../contracts/system-evidence-source.v2.json"' in generator
+            and capability.get("state") == "IMPLEMENTED_VERIFIED"
+            and "no runtime observation has been executed or published"
+            in capability.get("boundary", "")
+        )
+    except Exception as error:
+        failure = (
+            f"The public System runtime candidate exporter boundary drifted: {error}."
+        )
+    return [
+        _result(
+            "public_system_runtime_candidate_boundary",
+            "governance",
+            passed,
+            "System evidence v2 preserves repository truth and admits only current-Sydney, aggregate-only, identifier-free AWS control-plane candidates with no Athena, write, publication, or operational authority.",
+            failure,
+            evidence,
+        )
+    ]
+
+
 def run_audit(root: Path) -> dict[str, Any]:
     contract = load_contract(root)
     checks: list[CheckResult] = []
@@ -4303,6 +4724,9 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_capability_neutral_evaluation_boundary(root))
     checks.extend(check_decision_quality_adjudication_boundary(root))
     checks.extend(check_public_evaluation_snapshot_boundary(root))
+    checks.extend(check_system_runtime_manual_collection_workflow_boundary(root))
+    checks.extend(check_system_runtime_control_plane_collector_boundary(root))
+    checks.extend(check_public_system_runtime_candidate_boundary(root))
     checks.extend(check_agent_runtime_boundary(root))
     checks.extend(check_adapter_conformance_boundary(root))
     overall = "DRIFT" if any(check.status == "DRIFT" for check in checks) else "PASS"

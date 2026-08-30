@@ -7,7 +7,7 @@ import {
   validateSystemEvidenceSnapshot,
 } from "../app/system-evidence-snapshot.ts";
 
-export const SOURCE_SCHEMA_VERSION = "system-evidence-source.v1";
+export const SOURCE_SCHEMA_VERSION = "system-evidence-source.v2";
 export const SOURCE_DOCUMENTS = [
   "../INFRASTRUCTURE.md",
   "../docs/architecture_current.md",
@@ -15,7 +15,7 @@ export const SOURCE_DOCUMENTS = [
   "../docs/ops_snapshot.md",
 ];
 
-const sourcePath = new URL("../contracts/system-evidence-source.v1.json", import.meta.url);
+const sourcePath = new URL("../contracts/system-evidence-source.v2.json", import.meta.url);
 const outputPath = new URL("../public/data/system-evidence-snapshot.json", import.meta.url);
 
 const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);

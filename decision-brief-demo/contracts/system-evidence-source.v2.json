@@ -1,5 +1,5 @@
 {
-  "schema_version": "system-evidence-source.v1",
+  "schema_version": "system-evidence-source.v2",
   "source_documents": [
     "../INFRASTRUCTURE.md",
     "../docs/architecture_current.md",
@@ -7,11 +7,18 @@
     "../docs/ops_snapshot.md"
   ],
   "public_snapshot": {
-    "repository_as_of_date": "2026-08-31",
+    "as_of_date": "2026-08-31",
     "evidence_class": "REPOSITORY_ARCHITECTURE",
     "live_aws_inspection": false,
     "read_only": true,
-    "disclosure": "Repository-backed architecture evidence; not live AWS status or production readiness evidence.",
+    "disclosure": "Repository-backed architecture evidence; not live AWS status and not production readiness evidence.",
+    "source_provenance": {
+      "mode": "REPOSITORY_DOCUMENTS",
+      "observation_contract": null,
+      "athena_query_started": false,
+      "external_write": false,
+      "identifiers_retained": false
+    },
     "production_track": {
       "status": "DOCUMENTED_DEPLOYED",
       "scheduler_target": "PROD_ALIAS",

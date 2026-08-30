@@ -1453,6 +1453,116 @@ class ProjectDriftAuditTests(unittest.TestCase):
             result = AUDIT.check_public_evaluation_snapshot_boundary(root)[0]
         self.assertEqual(result.status, "DRIFT")
 
+    def test_system_runtime_manual_collection_workflow_boundary_drift(self):
+        paths = (
+            ".github/workflows/collect-system-runtime-observation.yml",
+            "ops/collect_system_runtime_observation.py",
+            "ops/export_public_system_evidence_snapshot.py",
+            "tests/test_collect_system_runtime_workflow.py",
+            "docs/project_drift_contract.json",
+            "docs/architecture_current.md",
+            "docs/deployment_workflow.md",
+            "docs/ops_snapshot.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        current = AUDIT.check_system_runtime_manual_collection_workflow_boundary(
+            ROOT
+        )[0]
+        self.assertEqual(current.status, "PASS")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            workflow_path = (
+                root / ".github/workflows/collect-system-runtime-observation.yml"
+            )
+            workflow = workflow_path.read_text(encoding="utf-8").replace(
+                "    timeout-minutes: 5\n",
+                "    timeout-minutes: 5\n    permissions:\n      id-token: write\n",
+                1,
+            )
+            workflow_path.write_text(workflow, encoding="utf-8")
+            result = AUDIT.check_system_runtime_manual_collection_workflow_boundary(
+                root
+            )[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_system_runtime_control_plane_collector_boundary_drift(self):
+        paths = (
+            "docs/system_runtime_collector_config_v1.schema.json",
+            "ops/collect_system_runtime_observation.py",
+            "ops/export_public_system_evidence_snapshot.py",
+            "docs/public_system_runtime_observation_v1.schema.json",
+            "tests/test_collect_system_runtime_observation.py",
+            "docs/project_drift_contract.json",
+            "docs/architecture_current.md",
+            "docs/ops_snapshot.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        current = AUDIT.check_system_runtime_control_plane_collector_boundary(
+            ROOT
+        )[0]
+        self.assertEqual(current.status, "PASS")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            collector_path = root / "ops/collect_system_runtime_observation.py"
+            collector_path.write_text(
+                collector_path.read_text(encoding="utf-8")
+                + "\n# start_query_execution(\n",
+                encoding="utf-8",
+            )
+            result = AUDIT.check_system_runtime_control_plane_collector_boundary(
+                root
+            )[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_public_system_runtime_candidate_boundary_and_authority_drift(self):
+        paths = (
+            "docs/public_system_runtime_observation_v1.schema.json",
+            "ops/export_public_system_evidence_snapshot.py",
+            "decision-brief-demo/app/system-evidence-snapshot.ts",
+            "decision-brief-demo/app/page.tsx",
+            "decision-brief-demo/contracts/system-evidence-source.v2.json",
+            "decision-brief-demo/public/data/system-evidence-snapshot.json",
+            "decision-brief-demo/scripts/build-system-evidence-snapshot.mjs",
+            "docs/project_drift_contract.json",
+            "docs/architecture_current.md",
+            "docs/ops_snapshot.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        current = AUDIT.check_public_system_runtime_candidate_boundary(ROOT)[0]
+        self.assertEqual(current.status, "PASS")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            snapshot_path = (
+                root
+                / "decision-brief-demo/public/data/system-evidence-snapshot.json"
+            )
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            snapshot["authority"]["aws_write"] = True
+            snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+            authority_drift = AUDIT.check_public_system_runtime_candidate_boundary(
+                root
+            )[0]
+        self.assertEqual(authority_drift.status, "DRIFT")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            exporter_path = root / "ops/export_public_system_evidence_snapshot.py"
+            exporter_path.write_text(
+                exporter_path.read_text(encoding="utf-8") + "\n# boto3\n",
+                encoding="utf-8",
+            )
+            client_drift = AUDIT.check_public_system_runtime_candidate_boundary(
+                root
+            )[0]
+        self.assertEqual(client_drift.status, "DRIFT")
+
     def test_action_mutation_release_scope_expansion_is_detected(self):
         source = json.loads(
             (

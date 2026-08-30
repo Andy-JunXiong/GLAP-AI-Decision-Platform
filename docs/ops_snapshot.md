@@ -141,14 +141,17 @@ not change the OPS contract or grant any write path.
 
 ## Sites System evidence snapshot
 
-The separately hosted Next/Sites demonstration has a compact
-`public-system-evidence-snapshot.v1` contract at
+The checked-in Next/Sites demonstration has a compact dual-mode
+`public-system-evidence-snapshot.v2` contract at
 `decision-brief-demo/public/data/system-evidence-snapshot.json`. It is not part
-of the GitHub Pages OPS snapshot and does not query AWS.
+of the GitHub Pages OPS snapshot. The tracked default remains repository-only
+and does not query AWS. Owner-only Sites v9 still serves its previously
+verified v1 repository build; this v2 change is local and unpublished.
 
 The contract contains only:
 
-- a repository as-of date and `REPOSITORY_ARCHITECTURE` evidence class;
+- an as-of date and either `REPOSITORY_ARCHITECTURE` or the separately supplied
+  `AWS_RUNTIME_INSPECTION` evidence class;
 - explicit `live_aws_inspection=false` and `read_only=true` boundaries;
 - documented production and isolated-staging track constraints;
 - the governed six-stage, ten-check, retry, event-age, and DLQ-retention
@@ -158,15 +161,17 @@ The contract contains only:
 - all-false AWS-write, infrastructure, alias, schedule, Action, policy, and
   model authority.
 
-The browser validates the exact envelope, fixed service order, temporal
-boundary, staging isolation, reliability constants, and all-false authority
-before displaying service or OPS values. Missing, future-dated, malformed,
-writable, or authority-widened input fails closed and withholds those values.
-The remaining architecture narrative stays explanatory and never substitutes
-live status.
+The browser validates the exact envelope, fixed public copy and service order,
+temporal boundary, evidence mode, source provenance, staging isolation,
+reliability constants, and all-false authority before displaying service or OPS
+values. Missing, future-dated, malformed, writable, mode-mismatched, or
+authority-widened input fails closed and withholds those values. Repository mode
+requires `live_aws_inspection=false`; runtime mode requires a versioned,
+aggregate-only control-plane observation and labels it as an offline projection,
+not a direct browser-to-AWS connection or production-readiness claim.
 
-The public JSON is a deterministic projection of
-`decision-brief-demo/contracts/system-evidence-source.v1.json`, produced by
+The repository-mode JSON is a deterministic projection of
+`decision-brief-demo/contracts/system-evidence-source.v2.json`, produced by
 `decision-brief-demo/scripts/build-system-evidence-snapshot.mjs`. The source
 contract fixes the four canonical repository documents and the complete public
 payload; it cannot point to an unapproved private source. The generator reuses
@@ -178,11 +183,48 @@ brief demo CI runs this gate explicitly and `npm test` runs it again before the
 build, contract tests, and browser smoke test. The generator performs no
 network call, AWS command, query, publication, or operational mutation.
 
-Refreshing this contract from AWS would require a separately approved,
-aggregate-only read path and its own exporter, schema, validation, and
-publication authority. An Athena query is not a read-without-side-effects
-operation because it creates a protected query-result object, so the local
-contract implementation grants no standing AWS-read authority.
+`docs/public_system_runtime_observation_v1.schema.json` defines the only runtime
+input accepted by `ops/export_public_system_evidence_snapshot.py`. It requires
+the current Sydney date, an exact UTC observation timestamp, all six services,
+the governed reliability values, intact production/staging boundaries, no
+Athena query, no external write, no retained identifier, and all-false
+authority. The exporter copies only allowlisted public responsibilities from
+the repository source, has no AWS SDK/CLI client, defaults to validation-only,
+and refuses to overwrite the tracked Sites snapshot. Its output is therefore a
+candidate, not publication or operational evidence.
+
+Collector execution, candidate promotion, Sites publication, and post-
+publication verification each remain separately approved actions. The
+collector is now implemented locally as
+`ops/collect_system_runtime_observation.py`, but it has not been executed. It
+defaults to `PLAN_ONLY`; execution requires the exact
+`AWS_CONTROL_PLANE_READS` confirmation, a private config outside the repository,
+and an output path outside the repository. The input config is governed by
+`docs/system_runtime_collector_config_v1.schema.json` and includes exact staging
+table and S3-write-prefix allowlists without publishing their values.
+
+The collector permits only the fixed S3, Glue, Athena-workgroup, Lambda-alias,
+Scheduler, SQS, CloudWatch, SNS, and IAM control-plane reads documented in its
+plan. It does not start Athena, invoke Lambda, or call an AWS mutation API. It
+fails closed on a non-immutable production alias, changed schedule retry/DLQ
+controls, missing alarms/encryption, any staging schedule or `prod` alias,
+managed staging policy, `NotAction`, broad service action, production-table
+reference, or Glue/S3 write resource outside the private allowlist. Athena
+queries remain excluded because they create protected result objects. Local
+implementation grants no standing AWS-read, publication, or production
+authority, and no runtime observation has run.
+
+The manual `.github/workflows/collect-system-runtime-observation.yml` path
+preserves the same separation. Its default `plan` action is configuration-free
+and cannot request OIDC or load an AWS client. Only the explicitly selected
+`execute` action enters the protected `system-observation-read` environment,
+uses a short-lived OIDC session, and passes secret-backed private configuration
+to the collector. Both the aggregate observation and derived candidate remain
+in the runner temporary directory, are validated there, are not uploaded, and
+are deleted even when a step fails. The workflow cannot publish the candidate
+or overwrite the tracked Sites snapshot. Source-control maturity is recorded
+by Git history; the workflow has not been configured or run, so it is
+implementation evidence only and not AWS runtime evidence.
 
 ## GitHub configuration
 

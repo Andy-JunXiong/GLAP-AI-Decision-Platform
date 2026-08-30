@@ -10,7 +10,7 @@ import {
   serializeSystemEvidenceSnapshot,
 } from "../scripts/build-system-evidence-snapshot.mjs";
 
-const sourcePath = new URL("../contracts/system-evidence-source.v1.json", import.meta.url);
+const sourcePath = new URL("../contracts/system-evidence-source.v2.json", import.meta.url);
 const outputPath = new URL("../public/data/system-evidence-snapshot.json", import.meta.url);
 
 async function source() {
@@ -40,6 +40,6 @@ test("rejects source-document and authority drift before projection", async () =
 
 test("rejects a source date after the Sydney validation boundary", async () => {
   const value = await source();
-  value.public_snapshot.repository_as_of_date = "2026-09-01";
+  value.public_snapshot.as_of_date = "2026-09-01";
   assert.throws(() => buildSystemEvidenceSnapshot(value, "2026-08-31"), /SYSTEM_EVIDENCE_BOUNDARY_INVALID/);
 });

@@ -1,0 +1,113 @@
+name: Collect System runtime observation
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Plan the bounded reads or execute one protected observation
+        required: true
+        type: choice
+        default: plan
+        options:
+          - plan
+          - execute
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-runtime-observation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Render redacted read-only plan
+    if: inputs.action == 'plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Verify collector contracts
+        run: >-
+          python -m unittest
+          tests.test_collect_system_runtime_observation
+          tests.test_public_system_evidence_snapshot -q
+
+      - name: Render plan without private configuration or AWS credentials
+        run: python ops/collect_system_runtime_observation.py --action plan
+
+  execute:
+    name: Execute one protected read-only observation
+    if: inputs.action == 'execute'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: system-observation-read
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Verify collector contracts before AWS authentication
+        run: >-
+          python -m unittest
+          tests.test_collect_system_runtime_observation
+          tests.test_public_system_evidence_snapshot -q
+
+      - name: Configure bounded read-only AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.SYSTEM_OBSERVATION_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: glap-system-observation
+          mask-aws-account-id: true
+
+      - name: Collect and validate one transient candidate
+        env:
+          GLAP_SYSTEM_STORAGE_BUCKET: ${{ secrets.SYSTEM_STORAGE_BUCKET }}
+          GLAP_SYSTEM_GLUE_DATABASE: ${{ secrets.SYSTEM_GLUE_DATABASE }}
+          GLAP_SYSTEM_ATHENA_WORKGROUP: ${{ secrets.SYSTEM_ATHENA_WORKGROUP }}
+          GLAP_SYSTEM_PRODUCTION_FUNCTION_NAME: ${{ secrets.SYSTEM_PRODUCTION_FUNCTION_NAME }}
+          GLAP_SYSTEM_PRODUCTION_SCHEDULE_NAME: ${{ secrets.SYSTEM_PRODUCTION_SCHEDULE_NAME }}
+          GLAP_SYSTEM_DLQ_URL: ${{ secrets.SYSTEM_DLQ_URL }}
+          GLAP_SYSTEM_ALARM_NAMES_JSON: ${{ secrets.SYSTEM_ALARM_NAMES_JSON }}
+          GLAP_SYSTEM_ALERT_TOPIC_ARN: ${{ secrets.SYSTEM_ALERT_TOPIC_ARN }}
+          GLAP_SYSTEM_STAGING_FUNCTION_NAMES_JSON: ${{ secrets.SYSTEM_STAGING_FUNCTION_NAMES_JSON }}
+          GLAP_SYSTEM_STAGING_ROLE_NAMES_JSON: ${{ secrets.SYSTEM_STAGING_ROLE_NAMES_JSON }}
+          GLAP_SYSTEM_STAGING_SCHEDULE_PREFIX: ${{ secrets.SYSTEM_STAGING_SCHEDULE_PREFIX }}
+          GLAP_SYSTEM_STAGING_TABLE_NAMES_JSON: ${{ secrets.SYSTEM_STAGING_TABLE_NAMES_JSON }}
+          GLAP_SYSTEM_STAGING_S3_WRITE_PREFIXES_JSON: ${{ secrets.SYSTEM_STAGING_S3_WRITE_PREFIXES_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          observation="$RUNNER_TEMP/system-runtime-observation.json"
+          candidate="$RUNNER_TEMP/system-evidence-candidate.json"
+          python ops/collect_system_runtime_observation.py \
+            --config-from-environment \
+            --action execute \
+            --confirm-read-only AWS_CONTROL_PLANE_READS \
+            --output "$observation"
+          python ops/export_public_system_evidence_snapshot.py \
+            --input "$observation" \
+            --output "$candidate"
+          python ops/export_public_system_evidence_snapshot.py \
+            --input "$observation" \
+            --check-output "$candidate"
+          echo "PASS: transient System candidate validated; no artifact was retained"
+
+      - name: Remove transient observation and candidate
+        if: always()
+        run: |
+          set -euo pipefail
+          observation="$RUNNER_TEMP/system-runtime-observation.json"
+          candidate="$RUNNER_TEMP/system-evidence-candidate.json"
+          rm -f -- "$observation" "$candidate"

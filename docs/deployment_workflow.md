@@ -86,6 +86,31 @@ sequence through AWS OIDC: test, package, upload candidate, smoke-test, publish,
 update `staging`, require approval, and finally update `prod`. Long-lived AWS
 access keys must not be stored as GitHub secrets.
 
+## Manual System runtime observation
+
+`.github/workflows/collect-system-runtime-observation.yml` is a manual-only,
+plan-first inspection path; it is not a deployment workflow. Its default
+`plan` action runs the collector/exporter tests and prints the fixed redacted
+call plan without loading resource configuration, requesting an OIDC token, or
+creating an AWS client.
+
+The separate `execute` action requires the protected
+`system-observation-read` environment. Private resource configuration is
+supplied only from environment secrets, and
+`aws-actions/configure-aws-credentials` exchanges GitHub OIDC for a short-lived
+session. The collector
+still requires the exact `AWS_CONTROL_PLANE_READS` confirmation and permits only
+its fixed control-plane reads. Observation and candidate files are written only
+under the runner temporary directory, checked there, never uploaded as an
+artifact, and deleted by an unconditional cleanup step.
+
+The workflow has no `push`, `schedule`, deploy, publication, alias, Scheduler,
+Action, policy, or model operation. Source-control maturity is recorded by Git
+history; its protected environment and role have not been configured, and
+neither action has run. Configuring the environment or OIDC role, dispatching
+`execute`, promoting a candidate, and publishing Sites each require separate
+human authority.
+
 ## GitHub staging deployment
 
 The manual `Deploy staging` workflow uses GitHub OIDC instead of stored AWS

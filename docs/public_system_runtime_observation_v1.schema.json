@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-radar-lab.com/contracts/public_system_runtime_observation_v1.schema.json",
+  "title": "GLAP aggregate System runtime observation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_date",
+    "observed_at_utc",
+    "evidence_class",
+    "aggregate_only",
+    "read_only",
+    "athena_query_started",
+    "external_write",
+    "identifiers_retained",
+    "production_track",
+    "staging_track",
+    "reliability",
+    "services",
+    "authority"
+  ],
+  "properties": {
+    "schema_version": { "const": "system-runtime-observation.v1" },
+    "as_of_date": { "type": "string", "format": "date" },
+    "observed_at_utc": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "evidence_class": { "const": "AWS_CONTROL_PLANE_READS" },
+    "aggregate_only": { "const": true },
+    "read_only": { "const": true },
+    "athena_query_started": { "const": false },
+    "external_write": { "const": false },
+    "identifiers_retained": { "const": false },
+    "production_track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheduler_targets_prod_alias", "immutable_alias"],
+      "properties": {
+        "scheduler_targets_prod_alias": { "const": true },
+        "immutable_alias": { "const": true }
+      }
+    },
+    "staging_track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manual_only", "scheduler_present", "production_alias_present", "production_table_write"],
+      "properties": {
+        "manual_only": { "const": true },
+        "scheduler_present": { "const": false },
+        "production_alias_present": { "const": false },
+        "production_table_write": { "const": false }
+      }
+    },
+    "reliability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage_count", "quality_check_count", "retry_count", "max_event_age_hours", "dlq_retention_days"],
+      "properties": {
+        "stage_count": { "const": 6 },
+        "quality_check_count": { "const": 10 },
+        "retry_count": { "const": 2 },
+        "max_event_age_hours": { "const": 24 },
+        "dlq_retention_days": { "const": 14 }
+      }
+    },
+    "services": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "prefixItems": [
+        { "$ref": "#/$defs/storage" },
+        { "$ref": "#/$defs/catalog" },
+        { "$ref": "#/$defs/analytics" },
+        { "$ref": "#/$defs/compute" },
+        { "$ref": "#/$defs/reliabilityService" },
+        { "$ref": "#/$defs/observability" }
+      ],
+      "items": false
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aws_write", "infrastructure_change", "production_alias_move", "schedule_change", "action_mutation", "policy_activation", "model_promotion"],
+      "properties": {
+        "aws_write": { "const": false },
+        "infrastructure_change": { "const": false },
+        "production_alias_move": { "const": false },
+        "schedule_change": { "const": false },
+        "action_mutation": { "const": false },
+        "policy_activation": { "const": false },
+        "model_promotion": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "storage": { "type": "object", "additionalProperties": false, "required": ["key", "verified"], "properties": { "key": { "const": "storage" }, "verified": { "const": true } } },
+    "catalog": { "type": "object", "additionalProperties": false, "required": ["key", "verified"], "properties": { "key": { "const": "catalog" }, "verified": { "const": true } } },
+    "analytics": { "type": "object", "additionalProperties": false, "required": ["key", "verified"], "properties": { "key": { "const": "analytics" }, "verified": { "const": true } } },
+    "compute": { "type": "object", "additionalProperties": false, "required": ["key", "verified"], "properties": { "key": { "const": "compute" }, "verified": { "const": true } } },
+    "reliabilityService": { "type": "object", "additionalProperties": false, "required": ["key", "verified"], "properties": { "key": { "const": "reliability" }, "verified": { "const": true } } },
+    "observability": { "type": "object", "additionalProperties": false, "required": ["key", "verified"], "properties": { "key": { "const": "observability" }, "verified": { "const": true } } }
+  }
+}

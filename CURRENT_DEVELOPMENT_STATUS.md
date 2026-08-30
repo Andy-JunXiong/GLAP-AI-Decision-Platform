@@ -17,6 +17,9 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Success-gated production pipeline | `IMPLEMENTED_VERIFIED` | Scheduled synthetic production track; aggregate public status only |
 | Public OPS snapshot | `PUBLISHED_VERIFIED` | Pages run `32731582185` published schema `1.7` from commit `28e3edf`; live verification returned equal cutoff and source dates at `2026-08-24` with synthetic, engineering-only provenance |
 | Restricted Next/Sites decision walkthrough | `PUBLISHED_RESTRICTED_BUILD_VERIFIED` | Owner-only Sites v9 is active with one allowed owner, zero groups, and zero external visitors. It restores the complete six-tab AWS System evidence surface, loads a versioned repository-only snapshot through a fail-closed browser validator, and ships a deterministic source-to-public generator plus CI drift gate. Deployment status succeeded from Sites source commit `f1d4447`; local full-browser verification made no write request. This is not public Pages, live AWS status, or operational authority. |
+| Public System runtime candidate exporter v2 | `IMPLEMENTED_LOCAL_NOT_EXECUTED_OR_PUBLISHED` | The checked-in browser contract now preserves repository mode while admitting runtime mode only from a current-Sydney `system-runtime-observation.v1` aggregate with exact service/reliability/staging boundaries, no Athena query or external write, no retained identifiers, and all-false authority. The local exporter has no AWS client, defaults to validation-only, and refuses to overwrite the tracked Sites snapshot. No AWS observation, candidate promotion, v2 Sites publication, or runtime verification has occurred; owner-only Sites v9 remains on its verified v1 repository build. |
+| System runtime control-plane collector v1 | `IMPLEMENTED_LOCAL_PLAN_FIRST_NOT_EXECUTED` | The collector defaults to a redacted plan and requires an exact read-only confirmation for execution. It permits only fixed S3/Glue/Athena-workgroup/Lambda-alias/Scheduler/SQS/CloudWatch/SNS/IAM control-plane reads, keeps private config and output outside the repository, and fails closed on queries, invocation, writes, staging schedules or prod aliases, managed/broad policies, production-table references, or non-allowlisted Glue/S3 writes. No AWS credential configuration, control-plane call, observation, or new IAM permission occurred. |
+| System runtime manual collection workflow v1 | `IMPLEMENTED_VERIFIED_NOT_CONFIGURED_OR_RUN` | The manual-only workflow defaults to a configuration-free plan with no OIDC or AWS client. Its separate execute branch requires the protected `system-observation-read` environment, short-lived OIDC, exact collector confirmation, secret-backed private config, transient runner files, and unconditional cleanup. It has no artifact, deploy, publication, push, or schedule path; source-control maturity is recorded by Git history, while no GitHub environment, AWS role, credential, call, candidate, or publication was created. |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-28`. Plan run `33149532396` and separately authorized continuation run `33149577300` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the one-date continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
@@ -1756,6 +1759,43 @@ done.
   Python tests, public-claim validation, the 54/54 drift audit, production
   dependency audit, and `git diff --check` pass. No AWS, Athena, Pages, Action,
   production alias, schedule, policy, or model operation occurred.
+- Implemented the local `public-system-evidence-snapshot.v2` dual-mode contract.
+  Its tracked default remains repository evidence, while runtime mode accepts
+  only a current-Sydney, aggregate-only, identifier-free AWS control-plane
+  observation with no Athena query, external write, staging widening, or true
+  authority field. The interface identifies runtime evidence as an offline safe
+  projection rather than a direct AWS console connection.
+- Added the machine-readable `system-runtime-observation.v1` schema and the
+  validation-only `ops/export_public_system_evidence_snapshot.py` candidate
+  exporter. It has no AWS client, copies only allowlisted public service text,
+  rejects protected ARN/S3/account/endpoint values, and cannot overwrite the
+  tracked Sites snapshot. Five focused exporter tests, seven focused browser/
+  generator contract tests, all 663 Python tests, the complete 14-test frontend
+  contract suite, Chromium smoke, and the expanded 55/55 drift audit pass. No
+  runtime observation was collected or published.
+- Implemented the separate plan-first System runtime collector and private
+  configuration Schema. The redacted plan exposes only the fixed read-method
+  inventory and all-false execution flags; it never prints private resource
+  values. Execution is locked behind an exact confirmation and keeps config and
+  output outside the repository. Mocked AWS clients verify the production
+  alias/schedule/retry/DLQ, six service controls, staging alias/schedule absence,
+  and actual inline IAM resource boundaries. Managed policies, `NotAction`,
+  broad service actions, production table markers, and Glue/S3 writes outside
+  caller-supplied staging allowlists fail closed. Seven focused collector tests
+  pass, including a CLI plan-mode proof that no AWS client loads. The final full
+  rerun passed all 671 Python tests and the expanded 56/56 drift audit; no
+  external call occurred.
+- Added a manual-only System observation workflow around the collector. Its
+  default action runs a configuration-free static plan and cannot request OIDC
+  or create an AWS client. The distinct execute action is protected by the
+  `system-observation-read` environment, loads every private value from a
+  secret, requires the existing exact confirmation, validates observation and
+  candidate files in runner temporary storage, uploads no artifact, and always
+  removes both files. Eight collector tests, four workflow boundary tests, all
+  677 Python tests, the 14-test frontend contract suite, Chromium zero-write
+  smoke, and the expanded 57/57 drift audit pass locally. Source-control
+  maturity is recorded by Git history; the workflow has not been configured or
+  run, and no AWS or publication action occurred.
 
 - Implemented and locally verified the plan-only authenticated Operations API
   sustained-read contract. It fixes seven viewer-safe GET projections, a
@@ -2542,9 +2582,18 @@ done.
    deployment channel is now established at owner-only v9 with exact-source,
    packaged-build, and local zero-write browser evidence. Do not reclassify that
    restricted build verification as a public Pages canary, live AWS status, or
-   operational evidence. Any AWS-backed System snapshot exporter remains a
-   separately approved future boundary because Athena creates a protected query
-   result object.
+   operational evidence. The local System v2 runtime candidate exporter is now
+   implemented but has not run against AWS or been published. The next bounded
+   collector and its manual plan-first workflow are implemented locally, but
+   neither has run. The bounded commit and push are now explicitly authorized;
+   record source-control and remote-CI maturity through Git history and the
+   final handoff. The new workflow itself is manual-only and will not dispatch
+   from this push. Configuring
+   the protected environment or OIDC role is a separate infrastructure action.
+   Any actual AWS execution still needs separate explicit human authorization; Athena is
+   limited to `GetWorkGroup`, and query execution remains forbidden because it
+   creates a protected result object. Candidate promotion, Sites publication,
+   and post-publication verification remain separate approvals.
 3. Do not retry or advance lifecycle dates merely to manufacture Cost or
    Learning evidence. Re-run the relevant reconciler only after a future
    independently justified operational continuation and new explicit authority.

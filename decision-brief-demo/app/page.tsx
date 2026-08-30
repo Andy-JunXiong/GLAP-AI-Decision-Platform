@@ -533,11 +533,13 @@ function SystemOverview({ go }: { go: (view: View) => void }) {
     return () => { active = false; };
   }, []);
 
+  const runtimeEvidence = evidence?.evidence_class === "AWS_RUNTIME_INSPECTION";
+
   return <div className="page">
     <PageTitle eyebrow="SYSTEM" title="AWS System & Evidence" copy="Understand what is deployed, how the governed decision loop operates, and where public, staging, and production authority remain separated." />
     <section className="demo-boundary" role="status">
-      <div><small>Repository-backed architecture</small><strong>Read-only AWS system evidence</strong><span>The architecture and controls below come from the current repository sources of truth. This page performs no AWS inspection and exposes no account IDs, ARNs, buckets, query IDs, subscriber details, or mutation controls.</span></div>
-      <b>NO LIVE CALLS</b>
+      <div><small>{runtimeEvidence ? "Aggregate runtime observation" : "Repository-backed architecture"}</small><strong>Read-only AWS system evidence</strong><span>{runtimeEvidence ? "A separately collected control-plane observation passed the v2 aggregate-only contract. This page still makes no AWS call and exposes no account IDs, ARNs, buckets, query IDs, subscriber details, or mutation controls." : "The architecture and controls below come from the current repository sources of truth. This page performs no AWS inspection and exposes no account IDs, ARNs, buckets, query IDs, subscriber details, or mutation controls."}</span></div>
+      <b>{runtimeEvidence ? "SAFE PROJECTION" : "NO LIVE CALLS"}</b>
     </section>
     <nav className="system-section-nav" aria-label="System subpages">
       {sections.map((item) => <button key={item.id} aria-pressed={section === item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}
@@ -552,7 +554,7 @@ function SystemOverview({ go }: { go: (view: View) => void }) {
     {section === "ops" && <SystemOps go={go} evidence={evidence} state={evidenceState} />}
     {section === "release" && <SystemRelease />}
 
-    <p className="data-disclaimer">Repository-backed system evidence is not a live AWS console. Logistics records and Outcomes are synthetic; production aliases, schedules, infrastructure changes, Action mutations, policy activation, and model promotion remain separately human-owned.</p>
+    <p className="data-disclaimer">Validated System evidence is not an AWS console and does not establish production readiness. Logistics records and Outcomes are synthetic; production aliases, schedules, infrastructure changes, Action mutations, policy activation, and model promotion remain separately human-owned.</p>
   </div>;
 }
 
@@ -560,9 +562,10 @@ function SystemEvidenceStatus({ evidence, state }: {
   evidence: SystemEvidenceSnapshot | null;
   state: "loading" | "connected" | "failed";
 }) {
-  if (state === "loading") return <section className="system-evidence-status loading" aria-live="polite"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Validating the versioned repository snapshot</strong><span>Architecture content remains available while its evidence envelope is checked.</span></div><b>CHECKING</b></section>;
+  if (state === "loading") return <section className="system-evidence-status loading" aria-live="polite"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Validating the versioned System snapshot</strong><span>Architecture content remains available while its evidence envelope is checked.</span></div><b>CHECKING</b></section>;
   if (state === "failed" || !evidence) return <section className="system-evidence-status failed" aria-live="assertive"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Snapshot unavailable — status details withheld</strong><span>The AWS and OPS tabs will not substitute unvalidated service or reliability values.</span></div><b>FAIL CLOSED</b></section>;
-  return <section className="system-evidence-status connected" aria-live="polite"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>Repository architecture verified for display</strong><span>As of {evidence.repository_as_of_date} · {evidence.evidence_class.replaceAll("_", " ")} · live AWS inspection: no</span></div><b>READ ONLY</b></section>;
+  const runtimeEvidence = evidence.evidence_class === "AWS_RUNTIME_INSPECTION";
+  return <section className="system-evidence-status connected" aria-live="polite"><i /><div><small>SYSTEM EVIDENCE SNAPSHOT</small><strong>{runtimeEvidence ? "Aggregate AWS runtime observation verified for display" : "Repository architecture verified for display"}</strong><span>As of {evidence.as_of_date} · {evidence.evidence_class.replaceAll("_", " ")} · live AWS inspection: {runtimeEvidence ? "yes — projected offline" : "no"}</span></div><b>READ ONLY</b></section>;
 }
 
 function SystemSectionTitle({ eyebrow, title, copy, badge }: { eyebrow: string; title: string; copy: string; badge: string }) {
@@ -595,8 +598,9 @@ function SystemAwsOverview({ evidence, state }: {
   evidence: SystemEvidenceSnapshot | null;
   state: "loading" | "connected" | "failed";
 }) {
+  const runtimeEvidence = evidence?.evidence_class === "AWS_RUNTIME_INSPECTION";
   return <section className="system-section" aria-label="AWS Overview">
-    <SystemSectionTitle eyebrow="AWS OVERVIEW" title="Deployed service responsibilities" copy="This inventory preserves verified architecture without presenting historical resource counts as current live status." badge="REPOSITORY EVIDENCE" />
+    <SystemSectionTitle eyebrow="AWS OVERVIEW" title="Deployed service responsibilities" copy={runtimeEvidence ? "A separately collected aggregate observation verified these service responsibilities without publishing resource identifiers or counts." : "This inventory preserves verified architecture without presenting historical resource counts as current live status."} badge={runtimeEvidence ? "RUNTIME EVIDENCE" : "REPOSITORY EVIDENCE"} />
     {state === "connected" && evidence
       ? <div className="system-service-grid">{evidence.services.map((service) => <article className="card" key={service.key}><small>{service.key}</small><h3>{service.label}</h3><p>{service.responsibility}</p><span>{service.status.replaceAll("_", " ")}</span></article>)}</div>
       : <DataState kind={state === "loading" ? "loading" : "failed"} title={state === "loading" ? "Validating service inventory" : "Service inventory withheld"} message={state === "loading" ? "The versioned System evidence snapshot is being checked." : "The snapshot failed validation, so no service status is substituted from page code."} />}
@@ -604,7 +608,7 @@ function SystemAwsOverview({ evidence, state }: {
       <article><small>PRODUCTION TRACK</small><strong>Scheduler → prod alias → governed aggregates</strong><p>Production automation targets an immutable alias. Movement of that alias remains a separately controlled human action.</p></article>
       <article><small>ISOLATED STAGING</small><strong>Manual controller → lifecycle history → private cockpit</strong><p>No Scheduler, production alias, or production-table write permission exists in the staging stack.</p></article>
     </div>
-    <div className="system-callout historical"><strong>Historical counts intentionally withheld</strong><p>The older System page displayed an inspected 6 August 2026 resource inventory. Those counts are preserved in repository history, but this view does not call AWS and therefore does not label them current.</p></div>
+    <div className="system-callout historical"><strong>Historical counts intentionally withheld</strong><p>The older System page displayed an inspected 6 August 2026 resource inventory. Those counts are preserved in repository history; this browser view never calls AWS directly and does not publish them as current.</p></div>
   </section>;
 }
 

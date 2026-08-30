@@ -22,14 +22,36 @@ test("accepts the exact read-only repository architecture snapshot", async () =>
   assert.deepEqual(new Set(Object.values(validated.authority)), new Set([false]));
 });
 
-test("rejects future, live, writable, or staging-authority drift", async () => {
+test("accepts an exact aggregate AWS runtime inspection snapshot", async () => {
+  const value = await snapshot();
+  value.evidence_class = "AWS_RUNTIME_INSPECTION";
+  value.live_aws_inspection = true;
+  value.disclosure = "Derived from an aggregate read-only AWS control-plane inspection; not production readiness evidence.";
+  value.source_provenance = {
+    mode: "AWS_CONTROL_PLANE_READS",
+    observation_contract: "system-runtime-observation.v1",
+    athena_query_started: false,
+    external_write: false,
+    identifiers_retained: false,
+  };
+  value.production_track.status = "RUNTIME_VERIFIED";
+  value.staging_track.status = "RUNTIME_VERIFIED";
+  value.services.forEach((service) => { service.status = "RUNTIME_VERIFIED"; });
+
+  const validated = validateSystemEvidenceSnapshot(value, "2026-08-31");
+  assert.equal(validated.evidence_class, "AWS_RUNTIME_INSPECTION");
+  assert.equal(validated.live_aws_inspection, true);
+  assert.deepEqual(new Set(Object.values(validated.authority)), new Set([false]));
+});
+
+test("rejects future, mismatched mode, writable, or staging-authority drift", async () => {
   const future = await snapshot();
-  future.repository_as_of_date = "2026-09-01";
+  future.as_of_date = "2026-09-01";
   assert.throws(() => validateSystemEvidenceSnapshot(future, "2026-08-31"), /SYSTEM_EVIDENCE_BOUNDARY_INVALID/);
 
   const live = await snapshot();
   live.live_aws_inspection = true;
-  assert.throws(() => validateSystemEvidenceSnapshot(live, "2026-08-31"), /SYSTEM_EVIDENCE_BOUNDARY_INVALID/);
+  assert.throws(() => validateSystemEvidenceSnapshot(live, "2026-08-31"), /SYSTEM_EVIDENCE_MODE_INVALID/);
 
   const writable = await snapshot();
   writable.authority.aws_write = true;

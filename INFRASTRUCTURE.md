@@ -208,6 +208,24 @@ in AWS and are deliberately not published in this repository.
 
 The Lambda execution role needs permission to start and inspect Athena queries, read Glue catalog metadata, and access the relevant S3 data and result locations. The scheduler needs permission to invoke the Lambda function. This repository does not publish account IDs, role ARNs, policies, or bucket names.
 
+The repository also contains a local, plan-first System runtime observation
+collector. It is not deployed and has not been executed. A future separately
+authorized run may use only fixed control-plane `Head`, `Get`, `Describe`, and
+`List` calls; Athena is limited to `GetWorkGroup` and no Lambda is invoked. The
+collector checks the production alias/schedule/retry/DLQ boundary and fails
+closed unless staging has no `prod` alias or schedule and every inline Glue/S3
+write resource stays inside a private, caller-supplied staging allowlist.
+Managed policies, broad service actions, production table markers, private
+configuration inside the repository, or output inside the repository are
+rejected. This code creates no IAM permission or standing inspection authority.
+The accompanying manual GitHub workflow keeps `plan` configuration-free and
+without OIDC. Its separately selected `execute` job requires the protected
+`system-observation-read` environment and a short-lived OIDC session, retains
+observation/candidate files only in runner temporary storage, and always
+deletes them without artifact upload or publication. Source-control maturity is
+recorded by Git history, while the workflow remains unconfigured and unrun; no
+AWS role or permission was created.
+
 The 2026-08-17 lifecycle recovery-controller release attempt exposed a narrower
 staging delivery gap: the GitHub staging deployer's exact-resource Glue
 allowlist did not cover one existing lifecycle catalog table. Manual workflow

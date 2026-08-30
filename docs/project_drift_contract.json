@@ -942,6 +942,62 @@
       ]
     },
     {
+      "id": "system_runtime_manual_collection_workflow_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the manual-only workflow defaults to a config-free plan job with read-only repository permission and no OIDC, secrets, or AWS client; execute is a separate protected environment job with exact confirmation and short-lived OIDC, validates transient observation and candidate files outside the repository, always deletes both, uploads no artifact, triggers no deployment or publication, and has not been configured or run",
+      "evidence_files": [
+        ".github/workflows/collect-system-runtime-observation.yml",
+        "ops/collect_system_runtime_observation.py",
+        "ops/export_public_system_evidence_snapshot.py",
+        "tests/test_collect_system_runtime_workflow.py",
+        "tests/test_collect_system_runtime_observation.py",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "docs/architecture_current.md",
+        "docs/deployment_workflow.md",
+        "docs/ops_snapshot.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "system_runtime_control_plane_collector_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the local plan-first collector can execute only after an exact read-only confirmation and uses fixed S3, Glue, Athena workgroup, Lambda alias, Scheduler, SQS, CloudWatch, SNS, and IAM control-plane reads; private configuration and aggregate output must remain outside the repository, Athena queries, Lambda invocation, AWS writes, managed staging policies, production-table references, staging schedules, and prod aliases fail closed, and no AWS collection has been executed",
+      "evidence_files": [
+        "docs/system_runtime_collector_config_v1.schema.json",
+        "ops/collect_system_runtime_observation.py",
+        "ops/export_public_system_evidence_snapshot.py",
+        "docs/public_system_runtime_observation_v1.schema.json",
+        "tests/test_collect_system_runtime_observation.py",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "docs/architecture_current.md",
+        "docs/ops_snapshot.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
+      "id": "public_system_runtime_candidate_exporter_v2",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "the System evidence v2 browser contract preserves repository mode and admits AWS runtime mode only from a current-Sydney, aggregate-only, identifier-free control-plane observation with no Athena query or external write; the local exporter has no AWS client, cannot overwrite the tracked Sites snapshot, grants no publication or operational authority, and no runtime observation has been executed or published",
+      "evidence_files": [
+        "docs/public_system_runtime_observation_v1.schema.json",
+        "ops/export_public_system_evidence_snapshot.py",
+        "decision-brief-demo/app/system-evidence-snapshot.ts",
+        "decision-brief-demo/contracts/system-evidence-source.v2.json",
+        "decision-brief-demo/public/data/system-evidence-snapshot.json",
+        "decision-brief-demo/scripts/build-system-evidence-snapshot.mjs",
+        "decision-brief-demo/tests/system-evidence-generator.test.mjs",
+        "decision-brief-demo/tests/system-evidence-snapshot.test.mjs",
+        "tests/test_public_system_evidence_snapshot.py",
+        "ops/audit_project_drift.py",
+        "tests/test_project_drift_audit.py",
+        "docs/architecture_current.md",
+        "docs/ops_snapshot.md",
+        "CURRENT_DEVELOPMENT_STATUS.md"
+      ]
+    },
+    {
       "id": "pre_commit_drift_gate",
       "state": "IMPLEMENTED_VERIFIED",
       "boundary": "local staged-snapshot validation before commit",

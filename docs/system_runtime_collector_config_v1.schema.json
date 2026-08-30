@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-radar-lab.com/contracts/system_runtime_collector_config_v1.schema.json",
+  "title": "PRIVATE GLAP System runtime collector configuration v1",
+  "description": "Private input contract. Populate outside the repository and never publish or commit its values.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "region",
+    "storage_bucket",
+    "glue_database",
+    "athena_workgroup",
+    "production_function_name",
+    "production_schedule_name",
+    "dlq_url",
+    "alarm_names",
+    "alert_topic_arn",
+    "staging_function_names",
+    "staging_role_names",
+    "staging_schedule_prefix",
+    "staging_table_names",
+    "staging_s3_write_prefixes"
+  ],
+  "properties": {
+    "schema_version": { "const": "system-runtime-collector-config.v1" },
+    "region": { "const": "us-east-1" },
+    "storage_bucket": { "$ref": "#/$defs/privateValue" },
+    "glue_database": { "$ref": "#/$defs/privateValue" },
+    "athena_workgroup": { "$ref": "#/$defs/privateValue" },
+    "production_function_name": { "$ref": "#/$defs/privateValue" },
+    "production_schedule_name": { "$ref": "#/$defs/privateValue" },
+    "dlq_url": { "$ref": "#/$defs/privateValue" },
+    "alarm_names": { "$ref": "#/$defs/privateList" },
+    "alert_topic_arn": { "$ref": "#/$defs/privateValue" },
+    "staging_function_names": { "$ref": "#/$defs/privateList" },
+    "staging_role_names": { "$ref": "#/$defs/privateList" },
+    "staging_schedule_prefix": { "$ref": "#/$defs/privateValue" },
+    "staging_table_names": { "$ref": "#/$defs/privateList" },
+    "staging_s3_write_prefixes": { "$ref": "#/$defs/privateList" }
+  },
+  "$defs": {
+    "privateValue": { "type": "string", "minLength": 1 },
+    "privateList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/privateValue" }
+    }
+  }
+}

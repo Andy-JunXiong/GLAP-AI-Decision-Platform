@@ -526,6 +526,9 @@ test("keeps authenticated Action writes behind the internal API client", async (
   assert.match(page, /Snapshot unavailable — status details withheld/);
   assert.match(page, /The snapshot failed validation, so no service status is substituted from page code/);
   assert.match(page, /Repository architecture verified for display/);
+  assert.match(page, /Aggregate AWS runtime observation verified for display/);
+  assert.match(page, /yes — projected offline/);
+  assert.match(page, /SAFE PROJECTION/);
   assert.match(page, /type SystemSection = "flow" \| "aws" \| "data" \| "logic" \| "ops" \| "release"/);
   assert.match(page, /Daily E2E Flow/);
   assert.match(page, /AWS Overview/);
