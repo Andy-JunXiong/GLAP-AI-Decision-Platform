@@ -420,6 +420,12 @@ flowchart TB
   protected Environment and role have not been configured, and execute has not
   run.
 
+  The human-only configuration boundary is defined by
+  [`system_runtime_observation_configuration.md`](system_runtime_observation_configuration.md).
+  It binds the exact secret names, Environment-scoped OIDC review, fixed read
+  permissions, private-value handling, and separate execute approval without
+  granting infrastructure or runtime authority.
+
 ## Isolated stateful multimodal staging boundary
 
 The lifecycle and analytics foundation is deployed beside, not inside, the

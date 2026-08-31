@@ -229,6 +229,13 @@ succeeded with execute skipped and zero artifacts. The protected Environment
 and OIDC role remain unconfigured, execute has not run, and this is still
 implementation/workflow evidence rather than AWS runtime evidence.
 
+The human-only
+[`system_runtime_observation_configuration.md`](system_runtime_observation_configuration.md)
+checklist makes the absent configuration reviewable without exposing it: exact
+secret names, fixed read calls, OIDC conditions, least-privilege rejection
+rules, and the separate execute approval are source-controlled, while all
+values and infrastructure actions remain outside the repository.
+
 ## GitHub configuration
 
 The repository includes an idempotent PowerShell setup command for the current

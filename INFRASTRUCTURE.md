@@ -229,6 +229,13 @@ succeeded with execute skipped and zero artifacts. The protected Environment,
 OIDC role, and execute action remain unconfigured and unrun; no AWS role,
 permission, credential, or call was created.
 
+Human setup is bounded by
+[`docs/system_runtime_observation_configuration.md`](docs/system_runtime_observation_configuration.md).
+That checklist names the exact protected secrets and read calls, requires an
+exact Environment-bound OIDC subject and independently reviewed least-privilege
+policy, and contains no private values or infrastructure mutation command.
+Completing the checklist does not authorize `execute`.
+
 The 2026-08-17 lifecycle recovery-controller release attempt exposed a narrower
 staging delivery gap: the GitHub staging deployer's exact-resource Glue
 allowlist did not cover one existing lifecycle catalog table. Manual workflow

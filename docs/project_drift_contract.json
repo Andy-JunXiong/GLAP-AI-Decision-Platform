@@ -944,7 +944,7 @@
     {
       "id": "system_runtime_manual_collection_workflow_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "the manual-only workflow defaults to a config-free dependency-free plan job with read-only repository permission and no OIDC, secrets, or AWS client; plan run 33348119882 passed with execute skipped and zero artifacts; execute installs and imports pinned boto3 after contract tests and before authentication, remains a separate protected environment job with exact confirmation and short-lived OIDC, validates transient observation and candidate files outside the repository, always deletes both, uploads no artifact, triggers no deployment or publication, and has not been configured or run",
+      "boundary": "the manual-only workflow defaults to a config-free dependency-free plan job with read-only repository permission and no OIDC, secrets, or AWS client; plan run 33348119882 passed with execute skipped and zero artifacts; the human-only configuration checklist binds the exact Environment secret names, OIDC trust review, read-call permissions, and separate execution authority without containing private values or IAM mutation commands; execute installs and imports pinned boto3 after contract tests and before authentication, remains a separate protected environment job with exact confirmation and short-lived OIDC, validates transient observation and candidate files outside the repository, always deletes both, uploads no artifact, triggers no deployment or publication, and has not been configured or run",
       "evidence_files": [
         ".github/workflows/collect-system-runtime-observation.yml",
         "ops/collect_system_runtime_observation.py",
@@ -952,6 +952,7 @@
         "ops/export_public_system_evidence_snapshot.py",
         "tests/test_collect_system_runtime_workflow.py",
         "tests/test_collect_system_runtime_observation.py",
+        "docs/system_runtime_observation_configuration.md",
         "ops/audit_project_drift.py",
         "tests/test_project_drift_audit.py",
         "docs/architecture_current.md",

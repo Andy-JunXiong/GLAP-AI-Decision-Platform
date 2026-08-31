@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,9 @@ WORKFLOW_PATH = (
 )
 COLLECTOR_PATH = ROOT / "ops/collect_system_runtime_observation.py"
 REQUIREMENTS_PATH = ROOT / "ops/requirements-system-runtime-observation.txt"
+CONFIGURATION_RUNBOOK_PATH = (
+    ROOT / "docs/system_runtime_observation_configuration.md"
+)
 SPEC = importlib.util.spec_from_file_location(
     "collect_system_runtime_workflow_contract", COLLECTOR_PATH
 )
@@ -118,6 +122,32 @@ class CollectSystemRuntimeWorkflowTests(unittest.TestCase):
             "role-to-assume: ${{ secrets.SYSTEM_OBSERVATION_ROLE_ARN }}",
             workflow,
         )
+
+    def test_human_configuration_runbook_matches_protected_contract(self) -> None:
+        runbook = CONFIGURATION_RUNBOOK_PATH.read_text(encoding="utf-8")
+        expected_secrets = {
+            "SYSTEM_OBSERVATION_ROLE_ARN",
+            *(
+                f"SYSTEM_{name.removeprefix('GLAP_SYSTEM_')}"
+                for name in (
+                    tuple(collector.ENV_SCALARS.values())
+                    + tuple(collector.ENV_LISTS.values())
+                )
+            ),
+        }
+        documented_secrets = set(
+            re.findall(r"`(SYSTEM_[A-Z0-9_]+)`", runbook)
+        )
+
+        self.assertEqual(documented_secrets, expected_secrets)
+        for call in collector.ALLOWED_CALLS:
+            self.assertIn(f"`{call}`", runbook)
+        self.assertIn("`s3:ListBucket`", runbook)
+        self.assertIn("exact equality match", runbook)
+        self.assertIn("new, explicit human authorization for `execute`", runbook)
+        self.assertNotRegex(runbook, r"arn:aws[^\s`]*")
+        self.assertNotRegex(runbook, r"(?<![0-9])[0-9]{12}(?![0-9])")
+        self.assertNotIn("aws iam create-role", runbook.lower())
 
 
 if __name__ == "__main__":

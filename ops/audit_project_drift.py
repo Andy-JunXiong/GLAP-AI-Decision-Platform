@@ -4267,6 +4267,7 @@ def check_system_runtime_manual_collection_workflow_boundary(
         "ops/requirements-system-runtime-observation.txt",
         "ops/export_public_system_evidence_snapshot.py",
         "tests/test_collect_system_runtime_workflow.py",
+        "docs/system_runtime_observation_configuration.md",
         "docs/project_drift_contract.json",
         "docs/architecture_current.md",
         "docs/deployment_workflow.md",
@@ -4291,6 +4292,9 @@ def check_system_runtime_manual_collection_workflow_boundary(
             ).read_text(encoding="utf-8").splitlines()
             if line.strip() and not line.lstrip().startswith("#")
         ]
+        runbook = (
+            root / "docs/system_runtime_observation_configuration.md"
+        ).read_text(encoding="utf-8")
         contract = load_contract(root)
         capability = next(
             (
@@ -4307,6 +4311,16 @@ def check_system_runtime_manual_collection_workflow_boundary(
         secret_bindings = tuple(
             f"{name}: ${{{{ secrets.SYSTEM_{name.removeprefix('GLAP_SYSTEM_')} }}}}"
             for name in environment_names
+        )
+        expected_runbook_secrets = {
+            "SYSTEM_OBSERVATION_ROLE_ARN",
+            *(
+                f"SYSTEM_{name.removeprefix('GLAP_SYSTEM_')}"
+                for name in environment_names
+            ),
+        }
+        documented_runbook_secrets = set(
+            re.findall(r"`(SYSTEM_[A-Z0-9_]+)`", runbook)
         )
         forbidden_workflow = (
             "\n  push:",
@@ -4355,6 +4369,14 @@ def check_system_runtime_manual_collection_workflow_boundary(
                 "six==1.17.0",
                 "urllib3==2.7.0",
             ]
+            and documented_runbook_secrets == expected_runbook_secrets
+            and all(f"`{call}`" in runbook for call in collector.ALLOWED_CALLS)
+            and "`s3:ListBucket`" in runbook
+            and "exact equality match" in runbook
+            and "new, explicit human authorization for `execute`" in runbook
+            and not re.search(r"arn:aws[^\s`]*", runbook)
+            and not re.search(r"(?<![0-9])[0-9]{12}(?![0-9])", runbook)
+            and "aws iam create-role" not in runbook.lower()
             and execute.index("Verify collector contracts before AWS authentication")
             < execute.index("Install pinned System observation dependency")
             < execute.index("Verify runtime dependency before AWS authentication")
@@ -4376,7 +4398,7 @@ def check_system_runtime_manual_collection_workflow_boundary(
             "system_runtime_manual_collection_workflow_boundary",
             "governance",
             passed,
-            "The manual System workflow remains plan-first, secret-free and OIDC-free in plan mode; execute installs and verifies its pinned AWS SDK before authentication while remaining separately protected, transient-only, and non-publishing.",
+            "The manual System workflow remains plan-first, secret-free and OIDC-free in plan mode; its human-only configuration checklist matches the exact secret and read-call contract, while execute remains separately protected, transient-only, and non-publishing.",
             failure,
             evidence,
         )

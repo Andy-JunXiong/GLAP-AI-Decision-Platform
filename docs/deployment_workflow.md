@@ -114,6 +114,14 @@ Environment and role have not been configured, and execute has not run.
 Configuring the Environment or OIDC role, dispatching `execute`, promoting a
 candidate, and publishing Sites each require separate human authority.
 
+Before any human configuration, use the repository's
+[`system_runtime_observation_configuration.md`](system_runtime_observation_configuration.md)
+checklist. It enumerates all 14 protected secret names, translates the fixed
+collector calls into the reviewed IAM action set, requires exact
+Environment-bound OIDC trust, and defines stop conditions. It deliberately
+contains no private values, account identifiers, resource locators, or IAM
+mutation commands; checklist completion is not execute authorization.
+
 ## GitHub staging deployment
 
 The manual `Deploy staging` workflow uses GitHub OIDC instead of stored AWS
