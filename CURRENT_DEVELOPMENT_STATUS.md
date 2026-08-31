@@ -19,7 +19,7 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Restricted Next/Sites decision walkthrough | `PUBLISHED_RESTRICTED_BUILD_VERIFIED` | Owner-only Sites v9 is active with one allowed owner, zero groups, and zero external visitors. It restores the complete six-tab AWS System evidence surface, loads a versioned repository-only snapshot through a fail-closed browser validator, and ships a deterministic source-to-public generator plus CI drift gate. Deployment status succeeded from Sites source commit `f1d4447`; local full-browser verification made no write request. This is not public Pages, live AWS status, or operational authority. |
 | Public System runtime candidate exporter v2 | `IMPLEMENTED_VERIFIED_NOT_EXECUTED_OR_PUBLISHED` | The checked-in browser contract now preserves repository mode while admitting runtime mode only from a current-Sydney `system-runtime-observation.v1` aggregate with exact service/reliability/staging boundaries, no Athena query or external write, no retained identifiers, and all-false authority. The exporter has no AWS client, defaults to validation-only, and refuses to overwrite the tracked Sites snapshot. Commit `4600e4c` is pushed and both source CI paths passed; no AWS observation, candidate promotion, v2 Sites publication, or runtime verification has occurred, and owner-only Sites v9 remains on its verified v1 repository build. |
 | System runtime control-plane collector v1 | `IMPLEMENTED_VERIFIED_PLAN_FIRST_NOT_EXECUTED` | The collector defaults to a redacted plan and requires an exact read-only confirmation for execution. It permits only fixed S3/Glue/Athena-workgroup/Lambda-alias/Scheduler/SQS/CloudWatch/SNS/IAM control-plane reads, keeps private config and output outside the repository, and fails closed on queries, invocation, writes, staging schedules or prod aliases, managed/broad policies, production-table references, or non-allowlisted Glue/S3 writes. Commit `4600e4c` is pushed and both source CI paths passed; no AWS credential configuration, control-plane call, observation, or new IAM permission occurred. |
-| System runtime manual collection workflow v1 | `PLAN_RUN_VERIFIED_CONFIG_RUNBOOK_SOURCE_VERIFIED` | The separately authorized configuration-free plan run `33348119882` passed 13 tests from commit `893eb6d`, rendered only the redacted fixed call inventory, skipped execute, and retained zero artifacts. Dependency fix commit `089f4ad` is pushed and CI run `33349260146` passed. A human-only configuration checklist now binds all 14 protected secret names, the fixed read-call/IAM-action review, exact Environment OIDC trust, rejection rules, and separate execute authority without private values or mutation commands. Python compilation, all 680 tests, and the 57/57 drift audit pass locally. The protected Environment and AWS role remain absent, and execute has not run. |
+| System runtime manual collection workflow v1 | `PLAN_RUN_VERIFIED_CONFIG_RUNBOOK_SOURCE_VERIFIED` | The separately authorized configuration-free plan run `33348119882` passed 13 tests from commit `893eb6d`, rendered only the redacted fixed call inventory, skipped execute, and retained zero artifacts. Dependency fix commit `089f4ad` and checklist commit `f828ebb` are pushed; CI runs `33349260146` and `33349928712` passed. The human-only checklist binds all 14 protected secret names, the fixed read-call/IAM-action review, exact Environment OIDC trust, rejection rules, and separate execute authority without private values or mutation commands. A post-push read-only GitHub settings audit confirmed the target Environment is absent and the repository currently uses the default name-based, non-immutable OIDC subject mode; existing high-risk protection precedent is one required reviewer, self-review prevention, and `main` only. AWS IAM was not queried or changed, and execute has not run. |
 | Stateful multimodal lifecycle | `IMPLEMENTED_STAGING` | Bounded actual-calendar continuation now reaches `2026-08-28`. Plan run `33149532396` and separately authorized continuation run `33149577300` used `OPERATIONAL` / `ACTUAL_CALENDAR`, no seed or scenario, and the one-date continuation passed four stages and all 41 checks. The earlier baseline remains at the `2026-08-24` cutoff; no baseline refresh, schedule, alias, Pages, or production change occurred. |
 | Authenticated Operations loop | `IMPLEMENTED_STAGING` | Private staging with signed identity and RBAC |
 | Action assignment canary | `IMPLEMENTED_STAGING` | Response fix, stable retry, distinct named-approver `APPROVE`, named-human `COMPLETE`, and aggregate completion reconciliation are runtime-verified |
@@ -1814,7 +1814,15 @@ done.
   exact Environment OIDC subject, rejection and stop rules, and a fresh
   execute-authorization gate. It contains no private values, account IDs,
   resource locators, IAM mutation commands, or standing authority. Python
-  compilation, all 680 tests, and the 57/57 drift audit pass locally.
+  compilation, all 680 tests, and the 57/57 drift audit pass locally. Commit
+  `f828ebb` is pushed and CI run `33349928712` passed without dispatching the
+  manual workflow or any deployment/publication path.
+- A post-push read-only GitHub settings audit confirmed that
+  `system-observation-read` still returns absent, the repository uses the
+  default name-based and non-immutable OIDC subject mode, and the existing
+  high-risk Environment precedent combines one required reviewer, prevention
+  of self-review, and a `main`-only custom branch rule. No Environment, secret,
+  IAM role, AWS session, workflow dispatch, or external write was created.
 
 - Implemented and locally verified the plan-only authenticated Operations API
   sustained-read contract. It fixes seven viewer-safe GET projections, a
@@ -2607,12 +2615,16 @@ done.
    source-CI verified. Configuration-free plan run `33348119882` is complete:
    it passed, skipped execute, retained zero artifacts, and requested no OIDC or
    AWS access. Dependency fix commit `089f4ad` is pushed and source CI run
-   `33349260146` passed. A human-only configuration checklist now
+   `33349260146` passed. Checklist commit `f828ebb` is pushed and source CI run
+   `33349928712` passed. A human-only configuration checklist now
    makes the required secret names, exact OIDC trust, least-privilege review,
    and stop conditions explicit without containing private values or granting
-   authority. Creating the protected Environment or OIDC role is the next
-   possible infrastructure step only with separate human authority, and any
-   actual AWS execution still needs separate explicit human authorization.
+   authority. Read-only GitHub settings evidence confirms that the target
+   Environment is absent and the repository currently uses its default
+   name-based, non-immutable subject mode. Creating the protected Environment
+   or OIDC role is the next possible infrastructure step only with separate
+   human authority, and any actual AWS execution still needs separate explicit
+   human authorization.
    Athena is limited to `GetWorkGroup`, and
    query execution remains forbidden because it creates a protected result
    object. Candidate promotion, Sites publication, and post-publication

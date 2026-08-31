@@ -44,6 +44,17 @@ preserved handoffs.
   unconfigured, and the workflow remains unrun. Commit `4600e4c` is on `main`;
   ordinary CI run `33320945134` and Decision brief demo CI run `33320945095`
   passed without dispatching the workflow or publishing the v2 candidate.
+- Verified the workflow's configuration-free plan path with manual run
+  `33348119882`: 13 tests and the redacted fixed-call inventory passed,
+  `execute` was skipped, and artifact count was zero. No Environment, OIDC,
+  secret, AWS client/call, candidate, deployment, or publication occurred.
+- Hardened the protected execute path with a fully pinned Boto3 dependency
+  closure installed and imported before AWS authentication, then added a
+  human-only configuration checklist covering all 14 secret names, exact OIDC
+  trust review, fixed read permissions, stop rules, and a separate execute
+  authorization gate. Commits `089f4ad` and `f828ebb` reached `main`; CI runs
+  `33349260146` and `33349928712` passed. The target Environment remains absent,
+  AWS IAM was not queried or changed, and execute remains unrun.
 
 ## 2026-08-29
 

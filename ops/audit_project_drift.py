@@ -4386,7 +4386,7 @@ def check_system_runtime_manual_collection_workflow_boundary(
             and capability.get("state") == "IMPLEMENTED_VERIFIED"
             and "plan run 33348119882 passed"
             in capability.get("boundary", "")
-            and "has not been configured or run"
+            and "execute has not been configured or run"
             in capability.get("boundary", "")
         )
     except Exception as error:
