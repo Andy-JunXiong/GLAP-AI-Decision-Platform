@@ -413,9 +413,12 @@ flowchart TB
   session, requires the collector's exact read confirmation, and keeps both
   observation and candidate files under the runner's temporary directory. An
   unconditional cleanup removes those files; the workflow has no artifact
-  upload, deploy, publication, push, or scheduled trigger. Source-control
-  maturity is recorded by Git history; the protected environment and role have
-  not been configured, and the workflow has not run.
+  upload, deploy, publication, push, or scheduled trigger. The execute branch
+  installs and imports its pinned Python AWS SDK after contract tests and before
+  OIDC authentication; plan remains dependency-free. Configuration-free plan
+  run `33348119882` passed with execute skipped and zero artifacts. The
+  protected Environment and role have not been configured, and execute has not
+  run.
 
 ## Isolated stateful multimodal staging boundary
 

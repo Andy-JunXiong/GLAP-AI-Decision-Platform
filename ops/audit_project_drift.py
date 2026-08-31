@@ -4264,6 +4264,7 @@ def check_system_runtime_manual_collection_workflow_boundary(
     evidence = (
         ".github/workflows/collect-system-runtime-observation.yml",
         "ops/collect_system_runtime_observation.py",
+        "ops/requirements-system-runtime-observation.txt",
         "ops/export_public_system_evidence_snapshot.py",
         "tests/test_collect_system_runtime_workflow.py",
         "docs/project_drift_contract.json",
@@ -4283,6 +4284,13 @@ def check_system_runtime_manual_collection_workflow_boundary(
         )
         plan = workflow.split("  plan:\n", 1)[1].split("  execute:\n", 1)[0]
         execute = workflow.split("  execute:\n", 1)[1]
+        requirements = [
+            line.strip()
+            for line in (
+                root / "ops/requirements-system-runtime-observation.txt"
+            ).read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
         contract = load_contract(root)
         capability = next(
             (
@@ -4322,6 +4330,7 @@ def check_system_runtime_manual_collection_workflow_boundary(
             and "configure-aws-credentials" not in plan
             and "secrets." not in plan
             and "--config-from-environment" not in plan
+            and "requirements-system-runtime-observation.txt" not in plan
             and "environment: system-observation-read" in execute
             and "permissions:\n      contents: read\n      id-token: write"
             in execute
@@ -4336,11 +4345,25 @@ def check_system_runtime_manual_collection_workflow_boundary(
             and all(binding in execute for binding in secret_bindings)
             and "role-to-assume: ${{ secrets.SYSTEM_OBSERVATION_ROLE_ARN }}"
             in execute
+            and requirements
+            == [
+                "boto3==1.43.83",
+                "botocore==1.43.83",
+                "jmespath==1.1.0",
+                "python-dateutil==2.9.0.post0",
+                "s3transfer==0.19.2",
+                "six==1.17.0",
+                "urllib3==2.7.0",
+            ]
             and execute.index("Verify collector contracts before AWS authentication")
+            < execute.index("Install pinned System observation dependency")
+            < execute.index("Verify runtime dependency before AWS authentication")
             < execute.index("aws-actions/configure-aws-credentials@v6")
             < execute.index("Collect and validate one transient candidate")
             < execute.index("Remove transient observation and candidate")
             and capability.get("state") == "IMPLEMENTED_VERIFIED"
+            and "plan run 33348119882 passed"
+            in capability.get("boundary", "")
             and "has not been configured or run"
             in capability.get("boundary", "")
         )
@@ -4353,7 +4376,7 @@ def check_system_runtime_manual_collection_workflow_boundary(
             "system_runtime_manual_collection_workflow_boundary",
             "governance",
             passed,
-            "The manual System workflow remains plan-first, secret-free and OIDC-free in plan mode, separately protected for execute, transient-only, non-publishing, and unexecuted.",
+            "The manual System workflow remains plan-first, secret-free and OIDC-free in plan mode; execute installs and verifies its pinned AWS SDK before authentication while remaining separately protected, transient-only, and non-publishing.",
             failure,
             evidence,
         )

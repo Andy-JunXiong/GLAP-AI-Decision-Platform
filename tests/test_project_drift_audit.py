@@ -1457,6 +1457,7 @@ class ProjectDriftAuditTests(unittest.TestCase):
         paths = (
             ".github/workflows/collect-system-runtime-observation.yml",
             "ops/collect_system_runtime_observation.py",
+            "ops/requirements-system-runtime-observation.txt",
             "ops/export_public_system_evidence_snapshot.py",
             "tests/test_collect_system_runtime_workflow.py",
             "docs/project_drift_contract.json",
@@ -1482,6 +1483,36 @@ class ProjectDriftAuditTests(unittest.TestCase):
                 1,
             )
             workflow_path.write_text(workflow, encoding="utf-8")
+            result = AUDIT.check_system_runtime_manual_collection_workflow_boundary(
+                root
+            )[0]
+        self.assertEqual(result.status, "DRIFT")
+
+    def test_system_runtime_manual_collection_dependency_drift(self):
+        paths = (
+            ".github/workflows/collect-system-runtime-observation.yml",
+            "ops/collect_system_runtime_observation.py",
+            "ops/requirements-system-runtime-observation.txt",
+            "ops/export_public_system_evidence_snapshot.py",
+            "tests/test_collect_system_runtime_workflow.py",
+            "docs/project_drift_contract.json",
+            "docs/architecture_current.md",
+            "docs/deployment_workflow.md",
+            "docs/ops_snapshot.md",
+            "CURRENT_DEVELOPMENT_STATUS.md",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            requirements_path = (
+                root / "ops/requirements-system-runtime-observation.txt"
+            )
+            requirements_path.write_text(
+                requirements_path.read_text(encoding="utf-8").replace(
+                    "boto3==1.43.83", "boto3>=1.43.83"
+                ),
+                encoding="utf-8",
+            )
             result = AUDIT.check_system_runtime_manual_collection_workflow_boundary(
                 root
             )[0]

@@ -222,9 +222,12 @@ The accompanying manual GitHub workflow keeps `plan` configuration-free and
 without OIDC. Its separately selected `execute` job requires the protected
 `system-observation-read` environment and a short-lived OIDC session, retains
 observation/candidate files only in runner temporary storage, and always
-deletes them without artifact upload or publication. Source-control maturity is
-recorded by Git history, while the workflow remains unconfigured and unrun; no
-AWS role or permission was created.
+deletes them without artifact upload or publication. The execute branch pins
+and imports its Python AWS SDK after contract tests and before authentication;
+plan remains dependency-free. Configuration-free plan run `33348119882`
+succeeded with execute skipped and zero artifacts. The protected Environment,
+OIDC role, and execute action remain unconfigured and unrun; no AWS role,
+permission, credential, or call was created.
 
 The 2026-08-17 lifecycle recovery-controller release attempt exposed a narrower
 staging delivery gap: the GitHub staging deployer's exact-resource Glue

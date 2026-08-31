@@ -222,9 +222,12 @@ uses a short-lived OIDC session, and passes secret-backed private configuration
 to the collector. Both the aggregate observation and derived candidate remain
 in the runner temporary directory, are validated there, are not uploaded, and
 are deleted even when a step fails. The workflow cannot publish the candidate
-or overwrite the tracked Sites snapshot. Source-control maturity is recorded
-by Git history; the workflow has not been configured or run, so it is
-implementation evidence only and not AWS runtime evidence.
+or overwrite the tracked Sites snapshot. Execute installs and imports its
+pinned Python AWS SDK after contract tests and before OIDC authentication;
+plan remains dependency-free. Configuration-free plan run `33348119882`
+succeeded with execute skipped and zero artifacts. The protected Environment
+and OIDC role remain unconfigured, execute has not run, and this is still
+implementation/workflow evidence rather than AWS runtime evidence.
 
 ## GitHub configuration
 

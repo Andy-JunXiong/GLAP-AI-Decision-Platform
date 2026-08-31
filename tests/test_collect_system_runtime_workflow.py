@@ -8,6 +8,7 @@ WORKFLOW_PATH = (
     ROOT / ".github/workflows/collect-system-runtime-observation.yml"
 )
 COLLECTOR_PATH = ROOT / "ops/collect_system_runtime_observation.py"
+REQUIREMENTS_PATH = ROOT / "ops/requirements-system-runtime-observation.txt"
 SPEC = importlib.util.spec_from_file_location(
     "collect_system_runtime_workflow_contract", COLLECTOR_PATH
 )
@@ -45,6 +46,45 @@ class CollectSystemRuntimeWorkflowTests(unittest.TestCase):
         self.assertNotIn("configure-aws-credentials", plan)
         self.assertNotIn("secrets.", plan)
         self.assertNotIn("--config-from-environment", plan)
+        self.assertNotIn("requirements-system-runtime-observation.txt", plan)
+
+    def test_execute_dependency_is_pinned_and_verified_before_authentication(
+        self,
+    ) -> None:
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        execute = workflow.split("  execute:\n", 1)[1]
+        requirements = [
+            line.strip()
+            for line in REQUIREMENTS_PATH.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+
+        self.assertEqual(
+            requirements,
+            [
+                "boto3==1.43.83",
+                "botocore==1.43.83",
+                "jmespath==1.1.0",
+                "python-dateutil==2.9.0.post0",
+                "s3transfer==0.19.2",
+                "six==1.17.0",
+                "urllib3==2.7.0",
+            ],
+        )
+        self.assertIn("-r ops/requirements-system-runtime-observation.txt", execute)
+        self.assertIn("import boto3", execute)
+        self.assertLess(
+            execute.index("Verify collector contracts before AWS authentication"),
+            execute.index("Install pinned System observation dependency"),
+        )
+        self.assertLess(
+            execute.index("Install pinned System observation dependency"),
+            execute.index("Verify runtime dependency before AWS authentication"),
+        )
+        self.assertLess(
+            execute.index("Verify runtime dependency before AWS authentication"),
+            execute.index("aws-actions/configure-aws-credentials@v6"),
+        )
 
     def test_execute_job_is_protected_read_only_and_transient(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")

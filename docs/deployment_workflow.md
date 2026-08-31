@@ -98,18 +98,21 @@ The separate `execute` action requires the protected
 `system-observation-read` environment. Private resource configuration is
 supplied only from environment secrets, and
 `aws-actions/configure-aws-credentials` exchanges GitHub OIDC for a short-lived
-session. The collector
-still requires the exact `AWS_CONTROL_PLANE_READS` confirmation and permits only
-its fixed control-plane reads. Observation and candidate files are written only
+session. Before authentication, this branch runs the collector contracts,
+installs the pinned `boto3==1.43.83` dependency, and verifies that it imports;
+the plan branch does not install or import the AWS SDK. The collector still
+requires the exact `AWS_CONTROL_PLANE_READS` confirmation and permits only its
+fixed control-plane reads. Observation and candidate files are written only
 under the runner temporary directory, checked there, never uploaded as an
 artifact, and deleted by an unconditional cleanup step.
 
 The workflow has no `push`, `schedule`, deploy, publication, alias, Scheduler,
 Action, policy, or model operation. Source-control maturity is recorded by Git
-history; its protected environment and role have not been configured, and
-neither action has run. Configuring the environment or OIDC role, dispatching
-`execute`, promoting a candidate, and publishing Sites each require separate
-human authority.
+history. Configuration-free plan run `33348119882` passed from commit
+`893eb6d`, execute was skipped, and artifact count was zero. Its protected
+Environment and role have not been configured, and execute has not run.
+Configuring the Environment or OIDC role, dispatching `execute`, promoting a
+candidate, and publishing Sites each require separate human authority.
 
 ## GitHub staging deployment
 
