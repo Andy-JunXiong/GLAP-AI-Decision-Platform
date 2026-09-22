@@ -332,7 +332,7 @@ def validate_contract(contract: dict[str, Any], root: Path = ROOT) -> list[str]:
         "schema_applied_by_release": False,
         "controller_changed_by_release": False,
         "schedule_or_alias_changed_by_release": False,
-        "post_deploy_code_digest_independently_verified": False,
+        "post_deploy_code_digest_independently_verified": True,
         "post_deploy_runtime_reconciliation_executed": False,
         "production_effect": False,
     }:
@@ -528,7 +528,7 @@ def main() -> int:
     print(
         "PASS: the closed simulated Outcome and failed-closed Learning result "
         "are preserved; the latest-logical-Outcome source fix is deployed to "
-        "staging with digest and runtime rechecks still pending"
+        "staging with independently verified digest; business runtime recheck remains pending"
     )
     return 0
 

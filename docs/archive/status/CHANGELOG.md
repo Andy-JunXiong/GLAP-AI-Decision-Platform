@@ -4,6 +4,44 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-09-22
+
+- Added local Generator release-binding comparison across fixed Git blobs,
+  supplied ZIP bytes, private receipt hashes and bracketing configuration
+  records. Rejects source/package drift, legacy receipt claims and changed or
+  stale configuration without importing code or contacting AWS. Consistency
+  does not authenticate review, deployment or mutable-version continuity.
+  CI now packages and asserts all four Generator source files, with a regression
+  check tying that inventory to the release-binding manifest.
+
+- Added a local plan-first private receipt reader with a bounded log and Athena
+  query-metadata path. It correlates one Generator invocation with Controller
+  records and query hashes/times, fails closed on missing or conflicting
+  evidence, and prints aggregates only. No live read occurred; release binding,
+  snapshot attribution and net-new-key reconciliation remain unverified.
+
+- Added local private Generator execution receipts and Controller correlation.
+  Query IDs/hashes, runtime context and generated/acknowledged-write counters
+  stay outside public status. Failure and legacy absence cannot claim complete
+  evidence; source authentication and snapshot reconciliation remain separate.
+  The extension is undeployed and introduces no new AWS call or authority.
+
+- Added offline Learning provenance receipt validation across supplied snapshot
+  lineages, shared before/after query windows and a target Generator invocation.
+  It checks temporal/source binding, writer attribution and count agreement,
+  preserves comparison violations, and grants no authenticity or runtime claim.
+
+- Added local Learning collection preparation: fixed snapshot-pinned staging
+  query planning, complete page-chain/schema validation, and private in-memory
+  assembly for the offline comparator. No collector execution, AWS client,
+  runtime-provenance claim or operational authority is added.
+
+- Added a local-only Learning cardinality evidence comparator. It distinguishes
+  preserved historical proposals from new below-threshold proposals, checks
+  exact history and latest logical Outcome counts, rejects incomplete or
+  ambiguous evidence, and outputs only aggregates. It has no collector, AWS
+  client, file output, runtime-verification claim or operational authority.
+
 ## 2026-08-31
 
 - Restored the complete AWS System information architecture in the restricted

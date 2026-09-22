@@ -156,7 +156,7 @@
     {
       "id": "outcome_learning_evidence_gate",
       "state": "IMPLEMENTED_STAGING",
-      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal view are deployed in private staging with no approval or activation authority; latest-version reconciliation reports 2/20 eligible Outcomes and fails closed because at least one unactivated proposal exists below threshold; the source fix now thresholds one latest cutoff version per outcome_id and fails closed on future or conflicting versions; commit a10678b passed CI and plan/deploy runs 33155014510 and 33157729317 released only the isolated Generator, but no post-release lifecycle or Learning reconciliation ran and the deployed digest was not independently verified, so runtime proposal provenance remains unestablished",
+      "boundary": "authenticated read-only Outcome aggregation and review-only policy-proposal view are deployed in private staging with no approval or activation authority; latest-version reconciliation reports 2/20 eligible Outcomes and fails closed because at least one unactivated proposal exists below threshold; the source fix now thresholds one latest cutoff version per outcome_id and fails closed on future or conflicting versions; commit a10678b passed CI and plan/deploy runs 33155014510 and 33157729317 released only the isolated Generator, the deployed digest and configuration passed 16 independent read-only checks on 2026-09-22, while no post-release lifecycle or Learning reconciliation ran, so runtime business behavior and proposal provenance remain unestablished",
       "evidence_files": [
         "lambda/glap_operations_api.py",
         "infrastructure/operations-api-staging.yaml",
@@ -1008,6 +1008,67 @@
         "ops/run_pre_commit_checks.py",
         "ops/install_project_hooks.ps1",
         "tests/test_pre_commit_gate.py"
+      ]
+    },
+    {
+      "id": "learning_cardinality_offline_comparison",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local-only in-memory comparison of supplied full-row before/after evidence with fixed source and 20-Outcome scope; preserves historical anomalies, rejects new below-threshold proposals and changed history, and returns unverified for incomplete or ambiguous evidence; aggregate-only reports never establish runtime verification, resolve historical anomalies, or grant AWS, lifecycle, policy, deployment or production authority; no collector or runtime observation executed",
+      "evidence_files": [
+        "ops/compare_learning_cardinality_evidence.py",
+        "docs/learning_cardinality_post_release_validation_plan.md",
+        "tests/test_learning_cardinality_comparison.py"
+      ]
+    },
+    {
+      "id": "learning_evidence_collection_preparation",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local-only snapshot-pinned staging query preparation and supplied-result-page validation; no AWS client, executor, file output, externally verified snapshots, cross-table consistency, generator invocation evidence or operational authority; live collection and provenance/continuity acquisition remain unimplemented",
+      "evidence_files": [
+        "ops/prepare_learning_evidence_collection.py",
+        "docs/learning_evidence_collection_design.md",
+        "tests/test_learning_evidence_collection.py"
+      ]
+    },
+    {
+      "id": "learning_evidence_provenance_receipts",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local-only consistency validation of supplied full-row page packets, snapshot lineages, shared collection fences and one source/date-bound Generator invocation; counts must reconcile to new keys and new rows cannot be backdated; no AWS authenticity, trusted provenance, runtime verification, anomaly resolution or execution authority; private execution-receipt production and Controller correlation are undeployed and the log/query metadata reader is implemented but unexecuted; release byte/supplied-record comparison is implemented locally while authenticated release acceptance and snapshot/writer acquisition remain pending",
+      "evidence_files": [
+        "ops/validate_learning_evidence_provenance.py",
+        "docs/learning_evidence_provenance_contract.md",
+        "tests/test_learning_evidence_provenance.py"
+      ]
+    },
+    {
+      "id": "generator_execution_receipt_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local-only undeployed Generator execution receipt and private Controller correlation; context identity, bounded query IDs and statement hashes, generated counts and acknowledged MERGEs remain in private logs/responses; public run status and OPS snapshot receive no receipt fields; missing legacy receipts are explicitly unavailable and malformed present receipts fail closed; counters are not net-new keys, source-manifest hashes are not Git or ZIP identities, and all runtime, snapshot-lineage and intrinsic trust claims remain false; no new AWS call, deployment, lifecycle continuation, policy activation or production authority is introduced; private log/query reading and local release byte/record comparison are implemented but no new live collection or authenticated release acceptance has occurred",
+      "evidence_files": [
+        "lambda/glap_lifecycle_athena_adapter.py",
+        "lambda/glap_pipeline_controller.py",
+        "docs/generator_execution_receipt.md",
+        "tests/test_generator_execution_receipt.py"
+      ]
+    },
+    {
+      "id": "generator_receipt_reader_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "locally tested plan-first reader with only bounded FilterLogEvents and GetQueryExecution calls, two fixed staging log groups and one invocation within a past or current Sydney-day two-hour window; exact log correlation, complete pagination and per-query SQL hash, scope, state, reuse and time agreement are required; no live read executed and producer remains undeployed; private logs and SQL stay in memory, CLI outputs only aggregate counts and fixed reasons, and no result-row download, SQL execution, invocation, persistence, retry, deployment or permission change is provided; runtime authentication, reviewed release binding, snapshot lineage, new-row proof and all operational authority remain false",
+      "evidence_files": [
+        "ops/read_generator_execution_receipt.py",
+        "docs/generator_receipt_reader.md",
+        "tests/test_generator_receipt_reader.py"
+      ]
+    },
+    {
+      "id": "generator_release_binding_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "local-only comparison of four fixed Git blobs, supplied ZIP bytes, private reader bundle and two supplied Lambda configuration captures; validates byte equality, ZIP and manifest digests, bounded configuration and producer settings/request hash recipes, source receipt compatibility and unchanged revision records bracketing the run; no worktree substitution, source execution, archive extraction, AWS client, deployment or source-pin advancement; human approval, receipt authenticity, runtime verification, authenticated release acceptance, mutable-version continuity, snapshot lineage, net-new keys and all operational authority remain false; artifact/configuration acquisition handoff remains next and historical missing captures cannot be recreated",
+      "evidence_files": [
+        "ops/validate_generator_release_binding.py",
+        "docs/generator_release_binding.md",
+        "tests/test_generator_release_binding.py"
       ]
     }
   ],

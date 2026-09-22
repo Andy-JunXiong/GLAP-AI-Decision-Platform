@@ -7,6 +7,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class StatefulLifecycleDeploymentTests(unittest.TestCase):
+    def test_ci_generator_package_matches_four_file_release_and_receipt_manifest(self):
+        from ops.validate_generator_release_binding import FILES
+
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        step = workflow.split("- name: Verify stateful lifecycle generator package entry point", 1)[1]
+        copies = dict((destination, source) for source, destination in re.findall(
+            r"cp (lambda/\S+) dist/lifecycle/(\S+)", step))
+        self.assertEqual(copies, FILES)
+        archive_members = re.search(r"zip -q ../glap-stateful-lifecycle-generator.zip ([^)]+)\)", step)
+        self.assertIsNotNone(archive_members)
+        self.assertEqual(set(archive_members.group(1).split()), set(FILES))
+        self.assertIn('= "' + ' '.join(sorted(FILES)) + ' "', step)
+
     def test_schema_is_isolated_and_contains_versioned_business_contracts(self):
         ddl = (ROOT / "sql" / "04_stateful_lifecycle_config.sql").read_text(encoding="utf-8")
         for table in (

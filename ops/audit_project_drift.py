@@ -818,11 +818,237 @@ def check_action_complete_outcome_canary(root: Path) -> list[CheckResult]:
             "action_complete_outcome_canary_boundary",
             "governance",
             passed,
-            "The runtime canary remains failed closed below threshold; the latest-logical-Outcome source fix is staging-deployed with digest and runtime rechecks pending and grants no standing authority.",
+            "The runtime canary remains failed closed below threshold; the latest-logical-Outcome source fix is staging-deployed with independently verified digest and business runtime recheck pending and grants no standing authority.",
             failure,
             evidence,
         )
     ]
+
+
+def check_learning_cardinality_comparison_boundary(root: Path) -> list[CheckResult]:
+    evidence = (
+        "ops/compare_learning_cardinality_evidence.py",
+        "docs/learning_cardinality_post_release_validation_plan.md",
+        "tests/test_learning_cardinality_comparison.py",
+    )
+    try:
+        module = _load_repository_module(root, evidence[0])
+        report = module.compare_evidence({"private_marker": "must-not-escape"})
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and module.MINIMUM_OUTCOMES == 20
+            and module.SOURCE_COMMIT == "a10678bc324f62731a021b33d9919f39fcba7731"
+            and report["status"] == "UNVERIFIED"
+            and report["evidence_class"] == "OFFLINE_INPUT_CONSISTENCY_ONLY"
+            and report["runtime_verified"] is False
+            and report["historical_anomaly_resolved"] is False
+            and report["real_world_evidence"] is False
+            and report["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation",
+                "policy_activation", "deployment", "production", "model_promotion")}
+            and "must-not-escape" not in json.dumps(report)
+        )
+    except Exception:
+        passed = False
+    return [_result(
+        "learning_cardinality_offline_comparison_boundary", "governance", passed,
+        "Offline comparison retains the fixed 20-Outcome rule, unresolved historical evidence, and no runtime or operational authority.",
+        "Offline Learning comparison contract, privacy, evidence maturity, or authority has drifted.",
+        evidence,
+    )]
+
+
+def check_learning_evidence_collection_preparation(root: Path) -> list[CheckResult]:
+    evidence = (
+        "ops/prepare_learning_evidence_collection.py",
+        "docs/learning_evidence_collection_design.md",
+        "tests/test_learning_evidence_collection.py",
+    )
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan = module.plan_summary()
+        rejected = module.validate_packet({"private": "must-not-escape"})
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and plan["status"] == "LOCAL_PLAN_ONLY"
+            and plan["data_queries_per_phase"] == 2
+            and module.TABLES == {
+                "outcomes": "fact_lifecycle_outcome_staging_v1",
+                "proposals": "fact_policy_proposal_staging_v1"}
+            and all(plan[field] is False for field in (
+                "execution_available", "runtime_verified", "snapshot_ids_externally_verified",
+                "snapshot_metadata_acquisition_implemented", "cross_table_consistency_verified",
+                "exclusive_window_verified", "generator_path_verified", "query_result_reuse_allowed"))
+            and plan["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation",
+                "policy_activation", "deployment", "production", "model_promotion")}
+            and rejected["status"] == "UNVERIFIED"
+            and "must-not-escape" not in json.dumps(rejected)
+        )
+    except Exception:
+        passed = False
+    return [_result(
+        "learning_evidence_collection_preparation", "governance", passed,
+        "Pinned staging query preparation and supplied-page checks remain offline, with no executor or verified provenance/continuity claim.",
+        "Learning collection preparation, offline evidence, or authority boundary has drifted.",
+        evidence,
+    )]
+
+
+def check_learning_provenance_receipts_boundary(root: Path) -> list[CheckResult]:
+    evidence = (
+        "ops/validate_learning_evidence_provenance.py",
+        "docs/learning_evidence_provenance_contract.md",
+        "tests/test_learning_evidence_provenance.py",
+    )
+    try:
+        module = _load_repository_module(root, evidence[0])
+        report = module.validate_evidence({"private": "must-not-escape"})
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and module.SCHEMA == "learning-evidence-provenance-input.v1"
+            and module.FUNCTION_NAME == "glap-stateful-lifecycle-generator-staging"
+            and report["status"] == "UNVERIFIED"
+            and report["evidence_class"] == "OFFLINE_INPUT_CONSISTENCY_ONLY"
+            and all(report[field] is False for field in (
+                "aws_receipts_authenticated", "snapshot_ids_externally_verified",
+                "cross_table_consistency_verified", "exclusive_window_verified",
+                "generator_path_verified", "runtime_verified", "historical_anomaly_resolved",
+                "real_world_evidence", "execution_available"))
+            and report["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation",
+                "policy_activation", "deployment", "production", "model_promotion")}
+            and report["comparison"] is None
+            and "must-not-escape" not in json.dumps(report)
+        )
+    except Exception:
+        passed = False
+    return [_result(
+        "learning_provenance_receipts_boundary", "governance", passed,
+        "Learning receipt linkage is offline consistency only; no AWS authentication, runtime verification or execution authority is inferred.",
+        "Learning provenance receipt evidence class, privacy, or authority has drifted.",
+        evidence,
+    )]
+
+
+def check_generator_execution_receipt_boundary(root: Path) -> list[CheckResult]:
+    """Check source contracts without importing an AWS client or running a handler."""
+    import ast
+
+    evidence = (
+        "lambda/glap_lifecycle_athena_adapter.py",
+        "lambda/glap_pipeline_controller.py",
+        "docs/generator_execution_receipt.md",
+        "tests/test_generator_execution_receipt.py",
+    )
+    try:
+        producer = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        controller = ast.parse((root / evidence[1]).read_text(encoding="utf-8"))
+        receipt = next(node for node in producer.body if isinstance(node, ast.FunctionDef)
+                       and node.name == "_new_execution_receipt")
+        fields = next(node.value for node in receipt.body if isinstance(node, ast.Return))
+        flags = {key.value: value.value for key, value in zip(fields.keys, fields.values)
+                 if isinstance(key, ast.Constant) and isinstance(value, ast.Constant)}
+        private_keys = {"execution_receipt", "query_id", "invocation_id", "link_id",
+                        "source_bundle_sha256", "settings_sha256", "controller_link"}
+        public_functions = [node for node in controller.body if isinstance(node, ast.FunctionDef)
+                            and node.name in {"new_run", "persist_run", "execute_pipeline"}]
+        public_constants = {node.value for function in public_functions for node in ast.walk(function)
+                            if isinstance(node, ast.Constant) and isinstance(node.value, str)}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and all(flags.get(key) is False for key in (
+                "controller_link_trusted", "complete", "runtime_verified",
+                "snapshot_lineage_verified", "real_world_evidence"))
+            and len(public_functions) == 3 and not private_keys.intersection(public_constants)
+        )
+    except Exception:
+        passed = False
+    return [_result(
+        "generator_execution_receipt_boundary", "governance", passed,
+        "Generator receipts have no intrinsic authenticity claim and private identifiers stay outside public run status.",
+        "Generator execution receipt evidence flags or private/public status boundary has drifted.",
+        evidence,
+    )]
+
+
+def check_generator_receipt_reader_boundary(root: Path) -> list[CheckResult]:
+    import ast
+
+    evidence = (
+        "ops/read_generator_execution_receipt.py",
+        "docs/generator_receipt_reader.md",
+        "tests/test_generator_receipt_reader.py",
+    )
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan = module.plan_summary()
+        rejected = module.collect_receipts({}, None, None)
+        tree = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        calls = {node.func.attr for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)
+                 and node.func.value.id in {"client", "logs_client", "athena_client"}}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and set(plan["allowed_calls"]) == {"logs:FilterLogEvents", "athena:GetQueryExecution"}
+            and calls == {"filter_log_events", "get_query_execution"}
+            and plan["status"] == "LOCAL_PLAN_ONLY" and plan["read_executor_available"] is True
+            and plan["max_pages_per_group"] == 20 and plan["max_query_metadata_reads"] == 256
+            and plan["log_groups"] == 2 and plan["max_window_seconds"] == 7200
+            and all(plan[field] is False for field in ("read_attempted", "runtime_verified",
+                "aws_receipts_authenticated", "release_binding_verified", "snapshot_lineage_verified",
+                "net_new_rows_verified", "real_world_evidence"))
+            and plan["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation", "policy_activation",
+                "deployment", "production", "model_promotion")}
+            and rejected["status"] == "UNVERIFIED" and rejected["read_attempted"] is False
+        )
+    except Exception:
+        passed = False
+    return [_result(
+        "generator_receipt_reader_boundary", "governance", passed,
+        "Receipt reader defaults to a redacted plan, permits only bounded log/query metadata reads, and grants no runtime or snapshot attribution.",
+        "Receipt reader call inventory, bounds, default mode or evidence authority has drifted.",
+        evidence,
+    )]
+
+
+def check_generator_release_binding_boundary(root: Path) -> list[CheckResult]:
+    evidence = (
+        "ops/validate_generator_release_binding.py",
+        "docs/generator_release_binding.md",
+        "tests/test_generator_release_binding.py",
+    )
+    try:
+        module = _load_repository_module(root, evidence[0])
+        report = module.validate_binding({})
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and module.SCHEMA == "generator-release-binding-input.v1"
+            and module.FILES == {
+                "lambda_function.py": "lambda/glap_lifecycle_athena_adapter.py",
+                "glap_stateful_lifecycle_generator.py": "lambda/glap_stateful_lifecycle_generator.py",
+                "glap_temporal_boundary.py": "lambda/glap_temporal_boundary.py",
+                "glap_governed_closed_loop.py": "lambda/glap_governed_closed_loop.py"}
+            and report["status"] == "UNVERIFIED" and report["counts"] is None
+            and len(report["checks"]) == 8 and all(value is False for value in report["checks"].values())
+            and report["evidence_class"] == "LOCAL_BYTES_AND_SUPPLIED_RECORD_CONSISTENCY_ONLY"
+            and all(report[key] is False for key in (
+                "runtime_verified", "aws_receipts_authenticated", "human_review_authenticated",
+                "release_binding_verified", "mutable_revision_continuity_verified",
+                "snapshot_lineage_verified", "net_new_rows_verified", "real_world_evidence", "execution_available"))
+            and report["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation", "policy_activation",
+                "deployment", "production", "model_promotion")}
+        )
+    except Exception:
+        passed = False
+    return [_result(
+        "generator_release_binding_boundary", "governance", passed,
+        "Release binding compares four fixed source files and supplied records without authenticating review, AWS, deployment or mutable-version continuity.",
+        "Release binding source scope, evidence class or authority boundary has drifted.",
+        evidence,
+    )]
 
 
 def check_action_mutation_release(root: Path) -> list[CheckResult]:
@@ -1189,7 +1415,7 @@ def check_public_claim_truth(root: Path) -> list[CheckResult]:
     canary = (root / canary_path).read_text(encoding="utf-8")
     bounded = (
         errors == []
-        and "PARTIALLY_PUBLISHED_PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_UNVERIFIED"
+        and "PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_RESTRICTED_BUILD_VERIFIED"
         in status
         and "HIGH_RISK_DECISION_EXECUTION_OUTCOME_VALUE_CLAIMS_V1" in architecture
         and "Public Claim Truth publication gate" in architecture
@@ -4758,6 +4984,12 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_action_contract(root, contract))
     checks.extend(check_action_assignment_rollout(root))
     checks.extend(check_action_complete_outcome_canary(root))
+    checks.extend(check_learning_cardinality_comparison_boundary(root))
+    checks.extend(check_learning_evidence_collection_preparation(root))
+    checks.extend(check_learning_provenance_receipts_boundary(root))
+    checks.extend(check_generator_execution_receipt_boundary(root))
+    checks.extend(check_generator_receipt_reader_boundary(root))
+    checks.extend(check_generator_release_binding_boundary(root))
     checks.extend(check_action_mutation_release(root))
     checks.extend(check_readiness_contract(root))
     checks.extend(check_public_claim_truth(root))

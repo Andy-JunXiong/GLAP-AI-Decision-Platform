@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+import hashlib
 import json
 import os
+from pathlib import Path
 import re
 import time
 from typing import Any, Iterable
@@ -436,22 +438,150 @@ def _coerce_snapshot(row: dict[str, str | None]) -> dict[str, Any]:
     return result
 
 
-def _run_query(client: Any, query: str) -> list[dict[str, str | None]]:
+RECEIPT_SCHEMA = "generator-execution-receipt.v1"
+MAX_RECEIPT_QUERIES = 256
+MAX_RECEIPT_BYTES = 192 * 1024
+REQUEST_ID = re.compile(r"^[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")
+READ_PURPOSES = {
+    "READ_TARGETS", "READ_ROUTES", "READ_RATES", "READ_FX", "READ_ACTIVE",
+    "READ_ALERTS", "READ_ACTIONS", "READ_OUTCOMES", "READ_PROPOSALS",
+}
+
+
+def _receipt_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _source_bundle_sha256() -> str:
+    """Hash the exact four packaged files; this is not the ZIP or Git commit hash."""
+    directory = Path(__file__).resolve().parent
+    paths = {
+        "lambda_function.py": Path(__file__),
+        "glap_stateful_lifecycle_generator.py": directory / "glap_stateful_lifecycle_generator.py",
+        "glap_temporal_boundary.py": directory / "glap_temporal_boundary.py",
+        "glap_governed_closed_loop.py": directory / "glap_governed_closed_loop.py",
+    }
+    manifest = {name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for name, path in sorted(paths.items())}
+    return hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _new_execution_receipt(event: dict, context: Any, temporal: dict) -> dict:
+    invocation_id = getattr(context, "aws_request_id", None)
+    function_name = getattr(context, "function_name", None)
+    function_version = getattr(context, "function_version", None)
+    if (not isinstance(invocation_id, str) or not REQUEST_ID.fullmatch(invocation_id)
+            or function_name != "glap-stateful-lifecycle-generator-staging"
+            or not isinstance(function_version, str)
+            or not re.fullmatch(r"\$LATEST|[0-9]{1,20}", function_version)):
+        raise ValueError("A bounded staging Lambda runtime context is required for execution evidence")
+    if type(event.get("dry_run", False)) is not bool:
+        raise ValueError("dry_run must be a boolean")
+    link = event.get("execution_link")
+    if link is not None:
+        if (not isinstance(link, dict) or set(link) != {"link_id", "run_started_at", "stage_started_at"}
+                or not isinstance(link["link_id"], str)
+                or not re.fullmatch(r"[a-f0-9]{32}", link["link_id"])):
+            raise ValueError("Invalid controller execution link")
+        try:
+            times = [datetime.fromisoformat(link[key].replace("Z", "+00:00"))
+                     for key in ("run_started_at", "stage_started_at")]
+            if (any(value.utcoffset() is None for value in times)
+                    or not times[0] <= times[1] <= datetime.now(timezone.utc)):
+                raise ValueError("invalid")
+        except (ValueError, TypeError, AttributeError):
+            raise ValueError("Invalid controller execution link times") from None
+        link = dict(link)
+    settings = {
+        "database": DATABASE, "workgroup": WORKGROUP, "output": OUTPUT,
+        "tables": [SNAPSHOT_TABLE, EVENT_TABLE, COST_TABLE, METRICS_TABLE, SIGNAL_TABLE,
+                   ALERT_TABLE, ACTION_TABLE, ACTION_CURRENT_VIEW, OUTCOME_TABLE, POLICY_PROPOSAL_TABLE,
+                   ROUTE_TABLE, TARGET_TABLE, RATE_TABLE, FX_TABLE],
+        "pipeline_environment": os.getenv("PIPELINE_ENVIRONMENT", ""),
+        "allow_future_simulation": os.getenv("ALLOW_FUTURE_SIMULATION", ""),
+    }
+    request = {key: event.get(key) for key in (
+        "seed_population", "population_size", "new_count", "seed_version", "retry_failed_run",
+        "minimum_policy_outcomes", "policy_version")}
+    hash_object = lambda value: hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    return {
+        "schema_version": RECEIPT_SCHEMA, "invocation_id": invocation_id,
+        "function_name": function_name, "function_version": function_version,
+        "controller_link": link, "controller_link_trusted": False,
+        "logical_date": event["logical_run_date"], "temporal_context": dict(temporal),
+        "source_bundle_sha256": _source_bundle_sha256(),
+        "settings_sha256": hash_object(settings), "request_parameters_sha256": hash_object(request),
+        "started_at": _receipt_timestamp(), "finished_at": None, "status": "RUNNING",
+        "dry_run": event.get("dry_run", False), "generated_counts": None,
+        "planned_write_statements": None, "completed_write_statements": 0,
+        "queries": [], "complete": False, "runtime_verified": False,
+        "snapshot_lineage_verified": False, "real_world_evidence": False,
+    }
+
+
+def _emit_execution_receipt(receipt: dict) -> None:
+    payload = json.dumps(receipt, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    if len(payload.encode()) > MAX_RECEIPT_BYTES:
+        raise RuntimeError("Execution receipt exceeds the private log bound")
+    print(payload, flush=True)
+
+
+def _trace_query(client: Any, query: str, receipt: dict, purpose: str) -> list[dict[str, str | None]]:
+    if len(receipt["queries"]) >= MAX_RECEIPT_QUERIES:
+        raise RuntimeError("Execution receipt query bound reached")
+    if purpose not in READ_PURPOSES | {"WRITE_MERGE"}:
+        raise ValueError("Invalid receipt query purpose")
+    record = {
+        "sequence": len(receipt["queries"]) + 1, "purpose": purpose,
+        "query_id": None, "statement_sha256": hashlib.sha256(query.encode()).hexdigest(),
+        "started_at": _receipt_timestamp(), "finished_at": None,
+        "status": "STARTING", "athena_state": None, "result_reused": None,
+    }
+    receipt["queries"].append(record)
+    try:
+        rows = _run_query(client, query, query_receipt=record)
+        if sum(item["query_id"] == record["query_id"] for item in receipt["queries"]) != 1:
+            raise RuntimeError("Execution receipt query identity repeated")
+        record["status"] = "SUCCEEDED"
+        return rows
+    except Exception:
+        if record["status"] != "TIMED_OUT":
+            record["status"] = "FAILED"
+        raise
+    finally:
+        if purpose == "WRITE_MERGE" and record["athena_state"] == "SUCCEEDED":
+            receipt["completed_write_statements"] += 1
+        record["finished_at"] = _receipt_timestamp()
+
+
+def _run_query(client: Any, query: str, query_receipt: dict | None = None) -> list[dict[str, str | None]]:
     execution_id = client.start_query_execution(
         QueryString=query,
         QueryExecutionContext={"Database": DATABASE},
         ResultConfiguration={"OutputLocation": OUTPUT},
         WorkGroup=WORKGROUP,
     )["QueryExecutionId"]
+    if query_receipt is not None:
+        if not isinstance(execution_id, str) or not REQUEST_ID.fullmatch(execution_id):
+            raise RuntimeError("Athena returned an invalid query identity")
+        query_receipt.update(query_id=execution_id, status="RUNNING")
     deadline = time.monotonic() + 180
     while True:
         execution = client.get_query_execution(QueryExecutionId=execution_id)["QueryExecution"]
         state = execution["Status"]["State"]
+        if query_receipt is not None:
+            query_receipt["athena_state"] = state if state in {
+                "QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"} else "UNKNOWN"
+            reused = execution.get("Statistics", {}).get("ResultReuseInformation", {}).get("ReusedPreviousResult")
+            query_receipt["result_reused"] = reused if type(reused) is bool else None
         if state == "SUCCEEDED":
             break
         if state in {"FAILED", "CANCELLED"}:
             raise RuntimeError(f"Athena lifecycle query {state.lower()}")
         if time.monotonic() >= deadline:
+            if query_receipt is not None:
+                query_receipt["status"] = "TIMED_OUT"
             client.stop_query_execution(QueryExecutionId=execution_id)
             raise TimeoutError("Athena lifecycle query timed out")
         time.sleep(1)
@@ -467,7 +597,7 @@ def _run_query(client: Any, query: str) -> list[dict[str, str | None]]:
     return rows
 
 
-def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
+def _execute_lifecycle(event: dict[str, Any], receipt: dict, temporal_context: dict) -> dict[str, Any]:
     """Read governed configuration, advance one day and MERGE staging rows."""
 
     validate_configuration()
@@ -476,11 +606,10 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     except ImportError as exc:  # pragma: no cover - AWS runtime supplies boto3
         raise RuntimeError("boto3 is required for Athena persistence") from exc
     logical_date = date.fromisoformat(event["logical_run_date"])
-    temporal_context = resolve_temporal_context(event["logical_run_date"], event)
     scope_id = temporal_scope_id(temporal_context)
     client = boto3.client("athena", region_name=os.getenv("AWS_REGION", "us-east-1"))
     config_queries = build_configuration_queries(logical_date)
-    target_rows = _run_query(client, config_queries["targets"])
+    target_rows = _trace_query(client, config_queries["targets"], receipt, "READ_TARGETS")
     legacy_to_generic = {
         "BOOKING_TO_GATE_IN": "BOOKING_TO_ORIGIN_HANDOVER",
         "GATE_IN_TO_ETD": "ORIGIN_HANDOVER_TO_DEPARTURE",
@@ -493,36 +622,36 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         mode = str(row.get("transport_mode") or "OCEAN")
         hours = int(str(row.get("target_hours") or int(str(row["target_days"])) * 24))
         targets[f"{mode}:{legacy_to_generic.get(stage, stage)}"] = hours
-    routes = _run_query(client, config_queries["routes"])
+    routes = _trace_query(client, config_queries["routes"], receipt, "READ_ROUTES")
     for row in routes:
         row["p2p_target_days"] = int(str(row["p2p_target_days"]))
         row["p2p_target_hours"] = int(str(row.get("p2p_target_hours") or row["p2p_target_days"] * 24))
-    rates = _run_query(client, config_queries["rates"])
-    fx_rows = _run_query(client, config_queries["fx"])
+    rates = _trace_query(client, config_queries["rates"], receipt, "READ_RATES")
+    fx_rows = _trace_query(client, config_queries["fx"], receipt, "READ_FX")
     fx_rates = {
         (str(row["base_currency"]), str(row["quote_currency"])): float(str(row["fx_rate"]))
         for row in fx_rows
     }
     active = [
         _coerce_snapshot(row)
-        for row in _run_query(client, build_active_snapshot_query(logical_date, scope_id))
+        for row in _trace_query(client, build_active_snapshot_query(logical_date, scope_id), receipt, "READ_ACTIVE")
     ]
     closed_loop_queries = build_closed_loop_state_queries(logical_date, scope_id)
     previous_alerts = [
         _coerce_closed_loop_row(row)
-        for row in _run_query(client, closed_loop_queries["previous_alerts"])
+        for row in _trace_query(client, closed_loop_queries["previous_alerts"], receipt, "READ_ALERTS")
     ]
     existing_actions = [
         _coerce_closed_loop_row(row)
-        for row in _run_query(client, closed_loop_queries["actions"])
+        for row in _trace_query(client, closed_loop_queries["actions"], receipt, "READ_ACTIONS")
     ]
     existing_outcomes = [
         _coerce_closed_loop_row(row)
-        for row in _run_query(client, closed_loop_queries["outcomes"])
+        for row in _trace_query(client, closed_loop_queries["outcomes"], receipt, "READ_OUTCOMES")
     ]
     existing_proposal_ids = {
         str(row["proposal_id"])
-        for row in _run_query(client, closed_loop_queries["proposals"])
+        for row in _trace_query(client, closed_loop_queries["proposals"], receipt, "READ_PROPOSALS")
     }
     if not active and event.get("seed_population", False):
         active = engine.seed_population(
@@ -626,9 +755,13 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             False,
         )
     )
+    receipt["generated_counts"] = {"outcomes": len(outcomes), "proposals": len(proposals)}
+    receipt["planned_write_statements"] = len(statements)
+    if len(receipt["queries"]) + len(statements) > MAX_RECEIPT_QUERIES:
+        raise RuntimeError("Planned writes exceed the execution receipt bound")
     if not event.get("dry_run", False):
         for statement in statements:
-            _run_query(client, statement)
+            _trace_query(client, statement, receipt, "WRITE_MERGE")
     return {
         **result,
         **temporal_context,
@@ -642,3 +775,29 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         "write_statements": len(statements),
         "dry_run": bool(event.get("dry_run", False)),
     }
+
+
+def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
+    """Preserve one private query receipt; public status is not a receipt sink."""
+    validate_configuration()
+    temporal = resolve_temporal_context(event["logical_run_date"], event)
+    receipt = _new_execution_receipt(event, _context, temporal)
+    try:
+        result = _execute_lifecycle(event, receipt, temporal)
+    except Exception:
+        receipt.update(status="FAILED", finished_at=_receipt_timestamp(), complete=False)
+        try:
+            _emit_execution_receipt(receipt)
+        except Exception:
+            pass  # Preserve the original failure; missing delivery never becomes success evidence.
+        raise
+    receipt.update(status="DRY_RUN" if receipt["dry_run"] else "SUCCEEDED",
+                   finished_at=_receipt_timestamp())
+    read_purposes = [query["purpose"] for query in receipt["queries"] if query["purpose"] in READ_PURPOSES]
+    receipt["complete"] = (not receipt["dry_run"] and len(read_purposes) == 9
+        and set(read_purposes) == READ_PURPOSES and all(
+        query["status"] == "SUCCEEDED" for query in receipt["queries"]) and
+        receipt["planned_write_statements"] == receipt["completed_write_statements"])
+    _emit_execution_receipt(receipt)
+    result["execution_receipt"] = receipt
+    return result

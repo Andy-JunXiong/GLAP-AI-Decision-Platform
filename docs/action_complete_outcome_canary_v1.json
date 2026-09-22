@@ -268,7 +268,7 @@
     "schema_applied_by_release": false,
     "controller_changed_by_release": false,
     "schedule_or_alias_changed_by_release": false,
-    "post_deploy_code_digest_independently_verified": false,
+    "post_deploy_code_digest_independently_verified": true,
     "post_deploy_runtime_reconciliation_executed": false,
     "production_effect": false
   },

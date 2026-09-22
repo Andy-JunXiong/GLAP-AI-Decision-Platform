@@ -120,5 +120,7 @@ jobs:
           mkdir -p dist/lifecycle
           cp lambda/glap_lifecycle_athena_adapter.py dist/lifecycle/lambda_function.py
           cp lambda/glap_stateful_lifecycle_generator.py dist/lifecycle/glap_stateful_lifecycle_generator.py
-          (cd dist/lifecycle && zip -q ../glap-stateful-lifecycle-generator.zip lambda_function.py glap_stateful_lifecycle_generator.py)
-          test "$(unzip -Z1 dist/glap-stateful-lifecycle-generator.zip | sort | tr '\n' ' ')" = "glap_stateful_lifecycle_generator.py lambda_function.py "
+          cp lambda/glap_temporal_boundary.py dist/lifecycle/glap_temporal_boundary.py
+          cp lambda/glap_governed_closed_loop.py dist/lifecycle/glap_governed_closed_loop.py
+          (cd dist/lifecycle && zip -q ../glap-stateful-lifecycle-generator.zip lambda_function.py glap_stateful_lifecycle_generator.py glap_temporal_boundary.py glap_governed_closed_loop.py)
+          test "$(unzip -Z1 dist/glap-stateful-lifecycle-generator.zip | sort | tr '\n' ' ')" = "glap_governed_closed_loop.py glap_stateful_lifecycle_generator.py glap_temporal_boundary.py lambda_function.py "

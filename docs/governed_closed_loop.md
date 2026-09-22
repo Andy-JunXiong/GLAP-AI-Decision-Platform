@@ -339,9 +339,36 @@ CI run `33154815653`; plan run `33155014510` completed the independent
 one-resource guard without upload or execution, and separately authorized
 deploy run `33157729317` released only the isolated Generator. The release
 summary reports no lifecycle, schema, Controller, schedule, alias, or production
-effect. The deployed digest and post-release behavior are not independently
-reconciled, so this remains no runtime confirmation of stored-proposal
-provenance. The stored proposal remains immutable and unactivated.
+effect. The separately authorized `2026-09-22` read-only verification passed all
+16 artifact/configuration checks, including Lambda digest equality with the
+commit-bound ZIP and four-file source equality with `a10678b`. No business-data
+query or invocation ran, so post-release behavior and stored-proposal provenance
+remain unverified. The stored proposal remains immutable and unactivated.
+
+The separate [offline cardinality comparator](learning_cardinality_post_release_validation_plan.md)
+now compares full before/after rows under the fixed 20-Outcome boundary. It
+preserves historical anomalies, rejects new below-threshold proposals or changed
+history, and returns unverified for incomplete evidence. All inputs remain
+untrusted supplied evidence: consistent local comparisons do not establish
+runtime behavior, resolve the historical anomaly, or grant execution authority.
+Its [collection preparation](learning_evidence_collection_design.md) now renders
+pinned staging SELECT plans and checks supplied query/page completeness locally.
+It introduces no executor or live provenance, cross-table consistency, or
+invocation evidence. Those remain explicit prerequisites for any future collector.
+The [provenance receipt validator](learning_evidence_provenance_contract.md) now
+checks supplied relationships across both tables, four queries and one target
+invocation. It rejects missing lineage, other writers, overlapping or stale
+windows and count mismatches. It never authenticates those receipts or upgrades
+local consistency into runtime verification. A
+[private Generator execution-receipt producer](generator_execution_receipt.md)
+and Controller correlation are now implemented locally and undeployed;
+the [private receipt reader](generator_receipt_reader.md) is also implemented
+but unexecuted. It correlates bounded logs and existing query metadata without
+issuing SQL or invoking a function. Trusted release/snapshot attribution remains
+pending. A [local release-binding validator](generator_release_binding.md) now
+compares Git/ZIP bytes and supplied receipt/configuration evidence without
+authenticating review or AWS continuity. Generated counts do not establish new
+keys, and this validation does not advance the fixed source binding.
 
 Learning maturity is therefore reported on four independent dimensions rather
 than compressed into one optimistic lifecycle label:

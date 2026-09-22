@@ -10,6 +10,14 @@ commit.
 Do not point production automation at `$LATEST`. The mutable version is only a
 build candidate.
 
+The local [Generator release-binding validator](generator_release_binding.md)
+compares a private receipt bundle with fixed Git blobs, supplied ZIP bytes and
+two supplied Lambda configuration records. It has no AWS client and does not
+replace deployment approval or runtime acceptance. Equal records cannot prove
+that mutable `$LATEST` remained unchanged between captures. The new receipt
+producer remains undeployed, the reader has not run, and all existing release
+workflows and authority boundaries remain unchanged.
+
 ## Release channels
 
 | Channel | Purpose | Invocation |
@@ -241,10 +249,14 @@ non-replacing `LifecycleGeneratorFunction` plan and deleted its unexecuted
 change set without uploading code. Separately authorized `deploy-release` run
 `33157729317` completed the isolated Generator update. The successful bounded
 summary records one Generator resource, no lifecycle invocation, no schema or
-Controller change, no schedule or alias change, and no production effect. A
-separate post-release `CodeSha256` and configuration read was not performed, and
-no later lifecycle or Learning reconciliation ran; exact artifact and runtime
-behavior verification therefore remain pending.
+Controller change, no schedule or alias change, and no production effect. The
+separately authorized `2026-09-22` read-only verification passed 16 checks:
+stable single-resource ownership, healthy runtime settings, role and exact
+environment/template binding, commit-bound artifact key, no aliases, ZIP digest
+equality with Lambda `CodeSha256`, and exact four-file source equality with
+`a10678b`. Private configuration and artifact bytes remained in memory. No
+function invocation or lifecycle/Learning query ran; post-release business
+behavior and stored-proposal provenance remain unverified.
 
 The mutation Lambda has a narrow staging release workflow implemented and
 verified through separate protected prepare and execute environments. The

@@ -460,6 +460,29 @@ not a claim that the three-provider program has enough actual-calendar history
 for comparison, label readiness, or model readiness. Those maturity gates
 remain separate and fail closed.
 
+A local, undeployed [private execution-receipt extension](generator_execution_receipt.md)
+now records Generator invocation context, bounded query IDs/hashes, generated
+counts and acknowledged MERGEs, with Controller correlation in private logs.
+The public run status and OPS snapshot still receive no private receipt fields.
+Legacy receipt absence remains explicitly unavailable. These unsigned records
+do not authenticate AWS provenance, prove new rows or snapshot lineage, or
+advance Learning readiness. The deployed artifact remains the separately
+verified prior release; collection and a new source-bound release are pending.
+
+The companion [private receipt reader](generator_receipt_reader.md) is locally
+implemented and unexecuted. Its plan-first CLI confines reads to two staging
+log groups and metadata for validated receipt query IDs. It starts no query,
+reads no result rows, invokes no Lambda and persists nothing. Its private bundle
+and aggregate report establish record consistency only; source-release binding,
+snapshot attribution and new-row evidence remain separate unresolved gates.
+
+The [release-binding validator](generator_release_binding.md) provides local
+Git/ZIP byte and supplied-record comparison for that private bundle. It checks
+four fixed files, source/settings/request digests and a bounded configuration
+projection across two captures. It executes no package code or AWS call and
+does not authenticate approval, mutable-version continuity or deployment.
+Missing historical configuration captures cannot be reconstructed as evidence.
+
 ## Authenticated internal Operations boundary — implemented in private staging
 
 The authenticated Operations API, Cognito four-role boundary, and private
@@ -499,9 +522,12 @@ passed CI run `33154815653`. Plan run `33155014510` accepted only the isolated
 one-resource, non-replacing Generator modification and removed the unexecuted
 change set; separately authorized deploy run `33157729317` then completed that
 release. Its bounded summary records one Generator resource and no lifecycle,
-schema, Controller, schedule, alias, or production effect. The deployed digest
-and post-release Learning behavior remain independently unverified, so this does
-not yet establish runtime proposal provenance. No proposal was activated or
+schema, Controller, schedule, alias, or production effect. The `2026-09-22`
+independent read-only check verified the deployed digest,
+commit-bound four-file artifact, exact template/environment, runtime settings,
+role binding, single-resource ownership, and absence of aliases (16/16 checks).
+Post-release Learning behavior remains unverified; artifact verification does
+not establish runtime proposal provenance. No proposal was activated or
 changed.
 
 The repository now also implements a local-only Outcome Review provenance

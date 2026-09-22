@@ -18,6 +18,105 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class ProjectDriftAuditTests(unittest.TestCase):
+    def test_release_binding_cannot_authenticate_review_or_expand_source_scope(self):
+        paths = ("ops/validate_generator_release_binding.py", "docs/generator_release_binding.md",
+                 "tests/test_generator_release_binding.py")
+        self.assertEqual(AUDIT.check_generator_release_binding_boundary(ROOT)[0].status, "PASS")
+        for before, after in (('"human_review_authenticated": False', '"human_review_authenticated": True'),
+                              ('FILES = {', 'FILES = {"extra.py": "unrelated.py",')):
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[0]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_generator_release_binding_boundary(root)[0].status, "DRIFT")
+
+    def test_receipt_reader_cannot_query_data_or_claim_snapshot_verification(self):
+        paths = ("ops/read_generator_execution_receipt.py", "docs/generator_receipt_reader.md",
+                 "tests/test_generator_receipt_reader.py")
+        self.assertEqual(AUDIT.check_generator_receipt_reader_boundary(ROOT)[0].status, "PASS")
+        for before, after in (('"snapshot_lineage_verified": False', '"snapshot_lineage_verified": True'),
+                              ('athena_client.get_query_execution(', 'athena_client.start_query_execution(')):
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[0]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_generator_receipt_reader_boundary(root)[0].status, "DRIFT")
+
+    def test_generator_receipt_cannot_grant_trust_or_enter_public_status(self):
+        paths = (
+            "lambda/glap_lifecycle_athena_adapter.py",
+            "lambda/glap_pipeline_controller.py",
+            "docs/generator_execution_receipt.md",
+            "tests/test_generator_execution_receipt.py",
+        )
+        self.assertEqual(AUDIT.check_generator_execution_receipt_boundary(ROOT)[0].status, "PASS")
+        mutations = (
+            (paths[0], '"runtime_verified": False', '"runtime_verified": True'),
+            (paths[1], 'run = new_run(', 'private_field = "invocation_id"\n    run = new_run('),
+        )
+        for path, before, after in mutations:
+            with self.subTest(path=path), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / path
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_generator_execution_receipt_boundary(root)[0].status, "DRIFT")
+
+    def test_learning_receipts_cannot_claim_aws_authentication(self):
+        paths = (
+            "ops/validate_learning_evidence_provenance.py",
+            "docs/learning_evidence_provenance_contract.md",
+            "tests/test_learning_evidence_provenance.py",
+        )
+        self.assertEqual(AUDIT.check_learning_provenance_receipts_boundary(ROOT)[0].status,
+                         "PASS")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            source = root / paths[0]
+            source.write_text(source.read_text(encoding="utf-8").replace(
+                '"aws_receipts_authenticated": False',
+                '"aws_receipts_authenticated": True'), encoding="utf-8")
+            self.assertEqual(
+                AUDIT.check_learning_provenance_receipts_boundary(root)[0].status, "DRIFT")
+
+    def test_learning_collection_cannot_claim_cross_table_consistency(self):
+        paths = (
+            "ops/prepare_learning_evidence_collection.py",
+            "docs/learning_evidence_collection_design.md",
+            "tests/test_learning_evidence_collection.py",
+        )
+        self.assertEqual(AUDIT.check_learning_evidence_collection_preparation(ROOT)[0].status,
+                         "PASS")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            source = root / paths[0]
+            source.write_text(source.read_text(encoding="utf-8").replace(
+                '"cross_table_consistency_verified": False',
+                '"cross_table_consistency_verified": True'), encoding="utf-8")
+            self.assertEqual(
+                AUDIT.check_learning_evidence_collection_preparation(root)[0].status, "DRIFT")
+
+    def test_offline_learning_comparison_cannot_claim_runtime_verification(self):
+        paths = (
+            "ops/compare_learning_cardinality_evidence.py",
+            "docs/learning_cardinality_post_release_validation_plan.md",
+            "tests/test_learning_cardinality_comparison.py",
+        )
+        self.assertEqual(AUDIT.check_learning_cardinality_comparison_boundary(ROOT)[0].status,
+                         "PASS")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._copy_paths(root, paths)
+            source = root / paths[0]
+            source.write_text(source.read_text(encoding="utf-8").replace(
+                '"runtime_verified": False', '"runtime_verified": True'), encoding="utf-8")
+            self.assertEqual(
+                AUDIT.check_learning_cardinality_comparison_boundary(root)[0].status, "DRIFT")
+
     @staticmethod
     def _copy_paths(root: Path, paths: tuple[str, ...]) -> None:
         for relative_path in paths:
@@ -817,6 +916,13 @@ class ProjectDriftAuditTests(unittest.TestCase):
             self._copy_paths(root, paths)
             current = AUDIT.check_public_claim_truth(root)[0]
             self.assertEqual(current.status, "PASS")
+            status_path = root / "CURRENT_DEVELOPMENT_STATUS.md"
+            original_status = status_path.read_text(encoding="utf-8")
+            status_path.write_text(original_status.replace(
+                "PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_RESTRICTED_BUILD_VERIFIED",
+                "PARTIALLY_PUBLISHED_PAGES_AUTOMATED_CANARY_VERIFIED_NEXT_UNVERIFIED"), encoding="utf-8")
+            self.assertEqual(AUDIT.check_public_claim_truth(root)[0].status, "DRIFT")
+            status_path.write_text(original_status, encoding="utf-8")
             page = root / "decision-brief-demo/app/page.tsx"
             original_page = page.read_text(encoding="utf-8")
             page.write_text(

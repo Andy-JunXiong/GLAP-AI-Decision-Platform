@@ -45,6 +45,16 @@ Controller dry-run mode validates only its ordered configuration. It does not
 invoke any target or write the latest status object because the existing
 generator does not implement a non-writing dry run.
 
+The isolated lifecycle stage has a local, undeployed
+[private execution-receipt extension](generator_execution_receipt.md). The
+Controller sends a bounded correlation link, validates a present Generator
+receipt and emits a private summary. An older response without a receipt is
+explicitly `UNAVAILABLE_LEGACY`; malformed present receipts fail the stage.
+Invocation/query IDs, source hashes and counts stay outside the persisted
+public run status. This adds no AWS call, retry, schedule or configuration
+change. Receipt completeness is not log-delivery or snapshot verification;
+failed or absent receipts do not prove that no MERGE committed.
+
 ## Athena quality gates
 
 `lambda/glap_data_quality_gate.py` runs aggregate-only checks before the AI

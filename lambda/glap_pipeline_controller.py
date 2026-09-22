@@ -12,6 +12,7 @@ import json
 import os
 import re
 import time
+import uuid
 from typing import Any
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -251,8 +252,112 @@ def validate_quality_checks(
     return checks
 
 
-def invoke_stage(stage: dict[str, Any], event: dict[str, Any]) -> list[dict[str, str]]:
+def _validate_generator_receipt(body: dict, stage: dict, event: dict, link: dict) -> dict:
+    """Validate private linkage only; never copy this receipt into run status."""
+    receipt = body.get("execution_receipt")
+    if receipt is None and "execution_receipt" not in body:
+        return {"receipt_state": "UNAVAILABLE_LEGACY"}
+    try:
+        expected = {
+            "schema_version", "invocation_id", "function_name", "function_version",
+            "controller_link", "controller_link_trusted", "logical_date", "temporal_context",
+            "source_bundle_sha256", "settings_sha256", "request_parameters_sha256", "started_at",
+            "finished_at", "status", "dry_run", "generated_counts", "planned_write_statements",
+            "completed_write_statements", "queries", "complete", "runtime_verified",
+            "snapshot_lineage_verified", "real_world_evidence",
+        }
+        if not isinstance(receipt, dict) or set(receipt) != expected:
+            raise ValueError
+        request_id_pattern = r"[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}"
+        if (receipt["schema_version"] != "generator-execution-receipt.v1"
+                or not re.fullmatch(request_id_pattern, receipt["invocation_id"])
+                or receipt["function_name"] != stage["function_name"]
+                or not re.fullmatch(r"\$LATEST|[0-9]{1,20}", receipt["function_version"])
+                or receipt["controller_link"] != link
+                or receipt["logical_date"] != event["logical_run_date"]
+                or receipt["temporal_context"] != {key: event[key] for key in (
+                    "execution_mode", "time_basis", "as_of_date", "scenario_id")}
+                or receipt["status"] != "SUCCEEDED" or receipt["complete"] is not True
+                or any(receipt[key] is not False for key in (
+                    "dry_run", "controller_link_trusted", "runtime_verified",
+                    "snapshot_lineage_verified", "real_world_evidence"))):
+            raise ValueError
+        for key in ("source_bundle_sha256", "settings_sha256", "request_parameters_sha256"):
+            if not re.fullmatch(r"[a-f0-9]{64}", receipt[key]):
+                raise ValueError
+        counts = receipt["generated_counts"]
+        if not isinstance(counts, dict) or set(counts) != {"outcomes", "proposals"}:
+            raise ValueError
+        values = [*counts.values(), receipt["planned_write_statements"], receipt["completed_write_statements"]]
+        if any(type(value) is not int or value < 0 for value in values):
+            raise ValueError
+        if any(type(body.get(key)) is not int or body[key] < 0 for key in (
+                "outcome_rows_created", "policy_proposal_rows_created", "write_statements")):
+            raise ValueError
+        if (counts["outcomes"] != body.get("outcome_rows_created") or
+                counts["proposals"] != body.get("policy_proposal_rows_created") or
+                body.get("dry_run") is not False or
+                receipt["planned_write_statements"] != body.get("write_statements") or
+                receipt["completed_write_statements"] != receipt["planned_write_statements"]):
+            raise ValueError
+        queries = receipt["queries"]
+        if not isinstance(queries, list) or not 9 <= len(queries) <= 256:
+            raise ValueError
+        seen, reads, writes = set(), set(), 0
+        start = datetime.fromisoformat(receipt["started_at"])
+        finish = datetime.fromisoformat(receipt["finished_at"])
+        stage_start = datetime.fromisoformat(link["stage_started_at"])
+        if start.utcoffset() is None or finish.utcoffset() is None or not stage_start <= start <= finish:
+            raise ValueError
+        previous_finish = start
+        expected_reads = {"READ_TARGETS", "READ_ROUTES", "READ_RATES", "READ_FX", "READ_ACTIVE",
+                          "READ_ALERTS", "READ_ACTIONS", "READ_OUTCOMES", "READ_PROPOSALS"}
+        for index, query in enumerate(queries, 1):
+            if not isinstance(query, dict) or set(query) != {
+                "sequence", "purpose", "query_id", "statement_sha256", "started_at", "finished_at",
+                "status", "athena_state", "result_reused"}:
+                raise ValueError
+            if (type(query["sequence"]) is not int or query["sequence"] != index or
+                    not re.fullmatch(request_id_pattern, query["query_id"]) or query["query_id"] in seen
+                    or query["status"] != "SUCCEEDED" or query["athena_state"] != "SUCCEEDED"
+                    or not re.fullmatch(r"[a-f0-9]{64}", query["statement_sha256"])
+                    or (query["result_reused"] is not None and type(query["result_reused"]) is not bool)):
+                raise ValueError
+            seen.add(query["query_id"])
+            query_start = datetime.fromisoformat(query["started_at"])
+            query_finish = datetime.fromisoformat(query["finished_at"])
+            if (query_start.utcoffset() is None or query_finish.utcoffset() is None
+                    or not previous_finish <= query_start <= query_finish <= finish):
+                raise ValueError
+            previous_finish = query_finish
+            purpose = query["purpose"]
+            if purpose in expected_reads and purpose not in reads and not writes:
+                reads.add(purpose)
+            elif purpose == "WRITE_MERGE" and reads == expected_reads:
+                writes += 1
+            else:
+                raise ValueError
+        if reads != expected_reads or writes != receipt["completed_write_statements"]:
+            raise ValueError
+        return {"receipt_state": "PRESENT_LOCALLY_VALIDATED", "invocation_id": receipt["invocation_id"],
+                "query_count": len(queries), "generated_outcomes": counts["outcomes"],
+                "generated_proposals": counts["proposals"]}
+    except (ValueError, TypeError, KeyError, OverflowError):
+        raise StageFailure("invalid_response") from None
+
+
+def invoke_stage(stage: dict[str, Any], event: dict[str, Any], *,
+                 run_started_at: str | None = None, stage_started_at: str | None = None) -> list[dict[str, str]]:
     invocation_event = dict(event)
+    link = None
+    if stage["name"] == "stateful_lifecycle_generation":
+        timestamp = iso_timestamp(utc_now())
+        link = {"link_id": uuid.uuid4().hex, "run_started_at": run_started_at or timestamp,
+                "stage_started_at": stage_started_at or timestamp}
+        invocation_event["execution_link"] = link
+        print(json.dumps({"schema_version": "generator-controller-link.v1", **link,
+                          "state": "REQUESTED", "logical_date": event["logical_run_date"],
+                          "runtime_verified": False}, sort_keys=True), flush=True)
     quality_contract = stage.get("quality_contract") or (
         "pipeline_v1" if stage.get("quality_gate") is True else None
     )
@@ -264,6 +369,11 @@ def invoke_stage(stage: dict[str, Any], event: dict[str, Any]) -> list[dict[str,
         Payload=json.dumps(invocation_event).encode("utf-8"),
     )
     body = parse_stage_payload(response)
+    if link is not None:
+        summary = _validate_generator_receipt(body, stage, invocation_event, link)
+        print(json.dumps({"schema_version": "generator-controller-link.v1", **link,
+                          "state": "RETURNED", "logical_date": event["logical_run_date"],
+                          "runtime_verified": False, **summary}, sort_keys=True), flush=True)
     return (
         validate_quality_checks(body, QUALITY_CONTRACTS[quality_contract])
         if stage["quality_gate"]
@@ -373,6 +483,8 @@ def execute_pipeline(
                     "retry_failed_run": retry_failed_run,
                     **temporal_context,
                 },
+                run_started_at=run["started_at"],
+                stage_started_at=stage_run["started_at"],
             )
         except StageFailure as exc:
             completed_at = utc_now()

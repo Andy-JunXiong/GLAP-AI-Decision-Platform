@@ -154,7 +154,9 @@ lifecycle invocation, schema, Controller, schedule, alias, or production
 effect.
 
 No post-release lifecycle continuation or Learning reconciliation ran. The
-deployed Lambda digest and configuration were not independently read after the
-workflow, so exact artifact verification remains pending. No additional Athena
+deployed Lambda digest and configuration passed the separately authorized
+`2026-09-22` verification: all 16 checks passed, including commit-bound ZIP
+digest equality and exact source equality for all four files from `a10678b`.
+Post-release business behavior remains unverified. No additional Athena
 query, stored-proposal delete/rewrite, or activation occurred. The unexpected
 immutable proposal remains failed-closed audit evidence.
