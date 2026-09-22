@@ -1,0 +1,70 @@
+{
+  "schema_version": "snapshot-writer-attribution-design.v1",
+  "status": "METADATA_READER_IMPLEMENTED_LIVE_ACQUISITION_PENDING",
+  "as_of_date": "2026-09-23",
+  "business_timezone": "Australia/Sydney",
+  "evidence_class": "LOCAL_DESIGN_ONLY",
+  "offline_normalizer": {
+    "implemented": true,
+    "runtime_verified": false,
+    "input_schema": "snapshot-metadata-input.v1",
+    "report_schema": "snapshot-metadata-report.v1",
+    "supported_format_versions": [2]
+  },
+  "offline_query_targets": {
+    "implemented": true,
+    "runtime_verified": false,
+    "reader_integration_implemented": false,
+    "input_schema": "generator-query-target-input.v1",
+    "report_schema": "generator-query-target-report.v1"
+  },
+  "source_pin": "a10678bc324f62731a021b33d9919f39fcba7731",
+  "tables": {
+    "outcomes": "fact_lifecycle_outcome_staging_v1",
+    "proposals": "fact_policy_proposal_staging_v1"
+  },
+  "proposed_metadata_scope": {
+    "authorized": false,
+    "implemented": true,
+    "runtime_verified": false,
+    "calls": ["glue:GetTable", "s3:GetObject"],
+    "max_get_table_calls": 8,
+    "max_metadata_get_attempts": 64,
+    "max_metadata_objects_per_table": 32,
+    "max_metadata_object_bytes": 1048576,
+    "max_metadata_total_bytes": 33554432,
+    "max_snapshots_per_table": 100,
+    "max_window_seconds": 7200
+  },
+  "open_gates": [
+    "METADATA_ACQUISITION_NOT_EXECUTED",
+    "LIVE_QUERY_TARGET_COLLECTION_NOT_INTEGRATED",
+    "QUERY_TO_COMMIT_BINDING_MISSING",
+    "COMPLETE_HISTORY_UNPROVEN",
+    "WRITER_EXCLUSIVITY_UNPROVEN",
+    "PINNED_ROW_ACQUISITION_NOT_EXECUTED",
+    "GENERATED_COUNTS_NOT_NEW_KEYS",
+    "LEGACY_SOURCE_PIN_INCOMPATIBLE_WITH_RECEIPT_PRODUCER"
+  ],
+  "next_local_deliverable": "PRIVATE_RECEIPT_QUERY_TARGET_COMPOSITION",
+  "runtime_verified": false,
+  "history_complete": false,
+  "writer_binding_verified": false,
+  "snapshot_lineage_verified": false,
+  "net_new_rows_verified": false,
+  "real_world_evidence": false,
+  "execution_available": false,
+  "authority": {
+    "aws_read": false,
+    "aws_query": false,
+    "lifecycle_continuation": false,
+    "deployment": false,
+    "permission_change": false,
+    "private_persistence": false,
+    "source_pin_change": false,
+    "proposal_mutation": false,
+    "policy_activation": false,
+    "model_promotion": false,
+    "production": false
+  }
+}

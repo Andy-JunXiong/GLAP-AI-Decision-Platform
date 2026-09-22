@@ -106,8 +106,17 @@ locally. This reader's private bundle supplies the invocation and query side;
 the validator compares four Git blobs with ZIP bytes and matches receipt hashes
 against supplied configuration/request evidence. It rejects legacy source and
 changed or unbracketed configuration records, but authenticates no release or
-human review. Next is a release-evidence acquisition handoff for the exact
-artifact/configuration read scope and pre/post-run capture timing.
+human review. The [release-evidence acquisition handoff](generator_release_evidence_acquisition_handoff.md)
+now defines the exact artifact/configuration read scope and pre/post-run capture
+timing. Its two-phase artifact/configuration reader is implemented and locally
+tested but has not run against AWS. The [private composition flow](generator_evidence_collection.md)
+now joins these two readers around an external run, with local mocked tests and
+no live collection. The [snapshot/writer attribution design](snapshot_writer_attribution_design.md)
+now records unresolved commit/writer proof. Its [offline metadata normalizer](snapshot_metadata_normalizer.md)
+and [bounded metadata reader](snapshot_metadata_reader.md) are locally implemented,
+with no live collection. The [offline source-bound query-target projection](generator_query_targets.md)
+now checks separately supplied SQL and full release evidence. Private composition
+before this reader discards SQL is next recommended; the existing bundle is unchanged.
 
 Snapshot/writer attribution and before/after row acquisition remain separate
 gaps. No AWS API in this reader establishes which Iceberg snapshot a query

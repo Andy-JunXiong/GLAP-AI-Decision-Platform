@@ -18,6 +18,15 @@ that mutable `$LATEST` remained unchanged between captures. The new receipt
 producer remains undeployed, the reader has not run, and all existing release
 workflows and authority boundaries remain unchanged.
 
+The [release-evidence acquisition handoff](generator_release_evidence_acquisition_handoff.md)
+defines bounded package/configuration reads and pre/post-run timing. Its private
+two-phase reader is implemented and locally tested, with a plan-only CLI and no
+AWS execution to date. It adds no release or invocation authority and requires
+separate Generator and Controller receipt-path release review before collection.
+The [private composition flow](generator_evidence_collection.md) is also locally
+implemented and tested; joining these readers adds no deployment authority or
+permission to initiate an operational run.
+
 ## Release channels
 
 | Channel | Purpose | Invocation |

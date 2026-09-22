@@ -18,6 +18,83 @@ SPEC.loader.exec_module(AUDIT)
 
 
 class ProjectDriftAuditTests(unittest.TestCase):
+    def test_query_target_projection_cannot_expand_recipe_or_claim_proof(self):
+        paths = ("ops/project_generator_query_targets.py", "docs/generator_query_targets.md",
+                 "tests/test_generator_query_targets.py", "docs/snapshot_writer_attribution_design.json",
+                 "lambda/glap_lifecycle_athena_adapter.py")
+        self.assertEqual(AUDIT.check_generator_query_target_boundary(ROOT)[0].status, "PASS")
+        mutations = ((0, "MAX_BATCH_ROWS = 100", "MAX_BATCH_ROWS = 101"),
+                     (0, '"history_complete": False', '"history_complete": True'),
+                     (0, "import hashlib", "import hashlib\nimport socket"),
+                     (3, '"reader_integration_implemented": false', '"reader_integration_implemented": true'),
+                     (4, "def build_merge_sql(", "def unreviewed_merge_sql("))
+        for index, before, after in mutations:
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[index]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_generator_query_target_boundary(root)[0].status, "DRIFT")
+
+    def test_metadata_reader_cannot_expand_scope_or_authorize_live_reads(self):
+        paths = ("ops/read_snapshot_metadata.py", "docs/snapshot_metadata_reader.md",
+                 "tests/test_snapshot_metadata_reader.py", "docs/snapshot_writer_attribution_design.json")
+        self.assertEqual(AUDIT.check_snapshot_metadata_reader_boundary(ROOT)[0].status, "PASS")
+        mutations = ((0, "MAX_GET_ATTEMPTS = 64", "MAX_GET_ATTEMPTS = 65"),
+                     (0, '"cli_read_available": False', '"cli_read_available": True'),
+                     (0, "self._s3.get_object(", "self._s3.put_object("),
+                     (3, '"authorized": false', '"authorized": true'),
+                     (3, '"implemented": true', '"implemented": false'))
+        for index, before, after in mutations:
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[index]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_snapshot_metadata_reader_boundary(root)[0].status, "DRIFT")
+
+    def test_metadata_normalizer_cannot_claim_history_or_expand_scope(self):
+        paths = ("ops/normalize_snapshot_metadata.py", "docs/snapshot_metadata_normalizer.md",
+                 "tests/test_snapshot_metadata_normalizer.py")
+        self.assertEqual(AUDIT.check_snapshot_metadata_normalizer_boundary(ROOT)[0].status, "PASS")
+        for before, after in (('"history_complete": False', '"history_complete": True'),
+                              ('MAX_OBJECTS_PER_TABLE = 32', 'MAX_OBJECTS_PER_TABLE = 33'),
+                              ('import hashlib', 'import hashlib\nimport urllib.request')):
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[0]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_snapshot_metadata_normalizer_boundary(root)[0].status, "DRIFT")
+
+    def test_evidence_composition_cannot_expand_calls_or_enable_invocation(self):
+        paths = ("ops/collect_generator_release_evidence.py", "docs/generator_evidence_collection.md",
+                 "tests/test_generator_evidence_collection.py")
+        self.assertEqual(AUDIT.check_generator_evidence_collection_boundary(ROOT)[0].status, "PASS")
+        for before, after in (('self.client.get_query_execution(', 'self.client.start_query_execution('),
+                              ('"business_invocation_available": False', '"business_invocation_available": True'),
+                              ('"persistence_available": False', '"persistence_available": True')):
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[0]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_generator_evidence_collection_boundary(root)[0].status, "DRIFT")
+
+    def test_release_acquisition_cannot_invoke_or_expand_read_limits(self):
+        paths = ("ops/read_generator_release_evidence.py", "docs/generator_release_evidence_acquisition_handoff.md",
+                 "tests/test_generator_release_acquisition.py")
+        self.assertEqual(AUDIT.check_generator_release_acquisition_boundary(ROOT)[0].status, "PASS")
+        for before, after in (('client.get_function(**target)', 'client.invoke(**target)'),
+                              ('"max_package_downloads": 1', '"max_package_downloads": 2'),
+                              ('"cli_read_available": False', '"cli_read_available": True')):
+            with self.subTest(mutation=before), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._copy_paths(root, paths)
+                source = root / paths[0]
+                source.write_text(source.read_text(encoding="utf-8").replace(before, after), encoding="utf-8")
+                self.assertEqual(AUDIT.check_generator_release_acquisition_boundary(root)[0].status, "DRIFT")
+
     def test_release_binding_cannot_authenticate_review_or_expand_source_scope(self):
         paths = ("ops/validate_generator_release_binding.py", "docs/generator_release_binding.md",
                  "tests/test_generator_release_binding.py")

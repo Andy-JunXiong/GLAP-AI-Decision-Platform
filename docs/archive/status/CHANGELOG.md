@@ -4,6 +4,28 @@ Feature-level completion history. This is not the current backlog or roadmap.
 Detailed session and workflow evidence lives in the monthly daily logs and
 preserved handoffs.
 
+## 2026-09-23
+
+- Added a local, plan-only release-evidence acquisition reader with bounded
+  in-memory package/configuration capture before and after an externally owned
+  run. Independent release expectations and immutable source bytes feed the
+  existing validator; no live acquisition or deployment occurred.
+- Added private composition of release acquisition and the receipt reader.
+  Frozen scope/digests and per-call expiry checks precede reads; aggregate
+  results preserve unverified authenticity and consume private session state.
+- Added offline Iceberg v2 metadata normalization with strict table, schema,
+  parent/reference, time and size checks. Structural consistency never supplies
+  missing writer identity, commit times or complete-history assertions.
+- Added a bounded, plan-only Glue/S3 metadata reader for the two fixed staging
+  tables. Owner/prefix bindings, read limits and single-send guards constrain
+  two-phase capture; cached-key and immutable-object limitations remain explicit.
+  It is locally mock-tested, without live reads or row-query execution.
+- Added offline source-bound query-target projection across all nine staging
+  write families. Full release binding, exact SQL hashes, reviewed source and
+  complete MERGE shapes govern private target projection and aggregate counts.
+  Receipt-reader integration, query-to-commit proof and legacy source-contract
+  compatibility remain open; no existing source pin or receipt schema changed.
+
 ## 2026-09-22
 
 - Added local Generator release-binding comparison across fixed Git blobs,

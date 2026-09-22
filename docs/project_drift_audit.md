@@ -45,6 +45,19 @@ checks that:
 - implemented Action operations remain exactly `EDIT`, `APPROVE`, `REJECT`,
   and `COMPLETE`, while the assignment canary's response fix, stable retry, and
   separate approver decision retain their current maturity;
+- the private release-evidence acquisition reader retains its plan-only CLI,
+  fixed Lambda read inventory, two-phase limits and false runtime/authority
+  claims; its mocked tests establish local behavior, not a live AWS collection;
+- the private composition flow retains the union of the two readers' bounded
+  call inventory, a plan-only CLI, and no invocation or persistence authority;
+- the offline metadata normalizer preserves bounded v2-only input, explicit
+  missing writer/history/commit evidence, all-false authority and no network SDK;
+- the metadata reader preserves its plan-only CLI, fixed Glue/S3 read inventory,
+  byte/object/call/time limits, cached-object gaps and false runtime/authority
+  flags; the design inventory matches local implementation with live use pending;
+- offline query-target projection preserves the reviewed adapter recipe, nine
+  staging families, complete write accounting, byte/batch limits and no source
+  execution or network; live reader integration and commit/writer proof stay open;
 - authenticated Operations queries retain the operational actual-calendar
   boundary and advisory forecasts retain no production effect;
 - the Action–Outcome evidence chain remains an authenticated read-only `GET`

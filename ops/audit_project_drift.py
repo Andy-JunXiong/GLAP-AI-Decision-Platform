@@ -1051,6 +1051,215 @@ def check_generator_release_binding_boundary(root: Path) -> list[CheckResult]:
     )]
 
 
+def check_generator_release_acquisition_boundary(root: Path) -> list[CheckResult]:
+    import ast
+
+    evidence = ("ops/read_generator_release_evidence.py", "docs/generator_release_evidence_acquisition_handoff.md",
+                "tests/test_generator_release_acquisition.py")
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan = module.plan_summary()
+        rejected, session = module.start_capture({})
+        tree = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        calls = {node.func.attr for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute) and
+                 ((isinstance(node.func.value, ast.Name) and node.func.value.id == "client") or
+                  (isinstance(node.func.value, ast.Attribute) and node.func.value.attr == "_client"))}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and module.SCHEMA == "generator-release-acquisition-config.v1"
+            and calls == {"get_function", "get_function_configuration"}
+            and plan["allowed_calls"] == ["lambda:GetFunction", "lambda:GetFunctionConfiguration"]
+            and plan["status"] == "LOCAL_PLAN_ONLY" and plan["cli_read_available"] is False
+            and plan["max_get_function_calls"] == 1 and plan["max_configuration_calls"] == 2
+            and plan["max_package_downloads"] == 1 and plan["max_zip_bytes"] == 2097152
+            and plan["max_window_seconds"] == 7200 and module.MAX_DOWNLOAD_SECONDS == 30
+            and all(plan[key] is False for key in ("read_attempted", "runtime_verified",
+                "aws_receipts_authenticated", "human_review_authenticated", "release_binding_verified",
+                "mutable_revision_continuity_verified", "snapshot_lineage_verified", "net_new_rows_verified",
+                "real_world_evidence", "execution_available"))
+            and plan["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation", "policy_activation",
+                "deployment", "production", "model_promotion")}
+            and rejected["status"] == "UNVERIFIED" and rejected["read_attempted"] is False and session is None
+        )
+    except Exception:
+        passed = False
+    return [_result("generator_release_acquisition_boundary", "governance", passed,
+                    "Release acquisition retains a plan-only CLI, bounded two-phase private reads and false runtime/authority claims.",
+                    "Release acquisition call scope, limits, plan default or evidence boundary has drifted.", evidence)]
+
+
+def check_generator_evidence_collection_boundary(root: Path) -> list[CheckResult]:
+    import ast
+
+    evidence = ("ops/collect_generator_release_evidence.py", "docs/generator_evidence_collection.md",
+                "tests/test_generator_evidence_collection.py")
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan = module.plan_summary()
+        rejected, session = module.start_collection({})
+        tree = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        calls = {node.func.attr for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Attribute)
+                 and node.func.value.attr == "client"}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and calls == {"filter_log_events", "get_query_execution"}
+            and plan["allowed_calls"] == ["lambda:GetFunction", "lambda:GetFunctionConfiguration",
+                                         "logs:FilterLogEvents", "athena:GetQueryExecution"]
+            and plan["status"] == "LOCAL_PLAN_ONLY" and plan["cli_read_available"] is False
+            and plan["schema_version"] == "generator-evidence-collection-report.v1"
+            and plan["evidence_class"] == "COMPOSED_READ_RECORD_CONSISTENCY_ONLY"
+            and plan["max_get_function_calls"] == 1 and plan["max_configuration_calls"] == 2
+            and plan["max_package_downloads"] == 1 and plan["max_window_seconds"] == 7200
+            and plan["log_groups"] == 2 and plan["max_pages_per_group"] == 20
+            and plan["max_events_per_group"] == 200 and plan["max_log_bytes_per_group"] == 2097152
+            and plan["max_query_metadata_reads"] == 256
+            and all(plan[key] is False for key in ("read_attempted", "business_invocation_available",
+                "persistence_available", "runtime_verified", "aws_receipts_authenticated",
+                "human_review_authenticated", "release_binding_verified", "mutable_revision_continuity_verified",
+                "snapshot_lineage_verified", "net_new_rows_verified", "real_world_evidence", "execution_available"))
+            and plan["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation", "policy_activation",
+                "deployment", "production", "model_promotion")}
+            and rejected["status"] == "UNVERIFIED" and rejected["read_attempted"] is False and session is None
+        )
+    except Exception:
+        passed = False
+    return [_result("generator_evidence_collection_boundary", "governance", passed,
+                    "Private composition preserves bounded readers, a plan-only CLI and no invocation, persistence or runtime authority.",
+                    "Private composition call inventory, limits or evidence boundary has drifted.", evidence)]
+
+
+def check_snapshot_metadata_normalizer_boundary(root: Path) -> list[CheckResult]:
+    import ast
+
+    evidence = ("ops/normalize_snapshot_metadata.py", "docs/snapshot_metadata_normalizer.md",
+                "tests/test_snapshot_metadata_normalizer.py")
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan, rejected = module.plan_summary(), module.normalize({})
+        tree = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        imports = {name.name for node in ast.walk(tree) if isinstance(node, ast.Import) for name in node.names}
+        imports |= {node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and imports <= {"__future__", "hashlib", "json", "re", "sys", "datetime", "zoneinfo", "ops",
+                            "ops.prepare_learning_evidence_collection", "compare_learning_cardinality_evidence",
+                            "prepare_learning_evidence_collection"}
+            and module.SCHEMA == "snapshot-metadata-input.v1"
+            and plan["status"] == "LOCAL_PLAN_ONLY" and plan["supported_format_versions"] == [2]
+            and plan["max_objects_per_table"] == 32 and plan["max_object_bytes"] == 1048576
+            and plan["max_total_metadata_bytes"] == 33554432 and plan["max_input_bytes"] == 41943040
+            and plan["max_snapshots_per_table"] == 100 and plan["max_window_seconds"] == 7200
+            and {"COMMIT_TIMES_UNAVAILABLE", "COMPLETE_HISTORY_UNPROVEN", "QUERY_TO_COMMIT_BINDING_UNAVAILABLE",
+                 "WRITER_EXCLUSIVITY_UNPROVEN", "LEGACY_SOURCE_PIN_INCOMPATIBLE_WITH_RECEIPT_PRODUCER"} <= set(plan["gaps"])
+            and all(plan[key] is False for key in ("runtime_verified", "history_complete", "writer_binding_verified",
+                "snapshot_lineage_verified", "net_new_rows_verified", "real_world_evidence", "execution_available"))
+            and plan["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation", "policy_activation",
+                "deployment", "production", "model_promotion", "aws_read", "permission_change",
+                "private_persistence", "source_pin_change")}
+            and rejected["status"] == "UNVERIFIED" and rejected["counts"] is None
+        )
+    except Exception:
+        passed = False
+    return [_result("snapshot_metadata_normalizer_boundary", "governance", passed,
+                    "Metadata normalization stays offline, bounded and explicit about absent writer/history proof.",
+                    "Metadata normalization scope, limits or evidence claims have drifted.", evidence)]
+
+
+def check_snapshot_metadata_reader_boundary(root: Path) -> list[CheckResult]:
+    import ast
+
+    evidence = ("ops/read_snapshot_metadata.py", "docs/snapshot_metadata_reader.md",
+                "tests/test_snapshot_metadata_reader.py", "docs/snapshot_writer_attribution_design.json")
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan = module.plan_summary()
+        rejected, session = module.start_capture({})
+        design = json.loads((root / evidence[3]).read_text(encoding="utf-8"))
+        scope = design["proposed_metadata_scope"]
+        tree = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        calls = {node.func.attr for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Attribute)
+                 and node.func.value.attr in {"_glue", "_s3"}}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and calls == {"get_table", "get_object"}
+            and plan["allowed_calls"] == scope["calls"] == ["glue:GetTable", "s3:GetObject"]
+            and plan["status"] == "LOCAL_PLAN_ONLY" and plan["schema_version"] == "snapshot-metadata-acquisition-report.v1"
+            and plan["max_get_table_calls"] == scope["max_get_table_calls"] == 8
+            and plan["max_metadata_get_attempts"] == scope["max_metadata_get_attempts"] == 64
+            and plan["max_objects_per_table"] == scope["max_metadata_objects_per_table"] == 32
+            and plan["max_object_bytes"] == scope["max_metadata_object_bytes"] == 1048576
+            and plan["max_total_bytes"] == scope["max_metadata_total_bytes"] == 33554432
+            and plan["max_window_seconds"] == scope["max_window_seconds"] == 7200
+            and scope["implemented"] is True and scope["authorized"] is False and scope["runtime_verified"] is False
+            and design["status"] == "METADATA_READER_IMPLEMENTED_LIVE_ACQUISITION_PENDING"
+            and "METADATA_ACQUISITION_NOT_EXECUTED" in design["open_gates"]
+            and {"CACHED_OBJECT_LOCATIONS_NOT_REVALIDATED", "IMMUTABLE_OBJECT_IDENTITY_NOT_GUARANTEED",
+                 "COMPLETE_HISTORY_UNPROVEN", "QUERY_TO_COMMIT_BINDING_UNAVAILABLE",
+                 "LEGACY_SOURCE_PIN_INCOMPATIBLE_WITH_RECEIPT_PRODUCER"} <= set(plan["gaps"])
+            and all(plan[key] is False for key in ("cli_read_available", "row_query_available", "persistence_available",
+                "read_attempted", "runtime_verified", "history_complete", "writer_binding_verified",
+                "snapshot_lineage_verified", "net_new_rows_verified", "real_world_evidence", "execution_available"))
+            and plan["authority"] == design["authority"] == {key: False for key in (
+                "aws_query", "lifecycle_continuation", "proposal_mutation", "policy_activation", "deployment",
+                "production", "model_promotion", "aws_read", "permission_change", "private_persistence", "source_pin_change")}
+            and rejected["status"] == "UNVERIFIED" and rejected["read_attempted"] is False and session is None
+        )
+    except Exception:
+        passed = False
+    return [_result("snapshot_metadata_reader_boundary", "governance", passed,
+                    "Metadata reader retains a plan-only CLI, bounded private reads and unresolved writer/history proof.",
+                    "Metadata reader scope, bounds, design inventory or evidence boundary has drifted.", evidence)]
+
+
+def check_generator_query_target_boundary(root: Path) -> list[CheckResult]:
+    import ast
+
+    evidence = ("ops/project_generator_query_targets.py", "docs/generator_query_targets.md",
+                "tests/test_generator_query_targets.py", "docs/snapshot_writer_attribution_design.json",
+                "lambda/glap_lifecycle_athena_adapter.py")
+    try:
+        module = _load_repository_module(root, evidence[0])
+        plan, rejected = module.plan_summary(), module.project({})
+        source_contract = module.source_contract((root / evidence[4]).read_bytes())
+        design = json.loads((root / evidence[3]).read_text(encoding="utf-8"))
+        tree = ast.parse((root / evidence[0]).read_text(encoding="utf-8"))
+        imports = {name.name for node in ast.walk(tree) if isinstance(node, ast.Import) for name in node.names}
+        imports |= {node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+        names = {node.func.id for node in ast.walk(tree) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)}
+        passed = (
+            all((root / path).is_file() for path in evidence)
+            and imports <= {"__future__", "ast", "datetime", "hashlib", "json", "math", "re", "sys", "ops",
+                            "validate_generator_release_binding"}
+            and not names & {"exec", "eval", "compile", "open", "__import__"}
+            and len(source_contract) == plan["table_families"] == 9
+            and plan["status"] == "LOCAL_PLAN_ONLY" and plan["schema_version"] == "generator-query-target-report.v1"
+            and plan["max_input_bytes"] == 25165824 and plan["max_sql_bytes"] == 524288
+            and plan["max_total_sql_bytes"] == 16777216 and plan["max_queries"] == 256 and plan["max_batch_rows"] == 100
+            and plan["aws_calls"] == [] and plan["source_execution_available"] is False
+            and design["offline_query_targets"] == {"implemented": True, "runtime_verified": False,
+                "reader_integration_implemented": False, "input_schema": "generator-query-target-input.v1",
+                "report_schema": "generator-query-target-report.v1"}
+            and "LIVE_QUERY_TARGET_COLLECTION_NOT_INTEGRATED" in design["open_gates"]
+            and {"LIVE_QUERY_TARGET_COLLECTION_NOT_INTEGRATED", "QUERY_TO_COMMIT_BINDING_UNAVAILABLE",
+                 "COMPLETE_HISTORY_UNPROVEN", "LEGACY_SOURCE_PIN_INCOMPATIBLE_WITH_RECEIPT_PRODUCER"} <= set(plan["gaps"])
+            and all(plan[key] is False for key in ("runtime_verified", "release_binding_verified", "writer_binding_verified",
+                "history_complete", "snapshot_lineage_verified", "net_new_rows_verified", "real_world_evidence", "execution_available"))
+            and plan["authority"] == design["authority"] and not any(plan["authority"].values())
+            and rejected["status"] == "UNVERIFIED" and rejected["counts"] is None
+        )
+    except Exception:
+        passed = False
+    return [_result("generator_query_target_boundary", "governance", passed,
+                    "Query targets stay offline, source-shape bound, aggregate-only and explicit about absent commit/writer proof.",
+                    "Query target recipe, limits, offline boundary or evidence claims have drifted.", evidence)]
+
+
 def check_action_mutation_release(root: Path) -> list[CheckResult]:
     contract_path = "docs/action_mutation_staging_release_contract.json"
     release = json.loads((root / contract_path).read_text(encoding="utf-8"))
@@ -4990,6 +5199,11 @@ def run_audit(root: Path) -> dict[str, Any]:
     checks.extend(check_generator_execution_receipt_boundary(root))
     checks.extend(check_generator_receipt_reader_boundary(root))
     checks.extend(check_generator_release_binding_boundary(root))
+    checks.extend(check_generator_release_acquisition_boundary(root))
+    checks.extend(check_generator_evidence_collection_boundary(root))
+    checks.extend(check_snapshot_metadata_normalizer_boundary(root))
+    checks.extend(check_snapshot_metadata_reader_boundary(root))
+    checks.extend(check_generator_query_target_boundary(root))
     checks.extend(check_action_mutation_release(root))
     checks.extend(check_readiness_contract(root))
     checks.extend(check_public_claim_truth(root))

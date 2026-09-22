@@ -1064,11 +1064,70 @@
     {
       "id": "generator_release_binding_v1",
       "state": "IMPLEMENTED_VERIFIED",
-      "boundary": "local-only comparison of four fixed Git blobs, supplied ZIP bytes, private reader bundle and two supplied Lambda configuration captures; validates byte equality, ZIP and manifest digests, bounded configuration and producer settings/request hash recipes, source receipt compatibility and unchanged revision records bracketing the run; no worktree substitution, source execution, archive extraction, AWS client, deployment or source-pin advancement; human approval, receipt authenticity, runtime verification, authenticated release acceptance, mutable-version continuity, snapshot lineage, net-new keys and all operational authority remain false; artifact/configuration acquisition handoff remains next and historical missing captures cannot be recreated",
+      "boundary": "local-only comparison of four fixed Git blobs, supplied ZIP bytes, private reader bundle and two supplied Lambda configuration captures; validates byte equality, ZIP and manifest digests, bounded configuration and producer settings/request hash recipes, source receipt compatibility and unchanged revision records bracketing the run; no worktree substitution, source execution, archive extraction, AWS client, deployment or source-pin advancement; human approval, receipt authenticity, runtime verification, authenticated release acceptance, mutable-version continuity, snapshot lineage, net-new keys and all operational authority remain false; artifact/configuration handoff and two-phase reader are implemented locally but no live acquisition has run; historical missing captures cannot be recreated",
       "evidence_files": [
         "ops/validate_generator_release_binding.py",
         "docs/generator_release_binding.md",
         "tests/test_generator_release_binding.py"
+      ]
+    },
+    {
+      "id": "generator_release_acquisition_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "locally tested plan-only CLI and private two-phase callable; one fixed staging GetFunction, one in-memory regional HTTPS package download and two bounded configuration reads; independent source and digest expectations precede collection, original pre-run capture cannot be recreated, finish consumes a separately acquired receipt bundle and composes the existing offline binding validator; no live acquisition, invocation, log/query read, persistence, retry, source-pin change or deployment; runtime authentication, mutable-version continuity, snapshot lineage, net-new keys and all authority remain false",
+      "evidence_files": [
+        "ops/read_generator_release_evidence.py",
+        "docs/generator_release_evidence_acquisition_handoff.md",
+        "tests/test_generator_release_acquisition.py"
+      ]
+    },
+    {
+      "id": "generator_evidence_collection_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "locally tested private two-phase composition with a plan-only CLI; receipt date/version/scope/digests must agree with frozen pre-run release evidence before log access; existing bounded readers correlate one supplied invocation and query metadata, guard each call against capture-window expiry, and feed post-capture plus offline binding; only aggregate results escape and every finish consumes the session; no live collection, invocation, polling, persistence, retry, deployment or source-pin advancement; AWS authenticity, human review, mutable-version continuity, snapshots, net-new keys and all authority remain unverified or false",
+      "evidence_files": [
+        "ops/collect_generator_release_evidence.py",
+        "docs/generator_evidence_collection.md",
+        "tests/test_generator_evidence_collection.py"
+      ]
+    },
+    {
+      "id": "snapshot_writer_attribution_acquisition",
+      "state": "PARTIAL",
+      "boundary": "bounded Glue/S3 reader, offline metadata normalization and source-bound supplied-SQL target projection are locally implemented and tested, but live acquisition remains unauthorized and unexecuted; private query-target reader integration, query-to-commit writer binding and pinned-row acquisition remain missing; no complete-history proof; legacy Learning source pin is incompatible with the new receipt producer and remains unchanged; next local recommendation is private receipt/query-target composition",
+      "evidence_files": [
+        "docs/snapshot_writer_attribution_design.md",
+        "docs/snapshot_writer_attribution_design.json"
+      ]
+    },
+    {
+      "id": "snapshot_metadata_normalizer_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "locally tested offline supplied-Iceberg-v2 metadata projection; exact two-table catalog/fence scope, bounded objects and snapshots, schema digests, parent/reference consistency, visible rollback rejection and aggregate-only reports; snapshot creation time is never promoted to commit time; missing history, writer, row and source compatibility proof remain explicit; no SDK, network, persistence, provenance-ready packet, source-pin change or runtime/authority claim",
+      "evidence_files": [
+        "ops/normalize_snapshot_metadata.py",
+        "docs/snapshot_metadata_normalizer.md",
+        "tests/test_snapshot_metadata_normalizer.py"
+      ]
+    },
+    {
+      "id": "snapshot_metadata_reader_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "locally mock-tested plan-only CLI and private two-phase Glue/S3 reader; exact two-table scope, independent catalog/bucket-owner/prefix bindings, eight catalog reads, sixty-four object attempts, byte/time bounds, single-send transport guard and aggregate-only normalizer output; cached locations and immutable identity remain explicit gaps; no live read, row query, business invocation, persistence, source-pin change or runtime/writer/history/authority claim",
+      "evidence_files": [
+        "ops/read_snapshot_metadata.py",
+        "docs/snapshot_metadata_reader.md",
+        "tests/test_snapshot_metadata_reader.py"
+      ]
+    },
+    {
+      "id": "generator_query_targets_v1",
+      "state": "IMPLEMENTED_VERIFIED",
+      "boundary": "locally synthetic-tested offline supplied-SQL target projection composed with full release-binding validation; reviewed adapter recipe, exact SQL hashes and whole MERGE templates, nine fixed staging families, retry/insert-only and batch boundaries; private query/table/hash projection with aggregate-only CLI reports; no SQL/source execution, live read, persistence, source-pin migration, inferred commit/snapshot identity or writer/history/runtime/authority claim; transient reader integration remains unimplemented",
+      "evidence_files": [
+        "ops/project_generator_query_targets.py",
+        "docs/generator_query_targets.md",
+        "tests/test_generator_query_targets.py"
       ]
     }
   ],

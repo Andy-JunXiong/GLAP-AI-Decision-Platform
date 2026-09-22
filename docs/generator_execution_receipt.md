@@ -107,8 +107,15 @@ logs and referenced query metadata, while snapshot/writer attribution and
 net-new-key reconciliation remain absent. The
 [release-binding validator](generator_release_binding.md) is now implemented
 locally for Git/ZIP byte equality, receipt digests and supplied configuration
-records. This adds no authenticated release or continuity claim. Next is a
-release-evidence acquisition handoff for artifact/configuration capture.
+records. This adds no authenticated release or continuity claim. Artifact and
+configuration acquisition plus private reader composition are now implemented
+locally and unexecuted. The [snapshot/writer attribution design](snapshot_writer_attribution_design.md)
+records missing table/commit/writer relationships and the legacy-source mismatch;
+its [offline metadata normalizer](snapshot_metadata_normalizer.md) is now locally
+implemented, together with the [bounded metadata reader](snapshot_metadata_reader.md).
+Both have local verification only. The [offline source-bound query-target projection](generator_query_targets.md)
+now checks supplied SQL against full release/receipt evidence. Private composition
+before SQL discard is next recommended; no producer or receipt schema changes here.
 The reader uses existing AWS access and adds no permissions. Collection,
 Athena queries, deployment and continuation retain their separate authority;
 no fresh run is justified merely to create receipts, and no historical proposal

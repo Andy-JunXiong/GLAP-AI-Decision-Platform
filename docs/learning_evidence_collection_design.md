@@ -81,7 +81,8 @@ The bounded limits are 16 MiB per CLI packet, 32 pages per query, 1,000 rows
 per page and 10,000 data rows per table. Exceeding a limit rejects the packet;
 no truncation, aggregate substitution or automatic widening is permitted.
 The two-query count is **data queries per phase**, not a total AWS call budget:
-metadata acquisition and provenance inspection are still unimplemented.
+the bounded metadata reader is locally implemented but unexecuted, and integrated
+row-query fences and complete provenance acquisition remain unavailable.
 
 ## Remaining collection design gates
 
@@ -121,8 +122,17 @@ and Controller correlation are implemented locally but undeployed. The
 but unexecuted: it reads bounded logs and existing query metadata only. The
 [release-binding validator](generator_release_binding.md) now checks local
 Git/ZIP bytes and supplied receipt/configuration consistency. Artifact and
-configuration acquisition is the next handoff; generated counts still need
-snapshot/key reconciliation and the fixed source pin is unchanged.
+configuration acquisition and private reader composition are now implemented
+locally but unexecuted. The [snapshot/writer attribution design](snapshot_writer_attribution_design.md)
+defines proposed metadata-only scope and the missing query/commit/writer links;
+its [offline metadata normalizer](snapshot_metadata_normalizer.md) is now locally
+implemented, together with the [bounded metadata reader](snapshot_metadata_reader.md),
+without live collection. The [offline source-bound query-target projection](generator_query_targets.md)
+now checks supplied SQL and full release records; private receipt/target composition
+before SQL discard is next recommended. Generated
+counts still need snapshot/key reconciliation, and the fixed legacy source pin
+remains incompatible with the new receipt-producing source until separately
+reviewed migration. The pin is unchanged.
 An executor remains unavailable in this module. Existing failed-closed Learning evidence and the immutable proposal
 remain intact; no policy progression or production readiness follows from this
 preparation.

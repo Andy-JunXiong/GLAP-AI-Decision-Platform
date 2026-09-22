@@ -483,6 +483,39 @@ projection across two captures. It executes no package code or AWS call and
 does not authenticate approval, mutable-version continuity or deployment.
 Missing historical configuration captures cannot be reconstructed as evidence.
 
+The [release-evidence acquisition reader](generator_release_evidence_acquisition_handoff.md)
+is implemented locally with a plan-only CLI and a private two-phase callable.
+It bounds acquisition to one Generator GetFunction, one in-memory package
+download and two configuration reads surrounding an external run. It accepts
+the separately acquired receipt bundle, composes the offline validator and
+discards session state on completion or failure. It has not run against AWS;
+no invocation, persistence, snapshot attribution or new authority is added.
+
+The [private composition flow](generator_evidence_collection.md) now connects
+both readers locally. It checks receipt expectations against the pre-run package
+and configuration before log access, enforces the capture window around each
+log/query-metadata call, then feeds the private bundle to post-capture and binding
+validation. It has not run against AWS and supplies only aggregate consistency
+results, with no invocation, persistence or new runtime/authentication claims.
+
+The [snapshot/writer attribution design](snapshot_writer_attribution_design.md)
+separates metadata structure, pinned-row changes and writer proof. It identifies
+missing live query-target collection, commit bindings and history completeness, and records
+that the old Learning source pin cannot accept the new receipt-producing source.
+The design adds no schema change or source-pin
+migration. Its [offline metadata normalizer](snapshot_metadata_normalizer.md)
+is now implemented and locally tested. Supplied v2 catalog/fence and snapshot
+structures can be checked without AWS; aggregate results retain explicit proof
+gaps and false writer/history/runtime flags. The [bounded plan-first metadata reader](snapshot_metadata_reader.md)
+is now implemented and locally tested, with no live acquisition. It retains
+explicit cached-key and immutable-object limitations and does not execute row
+queries. The [offline source-bound query-target projection](generator_query_targets.md)
+is now locally implemented for supplied SQL and full release evidence. It checks
+the reviewed source and whole MERGE shape while preserving the exact SQL hash;
+it executes neither SQL nor supplied code and authenticates no commit or writer.
+Private receipt/target composition before SQL discard is next recommended;
+snapshot attribution and business-behavior conclusions remain blocked.
+
 ## Authenticated internal Operations boundary — implemented in private staging
 
 The authenticated Operations API, Cognito four-role boundary, and private

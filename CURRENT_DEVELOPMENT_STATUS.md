@@ -1,11 +1,30 @@
 # GLAP Current Development Status
 
-**Sydney as-of date:** `2026-09-22`
+**Sydney as-of date:** `2026-09-23`
+
+**Local closeout — 2026-09-23:** The release-evidence acquisition handoff,
+bounded two-phase reader and private composition flow are implemented locally,
+with no live collection. Twenty acquisition cases, eighteen composition cases,
+twenty-five metadata-normalizer cases, twenty-seven metadata-reader cases,
+twenty-eight query-target cases and the full 938-test Python suite pass
+locally using an isolated temporary copy of the
+existing SAM Python 3.13 runtime with repository import paths configured.
+Compilation and 68/68 project drift checks passed. These local results do not refresh any runtime evidence;
+no AWS collection or business operation occurred.
+The snapshot/writer attribution design now has a locally implemented offline
+metadata normalizer, a bounded two-phase metadata reader, offline source-bound
+query-target projection and a machine-readable gap inventory. It identifies
+missing live target collection and commit/writer links, incomplete-history risk and the explicit
+legacy-source/new-receipt incompatibility. No new runtime observation is implied.
 
 The 22 September runtime update verifies only the isolated Generator release
 artifact and configuration. Today's evidence tooling is implemented and locally
 verified; it is not a new deployment or business observation. Other runtime
-entries retain their dated evidence and were not refreshed by this read-only check.
+entries retain their dated evidence and were not refreshed by this local development session.
+The user requested documentation synchronization and source delivery to `main`.
+The reviewed path set triggers Python CI only, with no push-triggered deployment
+or Pages publication. Commit/push and remote CI results are reported separately
+in the delivery handoff; local validation is not remote CI or runtime evidence.
 
 This document states what is true now, what is waiting for validation, and what
 should be implemented next. It is updated at each formal closeout and contains
@@ -74,6 +93,12 @@ records live under [`docs/archive/status/`](docs/archive/status/README.md).
 | Private Generator execution receipt v1 | `IMPLEMENTED_LOCAL_ONLY_UNDEPLOYED` | Records Lambda context identity, bounded query IDs/hashes, generated counts and acknowledged MERGEs in private logs/responses; Controller correlates the invocation privately and marks legacy absence unavailable. Public status stays aggregate-only. Counts are not net-new rows; source binding, log authenticity and snapshot acquisition remain unverified. |
 | Private Generator receipt reader v1 | `IMPLEMENTED_LOCAL_READER_NOT_EXECUTED` | Plan-first CLI and private callable correlate bounded logs from two staging functions with the exact referenced Athena query metadata. Only FilterLogEvents/GetQueryExecution are available; no query, result-row download, invocation, persistence or deployment. Supplied source expectations are not authenticated; release binding, snapshot attribution and net-new rows remain unverified. |
 | Generator release-binding validator v1 | `IMPLEMENTED_LOCAL_RECORD_CONSISTENCY_ONLY` | Compares four fixed Git blobs with supplied ZIP bytes, Lambda code digests, bounded configuration projections, request/settings hashes and the private reader bundle. Two supplied configuration captures must bracket the run with an unchanged revision. Legacy source without the receipt producer is rejected. Human review, AWS authenticity, mutable-version continuity and actual release acceptance remain unverified; no AWS client or deployment is added. |
+| Generator release-evidence acquisition reader v1 | `IMPLEMENTED_LOCAL_READER_NOT_EXECUTED` | Plan-only CLI and private two-phase callable bound one package read and two configuration captures around an external run. The supplied receipt bundle feeds the existing offline validator; failures close the session. No live read, invocation, persistence, source-pin change or new runtime/authority claim. |
+| Generator private evidence composition v1 | `IMPLEMENTED_LOCAL_COMPOSITION_NOT_EXECUTED` | Joins the two readers around one supplied external invocation, checks frozen release expectations before log access and guards each metadata read against expiry. Returns only aggregate consistency results and closes every completed or failed session. No live collection, invocation, persistence or new evidence authority. |
+| Snapshot/writer attribution acquisition design | `METADATA_READER_IMPLEMENTED_LIVE_ACQUISITION_PENDING` | Defines enforced metadata-only read bounds and separate row-change/writer-proof gates. The reader and normalizer are locally tested but unexecuted. Query-to-commit identity and complete history remain unproven; the legacy Learning source pin is incompatible with the new receipt producer. No query executor or contract migration is implemented. |
+| Bounded snapshot metadata reader v1 | `IMPLEMENTED_LOCAL_READER_NOT_EXECUTED` | Plan-only CLI and private before/after Glue/S3 callable feed the offline normalizer within exact table, owner, prefix, call, byte and date limits. Only aggregate results escape; cached-key and immutable-object gaps stay visible. No live collection, row query, business invocation, persistence or new evidence authority. |
+| Offline Generator query-target projection v1 | `IMPLEMENTED_OFFLINE_TARGET_PROJECTION_RUNTIME_UNVERIFIED` | Composes full release-binding evidence with separately supplied write SQL. Checks reviewed source, exact hashes, whole MERGE shapes, nine staging families, retry/insert-only behavior and batch boundaries. Private query/table/hash output and aggregate CLI counts carry no commit/snapshot/writer proof. Live reader integration remains unimplemented; Learning source pin unchanged. |
+| Offline snapshot metadata normalizer v1 | `IMPLEMENTED_OFFLINE_METADATA_NORMALIZER_RUNTIME_UNVERIFIED` | Checks supplied two-table catalog observations and bounded v2 metadata, schema/parent/reference consistency and visible rollback. Returns aggregate structural consistency with explicit proof gaps; creation times never become commit times, and writer/history/runtime flags remain false. |
 | Learning evidence provenance receipt validator v1 | `IMPLEMENTED_OFFLINE_RECEIPT_VALIDATOR_RUNTIME_UNVERIFIED` | Composes supplied before/after pages, snapshot lineage, shared collection windows and one invocation; checks temporal/source binding and creation-count agreement. It authenticates no AWS record, grants no authority and does not resolve historical anomalies. The private producer is undeployed and the receipt reader is implemented but unexecuted; snapshot/writer acquisition remains missing. |
 | Learning evidence collection preparation v1 | `IMPLEMENTED_OFFLINE_PREPARATION_NO_EXECUTOR` | Fixed snapshot-pinned staging SELECT planning and complete supplied-page decoding feed the offline comparator. Query identity, pagination, schema and limits are checked locally; runtime provenance, cross-table consistency and invocation evidence remain unverified. No AWS client, executor or operational authority is added. |
 | Learning cardinality offline evidence comparator v1 | `IMPLEMENTED_LOCAL_ONLY_RUNTIME_UNVERIFIED` | In-memory full-row comparison distinguishes preserved historical proposals, new below-threshold proposals, and insufficient evidence. The source commit and 20-Outcome rule are fixed; reports contain only aggregate results and cannot grant runtime verification or operational authority. No collector or staging observation was executed. |
@@ -187,9 +212,13 @@ and execute remain pending; no new role, Environment or permission is created.
 - Today's private receipt producer and Controller extension are undeployed.
   The reader has not run on AWS. Local release-binding consistency authenticates
   neither a human approval nor mutable-version continuity.
-- Artifact/configuration acquisition scope, pre/post-run capture and
-  snapshot/writer attribution are still needed. Missing historical pre-run
+- Artifact/configuration acquisition scope, its two-phase reader and private
+  reader composition are now implemented locally; actual pre/post-run captures
+  and snapshot/writer attribution are still needed. Missing historical pre-run
   records cannot be reconstructed by a later read.
+- The fixed-source Learning validators require the legacy source, while release
+  binding requires the newer receipt producer. A separately reviewed source
+  migration is needed before composition; no validator pin changed here.
 - Cost still has no natural proposal and cohort comparison has no eligible
   cohort evidence. Provider/model label maturity remains insufficient.
 - The System control-plane collector's protected Environment and execute path
@@ -247,9 +276,30 @@ August archive and their current implications in the product table.
    read has run. The [release-binding validator](docs/generator_release_binding.md)
    now compares fixed Git blobs, supplied ZIP bytes, receipt digests and two
    supplied configuration records locally. It authenticates neither review nor
-   runtime continuity. Next, prepare a release-evidence acquisition handoff with
-   exact artifact/configuration read scope, source expectations and pre/post-run
-   timing. Missing historical pre-run records cannot be recreated afterward.
+   runtime continuity. The [release-evidence acquisition handoff](docs/generator_release_evidence_acquisition_handoff.md)
+   was prepared locally on 2026-09-23 with exact artifact/configuration read
+   scope, independent source expectations and pre/post-run timing. Its
+   plan-only CLI and private two-phase artifact/configuration reader are now
+   implemented and locally tested; no live read was performed. The
+   [private composition flow](docs/generator_evidence_collection.md) now joins
+   it with the receipt reader, checking frozen release expectations before log
+   access and preserving external-run-only operation and no persistence.
+   The [snapshot/writer attribution design](docs/snapshot_writer_attribution_design.md)
+   is now prepared, with explicit query-target/commit/writer and complete-history
+   gaps plus the legacy-source/new-receipt incompatibility. The
+   [offline metadata normalizer](docs/snapshot_metadata_normalizer.md) now reports
+   structural consistency and explicit gaps without guessing writer identity,
+   commit times or history completeness. The [bounded plan-first Glue/S3 metadata reader](docs/snapshot_metadata_reader.md)
+   now feeds that packet in memory, with local mock verification only and separate
+   authority required before live use. The [offline source-bound query-target projection](docs/generator_query_targets.md)
+   is now locally implemented for supplied SQL and full release evidence. It
+   retains exact hashes and recognizes table names without claiming snapshot or
+   commit binding. The next recommended local deliverable is private composition
+   with the receipt reader, projecting transient SQL before discard under the same
+   release expectations, existing read inventory and aggregate-output boundary.
+   Live acquisition, pinned-row query execution and source-contract migration
+   remain separate work and retain their own authority boundaries.
+   Missing historical pre-run records cannot be recreated afterward.
    Generated counts still need independent snapshot/key reconciliation; do not
    silently advance the validators' fixed source pin.
    Deployment, collection and operational continuation retain separate authority;
@@ -293,7 +343,7 @@ August archive and their current implications in the product table.
 
 The current window is 2026-09-21 through 2026-09-27. The previous Monday–Sunday
 window (2026-09-14 through 2026-09-20) has no newly recorded sessions to roll up.
-During this closeout, expired August detail was preserved from source commit
+During the 22 September closeout, expired August detail was preserved from source commit
 `6db6a35` in [the August ledger](docs/archive/status/daily-logs/2026-08.md).
 This status retains current reality, active carry-over and blockers only;
 archiving does not refresh any historical runtime claim.

@@ -120,9 +120,20 @@ production readiness, public OPS status, or the fixed-source Learning validators
 
 ## Remaining work
 
-The next bounded feature is a release-evidence acquisition handoff: assemble
-the exact pre-run/post-run configuration and artifact read scope, expected
-source/configuration values and stop conditions needed to feed this validator.
+The [release-evidence acquisition handoff](generator_release_evidence_acquisition_handoff.md)
+now defines the exact pre-run/post-run configuration and artifact read scope,
+independent source/configuration expectations and stop conditions needed to feed
+this validator. Its bounded two-phase artifact/configuration reader is now
+implemented and locally tested, but has not executed against AWS. It composes
+this validator without changing its schema or evidence claims. The
+[private composition flow](generator_evidence_collection.md) is now implemented
+and locally tested, with no live collection. The
+[snapshot/writer attribution design](snapshot_writer_attribution_design.md) is
+prepared and its [offline metadata normalizer](snapshot_metadata_normalizer.md)
+and [bounded metadata reader](snapshot_metadata_reader.md) are locally implemented,
+without live collection. The [offline source-bound query-target projection](generator_query_targets.md)
+now composes this validator with supplied SQL and a reviewed adapter recipe.
+Private receipt/target composition before SQL discard is next recommended.
 The existing receipt reader already handles logs/query metadata; it does not
 download packages or capture Lambda configuration, and this validator adds no
 AWS client. The handoff must preserve the fact that a missing historical

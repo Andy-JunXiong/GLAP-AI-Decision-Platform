@@ -141,10 +141,29 @@ not build this validator's run input from generated counters. Snapshot/writer
 acquisition, log authenticity and net-new-key reconciliation remain unresolved.
 The [release-binding validator](generator_release_binding.md) now compares
 Git/ZIP bytes, receipt hashes and supplied configuration records locally; this
-does not authenticate release acceptance or runtime continuity. Next is an
-artifact/configuration acquisition handoff. This validator's pinned source
+does not authenticate release acceptance or runtime continuity. The
+[artifact/configuration acquisition handoff](generator_release_evidence_acquisition_handoff.md)
+now has a bounded two-phase reader, implemented and locally tested but not
+executed against AWS. It does not supply this validator's snapshot/writer inputs.
+The [private composition flow](generator_evidence_collection.md) now joins that
+reader to receipt acquisition locally; no live collection or snapshot attribution
+has occurred. The [snapshot/writer attribution design](snapshot_writer_attribution_design.md)
+now maps these projected fields to obtainable metadata and unresolved proof.
+Snapshot creation timestamps cannot simply become commit timestamps, and writer
+IDs or complete-history flags must not be guessed. The [offline metadata normalizer](snapshot_metadata_normalizer.md)
+is now locally implemented with those explicit gaps; it does not construct this
+validator's provenance input. The [bounded metadata reader](snapshot_metadata_reader.md)
+is also locally implemented and unexecuted. The [offline source-bound query-target projection](generator_query_targets.md)
+now checks supplied SQL and release evidence without closing the query-to-commit
+gate. Private receipt/target composition before SQL discard is next recommended.
+This validator's pinned source
 commit stays unchanged, and a missing historical pre-run record cannot be
 recreated by a later read.
+
+The pinned legacy source and new receipt producer are currently incompatible
+across validators: the release-binding validator requires a producer absent from
+the old pin. This is an explicit integration blocker, not permission to relabel
+new release evidence or silently change the source contract.
 
 No new lifecycle run is justified merely by implementing this validator. AWS
 execution, deployment and operational continuation retain their separate
